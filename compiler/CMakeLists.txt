@@ -1,0 +1,1 @@
+auto_build_component(vsc DEPENDS shared_lib)

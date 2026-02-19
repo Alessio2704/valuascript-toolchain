@@ -1,0 +1,1 @@
+auto_build_component(vse DEPENDS shared_lib)
