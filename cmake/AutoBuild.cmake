@@ -3,7 +3,10 @@ function(auto_build_component TARGET_NAME)
     cmake_parse_arguments(ARG "" "" "DEPENDS" ${ARGN})
 
     file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
-    file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "src/*.h" "src/*.hpp")
+    file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS 
+        "src/*.h" "src/*.hpp" 
+        "include/*.h" "include/*.hpp"
+    )
     
     list(FILTER SRC_FILES EXCLUDE REGEX "src/main.cpp$")
 
@@ -11,27 +14,40 @@ function(auto_build_component TARGET_NAME)
 
     if(SRC_FILES)
         add_library(${TARGET_NAME}_lib STATIC ${SRC_FILES} ${HEADER_FILES})
-        
-        target_include_directories(${TARGET_NAME}_lib PUBLIC 
-            src 
+        set(SCOPE PUBLIC)
+        set(SCOPE_PRIVATE PRIVATE)
+        set(HAS_INTERNAL_LIB TRUE)
+        message(STATUS "[${TARGET_NAME}] Core Library (STATIC) configured.")
+    elseif(HEADER_FILES)
+        add_library(${TARGET_NAME}_lib INTERFACE)
+        target_sources(${TARGET_NAME}_lib INTERFACE ${HEADER_FILES})
+        set(SCOPE INTERFACE)
+        set(SCOPE_PRIVATE INTERFACE)
+        set(HAS_INTERNAL_LIB TRUE)
+        message(STATUS "[${TARGET_NAME}] Core Library (HEADER-ONLY INTERFACE) configured.")
+    else()
+        message(STATUS "[${TARGET_NAME}] No library sources or headers found. Skipping.")
+    endif()
+
+    if(HAS_INTERNAL_LIB)
+        target_include_directories(${TARGET_NAME}_lib ${SCOPE} 
+            ${CMAKE_CURRENT_SOURCE_DIR}/src 
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${CMAKE_SOURCE_DIR}/shared/src
+            ${CMAKE_SOURCE_DIR}/shared/include
         )
 
         if(ARG_DEPENDS)
-            target_link_libraries(${TARGET_NAME}_lib PUBLIC ${ARG_DEPENDS})
+            target_link_libraries(${TARGET_NAME}_lib ${SCOPE} ${ARG_DEPENDS})
         endif()
 
-        target_compile_features(${TARGET_NAME}_lib PUBLIC cxx_std_20)
+        target_compile_features(${TARGET_NAME}_lib ${SCOPE} cxx_std_20)
+        
         if(MSVC)
-            target_compile_options(${TARGET_NAME}_lib PRIVATE "/W4" "/WX")
+            target_compile_options(${TARGET_NAME}_lib ${SCOPE_PRIVATE} "/W4" "/WX")
         else()
-            target_compile_options(${TARGET_NAME}_lib PRIVATE "-Wall" "-Wextra" "-Wpedantic")
+            target_compile_options(${TARGET_NAME}_lib ${SCOPE_PRIVATE} "-Wall" "-Wextra" "-Wpedantic")
         endif()
-
-        set(HAS_INTERNAL_LIB TRUE)
-        message(STATUS "[${TARGET_NAME}] Core Library configured.")
-    else()
-        message(STATUS "[${TARGET_NAME}] No library sources found (excluding main.cpp). Skipping library creation.")
     endif()
 
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
@@ -41,7 +57,12 @@ function(auto_build_component TARGET_NAME)
             target_link_libraries(${TARGET_NAME} PRIVATE ${TARGET_NAME}_lib)
         elseif(ARG_DEPENDS)
             target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_DEPENDS})
-            target_include_directories(${TARGET_NAME} PRIVATE src ${CMAKE_SOURCE_DIR}/shared/src)
+            target_include_directories(${TARGET_NAME} PRIVATE 
+                ${CMAKE_CURRENT_SOURCE_DIR}/src 
+                ${CMAKE_CURRENT_SOURCE_DIR}/include 
+                ${CMAKE_SOURCE_DIR}/shared/src 
+                ${CMAKE_SOURCE_DIR}/shared/include
+            )
         endif()
 
         message(STATUS "[${TARGET_NAME}] Executable configured.")
@@ -64,7 +85,7 @@ function(auto_build_component TARGET_NAME)
             gtest_discover_tests(${TEST_EXE_NAME})
             message(STATUS "[${TARGET_NAME}] Tests configured.")
         else()
-             message(STATUS "[${TARGET_NAME}] Tests found but no Core Library to link. Skipping tests.")
+            message(STATUS "[${TARGET_NAME}] Tests found but no Core Library to link. Skipping.")
         endif()
     endif()
 
