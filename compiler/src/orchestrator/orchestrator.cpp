@@ -9,6 +9,7 @@
 #include <set>
 
 #include "errors/valuascript_exception.h"
+#include "stages/file_reader/file_reader_stage.h"
 
 namespace valuascript::compiler {
     void Orchestrator::validate_stages_pipeline() const {
@@ -38,7 +39,7 @@ namespace valuascript::compiler {
     Orchestrator::Orchestrator() {
         stages_pipeline_.clear();
 
-        // add_stage(std::make_unique<>());
+        add_stage(std::make_unique<FileReaderStage>());
 
         validate_stages_pipeline();
     }

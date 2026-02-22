@@ -5,6 +5,8 @@
 namespace valuascript::compiler {
     enum class CompilerStageArtifactCode {
         FilePath,
+        SourceCode,
+        TokenStream,
         Ast,
         SymbolTable,
         EnrichedSymbolTable,
