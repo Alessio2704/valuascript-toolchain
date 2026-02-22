@@ -1,4 +1,3 @@
-#include "../../../include/stages/file_reader/file_reader_stage.h"
 #include "stages/file_reader/file_reader_stage.h"
 #include <fstream>
 #include <sstream>

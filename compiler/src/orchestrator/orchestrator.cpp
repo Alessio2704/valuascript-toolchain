@@ -10,6 +10,7 @@
 
 #include "errors/valuascript_exception.h"
 #include "stages/file_reader/file_reader_stage.h"
+#include "stages/lexer/lexer_stage.h"
 
 namespace valuascript::compiler {
     void Orchestrator::validate_stages_pipeline() const {
@@ -40,6 +41,7 @@ namespace valuascript::compiler {
         stages_pipeline_.clear();
 
         add_stage(std::make_unique<FileReaderStage>());
+        add_stage(std::make_unique<LexerStage>());
 
         validate_stages_pipeline();
     }

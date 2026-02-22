@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    add_compile_options("/W4" "/WX")
+else()
+    add_compile_options("-Wall" "-Wextra" "-Wpedantic" "-Werror=switch")
+endif()
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -13,9 +21,6 @@ FetchContent_Declare(
   GIT_TAG "v1.17.0"
 )
 
-if(MSVC)
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-endif()
 enable_testing()
 FetchContent_MakeAvailable(googletest)
 include(GoogleTest)

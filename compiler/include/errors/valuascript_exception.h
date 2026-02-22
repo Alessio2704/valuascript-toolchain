@@ -7,13 +7,18 @@ namespace valuascript::compiler {
     enum class ErrorCategory { Lexical, Syntax, Semantic, Internal };
 
     enum class ErrorCode {
-        // Lexical
+        // --- Lexer Errors ---
         InvalidCharacter,
-        // Syntax
-        MissingEqualsInDeclaration,
-        MissingClosingParenthesis,
-        // Semantic
-        UndefinedVariable
+        UnclosedString,
+        InvalidIdentifier,
+
+        // --- Parser Errors ---
+        MissingValueAfterEquals,
+        IncompleteAssignment,
+        UnmatchedBracket,
+        ReservedKeywordAsIdentifier,
+        UnexpectedToken,
+        GeneralParsingError
     };
 
     struct ErrorLocation {
@@ -39,5 +44,6 @@ namespace valuascript::compiler {
         [[nodiscard]] const char *what() const noexcept override { return formatted_message_.c_str(); }
         [[nodiscard]] ErrorCode get_code() const { return code_; }
         [[nodiscard]] ErrorCategory get_category() const { return category_; }
+        [[nodiscard]] ErrorLocation get_location() const { return location_; }
     };
 }
