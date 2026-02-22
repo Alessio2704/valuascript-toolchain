@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
-#include "compiler/compiler_stage/compiler_stage.h"
-#include <string>
-#include <vector>
+#include "compiler_stage/compiler_stage.h"
+#include <stdexcept>
+#include <memory>
 
-using namespace valuascript;
+using namespace valuascript::compiler;
 
-TEST(ArtifactUtilityTest, SuccessfulExtraction)
-{
+TEST(ArtifactUtilityTest, SuccessfulExtraction) {
     std::vector<CompilerStageArtifact> history;
 
     history.push_back({CompilerStageArtifactCode::FilePath, std::string("test_file.vs")});
@@ -15,8 +14,7 @@ TEST(ArtifactUtilityTest, SuccessfulExtraction)
     EXPECT_EQ(result, "test_file.vs");
 }
 
-TEST(ArtifactUtilityTest, ThrowsOnMissingCode)
-{
+TEST(ArtifactUtilityTest, ThrowsOnMissingCode) {
     std::vector<CompilerStageArtifact> history;
 
     EXPECT_THROW(
@@ -24,8 +22,7 @@ TEST(ArtifactUtilityTest, ThrowsOnMissingCode)
         std::runtime_error);
 }
 
-TEST(ArtifactUtilityTest, ThrowsOnTypeMismatch)
-{
+TEST(ArtifactUtilityTest, ThrowsOnTypeMismatch) {
     std::vector<CompilerStageArtifact> history;
     history.push_back({CompilerStageArtifactCode::FilePath, std::string("test_file.vs")});
 

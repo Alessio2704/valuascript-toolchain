@@ -1,0 +1,43 @@
+#pragma once
+#include <string>
+#include <utility>
+
+
+namespace valuascript::compiler {
+    enum class ErrorCategory { Lexical, Syntax, Semantic, Internal };
+
+    enum class ErrorCode {
+        // Lexical
+        InvalidCharacter,
+        // Syntax
+        MissingEqualsInDeclaration,
+        MissingClosingParenthesis,
+        // Semantic
+        UndefinedVariable
+    };
+
+    struct ErrorLocation {
+        size_t line;
+        size_t column;
+        std::string file_path;
+    };
+
+    class ValuaScriptException : public std::exception {
+    private:
+        ErrorCategory category_;
+        ErrorCode code_;
+        ErrorLocation location_;
+        std::string message_;
+        std::string formatted_message_;
+
+    public:
+        ValuaScriptException(ErrorCategory cat, ErrorCode code, ErrorLocation loc, std::string msg)
+            : category_(cat), code_(code), location_(std::move(loc)), message_(std::move(msg)) {
+            formatted_message_ = "[" + location_.file_path + ":" + std::to_string(location_.line) + "] " + message_;
+        }
+
+        [[nodiscard]] const char *what() const noexcept override { return formatted_message_.c_str(); }
+        [[nodiscard]] ErrorCode get_code() const { return code_; }
+        [[nodiscard]] ErrorCategory get_category() const { return category_; }
+    };
+}

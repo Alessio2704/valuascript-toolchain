@@ -1,106 +1,96 @@
 #include <gtest/gtest.h>
-#include "core/orchestrator/orchestrator.h"
-#include "compiler/compiler_stage/compiler_stage.h"
+#include "orchestrator/orchestrator.h"
+#include "compiler_stage/compiler_stage.h"
 #include <stdexcept>
 #include <memory>
 
 using namespace valuascript::compiler;
 
-class Parser : public CompilerStage
-{
+class Parser : public CompilerStage {
 public:
     Parser() : CompilerStage(
-                   "Parser",
-                   CompilerStageArtifactCode::Ast,
-                   {CompilerStageArtifactCode::FilePath}) {}
+        "Parser",
+        CompilerStageArtifactCode::Ast,
+        {CompilerStageArtifactCode::FilePath}) {
+    }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::Ast, {}};
     }
 };
 
-class SemanticAnalyser : public CompilerStage
-{
+class SemanticAnalyser : public CompilerStage {
 public:
     SemanticAnalyser() : CompilerStage(
-                             "SemanticAnalyser",
-                             CompilerStageArtifactCode::SymbolTable,
-                             {CompilerStageArtifactCode::Ast}) {}
+        "SemanticAnalyser",
+        CompilerStageArtifactCode::SymbolTable,
+        {CompilerStageArtifactCode::Ast}) {
+    }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::SymbolTable, {}};
     }
 };
 
-class SymbolTableEnricher : public CompilerStage
-{
+class SymbolTableEnricher : public CompilerStage {
 public:
     SymbolTableEnricher() : CompilerStage(
-                                "SymbolTableEnricher",
-                                CompilerStageArtifactCode::EnrichedSymbolTable,
-                                {CompilerStageArtifactCode::SymbolTable}) {}
+        "SymbolTableEnricher",
+        CompilerStageArtifactCode::EnrichedSymbolTable,
+        {CompilerStageArtifactCode::SymbolTable}) {
+    }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::EnrichedSymbolTable, {}};
     }
 };
 
-class MultipleDependencyStage : public CompilerStage
-{
+class MultipleDependencyStage : public CompilerStage {
 public:
     MultipleDependencyStage() : CompilerStage(
-                                    "MultipleDependencyStage",
-                                    CompilerStageArtifactCode::Bytecode,
-                                    {CompilerStageArtifactCode::Ast, CompilerStageArtifactCode::ValidatedSymbolTable}) {}
+        "MultipleDependencyStage",
+        CompilerStageArtifactCode::Bytecode,
+        {CompilerStageArtifactCode::Ast, CompilerStageArtifactCode::ValidatedSymbolTable}) {
+    }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::Bytecode, {}};
     }
 };
 
-class Validator : public CompilerStage
-{
+class Validator : public CompilerStage {
 public:
     Validator() : CompilerStage(
-                      "Validator",
-                      CompilerStageArtifactCode::ValidatedSymbolTable,
-                      {CompilerStageArtifactCode::EnrichedSymbolTable}) {}
+        "Validator",
+        CompilerStageArtifactCode::ValidatedSymbolTable,
+        {CompilerStageArtifactCode::EnrichedSymbolTable}) {
+    }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::ValidatedSymbolTable, {}};
     }
 };
 
-class Linter : public CompilerStage
-{
+class Linter : public CompilerStage {
 public:
     Linter() : CompilerStage(
-                   "Linter",
-                   CompilerStageArtifactCode::LinterReport,
-                   {CompilerStageArtifactCode::Ast})
-    {
+        "Linter",
+        CompilerStageArtifactCode::LinterReport,
+        {CompilerStageArtifactCode::Ast}) {
     }
 
-    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override
-    {
+    CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::LinterReport, {}};
     }
 };
 
-TEST(OrchestratorTest, EmptyPipelineDoesNotThrow)
-{
+TEST(OrchestratorTest, EmptyPipelineDoesNotThrow) {
     Orchestrator orchestrator;
 
     EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
 }
 
-TEST(OrchestratorTest, ValidPipelineDoesNotThrow)
-{
+TEST(OrchestratorTest, ValidPipelineDoesNotThrow) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<Parser>());
@@ -110,8 +100,7 @@ TEST(OrchestratorTest, ValidPipelineDoesNotThrow)
     EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
 }
 
-TEST(OrchestratorTest, ValidPipelineButWrongOrderThrows)
-{
+TEST(OrchestratorTest, ValidPipelineButWrongOrderThrows) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<Parser>());
@@ -121,8 +110,7 @@ TEST(OrchestratorTest, ValidPipelineButWrongOrderThrows)
     EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
 }
 
-TEST(OrchestratorTest, ValidPipelineWithMultipleDependencies)
-{
+TEST(OrchestratorTest, ValidPipelineWithMultipleDependencies) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<Parser>());
@@ -134,8 +122,7 @@ TEST(OrchestratorTest, ValidPipelineWithMultipleDependencies)
     EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
 }
 
-TEST(OrchestratorTest, ValidPipelineWithMultipleDependenciesButMissingOne)
-{
+TEST(OrchestratorTest, ValidPipelineWithMultipleDependenciesButMissingOne) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<Parser>());
@@ -145,8 +132,7 @@ TEST(OrchestratorTest, ValidPipelineWithMultipleDependenciesButMissingOne)
     EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
 }
 
-TEST(OrchestratorTest, MissingDependencyThrowsLogicError1)
-{
+TEST(OrchestratorTest, MissingDependencyThrowsLogicError1) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
@@ -154,8 +140,7 @@ TEST(OrchestratorTest, MissingDependencyThrowsLogicError1)
     EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
 }
 
-TEST(OrchestratorTest, MissingDependencyThrowsLogicError2)
-{
+TEST(OrchestratorTest, MissingDependencyThrowsLogicError2) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<SymbolTableEnricher>());
@@ -163,8 +148,7 @@ TEST(OrchestratorTest, MissingDependencyThrowsLogicError2)
     EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
 }
 
-TEST(OrchestratorTest, MultipleConsumersOfSameArtifactPasses)
-{
+TEST(OrchestratorTest, MultipleConsumersOfSameArtifactPasses) {
     Orchestrator orchestrator;
 
     orchestrator.add_stage(std::make_unique<Parser>());
