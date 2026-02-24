@@ -64,7 +64,7 @@ TEST_P(DirectiveHappyPathTest, ParsesSuccessfully) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ValidDirectives,
+    ParserStageTest,
     DirectiveHappyPathTest,
     testing::Values(
         DirectiveHappyParam{"iterations", "@iterations = 1000", "iterations", true},
@@ -108,7 +108,7 @@ TEST_P(DirectiveSadPathTest, ThrowsCorrectSyntaxError) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    InvalidDirectives,
+    ParserStageTest,
     DirectiveSadPathTest,
     testing::Values(
         DirectiveSadParam{"missing_at", "iterations = 1000", ErrorCode::UnexpectedToken},

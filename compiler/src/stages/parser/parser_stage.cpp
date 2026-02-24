@@ -1,12 +1,10 @@
 #include "stages/parser/parser_stage.h"
-
 #include <iostream>
-
-#include "stages/parser/ast.h"
-#include "errors/valuascript_exception.h"
-#include "stages/lexer/token.h"
 #include <memory>
 #include <ostream>
+#include "errors/valuascript_exception.h"
+#include "stages/lexer/token.h"
+#include "stages/parser/ast.h"
 
 namespace valuascript::compiler {
     namespace {
@@ -67,6 +65,10 @@ namespace valuascript::compiler {
 
                 std::vector<std::string> targets;
                 do {
+                    if (is_reserved_keyword(peek().type)) {
+                        throw error(peek(), ErrorCode::ReservedKeywordAsIdentifier,
+                                    "Syntax Error: Cannot use a reserved keyword as a variable name.");
+                    }
                     const Token &target = consume(TokenType::Identifier, ErrorCode::InvalidIdentifier,
                                                   "Syntax Error: Invalid identifier name.");
                     targets.push_back(target.lexeme);
@@ -75,7 +77,7 @@ namespace valuascript::compiler {
                 consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
                         "Syntax Error: Incomplete assignment. Expected '='.");
 
-                if (is_at_end() || check(TokenType::Let) || check(TokenType::Func)) {
+                if (is_at_end() || check(TokenType::Let) || check(TokenType::Func) || check(TokenType::At)) {
                     throw error(previous(), ErrorCode::MissingValueAfterEquals,
                                 "Syntax Error: Missing value after '='.");
                 }
@@ -213,14 +215,24 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_comparison_expression() {
                 auto expr = parse_addition_expression();
+
                 if (match({
-                    TokenType::Equals, TokenType::NotEquals, TokenType::Greater, TokenType::GreaterEqual,
-                    TokenType::Less, TokenType::LessEqual
+                    TokenType::Equals, TokenType::NotEquals, TokenType::Greater,
+                    TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual
                 })) {
                     Token op = previous();
                     auto right = parse_addition_expression();
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+
+                    if (match({
+                        TokenType::Equals, TokenType::NotEquals, TokenType::Greater,
+                        TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual
+                    })) {
+                        throw error(previous(), ErrorCode::InvalidExpression,
+                                    "Syntax Error: Chaining comparison operators is not allowed.");
+                    }
                 }
+
                 return expr;
             }
 
@@ -376,6 +388,25 @@ namespace valuascript::compiler {
                     {token.line, token.column, file_path_},
                     message
                 );
+            }
+
+            [[nodiscard]] bool is_reserved_keyword(TokenType type) const {
+                switch (type) {
+                    case TokenType::Let:
+                    case TokenType::Func:
+                    case TokenType::If:
+                    case TokenType::Then:
+                    case TokenType::Else:
+                    case TokenType::Return:
+                    case TokenType::True:
+                    case TokenType::False:
+                    case TokenType::And:
+                    case TokenType::Or:
+                    case TokenType::Not:
+                        return true;
+                    default:
+                        return false;
+                }
             }
         };
     }

@@ -16,6 +16,7 @@ namespace valuascript::compiler {
         MissingValueAfterEquals,
         IncompleteAssignment,
         UnmatchedBracket,
+        ReservedKeywordAsIdentifier,
         UnexpectedToken,
         GeneralParsingError,
         MissingDirectiveName,
