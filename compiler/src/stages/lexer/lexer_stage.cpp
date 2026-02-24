@@ -17,10 +17,6 @@ namespace valuascript::compiler {
             {"not", TokenType::Not},
             {"func", TokenType::Func},
             {"return", TokenType::Return},
-            {"scalar", TokenType::TypeScalar},
-            {"vector", TokenType::TypeVector},
-            {"bool", TokenType::TypeBool},
-            {"string", TokenType::TypeString}
         };
 
         class Lexer {
@@ -204,13 +200,7 @@ namespace valuascript::compiler {
                         while (peek() != '\n' && !is_at_end()) advance();
                         break;
 
-                    case '@':
-                        if (source_.substr(current_, 6) == "import") {
-                            for (int i = 0; i < 6; i++) advance();
-                            add_token(TokenType::Import);
-                        } else {
-                            add_token(TokenType::At);
-                        }
+                    case '@': add_token(TokenType::At);
                         break;
 
                     case '=': add_token(match('=') ? TokenType::Equals : TokenType::Assign);

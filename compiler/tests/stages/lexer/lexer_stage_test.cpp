@@ -35,7 +35,7 @@ TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
 
     EXPECT_EQ(code, CompilerStageArtifactCode::TokenStream);
 
-    ASSERT_EQ(tokens.size(), 15);
+    ASSERT_EQ(tokens.size(), 16);
 
     for (const auto &a: tokens) {
         std::cout << a.lexeme << std::endl;
@@ -48,8 +48,9 @@ TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
     EXPECT_EQ(tokens[3].type, TokenType::Number);
     EXPECT_EQ(tokens[3].lexeme, "1_000.50");
 
-    EXPECT_EQ(tokens[12].type, TokenType::Import);
-    EXPECT_EQ(tokens[13].type, TokenType::String);
+    EXPECT_EQ(tokens[12].type, TokenType::At);
+    EXPECT_EQ(tokens[13].type, TokenType::Identifier);
+    EXPECT_EQ(tokens[14].type, TokenType::String);
 }
 
 TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
@@ -89,10 +90,10 @@ TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
 }
 
 TEST(LexerStageTest, TokenizesKeywords) {
-    auto tokens = tokenize_code("let if then else true false and or not func return @import scalar vector bool string");
+    auto tokens = tokenize_code("let if then else true false and or not func return");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 17);
+    ASSERT_EQ(tokens.size(), 12);
     EXPECT_EQ(tokens[0].type, TokenType::Let);
     EXPECT_EQ(tokens[1].type, TokenType::If);
     EXPECT_EQ(tokens[2].type, TokenType::Then);
@@ -104,12 +105,6 @@ TEST(LexerStageTest, TokenizesKeywords) {
     EXPECT_EQ(tokens[8].type, TokenType::Not);
     EXPECT_EQ(tokens[9].type, TokenType::Func);
     EXPECT_EQ(tokens[10].type, TokenType::Return);
-    EXPECT_EQ(tokens[11].type, TokenType::Import);
-
-    EXPECT_EQ(tokens[12].type, TokenType::TypeScalar);
-    EXPECT_EQ(tokens[13].type, TokenType::TypeVector);
-    EXPECT_EQ(tokens[14].type, TokenType::TypeBool);
-    EXPECT_EQ(tokens[15].type, TokenType::TypeString);
 }
 
 TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {
@@ -307,13 +302,13 @@ TEST(LexerStageTest, TokenizesFunctionWithExplicitTypes) {
 
     EXPECT_EQ(tokens[3].type, TokenType::Identifier);
     EXPECT_EQ(tokens[4].type, TokenType::Colon);
-    EXPECT_EQ(tokens[5].type, TokenType::TypeScalar);
+    EXPECT_EQ(tokens[5].type, TokenType::Identifier);
 
     EXPECT_EQ(tokens[6].type, TokenType::Comma);
 
     EXPECT_EQ(tokens[7].type, TokenType::Identifier);
     EXPECT_EQ(tokens[8].type, TokenType::Colon);
-    EXPECT_EQ(tokens[9].type, TokenType::TypeVector);
+    EXPECT_EQ(tokens[9].type, TokenType::Identifier);
 
     EXPECT_EQ(tokens[10].type, TokenType::RightParen);
 

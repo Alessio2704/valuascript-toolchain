@@ -39,12 +39,6 @@ namespace valuascript::compiler {
         DocString, // """..."""
         Number, // 123, 12.3, 1_000 (SIGNED_NUMBER, FLOAT, INT)
 
-        // Built-in Types
-        TypeScalar,
-        TypeVector,
-        TypeBool,
-        TypeString,
-
         // Keywords
         Let, // let
         If, // if
@@ -57,7 +51,6 @@ namespace valuascript::compiler {
         Not, // not
         Func, // func
         Return, // return
-        Import, // @import (Mapped as a single token per your IMPORT_KEYWORD rule)
         EndOfFile
     };
 
@@ -110,7 +103,6 @@ namespace valuascript::compiler {
             case TokenType::Not: return "Not";
             case TokenType::Func: return "Func";
             case TokenType::Return: return "Return";
-            case TokenType::Import: return "Import";
             case TokenType::EndOfFile: return "EndOfFile";
             default: return "Unknown";
         }

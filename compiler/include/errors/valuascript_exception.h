@@ -16,9 +16,14 @@ namespace valuascript::compiler {
         MissingValueAfterEquals,
         IncompleteAssignment,
         UnmatchedBracket,
-        ReservedKeywordAsIdentifier,
         UnexpectedToken,
-        GeneralParsingError
+        GeneralParsingError,
+        MissingDirectiveName,
+        MissingFunctionName,
+        MissingParameterName,
+        MissingTypeAnnotation,
+        MissingArrowInFunction,
+        InvalidExpression
     };
 
     struct ErrorLocation {
