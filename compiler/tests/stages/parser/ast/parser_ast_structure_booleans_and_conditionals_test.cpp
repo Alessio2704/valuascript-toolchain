@@ -196,7 +196,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWith
     // Tests that a binary expression correctly wraps a function call with arguments
     // inside the condition slot.
 
-    auto ast = parse_code("let a = if get_value(x, 1) == 100 then onSuccess() else onError()");
+    auto ast = parse_code("let a = if get_value(a: x, b: 1) == 100 then onSuccess() else onError()");
     auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
     ASSERT_NE(root_cond, nullptr);
 
@@ -214,8 +214,8 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWith
 
     // Verify arguments: 'x' and '1'
     ASSERT_EQ(left_call->arguments.size(), 2);
-    auto arg_1 = dynamic_cast<IdentifierAccess*>(left_call->arguments[0].get());
-    auto arg_2 = dynamic_cast<NumberLiteral*>(left_call->arguments[1].get());
+    auto arg_1 = dynamic_cast<IdentifierAccess*>(left_call->arguments[0].second.get());
+    auto arg_2 = dynamic_cast<NumberLiteral*>(left_call->arguments[1].second.get());
     ASSERT_NE(arg_1, nullptr);
     ASSERT_NE(arg_2, nullptr);
     EXPECT_EQ(arg_1->name, "x");
@@ -231,7 +231,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
     // Code: let a = if check(fetch(url)) then process(transform(data)) else fallback(get_default())
     // Tests that function parameters can safely be other function calls within conditional branches.
 
-    auto ast = parse_code("let a = if check(fetch(url)) then process(transform(data)) else fallback(get_default())");
+    auto ast = parse_code("let a = if check(c: fetch(u: url)) then process(p: transform(d: data)) else fallback(f: get_default())");
     auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
     ASSERT_NE(root_cond, nullptr);
 
@@ -241,7 +241,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(cond_call->target.get())->name, "check");
     ASSERT_EQ(cond_call->arguments.size(), 1);
 
-    auto cond_arg_call = dynamic_cast<FunctionCall*>(cond_call->arguments[0].get());
+    auto cond_arg_call = dynamic_cast<FunctionCall*>(cond_call->arguments[0].second.get());
     ASSERT_NE(cond_arg_call, nullptr);
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(cond_arg_call->target.get())->name, "fetch");
 
@@ -251,7 +251,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(then_call->target.get())->name, "process");
     ASSERT_EQ(then_call->arguments.size(), 1);
 
-    auto then_arg_call = dynamic_cast<FunctionCall*>(then_call->arguments[0].get());
+    auto then_arg_call = dynamic_cast<FunctionCall*>(then_call->arguments[0].second.get());
     ASSERT_NE(then_arg_call, nullptr);
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(then_arg_call->target.get())->name, "transform");
 
@@ -261,7 +261,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(else_call->target.get())->name, "fallback");
     ASSERT_EQ(else_call->arguments.size(), 1);
 
-    auto else_arg_call = dynamic_cast<FunctionCall*>(else_call->arguments[0].get());
+    auto else_arg_call = dynamic_cast<FunctionCall*>(else_call->arguments[0].second.get());
     ASSERT_NE(else_arg_call, nullptr);
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(else_arg_call->target.get())->name, "get_default");
     EXPECT_EQ(else_arg_call->arguments.size(), 0); // get_default takes no args

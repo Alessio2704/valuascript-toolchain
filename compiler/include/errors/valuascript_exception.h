@@ -15,11 +15,14 @@ namespace valuascript::compiler {
         // --- Parser Errors ---
         MissingValueAfterEquals,
         IncompleteAssignment,
+        UnmatchedParenthesis,
+        UnmatchedParenthesisInTuple,
         UnmatchedBracket,
         ReservedKeywordAsIdentifier,
         ExpectedLetToken,
         ExpectedReturnStatement,
         MissingColonAfterParameter,
+        MissingColonAfterArgument,
         MissingThenToken,
         MissingElseToken,
         UnexpectedToken,
@@ -27,9 +30,11 @@ namespace valuascript::compiler {
         MissingDirectiveName,
         MissingFunctionName,
         MissingParameterName,
+        MissingArgumentName,
         MissingTypeAnnotation,
         MissingArrowInFunction,
         ChainingNotAllowedForComparisonOperations,
+        EmptyVectorAccess,
         InvalidExpression
     };
 

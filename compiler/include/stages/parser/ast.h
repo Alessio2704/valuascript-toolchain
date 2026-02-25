@@ -74,27 +74,35 @@ namespace valuascript::compiler {
     class FunctionCall : public Expression {
     public:
         std::unique_ptr<Expression> target;
-        std::vector<std::unique_ptr<Expression>> arguments;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
 
-        FunctionCall(std::unique_ptr<Expression> tgt, std::vector<std::unique_ptr<Expression>> args)
+        FunctionCall(std::unique_ptr<Expression> tgt,
+                     std::vector<std::pair<std::string, std::unique_ptr<Expression>>> args)
             : target(std::move(tgt)), arguments(std::move(args)) {}
     };
 
-    class VectorLiteral : public Expression {
+    class TensorLiteral : public Expression {
     public:
         std::vector<std::unique_ptr<Expression>> elements;
-        explicit VectorLiteral(std::vector<std::unique_ptr<Expression>> elems)
+        explicit TensorLiteral(std::vector<std::unique_ptr<Expression>> elems)
             : elements(std::move(elems)) {}
     };
 
-    class VectorAccess : public Expression {
+    class TupleLiteral : public Expression {
+    public:
+        std::vector<std::unique_ptr<Expression>> elements;
+
+        explicit TupleLiteral(std::vector<std::unique_ptr<Expression>> elements)
+            : elements(std::move(elements)) {}
+    };
+
+    class TensorAccess : public Expression {
     public:
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> index;
-        bool is_slice_delete;
 
-        VectorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx, bool is_delete = false)
-            : target(std::move(tgt)), index(std::move(idx)), is_slice_delete(is_delete) {}
+        TensorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
+            : target(std::move(tgt)), index(std::move(idx)) {}
     };
 
     class Assignment : public Statement {
@@ -141,7 +149,7 @@ namespace valuascript::compiler {
     public:
         std::string name;
         std::vector<FunctionParameter> parameters;
-        std::vector<std::unique_ptr<TypeAnnotation>> return_types; // Changed from TokenType
+        std::vector<std::unique_ptr<TypeAnnotation>> return_types;
         std::vector<std::unique_ptr<Statement>> body;
         std::optional<std::string> docstring;
 

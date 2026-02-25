@@ -34,7 +34,7 @@ protected:
 TEST_F(AstFunctionDefinitionTest, ValidatesSignatureAndDocstring) {
     // Code: func calculate(x: scalar, y: boolean) -> (scalar, scalar) { """Computes values""" }
 
-    auto ast = parse_code("func calculate(x: scalar, y: boolean) -> (scalar, scalar) { \"\"\"Computes values\"\"\" }");
+    auto ast = parse_code(R"(func calculate(x: scalar, y: boolean) -> (scalar, scalar) { """Computes values""" })");
     auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
 
@@ -170,7 +170,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyWithNestedCallsAndSignatureParams
     // Tests that function parameters (x, y) are correctly parsed as IdentifierAccess
     // inside deeply nested function calls on the right-hand side of an assignment.
 
-    auto ast = parse_code("func compute(x: scalar, y: scalar) -> scalar { let temp = add(x, multiply(y, 2)) \n return temp }");
+    auto ast = parse_code("func compute(x: scalar, y: scalar) -> scalar { let temp = add(a: x, b: multiply(c: y, d: 2)) \n return temp }");
     auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
 
@@ -188,23 +188,23 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyWithNestedCallsAndSignatureParams
     ASSERT_EQ(add_call->arguments.size(), 2);
 
     // Argument 1 of add(): x (Original signature param)
-    auto arg_x = dynamic_cast<IdentifierAccess*>(add_call->arguments[0].get());
+    auto arg_x = dynamic_cast<IdentifierAccess*>(add_call->arguments[0].second.get());
     ASSERT_NE(arg_x, nullptr);
     EXPECT_EQ(arg_x->name, "x");
 
     // Argument 2 of add(): multiply(y, 2)
-    auto mult_call = dynamic_cast<FunctionCall*>(add_call->arguments[1].get());
+    auto mult_call = dynamic_cast<FunctionCall*>(add_call->arguments[1].second.get());
     ASSERT_NE(mult_call, nullptr);
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(mult_call->target.get())->name, "multiply");
     ASSERT_EQ(mult_call->arguments.size(), 2);
 
     // Argument 1 of multiply(): y (Original signature param)
-    auto arg_y = dynamic_cast<IdentifierAccess*>(mult_call->arguments[0].get());
+    auto arg_y = dynamic_cast<IdentifierAccess*>(mult_call->arguments[0].second.get());
     ASSERT_NE(arg_y, nullptr);
     EXPECT_EQ(arg_y->name, "y");
 
     // Argument 2 of multiply(): 2
-    auto arg_2 = dynamic_cast<NumberLiteral*>(mult_call->arguments[1].get());
+    auto arg_2 = dynamic_cast<NumberLiteral*>(mult_call->arguments[1].second.get());
     ASSERT_NE(arg_2, nullptr);
     EXPECT_EQ(arg_2->value, "2");
 }

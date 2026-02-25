@@ -163,8 +163,7 @@ namespace valuascript::compiler {
                 }
 
                 if (match({TokenType::Return})) {
-
-                    std::vector<std::unique_ptr<Expression>> return_values;
+                    std::vector<std::unique_ptr<Expression> > return_values;
 
                     do {
                         return_values.push_back(parse_expression());
@@ -201,22 +200,13 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Expression> parse_and_expression() {
-                auto expr = parse_not_expression();
+                auto expr = parse_comparison_expression();
                 while (match({TokenType::And})) {
                     Token op = previous();
-                    auto right = parse_not_expression();
+                    auto right = parse_comparison_expression();
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
                 }
                 return expr;
-            }
-
-            std::unique_ptr<Expression> parse_not_expression() {
-                if (match({TokenType::Not})) {
-                    Token op = previous();
-                    auto right = parse_not_expression();
-                    return std::make_unique<UnaryExpression>(op.type, std::move(right));
-                }
-                return parse_comparison_expression();
             }
 
             std::unique_ptr<Expression> parse_comparison_expression() {
@@ -274,14 +264,35 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_atom() {
                 // Handling Unary Minus (e.g., -1) attached to a literal/atom
-                if (match({TokenType::Minus, TokenType::Plus})) {
+                if (match({TokenType::Minus, TokenType::Plus, TokenType::Not})) {
                     Token op = previous();
                     return std::make_unique<UnaryExpression>(op.type, parse_atom());
                 }
 
                 std::unique_ptr<Expression> expr;
 
-                if (match({TokenType::Number})) {
+                if (match({TokenType::LeftParen})) {
+                    if (match({TokenType::RightParen})) {
+                        expr = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression>>{});
+                    } else {
+                        expr = parse_expression();
+
+                        if (match({TokenType::Comma})) {
+                            std::vector<std::unique_ptr<Expression>> elements;
+                            elements.push_back(std::move(expr));
+
+                            do {
+                                elements.push_back(parse_expression());
+                            } while (match({TokenType::Comma}));
+
+                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple, "Expected ')' after tuple elements.");
+                            expr = std::make_unique<TupleLiteral>(std::move(elements));
+                        }
+                        else {
+                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis, "Expected ')' after expression.");
+                        }
+                    }
+                } else if (match({TokenType::Number})) {
                     expr = std::make_unique<NumberLiteral>(previous().lexeme);
                 } else if (match({TokenType::String})) {
                     expr = std::make_unique<StringLiteral>(previous().lexeme);
@@ -297,7 +308,7 @@ namespace valuascript::compiler {
                     }
                     consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
                             "Expected ']' after vector elements.");
-                    expr = std::make_unique<VectorLiteral>(std::move(elements));
+                    expr = std::make_unique<TensorLiteral>(std::move(elements));
                 } else if (match({TokenType::LeftParen})) {
                     // Grouping: (1 + 2)
                     expr = parse_expression();
@@ -309,26 +320,58 @@ namespace valuascript::compiler {
                     throw error(peek(), ErrorCode::InvalidExpression, "Syntax Error: Expected an expression.");
                 }
 
-                // POSTFIX PARSING (Function calls and Vector access)
+                // POSTFIX PARSING (Function calls and Tensor access)
                 // We loop to support infinite chaining: matrix[0][1] or get_func()(arg)
                 while (true) {
                     if (match({TokenType::LeftParen})) {
-                        std::vector<std::unique_ptr<Expression> > args;
+                        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+
                         if (!check(TokenType::RightParen)) {
                             do {
-                                args.push_back(parse_expression());
+                                Token arg_name = consume(TokenType::Identifier, ErrorCode::MissingArgumentName,
+                                                         "Expected argument name in function call.");
+
+                                consume(TokenType::Colon, ErrorCode::MissingColonAfterArgument,
+                                        "Expected ':' after argument name.");
+
+                                std::unique_ptr<Expression> arg_value = parse_expression();
+
+                                arguments.emplace_back(arg_name.lexeme, std::move(arg_value));
                             } while (match({TokenType::Comma}));
                         }
-                        consume(TokenType::RightParen, ErrorCode::UnmatchedBracket, "Expected ')' after arguments.");
 
-                        expr = std::make_unique<FunctionCall>(std::move(expr), std::move(args));
+                        consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+                                "Expected ')' after arguments.");
+                        expr = std::make_unique<FunctionCall>(std::move(expr), std::move(arguments));
                     } else if (match({TokenType::LeftBracket})) {
-                        bool is_slice = match({TokenType::Colon});
-                        auto index_expr = parse_expression();
+                        std::unique_ptr<Expression> index_expr = nullptr;
+
+                        if (!check(TokenType::Colon) && !check(TokenType::RightBracket)) {
+                            index_expr = parse_expression();
+                        }
+
+                        if (match({TokenType::Colon})) {
+                            std::unique_ptr<Expression> end_expr = nullptr;
+
+                            if (!check(TokenType::RightBracket)) {
+                                end_expr = parse_expression();
+                            }
+
+                            index_expr = std::make_unique<BinaryExpression>(
+                                std::move(index_expr),
+                                TokenType::Colon,
+                                std::move(end_expr)
+                            );
+                        } else if (!index_expr) {
+                            // If it wasn't a slice, and we didn't get an index, they typed `tensor[]`
+                            // We throw an error because empty access is meaningless.
+                            throw error(previous(), ErrorCode::EmptyVectorAccess, "Expected an index or slice inside '[]'.");
+                        }
+
                         consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
                                 "Expected ']' after vector index.");
 
-                        expr = std::make_unique<VectorAccess>(std::move(expr), std::move(index_expr), is_slice);
+                        expr = std::make_unique<TensorAccess>(std::move(expr), std::move(index_expr));
                     } else {
                         break;
                     }
