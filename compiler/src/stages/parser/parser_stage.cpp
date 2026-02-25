@@ -61,7 +61,7 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Assignment> parse_assignment() {
-                consume(TokenType::Let, ErrorCode::UnexpectedToken, "Expected 'let'.");
+                consume(TokenType::Let, ErrorCode::ExpectedLetToken, "Expected 'let'.");
 
                 std::vector<std::string> targets;
                 do {
@@ -117,9 +117,9 @@ namespace valuascript::compiler {
                     do {
                         const Token &param_name = consume(TokenType::Identifier, ErrorCode::MissingParameterName,
                                                           "Syntax Error: Expected parameter name.");
-                        consume(TokenType::Colon, ErrorCode::UnexpectedToken, "Expected ':' after parameter name.");
+                        consume(TokenType::Colon, ErrorCode::MissingColonAfterParameter,
+                                "Expected ':' after parameter name.");
 
-                        // Use our new type parsing logic
                         params.push_back({param_name.lexeme, parse_type_annotation()});
                     } while (match({TokenType::Comma}));
                 }
@@ -163,8 +163,14 @@ namespace valuascript::compiler {
                 }
 
                 if (match({TokenType::Return})) {
-                    auto value = parse_expression();
-                    return std::make_unique<ReturnStatement>(std::move(value));
+
+                    std::vector<std::unique_ptr<Expression>> return_values;
+
+                    do {
+                        return_values.push_back(parse_expression());
+                    } while (match({TokenType::Comma}));
+
+                    return std::make_unique<ReturnStatement>(std::move(return_values));
                 }
 
                 throw error(peek(), ErrorCode::UnexpectedToken,
@@ -174,9 +180,9 @@ namespace valuascript::compiler {
             std::unique_ptr<Expression> parse_expression() {
                 if (match({TokenType::If})) {
                     auto condition = parse_or_expression();
-                    consume(TokenType::Then, ErrorCode::UnexpectedToken, "Expected 'then' after condition.");
+                    consume(TokenType::Then, ErrorCode::MissingThenToken, "Expected 'then' after condition.");
                     auto then_branch = parse_or_expression();
-                    consume(TokenType::Else, ErrorCode::UnexpectedToken, "Expected 'else' after then branch.");
+                    consume(TokenType::Else, ErrorCode::MissingElseToken, "Expected 'else' after then branch.");
                     auto else_branch = parse_expression();
                     return std::make_unique<ConditionalExpression>(std::move(condition), std::move(then_branch),
                                                                    std::move(else_branch));
@@ -228,7 +234,7 @@ namespace valuascript::compiler {
                         TokenType::Equals, TokenType::NotEquals, TokenType::Greater,
                         TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual
                     })) {
-                        throw error(previous(), ErrorCode::InvalidExpression,
+                        throw error(previous(), ErrorCode::ChainingNotAllowedForComparisonOperations,
                                     "Syntax Error: Chaining comparison operators is not allowed.");
                     }
                 }
@@ -248,7 +254,7 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_multiplication_expression() {
                 auto expr = parse_power_expression();
-                while (match({TokenType::Star, TokenType::Slash})) {
+                while (match({TokenType::Star, TokenType::Slash, TokenType::Percent})) {
                     Token op = previous();
                     auto right = parse_power_expression();
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
@@ -304,14 +310,9 @@ namespace valuascript::compiler {
                 }
 
                 // POSTFIX PARSING (Function calls and Vector access)
-                // We loop because you could technically have `get_matrix()[0][:1]`
+                // We loop to support infinite chaining: matrix[0][1] or get_func()(arg)
                 while (true) {
                     if (match({TokenType::LeftParen})) {
-                        auto id_access = dynamic_cast<IdentifierAccess *>(expr.get());
-                        if (!id_access)
-                            throw error(previous(), ErrorCode::UnexpectedToken,
-                                        "Syntax Error: Invalid function call target.");
-
                         std::vector<std::unique_ptr<Expression> > args;
                         if (!check(TokenType::RightParen)) {
                             do {
@@ -320,21 +321,14 @@ namespace valuascript::compiler {
                         }
                         consume(TokenType::RightParen, ErrorCode::UnmatchedBracket, "Expected ')' after arguments.");
 
-                        std::string func_name = id_access->name;
-                        expr = std::make_unique<FunctionCall>(func_name, std::move(args));
+                        expr = std::make_unique<FunctionCall>(std::move(expr), std::move(args));
                     } else if (match({TokenType::LeftBracket})) {
-                        auto id_access = dynamic_cast<IdentifierAccess *>(expr.get());
-                        if (!id_access)
-                            throw error(previous(), ErrorCode::UnexpectedToken,
-                                        "Syntax Error: Invalid vector access target.");
-
                         bool is_slice = match({TokenType::Colon});
                         auto index_expr = parse_expression();
                         consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
                                 "Expected ']' after vector index.");
 
-                        std::string vec_name = id_access->name;
-                        expr = std::make_unique<VectorAccess>(vec_name, std::move(index_expr), is_slice);
+                        expr = std::make_unique<VectorAccess>(std::move(expr), std::move(index_expr), is_slice);
                     } else {
                         break;
                     }

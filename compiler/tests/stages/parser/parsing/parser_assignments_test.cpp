@@ -122,7 +122,8 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ErrorCode::IncompleteAssignment},
         AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals},
-        AssignmentSadParam{"chaining_not_allowed_for_comparison", "let x = a > b > c", ErrorCode::InvalidExpression},
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::ChainingNotAllowedForComparisonOperations},
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"reserved_keyword", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::ReservedKeywordAsIdentifier}
     ),

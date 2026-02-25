@@ -73,11 +73,11 @@ namespace valuascript::compiler {
 
     class FunctionCall : public Expression {
     public:
-        std::string function_name;
+        std::unique_ptr<Expression> target;
         std::vector<std::unique_ptr<Expression>> arguments;
 
-        FunctionCall(std::string name, std::vector<std::unique_ptr<Expression>> args)
-            : function_name(std::move(name)), arguments(std::move(args)) {}
+        FunctionCall(std::unique_ptr<Expression> tgt, std::vector<std::unique_ptr<Expression>> args)
+            : target(std::move(tgt)), arguments(std::move(args)) {}
     };
 
     class VectorLiteral : public Expression {
@@ -89,12 +89,12 @@ namespace valuascript::compiler {
 
     class VectorAccess : public Expression {
     public:
-        std::string target_name;
+        std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> index;
         bool is_slice_delete;
 
-        VectorAccess(std::string target, std::unique_ptr<Expression> idx, bool is_delete = false)
-            : target_name(std::move(target)), index(std::move(idx)), is_slice_delete(is_delete) {}
+        VectorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx, bool is_delete = false)
+            : target(std::move(tgt)), index(std::move(idx)), is_slice_delete(is_delete) {}
     };
 
     class Assignment : public Statement {
@@ -108,8 +108,10 @@ namespace valuascript::compiler {
 
     class ReturnStatement : public Statement {
     public:
-        std::unique_ptr<Expression> value;
-        explicit ReturnStatement(std::unique_ptr<Expression> val) : value(std::move(val)) {}
+        std::vector<std::unique_ptr<Expression>> values;
+
+        explicit ReturnStatement(std::vector<std::unique_ptr<Expression>> return_values)
+            : values(std::move(return_values)) {}
     };
 
     class Directive : public AstNode {

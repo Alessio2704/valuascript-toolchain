@@ -202,6 +202,8 @@ namespace valuascript::compiler {
 
                     case '@': add_token(TokenType::At);
                         break;
+                    case '%': add_token(TokenType::Percent);
+                        break;
 
                     case '=': add_token(match('=') ? TokenType::Equals : TokenType::Assign);
                         break;

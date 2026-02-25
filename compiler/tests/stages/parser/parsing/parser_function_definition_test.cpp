@@ -63,7 +63,7 @@ TEST_P(FunctionHappyPathTest, ParsesSuccessfully) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ValidFunctions,
+    ParserStageTest,
     FunctionHappyPathTest,
     testing::Values(
         FunctionHappyParam{"minimal_func", "func test() -> scalar {}", 0, 1, 0, false},
@@ -109,7 +109,7 @@ TEST_P(FunctionSadPathTest, ThrowsCorrectSyntaxError) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    InvalidFunctions,
+    ParserStageTest,
     FunctionSadPathTest,
     testing::Values(
         FunctionSadParam{"missing_func_name", "func () -> scalar {}", ErrorCode::MissingFunctionName},
@@ -122,7 +122,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionSadParam{"missing_right_brace", "func test() -> scalar { return 1", ErrorCode::UnmatchedBracket},
 
         FunctionSadParam{"missing_param_name", "func test(: scalar) -> scalar {}", ErrorCode::MissingParameterName},
-        FunctionSadParam{"missing_colon", "func test(a scalar) -> scalar {}", ErrorCode::UnexpectedToken},
+        FunctionSadParam{"missing_colon", "func test(a scalar) -> scalar {}", ErrorCode::MissingColonAfterParameter},
         FunctionSadParam{"missing_param_type", "func test(a: ) -> scalar {}", ErrorCode::MissingTypeAnnotation},
         FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: boolean) -> scalar {}", ErrorCode::
         UnmatchedBracket}, // Fails expecting ')' after first param

@@ -15,6 +15,7 @@ namespace valuascript::compiler {
         Comma, // ,
         Colon, // :
         At, // @ (for directives like @iterations)
+        Percent,
 
         // Math operators
         Plus, // +
