@@ -1,0 +1,139 @@
+#include <gtest/gtest.h>
+#include "stages/parser/parser_stage.h"
+#include "stages/parser/ast.h"
+#include "stages/lexer/lexer_stage.h"
+#include "errors/valuascript_exception.h"
+
+using namespace valuascript;
+using namespace valuascript::compiler;
+
+class ParserFunctionTestBase : public testing::Test {
+protected:
+    std::shared_ptr<Program> parse_code(const std::string &code) {
+        LexerStage lexer;
+        std::vector<CompilerStageArtifact> lexer_history = {
+            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+            {CompilerStageArtifactCode::SourceCode, code}
+        };
+        auto lexer_result = lexer.run(lexer_history);
+
+        ParserStage parser;
+        std::vector<CompilerStageArtifact> parser_history = {
+            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+            lexer_result
+        };
+        auto parser_result = parser.run(parser_history);
+
+        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
+    }
+};
+
+struct FunctionHappyParam {
+    std::string test_id;
+    std::string source_code;
+    size_t expected_param_count;
+    size_t expected_return_type_count;
+    size_t expected_body_statements;
+    bool expects_docstring;
+};
+
+class FunctionHappyPathTest : public ParserFunctionTestBase,
+                              public testing::WithParamInterface<FunctionHappyParam> {
+};
+
+TEST_P(FunctionHappyPathTest, ParsesSuccessfully) {
+    const FunctionHappyParam &param = GetParam();
+
+    std::shared_ptr<Program> ast;
+    EXPECT_NO_THROW({
+        ast = parse_code(param.source_code);
+        }) << "Parser threw an exception on valid function test: " << param.test_id;
+
+    if (ast) {
+        ASSERT_EQ(ast->function_definitions.size(), 1) << "Expected exactly 1 function in AST.";
+        EXPECT_EQ(ast->execution_steps.size(), 0);
+        EXPECT_EQ(ast->directives.size(), 0);
+
+        auto &func = ast->function_definitions[0];
+        EXPECT_EQ(func->parameters.size(), param.expected_param_count) << "Parameter count mismatch.";
+        EXPECT_EQ(func->return_types.size(), param.expected_return_type_count) << "Return type count mismatch.";
+        EXPECT_EQ(func->body.size(), param.expected_body_statements) << "Body statement count mismatch.";
+        EXPECT_EQ(func->docstring.has_value(), param.expects_docstring) << "Docstring presence mismatch.";
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ValidFunctions,
+    FunctionHappyPathTest,
+    testing::Values(
+        FunctionHappyParam{"minimal_func", "func test() -> scalar {}", 0, 1, 0, false},
+        FunctionHappyParam{"single_param", "func test(a: scalar) -> scalar {}", 1, 1, 0, false},
+        FunctionHappyParam{"multi_param", "func test(a: scalar, b: boolean) -> scalar {}", 2, 1, 0, false},
+        FunctionHappyParam{"generic_param", "func process(data: vector<matrix>) -> scalar {}", 1, 1, 0, false},
+        FunctionHappyParam{"nested_generic_param", "func process(data: vector<vector<scalar>>) -> scalar {}", 1, 1, 0,
+        false},
+        FunctionHappyParam{"tuple_return", "func bounds() -> (scalar, scalar) {}", 0, 2, 0, false},
+        FunctionHappyParam{"docstring", "func test() -> scalar { \"\"\"Calculates something.\"\"\" }", 0, 1, 0, true},
+        FunctionHappyParam{"body_statements", "func test() -> scalar { let a = 1 \n return a }", 0, 1, 2, false},
+        FunctionHappyParam{"kitchen_sink",
+        "func full(v: vector<scalar>, b: boolean) -> (vector<scalar>, boolean) { \"\"\"Docs\"\"\" let out = v \n return out }"
+        , 2, 2, 2, true}
+    ),
+    [](const testing::TestParamInfo<FunctionHappyParam>& info) {
+    return info.param.test_id;
+    }
+);
+
+struct FunctionSadParam {
+    std::string test_id;
+    std::string source_code;
+    ErrorCode expected_error;
+};
+
+class FunctionSadPathTest : public ParserFunctionTestBase,
+                            public testing::WithParamInterface<FunctionSadParam> {
+};
+
+TEST_P(FunctionSadPathTest, ThrowsCorrectSyntaxError) {
+    const FunctionSadParam &param = GetParam();
+
+    try {
+        parse_code(param.source_code);
+        FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
+    } catch (const ValuaScriptException &e) {
+        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+            << "Category mismatch on test: " << param.test_id;
+        EXPECT_EQ(e.get_code(), param.expected_error)
+            << "Error code mismatch on test: " << param.test_id;
+    }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    InvalidFunctions,
+    FunctionSadPathTest,
+    testing::Values(
+        FunctionSadParam{"missing_func_name", "func () -> scalar {}", ErrorCode::MissingFunctionName},
+        FunctionSadParam{"missing_left_paren", "func test) -> scalar {}", ErrorCode::UnmatchedBracket},
+        FunctionSadParam{"missing_right_paren", "func test(a: scalar -> scalar {}", ErrorCode::UnmatchedBracket},
+        FunctionSadParam{"missing_arrow", "func test() scalar {}", ErrorCode::MissingArrowInFunction},
+        FunctionSadParam{"malformed_arrow_1", "func test() scalar - {}", ErrorCode::MissingArrowInFunction},
+        FunctionSadParam{"malformed_arrow_2", "func test() scalar > {}", ErrorCode::MissingArrowInFunction},
+        FunctionSadParam{"missing_left_brace", "func test() -> scalar }", ErrorCode::UnmatchedBracket},
+        FunctionSadParam{"missing_right_brace", "func test() -> scalar { return 1", ErrorCode::UnmatchedBracket},
+
+        FunctionSadParam{"missing_param_name", "func test(: scalar) -> scalar {}", ErrorCode::MissingParameterName},
+        FunctionSadParam{"missing_colon", "func test(a scalar) -> scalar {}", ErrorCode::UnexpectedToken},
+        FunctionSadParam{"missing_param_type", "func test(a: ) -> scalar {}", ErrorCode::MissingTypeAnnotation},
+        FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: boolean) -> scalar {}", ErrorCode::
+        UnmatchedBracket}, // Fails expecting ')' after first param
+        FunctionSadParam{"unclosed_generic", "func test(a: vector<scalar) -> scalar {}", ErrorCode::UnmatchedBracket},
+
+        FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotation},
+        FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedBracket},
+
+        FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::UnexpectedToken}
+    ),
+    [](const testing::TestParamInfo<FunctionSadParam>& info) {
+    return info.param.test_id;
+    }
+);

@@ -77,7 +77,8 @@ INSTANTIATE_TEST_SUITE_P(
         DirectiveHappyParam{"value_directive_2", "@value = 10.5", "value", true},
         DirectiveHappyParam{"value_directive_3", "@value = 1_000.5", "value", true},
         DirectiveHappyParam{"value_directive_4", "@value = \"string\"", "value", true},
-        DirectiveHappyParam{"value_directive_5", "@value = true", "value", true}
+        DirectiveHappyParam{"value_directive_5", "@value = true", "value", true},
+        DirectiveHappyParam{"value_directive_6", "@value = var_name", "value", true}
     ),
     [](const testing::TestParamInfo<DirectiveHappyParam>& info) {
         return info.param.test_id;
