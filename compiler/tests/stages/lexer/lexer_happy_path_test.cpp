@@ -77,6 +77,9 @@ INSTANTIATE_TEST_SUITE_P(
         HappyLexerParam{"output", "@output = my_var", 5},
         HappyLexerParam{"output_file", "@output_file = \"results.csv\"", 5},
         HappyLexerParam{"module", "@module", 3},
+
+        // Structs
+        HappyLexerParam{"struct", "struct Assumption { cagr: Decimal }", 8},
         
         // Floats and Separators
         HappyLexerParam{"at_separator", "let a = 1_000", 5},

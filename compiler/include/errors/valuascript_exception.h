@@ -37,6 +37,11 @@ namespace valuascript::compiler {
         EmptyVectorAccess,
         ExpectedDictionaryKey,
         ExpectedColonAfterDictionaryKey,
+        ExpectedStructToken,
+        ExpectedStructName,
+        ExpectedBraceInStructDefinition,
+        ExpectedStructFieldName,
+        ExpectedColonAfterStructFieldName,
         UnmatchedBraceInDictionaryLiteral,
         InvalidExpression
     };

@@ -90,10 +90,10 @@ TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
 }
 
 TEST(LexerStageTest, TokenizesKeywords) {
-    auto tokens = tokenize_code("let if then else true false and or not func return");
+    auto tokens = tokenize_code("let if then else true false and or not func struct return");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 12);
+    ASSERT_EQ(tokens.size(), 13);
     EXPECT_EQ(tokens[0].type, TokenType::Let);
     EXPECT_EQ(tokens[1].type, TokenType::If);
     EXPECT_EQ(tokens[2].type, TokenType::Then);
@@ -104,7 +104,8 @@ TEST(LexerStageTest, TokenizesKeywords) {
     EXPECT_EQ(tokens[7].type, TokenType::Or);
     EXPECT_EQ(tokens[8].type, TokenType::Not);
     EXPECT_EQ(tokens[9].type, TokenType::Func);
-    EXPECT_EQ(tokens[10].type, TokenType::Return);
+    EXPECT_EQ(tokens[10].type, TokenType::Struct);
+    EXPECT_EQ(tokens[11].type, TokenType::Return);
 }
 
 TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {

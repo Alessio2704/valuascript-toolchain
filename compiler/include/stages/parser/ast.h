@@ -173,10 +173,11 @@ namespace valuascript::compiler {
 
     class TupleTypeAnnotation : public TypeAnnotation {
     public:
-        std::vector<std::unique_ptr<TypeAnnotation>> element_types;
+        std::vector<std::unique_ptr<TypeAnnotation> > element_types;
 
-        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation>> elements)
-            : TypeAnnotation("tuple"), element_types(std::move(elements)) {}
+        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation> > elements)
+            : TypeAnnotation("tuple"), element_types(std::move(elements)) {
+        }
     };
 
     struct FunctionParameter {
@@ -202,10 +203,22 @@ namespace valuascript::compiler {
         }
     };
 
+    class StructDefinition : public AstNode {
+    public:
+        std::string name;
+        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
+
+        StructDefinition(std::string name,
+                         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
+            : name(std::move(name)), fields(std::move(fields)) {
+        }
+    };
+
     class Program : public AstNode {
     public:
         std::vector<std::unique_ptr<Directive> > directives;
         std::vector<std::unique_ptr<Assignment> > execution_steps;
         std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
+        std::vector<std::unique_ptr<StructDefinition>> struct_definitions;
     };
 }

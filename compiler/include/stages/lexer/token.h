@@ -51,6 +51,7 @@ namespace valuascript::compiler {
         Or, // or
         Not, // not
         Func, // func
+        Struct, // struct
         Return, // return
         EndOfFile
     };

@@ -16,6 +16,7 @@ namespace valuascript::compiler {
             {"or", TokenType::Or},
             {"not", TokenType::Not},
             {"func", TokenType::Func},
+            {"struct", TokenType::Struct},
             {"return", TokenType::Return},
         };
 

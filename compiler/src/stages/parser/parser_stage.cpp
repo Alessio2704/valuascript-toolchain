@@ -1,7 +1,7 @@
 #include "stages/parser/parser_stage.h"
-#include <iostream>
+
 #include <memory>
-#include <ostream>
+
 #include "errors/valuascript_exception.h"
 #include "stages/lexer/token.h"
 #include "stages/parser/ast.h"
@@ -29,6 +29,8 @@ namespace valuascript::compiler {
                         program->execution_steps.push_back(parse_assignment());
                     } else if (check(TokenType::Func)) {
                         program->function_definitions.push_back(parse_function_definition());
+                    } else if (check(TokenType::Struct)) {
+                        program->struct_definitions.push_back(parse_struct_definition());
                     } else {
                         throw error(peek(), ErrorCode::UnexpectedToken,
                                     "Syntax Error: Invalid syntax. Expected '@', 'let', or 'func'.");
@@ -60,6 +62,32 @@ namespace valuascript::compiler {
                 return std::make_unique<Directive>(directive_name, std::move(value));
             }
 
+            std::unique_ptr<StructDefinition> parse_struct_definition() {
+                consume(TokenType::Struct, ErrorCode::ExpectedStructToken, "Expected 'struct' in struct definition.");
+                Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedStructName,
+                                           "Expected struct name.");
+                consume(TokenType::LeftBrace, ErrorCode::ExpectedBraceInStructDefinition, "Expected '{' before struct body.");
+
+                std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
+
+                if (!check(TokenType::RightBrace)) {
+                    do {
+                        Token field_name = consume(TokenType::Identifier, ErrorCode::ExpectedStructFieldName,
+                                                   "Expected field name in struct.");
+                        consume(TokenType::Colon, ErrorCode::ExpectedColonAfterStructFieldName, "Expected ':' after field name.");
+
+                        std::unique_ptr<TypeAnnotation> field_type = parse_type_annotation();
+
+                        fields.emplace_back(field_name.lexeme, std::move(field_type));
+                    } while (match({TokenType::Comma}));
+                }
+
+                consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition, "Expected '}' after struct body.");
+
+
+                return std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
+            }
+
             std::unique_ptr<Assignment> parse_assignment() {
                 consume(TokenType::Let, ErrorCode::ExpectedLetToken, "Expected 'let'.");
 
@@ -88,7 +116,7 @@ namespace valuascript::compiler {
 
             std::unique_ptr<TypeAnnotation> parse_type_annotation() {
                 if (match({TokenType::LeftParen})) {
-                    std::vector<std::unique_ptr<TypeAnnotation>> elements;
+                    std::vector<std::unique_ptr<TypeAnnotation> > elements;
 
                     if (!check(TokenType::RightParen)) {
                         do {
@@ -96,13 +124,15 @@ namespace valuascript::compiler {
                         } while (match({TokenType::Comma}));
                     }
 
-                    consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple, "Expected ')' after tuple type elements.");
+                    consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
+                            "Expected ')' after tuple type elements.");
                     return std::make_unique<TupleTypeAnnotation>(std::move(elements));
                 }
 
-                Token name_token = consume(TokenType::Identifier, ErrorCode::MissingTypeAnnotation, "Expected a type name.");
+                Token name_token = consume(TokenType::Identifier, ErrorCode::MissingTypeAnnotation,
+                                           "Expected a type name.");
 
-                std::vector<std::unique_ptr<TypeAnnotation>> generic_args;
+                std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
 
                 if (match({TokenType::Less})) {
                     do {
@@ -138,7 +168,7 @@ namespace valuascript::compiler {
 
                 consume(TokenType::Arrow, ErrorCode::MissingArrowInFunction, "Expected '->' before return type.");
 
-                std::vector<std::unique_ptr<TypeAnnotation>> return_types;
+                std::vector<std::unique_ptr<TypeAnnotation> > return_types;
 
                 return_types.push_back(parse_type_annotation());
 
@@ -280,23 +310,24 @@ namespace valuascript::compiler {
 
                 if (match({TokenType::LeftParen})) {
                     if (match({TokenType::RightParen})) {
-                        expr = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression>>{});
+                        expr = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression> >{});
                     } else {
                         expr = parse_expression();
 
                         if (match({TokenType::Comma})) {
-                            std::vector<std::unique_ptr<Expression>> elements;
+                            std::vector<std::unique_ptr<Expression> > elements;
                             elements.push_back(std::move(expr));
 
                             do {
                                 elements.push_back(parse_expression());
                             } while (match({TokenType::Comma}));
 
-                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple, "Expected ')' after tuple elements.");
+                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
+                                    "Expected ')' after tuple elements.");
                             expr = std::make_unique<TupleLiteral>(std::move(elements));
-                        }
-                        else {
-                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis, "Expected ')' after expression.");
+                        } else {
+                            consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+                                    "Expected ')' after expression.");
                         }
                     }
                 } else if (match({TokenType::Number})) {
@@ -324,21 +355,23 @@ namespace valuascript::compiler {
                     std::string name = previous().lexeme;
                     expr = std::make_unique<IdentifierAccess>(name);
                 } else if (match({TokenType::LeftBrace})) {
-                    std::vector<std::pair<std::string, std::unique_ptr<Expression>>> pairs;
+                    std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
 
                     if (!check(TokenType::RightBrace)) {
                         do {
-                            Token key_token = consume(TokenType::Identifier, ErrorCode::ExpectedDictionaryKey, "Expected key in dictionary.");
+                            Token key_token = consume(TokenType::Identifier, ErrorCode::ExpectedDictionaryKey,
+                                                      "Expected key in dictionary.");
 
-                            consume(TokenType::Colon, ErrorCode::ExpectedColonAfterDictionaryKey, "Expected ':' after dictionary key.");
+                            consume(TokenType::Colon, ErrorCode::ExpectedColonAfterDictionaryKey,
+                                    "Expected ':' after dictionary key.");
 
                             std::unique_ptr<Expression> value_expr = parse_expression();
                             pairs.emplace_back(key_token.lexeme, std::move(value_expr));
-
                         } while (match({TokenType::Comma}));
                     }
 
-                    consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral, "Expected '}' after dictionary literal.");
+                    consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral,
+                            "Expected '}' after dictionary literal.");
                     expr = std::make_unique<DictLiteral>(std::move(pairs));
                 } else {
                     throw error(peek(), ErrorCode::InvalidExpression, "Syntax Error: Expected an expression.");
@@ -389,7 +422,8 @@ namespace valuascript::compiler {
                         } else if (!index_expr) {
                             // If it wasn't a slice, and we didn't get an index, they typed `tensor[]`
                             // We throw an error because empty access is meaningless.
-                            throw error(previous(), ErrorCode::EmptyVectorAccess, "Expected an index or slice inside '[]'.");
+                            throw error(previous(), ErrorCode::EmptyVectorAccess,
+                                        "Expected an index or slice inside '[]'.");
                         }
 
                         consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
