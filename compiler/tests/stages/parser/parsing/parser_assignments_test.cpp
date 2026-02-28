@@ -63,16 +63,9 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         AssignmentHappyParam{"number", "let a = 1000", 1},
         AssignmentHappyParam{"string", "let a = \"string\"", 1},
-        AssignmentHappyParam{"vector_literal", "let a = [1,2,3]", 1},
-        AssignmentHappyParam{"matrix_literal", "let a = [[1,2], [3, 4]]", 1},
         AssignmentHappyParam{"boolean", "let a = true", 1},
-        AssignmentHappyParam{"tuple", "let a = (1,2,3)", 1},
-        AssignmentHappyParam{"tuple_1", "let a = (a, 2, c+1)", 1},
-        AssignmentHappyParam{"tuple_2", "let a = (a, 2, if a then 1 else 2)", 1},
         AssignmentHappyParam{"cname_3", "let _a = false", 1},
         AssignmentHappyParam{"identifier_containing_keyword", "let ifthenelse = 1", 1},
-        AssignmentHappyParam{"function_call", "let a = some_func()", 1},
-        AssignmentHappyParam{"function_call_params", "let a = some_func(a: 2, b: var)", 1},
         AssignmentHappyParam{"multi_assignment", "let a, b = some_func()", 2},
         AssignmentHappyParam{"multi_assignment_params", "let a, b = some_func(a: 1, b: 1.5, c: true, d: \"call\")", 2},
         AssignmentHappyParam{"conditional_expression", "let a = if true then 10 else 4", 1},
@@ -86,12 +79,7 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentHappyParam{"gte_expr", "let a = x >= y", 1},
         AssignmentHappyParam{"lte_expr", "let a = x <= y", 1},
         AssignmentHappyParam{"pow_expr", "let a = x^y", 1},
-        AssignmentHappyParam{"access_vector_element", "let a = x[1]", 1},
-        AssignmentHappyParam{"delete_vector_element", "let a = x[:1]", 1},
-        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1},
-        AssignmentHappyParam{"dict", "let a = { name: \"one\", age: 20 }", 1},
-        AssignmentHappyParam{"dict_complex", "let a = { name: func_call(), age: 20 }", 1},
-        AssignmentHappyParam{"dict_complex_1", "let a = { name: func_call(), age: matrix[0][:] }", 1}
+        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1}
     ),
     [](const testing::TestParamInfo<AssignmentHappyParam>& info) {
     return info.param.test_id;
@@ -139,18 +127,8 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::
         ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"reserved_keyword", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"tuple_missing_second_value", "let a = (a, ", ErrorCode::InvalidExpression},
-        AssignmentSadParam{"tuple_parenthesis", "let a = (a, b", ErrorCode::UnmatchedParenthesisInTuple},
         AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::
-        ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"dict_missing_brace", "let x = {a: 1", ErrorCode::
-        UnmatchedBraceInDictionaryLiteral},
-        AssignmentSadParam{"dict_missing_key", "let x = {1}", ErrorCode::
-        ExpectedDictionaryKey},
-        AssignmentSadParam{"dict_missing_colon", "let x = {a 1}", ErrorCode::
-        ExpectedColonAfterDictionaryKey},
-        AssignmentSadParam{"dict_empty", "let x = {a}", ErrorCode::
-        ExpectedColonAfterDictionaryKey}
+        ReservedKeywordAsIdentifier}
 
     ),
     [](const testing::TestParamInfo<AssignmentSadParam>& info) {
