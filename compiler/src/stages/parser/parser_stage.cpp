@@ -87,11 +87,22 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<TypeAnnotation> parse_type_annotation() {
-                const Token &name_token = consume(TokenType::Identifier, ErrorCode::MissingTypeAnnotation,
-                                                  "Syntax Error: Expected a type name.");
+                if (match({TokenType::LeftParen})) {
+                    std::vector<std::unique_ptr<TypeAnnotation>> elements;
 
-                std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
+                    if (!check(TokenType::RightParen)) {
+                        do {
+                            elements.push_back(parse_type_annotation());
+                        } while (match({TokenType::Comma}));
+                    }
 
+                    consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple, "Expected ')' after tuple type elements.");
+                    return std::make_unique<TupleTypeAnnotation>(std::move(elements));
+                }
+
+                Token name_token = consume(TokenType::Identifier, ErrorCode::MissingTypeAnnotation, "Expected a type name.");
+
+                std::vector<std::unique_ptr<TypeAnnotation>> generic_args;
 
                 if (match({TokenType::Less})) {
                     do {
@@ -127,15 +138,11 @@ namespace valuascript::compiler {
 
                 consume(TokenType::Arrow, ErrorCode::MissingArrowInFunction, "Expected '->' before return type.");
 
-                std::vector<std::unique_ptr<TypeAnnotation> > return_types;
-                if (match({TokenType::LeftParen})) {
-                    // Tuple return type: -> (scalar, vector)
-                    do {
-                        return_types.push_back(parse_type_annotation());
-                    } while (match({TokenType::Comma}));
-                    consume(TokenType::RightParen, ErrorCode::UnmatchedBracket, "Expected ')' after return types.");
-                } else {
-                    // Single return type: -> scalar
+                std::vector<std::unique_ptr<TypeAnnotation>> return_types;
+
+                return_types.push_back(parse_type_annotation());
+
+                while (match({TokenType::Comma})) {
                     return_types.push_back(parse_type_annotation());
                 }
 

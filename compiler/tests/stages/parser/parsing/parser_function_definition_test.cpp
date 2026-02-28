@@ -72,12 +72,18 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionHappyParam{"generic_param", "func process(data: vector<matrix>) -> scalar {}", 1, 1, 0, false},
         FunctionHappyParam{"nested_generic_param", "func process(data: vector<vector<scalar>>) -> scalar {}", 1, 1, 0,
         false},
-        FunctionHappyParam{"tuple_return", "func bounds() -> (scalar, scalar) {}", 0, 2, 0, false},
+        FunctionHappyParam{"tuple_return", "func bounds() -> (scalar, scalar) {}", 0, 1, 0, false},
+        FunctionHappyParam{"tuple_return_generic", "func bounds() -> (scalar, vector<scalar>) {}", 0, 1, 0, false},
+        FunctionHappyParam{"tuple_param", "func bounds(a: (scalar, scalar, Custom)) -> (scalar, Custom) {}", 1, 1, 0, false},
+        FunctionHappyParam{"tuple_param_generic", "func bounds(a: (scalar, vector<scalar>, Custom)) -> (scalar, Custom) {}", 1, 1, 0, false},
+        FunctionHappyParam{"tuple_and_struct_param", "func bounds(a: (scalar, scalar, Custom), b: Other) -> (scalar, Custom) {}", 2, 1, 0, false},
+        FunctionHappyParam{"tuple_and_struct_return", "func bounds(a: (scalar, scalar, Custom), b: Other) -> (scalar, Custom), Other {}", 2, 2, 0, false},
+        FunctionHappyParam{"dict_literal_return", "func dict() -> dict { return { cagr: 1, yrs: 10 } }", 0, 1, 1, false},
         FunctionHappyParam{"docstring", "func test() -> scalar { \"\"\"Calculates something.\"\"\" }", 0, 1, 0, true},
         FunctionHappyParam{"body_statements", "func test() -> scalar { let a = 1 \n return a }", 0, 1, 2, false},
         FunctionHappyParam{"kitchen_sink",
         "func full(v: vector<scalar>, b: boolean) -> (vector<scalar>, boolean) { \"\"\"Docs\"\"\" let out = v \n return out }"
-        , 2, 2, 2, true}
+        , 2, 1, 2, true}
     ),
     [](const testing::TestParamInfo<FunctionHappyParam>& info) {
     return info.param.test_id;
@@ -129,7 +135,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionSadParam{"unclosed_generic", "func test(a: vector<scalar) -> scalar {}", ErrorCode::UnmatchedBracket},
 
         FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotation},
-        FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedBracket},
+        FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedParenthesisInTuple},
 
         FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::UnexpectedToken}
     ),

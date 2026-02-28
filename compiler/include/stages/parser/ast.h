@@ -171,6 +171,14 @@ namespace valuascript::compiler {
         }
     };
 
+    class TupleTypeAnnotation : public TypeAnnotation {
+    public:
+        std::vector<std::unique_ptr<TypeAnnotation>> element_types;
+
+        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation>> elements)
+            : TypeAnnotation("tuple"), element_types(std::move(elements)) {}
+    };
+
     struct FunctionParameter {
         std::string name;
         std::unique_ptr<TypeAnnotation> type;

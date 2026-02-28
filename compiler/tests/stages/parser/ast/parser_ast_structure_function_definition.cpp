@@ -56,9 +56,13 @@ TEST_F(AstFunctionDefinitionTest, ValidatesSignatureAndDocstring) {
     EXPECT_EQ(func->parameters[1].type->name, "boolean");
 
     // 4. Return Types (Tuple)
-    ASSERT_EQ(func->return_types.size(), 2);
-    EXPECT_EQ(func->return_types[0]->name, "scalar");
-    EXPECT_EQ(func->return_types[1]->name, "scalar");
+    ASSERT_EQ(func->return_types.size(), 1);
+
+    auto tuple_return_annotation = dynamic_cast<TupleTypeAnnotation*>(func->return_types[0].get());
+
+    ASSERT_EQ(tuple_return_annotation->element_types.size(), 2);
+    ASSERT_EQ(tuple_return_annotation->element_types[0]->name, "scalar");
+    ASSERT_EQ(tuple_return_annotation->element_types[1]->name, "scalar");
 
     // Body should be empty (docstring is not a statement)
     EXPECT_EQ(func->body.size(), 0);
@@ -261,4 +265,65 @@ TEST_F(AstFunctionDefinitionTest, ValidatesConditionalInsideFunctionBody) {
     auto ret_val = dynamic_cast<IdentifierAccess*>(return_stmt->values[0].get());
     ASSERT_NE(ret_val, nullptr);
     EXPECT_EQ(ret_val->name, "res");
+}
+
+TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenericsAndTuples) {
+    // Proves the parser correctly orchestrates:
+    // 1. A parameter that is a tuple containing a base type and a generic type.
+    // 2. A multiple-return signature (Go-style).
+    // 3. The first return is a tuple containing a generic with MULTIPLE generic arguments.
+    // 4. The second return is a standalone type.
+
+    auto ast = parse_code("func transform(data: (scalar, Vector<integer>)) -> (scalar, Result<scalar, Error>), Status {}");
+    auto func = get_first_func(ast);
+    ASSERT_NE(func, nullptr);
+
+    // ==========================================
+    // PARAMETERS: data: (scalar, Vector<integer>)
+    // ==========================================
+    ASSERT_EQ(func->parameters.size(), 1) << "Function should have exactly 1 parameter";
+    EXPECT_EQ(func->parameters[0].name, "data");
+
+    // The parameter type MUST be a TupleTypeAnnotation
+    auto param_tuple = dynamic_cast<TupleTypeAnnotation*>(func->parameters[0].type.get());
+    ASSERT_NE(param_tuple, nullptr) << "Parameter type must be a TupleTypeAnnotation";
+    ASSERT_EQ(param_tuple->element_types.size(), 2);
+
+    // Element 0: scalar
+    EXPECT_EQ(param_tuple->element_types[0]->name, "scalar");
+    EXPECT_TRUE(param_tuple->element_types[0]->generic_args.empty());
+
+    // Element 1: Vector<integer>
+    EXPECT_EQ(param_tuple->element_types[1]->name, "Vector");
+    ASSERT_EQ(param_tuple->element_types[1]->generic_args.size(), 1) << "Vector must have 1 generic argument";
+    EXPECT_EQ(param_tuple->element_types[1]->generic_args[0]->name, "integer");
+
+    // ==========================================
+    // RETURN TYPES: -> (scalar, Result<scalar, Error>), Status
+    // ==========================================
+    ASSERT_EQ(func->return_types.size(), 2) << "Function should have exactly 2 disjointed return types";
+
+    // Return 0: (scalar, Result<scalar, Error>)
+    auto ret0_tuple = dynamic_cast<TupleTypeAnnotation*>(func->return_types[0].get());
+    ASSERT_NE(ret0_tuple, nullptr) << "First return type must be a TupleTypeAnnotation";
+    ASSERT_EQ(ret0_tuple->element_types.size(), 2);
+
+    // Return 0, Element 0: scalar
+    EXPECT_EQ(ret0_tuple->element_types[0]->name, "scalar");
+
+    // Return 0, Element 1: Result<scalar, Error>
+    auto ret0_elem1 = ret0_tuple->element_types[1].get();
+    EXPECT_EQ(ret0_elem1->name, "Result");
+    ASSERT_EQ(ret0_elem1->generic_args.size(), 2) << "Result must have exactly 2 generic arguments";
+    EXPECT_EQ(ret0_elem1->generic_args[0]->name, "scalar");
+    EXPECT_EQ(ret0_elem1->generic_args[1]->name, "Error");
+
+    // Return 1: Status
+    // Because it is NOT a tuple, it must just be a standard TypeAnnotation
+    auto ret1_type = func->return_types[1].get();
+    EXPECT_EQ(ret1_type->name, "Status");
+    EXPECT_TRUE(ret1_type->generic_args.empty());
+
+    // Verify it is definitively NOT a tuple annotation masquerading as a base annotation
+    EXPECT_EQ(dynamic_cast<TupleTypeAnnotation*>(ret1_type), nullptr);
 }
