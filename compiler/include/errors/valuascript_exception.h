@@ -35,6 +35,9 @@ namespace valuascript::compiler {
         MissingArrowInFunction,
         ChainingNotAllowedForComparisonOperations,
         EmptyVectorAccess,
+        ExpectedDictionaryKey,
+        ExpectedColonAfterDictionaryKey,
+        UnmatchedBraceInDictionaryLiteral,
         InvalidExpression
     };
 

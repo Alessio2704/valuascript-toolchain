@@ -316,6 +316,23 @@ namespace valuascript::compiler {
                 } else if (match({TokenType::Identifier})) {
                     std::string name = previous().lexeme;
                     expr = std::make_unique<IdentifierAccess>(name);
+                } else if (match({TokenType::LeftBrace})) {
+                    std::vector<std::pair<std::string, std::unique_ptr<Expression>>> pairs;
+
+                    if (!check(TokenType::RightBrace)) {
+                        do {
+                            Token key_token = consume(TokenType::Identifier, ErrorCode::ExpectedDictionaryKey, "Expected key in dictionary.");
+
+                            consume(TokenType::Colon, ErrorCode::ExpectedColonAfterDictionaryKey, "Expected ':' after dictionary key.");
+
+                            std::unique_ptr<Expression> value_expr = parse_expression();
+                            pairs.emplace_back(key_token.lexeme, std::move(value_expr));
+
+                        } while (match({TokenType::Comma}));
+                    }
+
+                    consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral, "Expected '}' after dictionary literal.");
+                    expr = std::make_unique<DictLiteral>(std::move(pairs));
                 } else {
                     throw error(peek(), ErrorCode::InvalidExpression, "Syntax Error: Expected an expression.");
                 }

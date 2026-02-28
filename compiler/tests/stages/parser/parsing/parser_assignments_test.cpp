@@ -9,7 +9,7 @@ using namespace valuascript::compiler;
 
 class ParserAssignmentTestBase : public testing::Test {
 protected:
-    static std::shared_ptr<Program> parse_code(const std::string& code) {
+    static std::shared_ptr<Program> parse_code(const std::string &code) {
         LexerStage lexer;
         std::vector<CompilerStageArtifact> lexer_history = {
             {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
@@ -23,8 +23,8 @@ protected:
             lexer_result
         };
         auto parser_result = parser.run(parser_history);
-        
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
+
+        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
     }
 };
 
@@ -34,23 +34,24 @@ struct AssignmentHappyParam {
     size_t expected_target_count;
 };
 
-class AssignmentHappyPathTest : public ParserAssignmentTestBase, 
-                                public testing::WithParamInterface<AssignmentHappyParam> {};
+class AssignmentHappyPathTest : public ParserAssignmentTestBase,
+                                public testing::WithParamInterface<AssignmentHappyParam> {
+};
 
 TEST_P(AssignmentHappyPathTest, ParsesSuccessfully) {
-    const AssignmentHappyParam& param = GetParam();
-    
+    const AssignmentHappyParam &param = GetParam();
+
     std::shared_ptr<Program> ast;
     EXPECT_NO_THROW({
         ast = parse_code(param.source_code);
-    }) << "Parser threw an exception on valid assignment test: " << param.test_id;
+        }) << "Parser threw an exception on valid assignment test: " << param.test_id;
 
     if (ast) {
         ASSERT_EQ(ast->execution_steps.size(), 1) << "Expected exactly 1 assignment in AST.";
         EXPECT_EQ(ast->directives.size(), 0);
         EXPECT_EQ(ast->function_definitions.size(), 0);
 
-        auto& assignment = ast->execution_steps[0];
+        auto &assignment = ast->execution_steps[0];
         EXPECT_EQ(assignment->targets.size(), param.expected_target_count);
         EXPECT_NE(assignment->value, nullptr) << "Expected assignment to have a value expression.";
     }
@@ -87,10 +88,13 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentHappyParam{"pow_expr", "let a = x^y", 1},
         AssignmentHappyParam{"access_vector_element", "let a = x[1]", 1},
         AssignmentHappyParam{"delete_vector_element", "let a = x[:1]", 1},
-        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1}
+        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1},
+        AssignmentHappyParam{"dict", "let a = { name: \"one\", age: 20 }", 1},
+        AssignmentHappyParam{"dict_complex", "let a = { name: func_call(), age: 20 }", 1},
+        AssignmentHappyParam{"dict_complex_1", "let a = { name: func_call(), age: matrix[0][:] }", 1}
     ),
     [](const testing::TestParamInfo<AssignmentHappyParam>& info) {
-        return info.param.test_id;
+    return info.param.test_id;
     }
 );
 
@@ -100,19 +104,20 @@ struct AssignmentSadParam {
     ErrorCode expected_error;
 };
 
-class AssignmentSadPathTest : public ParserAssignmentTestBase, 
-                              public testing::WithParamInterface<AssignmentSadParam> {};
+class AssignmentSadPathTest : public ParserAssignmentTestBase,
+                              public testing::WithParamInterface<AssignmentSadParam> {
+};
 
 TEST_P(AssignmentSadPathTest, ThrowsCorrectSyntaxError) {
-    const AssignmentSadParam& param = GetParam();
+    const AssignmentSadParam &param = GetParam();
 
     try {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
-    } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax) 
+    } catch (const ValuaScriptException &e) {
+        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
-        EXPECT_EQ(e.get_code(), param.expected_error) 
+        EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
     }
 }
@@ -127,15 +132,28 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"invalid_cname_for_var_name_1", "let 12 = 1", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ErrorCode::IncompleteAssignment},
-        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals},
-        AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::ChainingNotAllowedForComparisonOperations},
-        AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::ChainingNotAllowedForComparisonOperations},
+        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals}
+        ,
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::
+        ChainingNotAllowedForComparisonOperations},
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::
+        ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"reserved_keyword", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"tuple_missing_second_value", "let a = (a, ", ErrorCode::InvalidExpression},
         AssignmentSadParam{"tuple_parenthesis", "let a = (a, b", ErrorCode::UnmatchedParenthesisInTuple},
-        AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::ReservedKeywordAsIdentifier}
+        AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::
+        ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"dict_missing_brace", "let x = {a: 1", ErrorCode::
+        UnmatchedBraceInDictionaryLiteral},
+        AssignmentSadParam{"dict_missing_key", "let x = {1}", ErrorCode::
+        ExpectedDictionaryKey},
+        AssignmentSadParam{"dict_missing_colon", "let x = {a 1}", ErrorCode::
+        ExpectedColonAfterDictionaryKey},
+        AssignmentSadParam{"dict_empty", "let x = {a}", ErrorCode::
+        ExpectedColonAfterDictionaryKey}
+
     ),
     [](const testing::TestParamInfo<AssignmentSadParam>& info) {
-        return info.param.test_id;
+    return info.param.test_id;
     }
 );
