@@ -1,7 +1,7 @@
 #pragma once
-
-#pragma once
+#include <unordered_map>
 #include <string>
+#include <optional>
 
 namespace valuascript::compiler {
     enum class TokenType {
@@ -68,7 +68,7 @@ namespace valuascript::compiler {
         }
     };
 
-    inline std::string to_string(TokenType type) {
+    inline std::string to_string(const TokenType type) {
         switch (type) {
             case TokenType::LeftParen: return "LeftParen";
             case TokenType::RightParen: return "RightParen";
@@ -109,5 +109,49 @@ namespace valuascript::compiler {
             case TokenType::EndOfFile: return "EndOfFile";
             default: return "Unknown";
         }
+    }
+
+    inline bool is_reserved_keyword(const TokenType type) {
+        switch (type) {
+            case TokenType::Import:
+            case TokenType::Let:
+            case TokenType::Func:
+            case TokenType::If:
+            case TokenType::Then:
+            case TokenType::Else:
+            case TokenType::Return:
+            case TokenType::Struct:
+            case TokenType::True:
+            case TokenType::False:
+            case TokenType::And:
+            case TokenType::Or:
+            case TokenType::Not:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    inline std::optional<TokenType> get_keyword_type(const std::string& lexeme) {
+        static const std::unordered_map<std::string, TokenType> kKeywords = {
+            {"import", TokenType::Import},
+            {"let", TokenType::Let},
+            {"if", TokenType::If},
+            {"then", TokenType::Then},
+            {"else", TokenType::Else},
+            {"true", TokenType::True},
+            {"false", TokenType::False},
+            {"and", TokenType::And},
+            {"or", TokenType::Or},
+            {"not", TokenType::Not},
+            {"func", TokenType::Func},
+            {"struct", TokenType::Struct},
+            {"return", TokenType::Return},
+        };
+
+        if (const auto it = kKeywords.find(lexeme); it != kKeywords.end()) {
+            return it->second;
+        }
+        return std::nullopt;
     }
 }

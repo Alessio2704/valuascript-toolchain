@@ -76,6 +76,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionHappyParam{"tuple_return_generic", "func bounds() -> (scalar, vector<scalar>) {}", 0, 1, 0, false},
         FunctionHappyParam{"tuple_param", "func bounds(a: (scalar, scalar, Custom)) -> (scalar, Custom) {}", 1, 1, 0, false},
         FunctionHappyParam{"tuple_param_generic", "func bounds(a: (scalar, vector<scalar>, Custom)) -> (scalar, Custom) {}", 1, 1, 0, false},
+        FunctionHappyParam{"param_generic", "func test(a: Input<A, B>) -> Result<T, E> {}", 1, 1, 0, false},
         FunctionHappyParam{"tuple_and_struct_param", "func bounds(a: (scalar, scalar, Custom), b: Other) -> (scalar, Custom) {}", 2, 1, 0, false},
         FunctionHappyParam{"tuple_and_struct_return", "func bounds(a: (scalar, scalar, Custom), b: Other) -> (scalar, Custom), Other {}", 2, 2, 0, false},
         FunctionHappyParam{"dict_literal_return", "func dict() -> dict { return { cagr: 1, yrs: 10 } }", 0, 1, 1, false},

@@ -5,22 +5,6 @@
 
 namespace valuascript::compiler {
     namespace {
-        const std::unordered_map<std::string, TokenType> kKeywords = {
-            {"import", TokenType::Import},
-            {"let", TokenType::Let},
-            {"if", TokenType::If},
-            {"then", TokenType::Then},
-            {"else", TokenType::Else},
-            {"true", TokenType::True},
-            {"false", TokenType::False},
-            {"and", TokenType::And},
-            {"or", TokenType::Or},
-            {"not", TokenType::Not},
-            {"func", TokenType::Func},
-            {"struct", TokenType::Struct},
-            {"return", TokenType::Return},
-        };
-
         class Lexer {
         private:
             std::string source_;
@@ -156,8 +140,8 @@ namespace valuascript::compiler {
 
                 const std::string text = source_.substr(start_, current_ - start_);
 
-                if (const auto it = kKeywords.find(text); it != kKeywords.end()) {
-                    add_token(it->second);
+                if (auto keyword_opt = get_keyword_type(text); keyword_opt.has_value()) {
+                    add_token(keyword_opt.value());
                 } else {
                     add_token(TokenType::Identifier);
                 }

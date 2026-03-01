@@ -1,160 +1,110 @@
-# ValuaScript Abstract Syntax Tree (AST): Architecture & Memory Mechanics
+## ValuaScript Abstract Syntax Tree (AST): Architecture and Memory Semantics
 
-This document details the architectural philosophy, memory management strategy, and structural mechanics of the
-ValuaScript Abstract Syntax Tree (AST). It explains not just how the tree is built, but *why* it is built this way,
-addressing the fundamental challenges of representing recursive grammatical structures in memory.
-
----
-
-## 1. The Core Challenge: Dynamic Sizing and Object Slicing
-
-An AST is a hierarchical representation of source code. A parent node (like a `BinaryExpression`) must hold references
-to its child nodes (the `left` and `right` operands).
-
-The fundamental problem in C++ is that the compiler must know the exact memory size of an object at compile time.
-
-If we attempted to store child nodes by value:
-
-```cpp
-class BinaryExpression : public Expression {
-public:
-    Expression left;  // ERROR: Compiler does not know the size of 'Expression'
-    Expression right; 
-};
-
-```
-
-Because `Expression` is an abstract base class, it has no fixed size. A `NumberLiteral` might require 24 bytes, while a
-`FunctionCall` might require 64 bytes.
-
-Furthermore, if C++ allowed this, assigning a `FunctionCall` to an `Expression` variable would trigger **Object Slicing
-**. The C++ compiler would literally slice off all the specialized data (like the function's argument array), leaving
-only the empty base `Expression` shell.
-
-**The Solution:** We must use pointers. A pointer on a 64-bit architecture is always exactly 8 bytes, regardless of
-whether it points to a tiny boolean or a massive, deeply nested function body.
+This document details the internal representation, node hierarchy, and memory ownership model of the ValuaScript
+Abstract Syntax Tree (AST). The AST serves as the primary intermediate representation (IR) between the parsing and
+semantic analysis phases.
 
 ---
 
-## 2. The ValuaScript Solution: Smart Pointers & Polymorphism
+### 1. Architectural Philosophy and Memory Model
 
-Historically, compilers used raw pointers (`Expression* left`), which required manual `new` and `delete` calls. If the
-parser crashed midway due to a syntax error, any orphaned nodes caused massive memory leaks.
+The ValuaScript AST is engineered strictly as a **Directed Acyclic Graph (DAG)** with a strict tree topology (every node
+has exactly one owner).
 
-ValuaScript solves this using **Modern C++ Smart Pointers**, achieving absolute memory safety with zero runtime
-overhead.
-
-### 2.1 `std::unique_ptr` (Exclusive Ownership)
-
-Almost every node in the ValuaScript AST is wrapped in a `std::unique_ptr`.
-
-An AST is a strict, acyclic hierarchy. A node has exactly *one* parent. The `left` side of `1 + 2` belongs exclusively
-to the `+` node. `std::unique_ptr` perfectly enforces this architectural reality in memory.
-
-* **Zero Overhead:** It is exactly the same size as a raw pointer.
-* **Automatic Cleanup (RAII):** When a parent node is destroyed, its `unique_ptr` fields automatically delete their
-  children. Those children delete their children. The entire tree cleans itself up instantly, even during an exception.
-
-### 2.2 `std::move()` (The Baton Pass)
-
-Because `std::unique_ptr` enforces exclusive ownership, it cannot be copied. This dictates the mechanics of our
-Recursive Descent parser.
-
-When the parser builds the tree bottom-up, it transfers ownership up the call stack using `std::move()`:
-
-```cpp
-std::unique_ptr<Expression> left_node = parse_atom(); 
-Token op = previous();
-std::unique_ptr<Expression> right_node = parse_atom();
-
-// Transfer ownership to the parent. The local pointers become null.
-return std::make_unique<BinaryExpression>(
-    std::move(left_node), 
-    std::move(right_node), 
-    op.type
-);
-
-```
-
-### 2.3 `std::shared_ptr` (Pipeline Lifecycle)
-
-While internal nodes have 1:1 ownership, the **root node** (the `Program`) represents the entire compiled file. It must
-be passed through the compiler's pipeline (Parser -> Semantic Analyzer -> Code Generator).
-
-By wrapping the root `Program` in a `std::shared_ptr`, multiple compiler stages can reference the tree simultaneously.
-Once the final stage finishes and the reference count drops to zero, the root deletes itself, triggering the
-`unique_ptr` cascade that safely destroys the entire AST.
+* **Strict Single Ownership:** The architecture enforces memory safety and lifecycle determinism through the exclusive
+  use of `std::unique_ptr<T>` for all child nodes. There are no dangling references or circular dependencies. When the
+  root `Program` node is destroyed, the entire tree cascades into deterministic destruction without requiring a garbage
+  collector.
+* **Zero-Copy Ingestion:** The parser transfers ownership of lexemes directly into the AST using `std::move()`. Fields
+  like `std::string name` or `std::string value` in literals and identifiers are move-constructed, eliminating redundant
+  heap allocations for strings during tree generation.
+* **Expression vs. Statement Bifurcation:** The AST strictly categorizes nodes into `Expression` (computations that
+  yield a value) and `Statement` (operations that produce side effects).
 
 ---
 
-## 3. Why Trees Are Inherently Difficult
+### 2. Core Node Hierarchy
 
-Constructing the tree is only half the battle. The true difficulty in compiler design lies in navigating it. There are
-three core challenges:
+The base of the tree relies on a purely virtual polymorphic interface.
 
-### 3.1 The Traversal Problem (The N-Dimensional Maze)
-
-You cannot use a simple `for` loop on a tree. You must write recursive algorithms to walk the branches, and the order of
-visitation changes the entire logic of the compiler:
-
-* **Pre-order (Parent first, then children):** Used for scope resolution. You must register a function's parameters in
-  the Symbol Table *before* analyzing the function's body.
-* **Post-order (Children first, then parent):** Used for execution/evaluation. You cannot evaluate a `*` node until you
-  have fully traversed to the bottom leaves and resolved their mathematical values.
-
-### 3.2 Type Blindness (The Cost of Polymorphism)
-
-Because our tree uses polymorphic base classes (`std::unique_ptr<Expression>`), the compiler is "blind" to the actual
-node types during traversal. When the analyzer looks at `node->left`, it does not know if it is looking at a
-`NumberLiteral` or a `FunctionCall`.
-
-This requires safe downcasting (`dynamic_cast`) or structural patterns like the **Visitor Pattern** to force nodes to
-reveal their true identities, adding complexity to the Semantic Analyzer.
-
-### 3.3 The Call Stack Limit (Stack Overflow)
-
-Because we navigate trees using recursive functions, we are bound by the CPU's hardware call stack limit. If a user
-writes an edge-case file that concatenates 100,000 strings (`"a" + "b" + "c"...`), the tree leans 100,000 nodes deep.
-Walking this tree requires 100,000 nested function calls, which will crash the operating system with a Stack Overflow.
+| Base Class   | Role                                                                                                   | Memory Footprint Characteristics                       |
+|--------------|--------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `AstNode`    | Root virtual interface. Guarantees proper polymorphic destruction via `virtual ~AstNode() = default;`. | 8 bytes (vtable pointer).                              |
+| `Expression` | Inherits from `AstNode`. Represents nodes that can be evaluated to a typed value.                      | Inherits vptr. Heavily recursive structures.           |
+| `Statement`  | Inherits from `AstNode`. Represents side-effecting operations, control flow jumps, or bindings.        | Inherits vptr. Typically holds vectors of expressions. |
 
 ---
 
-## 4. Alternative AST Architectures
+### 3. Expression Node Semantics
 
-If we did not use OOP Polymorphism (base classes and virtual functions), there are three professional alternatives used
-in compiler engineering:
+Expressions represent the core computational fabric of ValuaScript. The language treats several constructs as
+first-class expressions that might be statements in older paradigms.
 
-### Alternative 1: Algebraic Data Types (`std::variant`)
+#### 3.1 Primitives and Identifiers
 
-Similar to Swift `enums`, this approach eliminates base classes entirely. You define a strict, type-safe box that can
-hold exactly one of the known node structs.
+* **Literals (`NumberLiteral`, `StringLiteral`, `BooleanLiteral`):** Terminal leaf nodes. They encapsulate primitive
+  state directly.
+* **`IdentifierAccess`:** Represents a read operation against the current lexical environment.
 
-* **Navigation:** Uses compile-time pattern matching (`std::visit`) instead of `dynamic_cast`.
-* **Pros:** Extremely type-safe; forces the developer to handle every node type.
-* **Cons:** Defining recursive variants in C++ requires clumsy wrapper structs.
+#### 3.2 Compound and Control Expressions
 
-### Alternative 2: The Tagged Union (The C-Compiler Way)
+* **`BinaryExpression` / `UnaryExpression`:** Standard arithmetic and logical operations. Op-codes are stored as raw
+  `TokenType` enumerations to maintain high cache locality and fast switch-dispatch during evaluation/compilation.
+* **`ConditionalExpression`:** ValuaScript treats `if/then/else` as an expression (similar to Rust or Kotlin), allowing
+  constructs like variable assignment directly from a conditional branch. It owns three discrete `Expression` sub-trees.
 
-The historic approach used by early C compilers. One massive `Node` struct contains an `enum` indicating its type (the "
-Tag") and a memory `union` overlapping the specific data fields.
+#### 3.3 Tensors and Dictionaries (First-Class Data Structures)
 
-* **Navigation:** A massive `switch(node->tag)` statement.
-* **Pros:** Very fast memory allocation; no virtual table overhead.
-* **Cons:** Highly unsafe. Reading the wrong union field results in silent memory corruption.
+* **`TensorLiteral` / `TupleLiteral`:** Represented as contiguous `std::vector<std::unique_ptr<Expression>>`.
+* **`DictLiteral`:** Maintains insertion order and relationships via
+  `std::vector<std::pair<std::string, std::unique_ptr<Expression>>>`. Note that keys are restricted to statically known
+  strings at the AST level, optimizing property access lookups.
+* **`TensorAccess`:** Handles both direct indexing (`tensor[0]`) and slice generation. The parser creatively overloads
+  `BinaryExpression` with a `TokenType::Colon` to represent the `[start:end]` bounds within the `index` property.
 
-### Alternative 3: Data-Oriented Design (The ECS Way)
+#### 3.4 Function Calls and Named Arguments
 
-Used by cutting-edge compilers (like Zig) and game engines. Pointers are eliminated completely. Nodes are stored as flat
-`structs` in giant contiguous arrays (`std::vector`). An "AST Node" is simply an integer index pointing to a slot in an
-array.
+* **`FunctionCall`:** Supports complex invocation semantics. Arguments are stored as
+  `std::pair<std::string, std::unique_ptr<Expression>>`, natively supporting named/keyword arguments right out of the
+  parser stage.
 
-* **Navigation:** Array lookups (e.g., `ast.binary_nodes[4]`).
-* **Pros:** The absolute maximum performance possible due to perfect CPU L1 cache utilization. Eliminates Stack Overflow
-  risks because trees can be traversed with flat `for` loops.
-* **Cons:** Extremely difficult to maintain. Inserting or removing a node requires shifting arrays and recalculating
-  thousands of integer indices.
+---
 
-### Conclusion: The ValuaScript Choice
+### 4. Statement and Declaration Nodes
 
-ValuaScript utilizes **Polymorphism + Smart Pointers** because it offers the perfect balance of mathematical intuition,
-infinite extensibility, and default memory safety, allowing rapid and safe evolution of the language's grammar.
+Declarations structure the execution environment and define custom types.
+
+#### 4.1 Type System Representation
+
+* **`TypeAnnotation` & `TupleTypeAnnotation`:** The AST models a robust static type system. `TypeAnnotation` supports
+  generics via the `generic_args` vector (e.g., `Result<T, E>`).
+
+#### 4.2 Assignments and Returns
+
+* **`Assignment`:** Natively supports destructuring and multiple returns. The `targets` field is a
+  `std::vector<std::string>`, allowing `let a, b = compute()`.
+* **`ReturnStatement`:** Mirrors assignment by accepting a `std::vector<std::unique_ptr<Expression>>` to support
+  multi-value returns out of functions.
+
+#### 4.3 High-Level Declarations
+
+* **`StructDefinition`:** Defines contiguous memory layouts. Fields bind string identifiers directly to `TypeAnnotation`
+  sub-trees.
+* **`FunctionDefinition`:** A heavy node encapsulating the function signature (`name`, `parameters`, `return_types`),
+  the local block `body`, and an optional `docstring` for native tooling/LSP support.
+
+---
+
+### 5. The Root Node: `Program`
+
+The `Program` node is the ultimate owner of the compilation unit. It organizes the global scope into logically separated
+vectors:
+
+1. `import_statements`: Dependency resolution.
+2. `directives`: Compiler/Runtime metadata (e.g., `@inline`, `@optimize`).
+3. `struct_definitions`: Type registry population.
+4. `function_definitions`: Global executable code.
+5. `execution_steps`: Top-level script evaluations (e.g., global `let` bindings).
+
+This segmented structure allows subsequent compiler passes (like hoisting or type-checking) to iterate over declarations
+in a highly predictable, cache-friendly manner without needing to filter a generic list of "top-level nodes."

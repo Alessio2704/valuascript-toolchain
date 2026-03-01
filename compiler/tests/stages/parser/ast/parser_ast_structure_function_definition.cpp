@@ -327,3 +327,59 @@ TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenericsAndTuples) {
     // Verify it is definitively NOT a tuple annotation masquerading as a base annotation
     EXPECT_EQ(dynamic_cast<TupleTypeAnnotation*>(ret1_type), nullptr);
 }
+
+TEST_F(AstFunctionDefinitionTest, ValidatesMultipleGenericArgumentsInSignature) {
+    // Proves the parser correctly identifies and nests multiple comma-separated
+    // generic arguments for both function parameters and return types.
+
+    auto ast = parse_code("func test(a: Input<A, B>) -> Result<T, E> {}");
+    auto func = get_first_func(ast);
+
+    ASSERT_NE(func, nullptr) << "Execution step must be a FunctionDefinition";
+    EXPECT_EQ(func->name, "test");
+
+    // ==========================================
+    // PARAMETERS: a: Input<A, B>
+    // ==========================================
+    ASSERT_EQ(func->parameters.size(), 1) << "Function should have exactly 1 parameter";
+    EXPECT_EQ(func->parameters[0].name, "a");
+
+    auto param_type = func->parameters[0].type.get();
+    ASSERT_NE(param_type, nullptr);
+    EXPECT_EQ(param_type->name, "Input");
+
+    // Validate the generic arguments <A, B>
+    ASSERT_EQ(param_type->generic_args.size(), 2) << "Input type must have exactly 2 generic arguments";
+
+    // Generic Arg 0: A
+    auto param_generic_0 = param_type->generic_args[0].get();
+    EXPECT_EQ(param_generic_0->name, "A");
+    EXPECT_TRUE(param_generic_0->generic_args.empty()) << "Generic arg A should not have its own nested generics";
+
+    // Generic Arg 1: B
+    auto param_generic_1 = param_type->generic_args[1].get();
+    EXPECT_EQ(param_generic_1->name, "B");
+    EXPECT_TRUE(param_generic_1->generic_args.empty()) << "Generic arg B should not have its own nested generics";
+
+    // ==========================================
+    // RETURN TYPES: -> Result<T, E>
+    // ==========================================
+    ASSERT_EQ(func->return_types.size(), 1) << "Function should have exactly 1 return type";
+
+    auto return_type = func->return_types[0].get();
+    ASSERT_NE(return_type, nullptr);
+    EXPECT_EQ(return_type->name, "Result");
+
+    // Validate the generic arguments <T, E>
+    ASSERT_EQ(return_type->generic_args.size(), 2) << "Result type must have exactly 2 generic arguments";
+
+    // Generic Arg 0: T
+    auto return_generic_0 = return_type->generic_args[0].get();
+    EXPECT_EQ(return_generic_0->name, "T");
+    EXPECT_TRUE(return_generic_0->generic_args.empty()) << "Generic arg T should not have its own nested generics";
+
+    // Generic Arg 1: E
+    auto return_generic_1 = return_type->generic_args[1].get();
+    EXPECT_EQ(return_generic_1->name, "E");
+    EXPECT_TRUE(return_generic_1->generic_args.empty()) << "Generic arg E should not have its own nested generics";
+}

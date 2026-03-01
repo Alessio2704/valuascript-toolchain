@@ -1,115 +1,106 @@
-# ValuaScript Lexer: Mechanics & Extension Guide
+# Lexer Stage
 
-The Lexer (or Scanner) is the first line of defense in the ValuaScript compiler. Its job is to group raw characters into meaningful words (`Tokens`) and discard formatting detritus like whitespace and comments. It operates as a strict, forward-moving sliding window over the source string.
+## 1. Architectural Overview
 
-## Part 1: How the Lexer Works in Practice
+The `LexerStage` is the first transformation phase in the ValuaScript compilation pipeline. It acts as an adapter
+between the raw source input (as a stream of characters) and the subsequent syntax analysis phases (Parser), which
+require structured input.
 
-### 1. The Sliding Window (`start` and `current`)
-
-At its core, the Lexer tracks its position in the source code using indices (conceptually, a `start` and a `current` pointer).
-
-* `start` points to the first character of the lexeme being scanned.
-* `current` points to the character currently being evaluated.
-* When a token is finalized, the substring from `start` to `current` is emitted as the `lexeme`, and `start` catches up to `current` to begin the next token.
-
-### 2. The Core Primitives
-
-The Lexer navigates the string using three essential methods:
-
-* **`advance()`**: Consumes the next character and moves the `current` pointer forward. It *always* changes state.
-* **`peek()`**: Looks at the current character without consuming it. It is a safe lookahead.
-* **`match(expected)`**: A conditional `advance()`. It peeks at the current character; if it matches the `expected` character, it consumes it and returns `true`. Otherwise, it does nothing and returns `false`.
-
-### 3. The Maximal Munch Principle
-
-When the Lexer encounters a `<` character, it doesn't immediately emit a `Less` token. It uses the Maximal Munch principle: *always consume the longest possible valid token*.
-It calls `match('=')`. If true, it emits `LessEqual` (`<=`). If false, it falls back to emitting `Less` (`<`).
-
-### 4. Handling Keywords vs. Identifiers
-
-The Lexer does not have a hardcoded `switch` case for every keyword (like `let`, `func`, `return`). Instead, it treats every alphabetical sequence as a generic `Identifier`. Once the full identifier is consumed (e.g., `r-e-t-u-r-n`), it checks a pre-populated Hash Map (or Dictionary) of reserved keywords. If `return` is in the map, it emits a `TokenType::Return`. If not, it emits a `TokenType::Identifier`. This makes adding new keywords completely frictionless.
+The lexer is implemented as an encapsulated unit within the `valuascript::compiler` namespace. It adheres to the
+`CompilerStage` interface, transforming `CompilerStageArtifactCode::SourceCode` into
+`CompilerStageArtifactCode::TokenStream`.
 
 ---
 
-## Part 2: Extending the Lexer (Future-Proofing)
+## 2. Token Specification
 
-Because the Lexer is a simple state machine, extending it requires only mechanical additions. Here is exactly how to evolve the Lexer when ValuaScript needs new features.
+The lexer reduces the source code into a linear sequence of `Token` structures. Each `Token` preserves its lexical type,
+associated lexeme, and source position (line and column) for diagnostic accuracy.
 
-### Scenario A: Adding a New Keyword (e.g., `while` or `struct`)
+### 2.1 Token Categories
 
-**Goal:** Make ValuaScript understand a new reserved word.
-**Effort:** Trivial.
+The grammar defines the following token taxonomy:
 
-1. **Update `TokenType` Enum:** Add `While` or `Struct` to your `TokenType` definition.
-2. **Update the Keyword Map:** Locate the dictionary/map where reserved words are registered in the Lexer initialization.
-```cpp
-// Inside the Lexer's constructor or initialization block
-keywords["let"] = TokenType::Let;
-keywords["func"] = TokenType::Func;
-keywords["return"] = TokenType::Return;
+| Category        | Token Types                                                                                                                         |
+|-----------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| **Punctuation** | `LeftParen`, `RightParen`, `LeftBracket`, `RightBracket`, `LeftBrace`, `RightBrace`, `Comma`, `Colon`, `At`, `Percent`              |
+| **Operators**   | `Plus`, `Minus`, `Star`, `Slash`, `Caret`, `Assign`, `Equals`, `NotEquals`, `Greater`, `GreaterEqual`, `Less`, `LessEqual`, `Arrow` |
+| **Literals**    | `Identifier`, `String`, `DocString`, `Number`                                                                                       |
+| **Keywords**    | `Import`, `Let`, `If`, `Then`, `Else`, `True`, `False`, `And`, `Or`, `Not`, `Func`, `Struct`, `Return`                              |
+| **Metadata**    | `EndOfFile`                                                                                                                         |
 
-// --- YOUR ADDITION ---
-keywords["while"] = TokenType::While;
-keywords["struct"] = TokenType::Struct;
+---
 
-```
+## 3. Lexical Analysis Logic
 
+### 3.1 Scanning Strategy
 
+The `Lexer` class utilizes a single-pass, predictive scanning approach. It maintains pointers to the `start_` and
+`current_` positions within the source string.
 
-*That is it.* The existing identifier scanning loop will automatically catch these words, look them up in the map, and emit the correct token.
+* **Dispatch Mechanism:** The `scan_token()` method acts as the primary dispatch loop, consuming the lookahead character
+  and branching into specialized handlers for operators, literals, and identifiers.
+* **Encapsulation:** The implementation is strictly hidden within an anonymous namespace, preventing symbol leakage.
+* **Lookahead:** The lexer supports $1$-character lookahead (`peek()`) and $2$-character lookahead (`peek_next()`) to
+  differentiate multi-character operators (e.g., `==`, `!=`, `->`, `docstrings`).
 
-### Scenario B: Adding a New Multi-Character Operator (e.g., `+=` or `!=`)
+### 3.2 Specific Handling Logic
 
-**Goal:** Add a compound operator that reuses existing characters.
-**Effort:** Low.
+#### String Literals
 
-1. **Update `TokenType` Enum:** Add `PlusEqual` or `NotEqual`.
-2. **Update the `switch` statement:** Find the case for the starting character (e.g., `+` or `!`) and use the `match()` primitive to branch the logic.
-```cpp
-case '+':
-    // --- YOUR ADDITION ---
-    if (match('=')) {
-        add_token(TokenType::PlusEqual);
-    } else {
-        add_token(TokenType::Plus);
-    }
-    break;
+The lexer handles both standard string literals (`"..."`) and multi-line docstrings (`"""..."""`).
 
-case '!':
-    // --- YOUR ADDITION ---
-    if (match('=')) {
-        add_token(TokenType::NotEqual);
-    } else {
-        // Depending on your language, a naked '!' might be a TokenType::Not
-        add_token(TokenType::Not); 
-    }
-    break;
+* **State Detection:** A boolean `is_docstring` flag is set by checking for a triple-quote sequence.
+* **Termination:** Docstrings are terminated by the first occurrence of `"""`. Standard strings are terminated by a
+  single `"`.
+* **Diagnostics:** Unclosed strings at `EOF` trigger a `ValuaScriptException` with `ErrorCategory::Lexical`.
 
-```
+#### Numeric Literals
 
+Numeric scanning supports integer and floating-point formats, with optional `_` as a digit separator.
 
+* **Validation:** The lexer enforces strict separator rules: an underscore `_` must be followed by a digit. A trailing
+  or leading underscore, or an underscore immediately followed by a non-digit, is treated as an invalid lexical
+  sequence.
+* **Complexity:** The consumption is performed in $O(N)$ time relative to the number of digits in the token.
 
-### Scenario C: Adding a New Literal Type (e.g., Hexadecimal Numbers `0xFF`)
+#### Identifiers and Keywords
 
-**Goal:** Allow users to write numbers in base-16.
-**Effort:** Medium.
+* **Mechanism:** Identifiers are greedy, consuming all alphanumeric characters and underscores.
+* **Resolution:** Once a candidate identifier is fully scanned, a `static` lookup map (`kKeywords`) is queried. This
+  allows for $O(1)$ keyword identification, minimizing overhead for reserved word checks.
 
-1. **Locate the Number Parsing Logic:** Find the block that triggers when `is_digit(peek())` is true.
-2. **Add a Lookahead Branch:** Before entering the standard base-10 parsing loop, check if the current character is `0` and the next character is `x` or `X`.
-```cpp
-// Inside the number scanning method
-if (peek() == '0' && (peek_next() == 'x' || peek_next() == 'X')) {
-    advance(); // consume '0'
-    advance(); // consume 'x'
+---
 
-    // Scan hexadecimal characters
-    while (is_hex_digit(peek())) {
-        advance();
-    }
-    add_token(TokenType::NumberLiteral); // Or a specific HexLiteral token
-    return;
-}
+## 4. Error Handling and Diagnostics
 
-// ... fallback to standard decimal parsing ...
+The lexer is designed to fail early and informatively. It does not attempt to recover from lexical errors (e.g., invalid
+characters or unclosed strings) but instead propagates a `ValuaScriptException`.
 
-```
+* **Error Structure:** Exceptions carry:
+* `ErrorCategory::Lexical`
+* `ErrorCode`: Specific code for the violation (e.g., `InvalidCharacter`, `UnclosedString`).
+* `SourceLocation`: Including `line`, `column`, and `file_path`.
+
+---
+
+## 5. Performance Considerations
+
+* **Time Complexity:** The tokenizer operates in $O(N)$ time, where $N$ is the total length of the source string. Each
+  character is visited a constant number of times.
+* **Memory Complexity:** The output is a `std::vector<Token>`. Memory usage is $O(T)$, where $T$ is the number of tokens
+  generated.
+* **Allocation:** The implementation relies on standard containers. While `std::string::substr` is used to capture
+  lexemes, this is efficient for typical source code distributions.
+
+---
+
+## 6. Extension Guidelines
+
+To extend the lexer (e.g., adding a new operator):
+
+1. **Modify `TokenType`:** Add the entry to the `enum class` in `token.h`.
+2. **Update `to_string`:** Add the string conversion entry for debugging.
+3. **Update `get_keyword_type`:** If the new token is a keyword, register it in the `kKeywords` map.
+4. **Implement Logic:** Add the character transition in `Lexer::scan_token` in `lexer_stage.cpp`. If the token is
+   multi-character, use `match()` or `peek_next()` logic within the switch case.
