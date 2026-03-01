@@ -172,7 +172,7 @@ TEST_F(AstDictLiteralTest, ValidatesOmnibusDictionaryWithAllExpressionTypes) {
     // PAIR 5: Tensor Slicing (subset: history[0 : 10])
     // ==========================================
     EXPECT_EQ(dict_val->pairs[5].first, "subset");
-    auto pair5_slice = dynamic_cast<TensorAccess*>(dict_val->pairs[5].second.get());
+    auto pair5_slice = dynamic_cast<BracketAccess*>(dict_val->pairs[5].second.get());
     ASSERT_NE(pair5_slice, nullptr);
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(pair5_slice->target.get())->name, "history");
     EXPECT_EQ(dynamic_cast<BinaryExpression*>(pair5_slice->index.get())->op, TokenType::Colon);

@@ -122,12 +122,12 @@ namespace valuascript::compiler {
         }
     };
 
-    class TensorAccess : public Expression {
+    class BracketAccess : public Expression {
     public:
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> index;
 
-        explicit TensorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
+        explicit BracketAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
             : target(std::move(tgt)), index(std::move(idx)) {
         }
     };
@@ -223,12 +223,12 @@ namespace valuascript::compiler {
         }
     };
 
-    class MemberAccess : public Expression {
+    class DotAccess : public Expression {
     public:
         std::unique_ptr<Expression> target;
         std::string property_name;
 
-        MemberAccess(std::unique_ptr<Expression> target, std::string property_name)
+        DotAccess(std::unique_ptr<Expression> target, std::string property_name)
             : target(std::move(target)), property_name(std::move(property_name)) {}
     };
 

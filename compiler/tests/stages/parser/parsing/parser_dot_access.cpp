@@ -7,7 +7,7 @@
 using namespace valuascript;
 using namespace valuascript::compiler;
 
-class ParserMemberAccessTestBase : public testing::Test {
+class ParserDotAccessTestBase : public testing::Test {
 protected:
     static std::shared_ptr<Program> parse_code(const std::string &code) {
         LexerStage lexer;
@@ -28,17 +28,17 @@ protected:
     }
 };
 
-struct MemberAccessHappyParam {
+struct DotAccessHappyParam {
     std::string test_id;
     std::string source_code;
 };
 
-class MemberAccessHappyPathTest : public ParserMemberAccessTestBase,
-                                  public testing::WithParamInterface<MemberAccessHappyParam> {
+class DotAccessHappyPathTest : public ParserDotAccessTestBase,
+                                  public testing::WithParamInterface<DotAccessHappyParam> {
 };
 
-TEST_P(MemberAccessHappyPathTest, ParsesSuccessfully) {
-    const MemberAccessHappyParam &param = GetParam();
+TEST_P(DotAccessHappyPathTest, ParsesSuccessfully) {
+    const DotAccessHappyParam &param = GetParam();
 
     std::shared_ptr<Program> ast;
     EXPECT_NO_THROW({
@@ -58,38 +58,38 @@ TEST_P(MemberAccessHappyPathTest, ParsesSuccessfully) {
 
 INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
-    MemberAccessHappyPathTest,
+    DotAccessHappyPathTest,
     testing::Values(
-        MemberAccessHappyParam{"simple_access", "let a = model.cagr"},
-        MemberAccessHappyParam{"deep_chain", "let a = company.department.manager.name"},
-        MemberAccessHappyParam{"method_chaining", "let a = builder.set_x(x: 1).set_y(y: 2).build()"},
-        MemberAccessHappyParam{"tensor_mixed", "let a = portfolio.assets[0].risk_profile.score"},
-        MemberAccessHappyParam{"math_expression", "let a = obj.width * obj.height + obj.depth"},
-        MemberAccessHappyParam{
+        DotAccessHappyParam{"simple_access", "let a = model.cagr"},
+        DotAccessHappyParam{"deep_chain", "let a = company.department.manager.name"},
+        DotAccessHappyParam{"method_chaining", "let a = builder.set_x(x: 1).set_y(y: 2).build()"},
+        DotAccessHappyParam{"tensor_mixed", "let a = portfolio.assets[0].risk_profile.score"},
+        DotAccessHappyParam{"math_expression", "let a = obj.width * obj.height + obj.depth"},
+        DotAccessHappyParam{
         "complex_nested_stress",
         "let a = simulation.run()[0].metrics.get_alpha(risk: 0.05).values[10:20].mean"
         },
-        MemberAccessHappyParam{"spacing_tolerance", "let a = model  .  cagr"},
-        MemberAccessHappyParam{"inline_dict_access", "let a = { rate: 0.05, name: \"test\" }.rate"},
-        MemberAccessHappyParam{"inside_arguments", "let a = compute(x: model.x, y: config.bounds[0].max)"}
+        DotAccessHappyParam{"spacing_tolerance", "let a = model  .  cagr"},
+        DotAccessHappyParam{"inline_dict_access", "let a = { rate: 0.05, name: \"test\" }.rate"},
+        DotAccessHappyParam{"inside_arguments", "let a = compute(x: model.x, y: config.bounds[0].max)"}
     ),
-    [](const testing::TestParamInfo<MemberAccessHappyParam>& info) {
+    [](const testing::TestParamInfo<DotAccessHappyParam>& info) {
     return info.param.test_id;
     }
 );
 
-struct MemberAccessSadParam {
+struct DotAccessSadParam {
     std::string test_id;
     std::string source_code;
     ErrorCode expected_error;
 };
 
-class MemberAccessSadPathTest : public ParserMemberAccessTestBase,
-                                public testing::WithParamInterface<MemberAccessSadParam> {
+class DotAccessSadPathTest : public ParserDotAccessTestBase,
+                                public testing::WithParamInterface<DotAccessSadParam> {
 };
 
-TEST_P(MemberAccessSadPathTest, ThrowsCorrectSyntaxError) {
-    const MemberAccessSadParam &param = GetParam();
+TEST_P(DotAccessSadPathTest, ThrowsCorrectSyntaxError) {
+    const DotAccessSadParam &param = GetParam();
 
     try {
         parse_code(param.source_code);
@@ -104,14 +104,14 @@ TEST_P(MemberAccessSadPathTest, ThrowsCorrectSyntaxError) {
 
 INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
-    MemberAccessSadPathTest,
+    DotAccessSadPathTest,
     testing::Values(
-        MemberAccessSadParam{"missing_property", "let a = model.", ErrorCode::ExpectedPropertyName},
-        MemberAccessSadParam{"number_as_property", "let a = model.123", ErrorCode::ExpectedPropertyName},
-        MemberAccessSadParam{"keyword_as_property", "let a = model.let", ErrorCode::ExpectedPropertyName},
-        MemberAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ErrorCode::ExpectedPropertyName}
+        DotAccessSadParam{"missing_property", "let a = model.", ErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"number_as_property", "let a = model.123", ErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"keyword_as_property", "let a = model.let", ErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ErrorCode::ExpectedPropertyName}
     ),
-    [](const testing::TestParamInfo<MemberAccessSadParam>& info) {
+    [](const testing::TestParamInfo<DotAccessSadParam>& info) {
     return info.param.test_id;
     }
 );

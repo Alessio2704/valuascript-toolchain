@@ -59,7 +59,7 @@ first-class expressions that might be statements in older paradigms.
 * **`DictLiteral`:** Maintains insertion order and relationships via
   `std::vector<std::pair<std::string, std::unique_ptr<Expression>>>`. Note that keys are restricted to statically known
   strings at the AST level, optimizing property access lookups.
-* **`TensorAccess`:** Handles both direct indexing (`tensor[0]`) and slice generation. The parser creatively overloads
+* **`BracketAccess`:** Handles both direct indexing (`tensor[0]`) and slice generation. The parser creatively overloads
   `BinaryExpression` with a `TokenType::Colon` to represent the `[start:end]` bounds within the `index` property.
 
 #### 3.4 Function Calls and Named Arguments

@@ -6,7 +6,7 @@
 using namespace valuascript;
 using namespace valuascript::compiler;
 
-class AstTensorAccessTest : public testing::Test {
+class AstBracketAccessTest : public testing::Test {
 protected:
     std::shared_ptr<Program> parse_code(const std::string& code) {
         LexerStage lexer;
@@ -32,21 +32,21 @@ protected:
     }
 };
 
-TEST_F(AstTensorAccessTest, ValidatesDeepIdentifierAccess) {
+TEST_F(AstBracketAccessTest, ValidatesDeepIdentifierAccess) {
     // Code: let val = matrix[0][1][2]
     // Proves the infinite while(true) loop in parse_atom correctly chains left-to-right.
     // The outermost node must be the [2] access.
 
     auto ast = parse_code("let val = matrix[0][1][2]");
-    auto access_2 = dynamic_cast<TensorAccess*>(get_assigned_value(ast));
+    auto access_2 = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
     ASSERT_NE(access_2, nullptr);
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access_2->index.get())->value, "2");
 
-    auto access_1 = dynamic_cast<TensorAccess*>(access_2->target.get());
+    auto access_1 = dynamic_cast<BracketAccess*>(access_2->target.get());
     ASSERT_NE(access_1, nullptr);
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access_1->index.get())->value, "1");
 
-    auto access_0 = dynamic_cast<TensorAccess*>(access_1->target.get());
+    auto access_0 = dynamic_cast<BracketAccess*>(access_1->target.get());
     ASSERT_NE(access_0, nullptr);
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access_0->index.get())->value, "0");
 
@@ -55,12 +55,12 @@ TEST_F(AstTensorAccessTest, ValidatesDeepIdentifierAccess) {
     EXPECT_EQ(target_id->name, "matrix");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesFunctionCallAsTarget) {
+TEST_F(AstBracketAccessTest, ValidatesFunctionCallAsTarget) {
     // Code: let val = get_projections(ticker)[5]
     // Proves we can immediately index into the return value of a function.
 
     auto ast = parse_code("let val = get_projections(a: ticker)[5]");
-    auto access = dynamic_cast<TensorAccess*>(get_assigned_value(ast));
+    auto access = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
     ASSERT_NE(access, nullptr);
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access->index.get())->value, "5");
 
@@ -70,12 +70,12 @@ TEST_F(AstTensorAccessTest, ValidatesFunctionCallAsTarget) {
     ASSERT_EQ(func_call->arguments.size(), 1);
 }
 
-TEST_F(AstTensorAccessTest, ValidatesParenthesizedBinaryOperationAsTarget) {
+TEST_F(AstBracketAccessTest, ValidatesParenthesizedBinaryOperationAsTarget) {
     // Code: let val = (base_case + bull_case)[0]
     // Proves that grouping parentheses correctly wrap a binary operation into a valid target.
 
     auto ast = parse_code("let val = (base_case + bull_case)[0]");
-    auto access = dynamic_cast<TensorAccess*>(get_assigned_value(ast));
+    auto access = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
     ASSERT_NE(access, nullptr);
 
     auto bin_op = dynamic_cast<BinaryExpression*>(access->target.get());
@@ -86,31 +86,31 @@ TEST_F(AstTensorAccessTest, ValidatesParenthesizedBinaryOperationAsTarget) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(bin_op->right.get())->name, "bull_case");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesUnaryPrecedenceWithAccess) {
+TEST_F(AstBracketAccessTest, ValidatesUnaryPrecedenceWithAccess) {
     // Code: let val = -matrix[0]
     // CRITICAL PRECEDENCE TEST: Postfix [] is higher than Prefix -.
-    // The AST root must be Unary(-), and its child must be TensorAccess([0]).
+    // The AST root must be Unary(-), and its child must be BracketAccess([0]).
 
     auto ast = parse_code("let val = -matrix[0]");
     auto root_val = get_assigned_value(ast);
 
     auto unary_op = dynamic_cast<UnaryExpression*>(root_val);
-    ASSERT_NE(unary_op, nullptr) << "Root node must be UnaryExpression, NOT TensorAccess";
+    ASSERT_NE(unary_op, nullptr) << "Root node must be UnaryExpression, NOT BracketAccess";
     EXPECT_EQ(unary_op->op, TokenType::Minus);
 
-    auto access = dynamic_cast<TensorAccess*>(unary_op->right.get());
-    ASSERT_NE(access, nullptr) << "The target of the unary minus must be the TensorAccess";
+    auto access = dynamic_cast<BracketAccess*>(unary_op->right.get());
+    ASSERT_NE(access, nullptr) << "The target of the unary minus must be the BracketAccess";
 
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(access->target.get())->name, "matrix");
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access->index.get())->value, "0");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesComplexExpressionAsIndex) {
+TEST_F(AstBracketAccessTest, ValidatesComplexExpressionAsIndex) {
     // Code: let val = data[get_offset() + 2]
     // Proves the index itself can be a highly complex, nested expression.
 
     auto ast = parse_code("let val = data[get_offset() + 2]");
-    auto access = dynamic_cast<TensorAccess*>(get_assigned_value(ast));
+    auto access = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
     ASSERT_NE(access, nullptr);
 
     auto index_bin_op = dynamic_cast<BinaryExpression*>(access->index.get());
@@ -124,7 +124,7 @@ TEST_F(AstTensorAccessTest, ValidatesComplexExpressionAsIndex) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(index_bin_op->right.get())->value, "2");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesExactTargetChainingForMultiDimensionalAccess) {
+TEST_F(AstBracketAccessTest, ValidatesExactTargetChainingForMultiDimensionalAccess) {
     // Code: let val = tensor[5][10][15]
     // This test forensically unpacks the memory pointers to prove that
     // the target of [15] is the [10] access, the target of [10] is the [5] access,
@@ -133,12 +133,12 @@ TEST_F(AstTensorAccessTest, ValidatesExactTargetChainingForMultiDimensionalAcces
     auto ast = parse_code("let val = tensor[5][10][15]");
 
     // get_assigned_value() returns the raw Expression* on the right side of the '='
-    auto root_access = dynamic_cast<TensorAccess*>(get_assigned_value(ast));
+    auto root_access = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
 
     // ==========================================
     // LAYER 3 (Outermost): [15]
     // ==========================================
-    ASSERT_NE(root_access, nullptr) << "Root must be the outermost TensorAccess";
+    ASSERT_NE(root_access, nullptr) << "Root must be the outermost BracketAccess";
     auto index3 = dynamic_cast<NumberLiteral*>(root_access->index.get());
     ASSERT_NE(index3, nullptr) << "Outermost index must be a NumberLiteral";
     EXPECT_EQ(index3->value, "15");
@@ -146,9 +146,9 @@ TEST_F(AstTensorAccessTest, ValidatesExactTargetChainingForMultiDimensionalAcces
     // ==========================================
     // LAYER 2 (Middle): [10]
     // ==========================================
-    // The target of the [15] access MUST be another TensorAccess
-    auto layer2_target = dynamic_cast<TensorAccess*>(root_access->target.get());
-    ASSERT_NE(layer2_target, nullptr) << "Target of [15] must be the [10] TensorAccess node";
+    // The target of the [15] access MUST be another BracketAccess
+    auto layer2_target = dynamic_cast<BracketAccess*>(root_access->target.get());
+    ASSERT_NE(layer2_target, nullptr) << "Target of [15] must be the [10] BracketAccess node";
 
     auto index2 = dynamic_cast<NumberLiteral*>(layer2_target->index.get());
     ASSERT_NE(index2, nullptr) << "Middle index must be a NumberLiteral";
@@ -157,9 +157,9 @@ TEST_F(AstTensorAccessTest, ValidatesExactTargetChainingForMultiDimensionalAcces
     // ==========================================
     // LAYER 1 (Innermost): [5]
     // ==========================================
-    // The target of the [10] access MUST be another TensorAccess
-    auto layer1_target = dynamic_cast<TensorAccess*>(layer2_target->target.get());
-    ASSERT_NE(layer1_target, nullptr) << "Target of [10] must be the [5] TensorAccess node";
+    // The target of the [10] access MUST be another BracketAccess
+    auto layer1_target = dynamic_cast<BracketAccess*>(layer2_target->target.get());
+    ASSERT_NE(layer1_target, nullptr) << "Target of [10] must be the [5] BracketAccess node";
 
     auto index1 = dynamic_cast<NumberLiteral*>(layer1_target->index.get());
     ASSERT_NE(index1, nullptr) << "Innermost index must be a NumberLiteral";
@@ -174,17 +174,17 @@ TEST_F(AstTensorAccessTest, ValidatesExactTargetChainingForMultiDimensionalAcces
     EXPECT_EQ(base_target->name, "tensor");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesDeepTensorSliceAccess) {
+TEST_F(AstBracketAccessTest, ValidatesDeepTensorSliceAccess) {
     // Proves that the colon operator correctly binds as a BinaryExpression
-    // INSIDE the TensorAccess index, and respects math precedence on its right side.
+    // INSIDE the BracketAccess index, and respects math precedence on its right side.
 
     auto ast = parse_code("let slice = matrix[1 : limit - 1]");
 
-    // 1. Get the TensorAccess node
+    // 1. Get the BracketAccess node
     auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     ASSERT_NE(assign, nullptr);
-    auto access = dynamic_cast<TensorAccess*>(assign->value.get());
-    ASSERT_NE(access, nullptr) << "Right side of assignment must be a TensorAccess";
+    auto access = dynamic_cast<BracketAccess*>(assign->value.get());
+    ASSERT_NE(access, nullptr) << "Right side of assignment must be a BracketAccess";
 
     // 2. Verify the Target
     auto target = dynamic_cast<IdentifierAccess*>(access->target.get());
@@ -210,14 +210,14 @@ TEST_F(AstTensorAccessTest, ValidatesDeepTensorSliceAccess) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(end_node->right.get())->value, "1");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesSliceMissingLeftBound) {
+TEST_F(AstBracketAccessTest, ValidatesSliceMissingLeftBound) {
     // Proves the parser correctly assigns nullptr to the left side of the colon.
 
     auto ast = parse_code("let slice = matrix[: 5]");
 
     auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     ASSERT_NE(assign, nullptr);
-    auto access = dynamic_cast<TensorAccess*>(assign->value.get());
+    auto access = dynamic_cast<BracketAccess*>(assign->value.get());
     ASSERT_NE(access, nullptr);
 
     auto slice_op = dynamic_cast<BinaryExpression*>(access->index.get());
@@ -233,14 +233,14 @@ TEST_F(AstTensorAccessTest, ValidatesSliceMissingLeftBound) {
     EXPECT_EQ(right_node->value, "5");
 }
 
-TEST_F(AstTensorAccessTest, ValidatesSliceMissingRightBound) {
+TEST_F(AstBracketAccessTest, ValidatesSliceMissingRightBound) {
     // Proves the parser correctly assigns nullptr to the right side of the colon.
 
     auto ast = parse_code("let slice = matrix[1 :]");
 
     auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     ASSERT_NE(assign, nullptr);
-    auto access = dynamic_cast<TensorAccess*>(assign->value.get());
+    auto access = dynamic_cast<BracketAccess*>(assign->value.get());
     ASSERT_NE(access, nullptr);
 
     auto slice_op = dynamic_cast<BinaryExpression*>(access->index.get());
@@ -256,14 +256,14 @@ TEST_F(AstTensorAccessTest, ValidatesSliceMissingRightBound) {
     EXPECT_EQ(slice_op->right.get(), nullptr) << "Right bound must be implicitly null";
 }
 
-TEST_F(AstTensorAccessTest, ValidatesSliceMissingBothBounds) {
+TEST_F(AstBracketAccessTest, ValidatesSliceMissingBothBounds) {
     // Proves a full tensor clone operation results in double nullptrs.
 
     auto ast = parse_code("let clone = matrix[:]");
 
     auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     ASSERT_NE(assign, nullptr);
-    auto access = dynamic_cast<TensorAccess*>(assign->value.get());
+    auto access = dynamic_cast<BracketAccess*>(assign->value.get());
     ASSERT_NE(access, nullptr);
 
     auto slice_op = dynamic_cast<BinaryExpression*>(access->index.get());
@@ -275,4 +275,100 @@ TEST_F(AstTensorAccessTest, ValidatesSliceMissingBothBounds) {
 
     // 2. Verify Right is Null
     EXPECT_EQ(slice_op->right.get(), nullptr) << "Right bound must be implicitly null";
+}
+
+TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnTupleLiteral) {
+    // Proves that the target of a BracketAccess can be a raw TupleLiteral expression.
+
+    auto ast = parse_code("let val = (10, 20)[0]");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    // 1. Root: [0]
+    auto bracket_access = dynamic_cast<BracketAccess*>(assignment->value.get());
+    ASSERT_NE(bracket_access, nullptr) << "Root expression must be a BracketAccess";
+
+    // 2. Index: 0
+    auto index = dynamic_cast<NumberLiteral*>(bracket_access->index.get());
+    ASSERT_NE(index, nullptr);
+    EXPECT_EQ(index->value, "0");
+
+    // 3. Target: (10, 20)
+    auto tuple_target = dynamic_cast<TupleLiteral*>(bracket_access->target.get());
+    ASSERT_NE(tuple_target, nullptr) << "Target of bracket access must be a TupleLiteral";
+    ASSERT_EQ(tuple_target->elements.size(), 2);
+
+    auto first_element = dynamic_cast<NumberLiteral*>(tuple_target->elements[0].get());
+    ASSERT_NE(first_element, nullptr);
+    EXPECT_EQ(first_element->value, "10");
+
+    auto second_element = dynamic_cast<NumberLiteral*>(tuple_target->elements[1].get());
+    ASSERT_NE(second_element, nullptr);
+    EXPECT_EQ(second_element->value, "20");
+}
+
+TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnFunctionCall) {
+    // Proves that BracketAccess seamlessly chains off a FunctionCall.
+
+    auto ast = parse_code("let val = get_pair()[1]");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    // 1. Root: [1]
+    auto bracket_access = dynamic_cast<BracketAccess*>(assignment->value.get());
+    ASSERT_NE(bracket_access, nullptr) << "Root expression must be a BracketAccess";
+
+    // 2. Index: 1
+    auto index = dynamic_cast<NumberLiteral*>(bracket_access->index.get());
+    ASSERT_NE(index, nullptr);
+    EXPECT_EQ(index->value, "1");
+
+    // 3. Target: get_pair()
+    auto func_call = dynamic_cast<FunctionCall*>(bracket_access->target.get());
+    ASSERT_NE(func_call, nullptr) << "Target of bracket access must be a FunctionCall";
+
+    auto func_target = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+    ASSERT_NE(func_target, nullptr);
+    EXPECT_EQ(func_target->name, "get_pair");
+}
+
+TEST_F(AstBracketAccessTest, ValidatesMixedBracketAndDotAccess) {
+    // AST Shape: DotAccess( BracketAccess( FunctionCall( DotAccess(model, fetch_bounds) ), 1 ), max )
+
+    auto ast = parse_code("let val = model.fetch_bounds()[1].max");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    // 1. Root: .max
+    auto root_access = dynamic_cast<DotAccess*>(assignment->value.get());
+    ASSERT_NE(root_access, nullptr);
+    EXPECT_EQ(root_access->property_name, "max");
+
+    // 2. Target of .max -> [1]
+    auto bracket_access = dynamic_cast<BracketAccess*>(root_access->target.get());
+    ASSERT_NE(bracket_access, nullptr);
+
+    auto index = dynamic_cast<NumberLiteral*>(bracket_access->index.get());
+    ASSERT_NE(index, nullptr);
+    EXPECT_EQ(index->value, "1");
+
+    // 3. Target of [1] -> fetch_bounds()
+    auto func_call = dynamic_cast<FunctionCall*>(bracket_access->target.get());
+    ASSERT_NE(func_call, nullptr);
+
+    // 4. Target of function call -> .fetch_bounds
+    auto fetch_access = dynamic_cast<DotAccess*>(func_call->target.get());
+    ASSERT_NE(fetch_access, nullptr);
+    EXPECT_EQ(fetch_access->property_name, "fetch_bounds");
+
+    // 5. Target of .fetch_bounds -> model
+    auto model_id = dynamic_cast<IdentifierAccess*>(fetch_access->target.get());
+    ASSERT_NE(model_id, nullptr);
+    EXPECT_EQ(model_id->name, "model");
 }

@@ -109,7 +109,7 @@ TEST_F(AstTensorLiteralTest, ValidatesOrthogonalityInsideVectors) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(func_call->target.get())->name, "get_fcf");
 
     // Element 2: Inline Vector Access ([1, 2][0])
-    auto vec_access = dynamic_cast<TensorAccess *>(mixed->elements[2].get());
+    auto vec_access = dynamic_cast<BracketAccess *>(mixed->elements[2].get());
     ASSERT_NE(vec_access, nullptr);
     auto inline_vec = dynamic_cast<TensorLiteral *>(vec_access->target.get());
     ASSERT_NE(inline_vec, nullptr);

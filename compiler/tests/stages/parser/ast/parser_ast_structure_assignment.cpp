@@ -138,7 +138,7 @@ TEST_F(AstAssignmentTest, ValidatesComplexChainedPostfixOnRHS) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(final_call->arguments[0].second.get())->name, "arg");
 
     // Target of the final call is the vector access: (...)[0]
-    auto vector_access = dynamic_cast<TensorAccess*>(final_call->target.get());
+    auto vector_access = dynamic_cast<BracketAccess*>(final_call->target.get());
     ASSERT_NE(vector_access, nullptr);
     auto index_val = dynamic_cast<NumberLiteral*>(vector_access->index.get());
     ASSERT_NE(index_val, nullptr);
@@ -226,10 +226,10 @@ TEST_F(AstAssignmentTest, ValidatesPostfixExpressionsAsParameters) {
     ASSERT_EQ(func_call->arguments.size(), 2);
 
     // --- Arg 0: matrix[0][1] ---
-    auto arg_vec = dynamic_cast<TensorAccess*>(func_call->arguments[0].second.get());
+    auto arg_vec = dynamic_cast<BracketAccess*>(func_call->arguments[0].second.get());
     ASSERT_NE(arg_vec, nullptr);
 
-    auto inner_vec = dynamic_cast<TensorAccess*>(arg_vec->target.get());
+    auto inner_vec = dynamic_cast<BracketAccess*>(arg_vec->target.get());
     ASSERT_NE(inner_vec, nullptr);
     auto vec_id = dynamic_cast<IdentifierAccess*>(inner_vec->target.get());
     ASSERT_NE(vec_id, nullptr);

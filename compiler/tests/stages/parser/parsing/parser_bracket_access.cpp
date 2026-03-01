@@ -7,7 +7,7 @@
 using namespace valuascript;
 using namespace valuascript::compiler;
 
-class ParserTensorAccessTestBase : public testing::Test {
+class ParserBracketAccessTestBase : public testing::Test {
 protected:
     std::shared_ptr<Program> parse_code(const std::string &expression) {
         std::string code = "let result = " + expression;
@@ -30,17 +30,17 @@ protected:
     }
 };
 
-struct TensorAccessHappyParam {
+struct BracketAccessHappyParam {
     std::string test_id;
     std::string source_code;
 };
 
-class TensorAccessHappyPathTest : public ParserTensorAccessTestBase,
-                            public testing::WithParamInterface<TensorAccessHappyParam> {
+class BracketAccessHappyPathTest : public ParserBracketAccessTestBase,
+                            public testing::WithParamInterface<BracketAccessHappyParam> {
 };
 
-TEST_P(TensorAccessHappyPathTest, ParsesSuccessfully) {
-    const TensorAccessHappyParam &param = GetParam();
+TEST_P(BracketAccessHappyPathTest, ParsesSuccessfully) {
+    const BracketAccessHappyParam &param = GetParam();
 
     std::shared_ptr<Program> ast;
     EXPECT_NO_THROW({
@@ -59,37 +59,37 @@ TEST_P(TensorAccessHappyPathTest, ParsesSuccessfully) {
 
 INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
-    TensorAccessHappyPathTest,
+    BracketAccessHappyPathTest,
     testing::Values(
-        TensorAccessHappyParam{"vector_access_simple", "vec[0]"},
-        TensorAccessHappyParam{"vector_slice", "vec[:1]"},
-        TensorAccessHappyParam{"vector_access_nested", "matrix[0][1]"},
-        TensorAccessHappyParam{"vector_access_with_math", "vec[i + 1]"},
-        TensorAccessHappyParam{"vector_slice_double", "vec[1:2]"},
-        TensorAccessHappyParam{"vector_slice_double_1", "vec[a:b]"},
-        TensorAccessHappyParam{"vector_slice_double_2", "vec[a : b - 1]"},
-        TensorAccessHappyParam{"vector_slice_both_empty", "vec[:]"},
-        TensorAccessHappyParam{"chain_call_then_access", "get_vector()[0]"},
-        TensorAccessHappyParam{"chain_access_then_call", "array_of_funcs[0](a: arg)"},
-        TensorAccessHappyParam{"chain_deep_mixed", "get_matrix()[0][:1]"}
+        BracketAccessHappyParam{"vector_access_simple", "vec[0]"},
+        BracketAccessHappyParam{"vector_slice", "vec[:1]"},
+        BracketAccessHappyParam{"vector_access_nested", "matrix[0][1]"},
+        BracketAccessHappyParam{"vector_access_with_math", "vec[i + 1]"},
+        BracketAccessHappyParam{"vector_slice_double", "vec[1:2]"},
+        BracketAccessHappyParam{"vector_slice_double_1", "vec[a:b]"},
+        BracketAccessHappyParam{"vector_slice_double_2", "vec[a : b - 1]"},
+        BracketAccessHappyParam{"vector_slice_both_empty", "vec[:]"},
+        BracketAccessHappyParam{"chain_call_then_access", "get_vector()[0]"},
+        BracketAccessHappyParam{"chain_access_then_call", "array_of_funcs[0](a: arg)"},
+        BracketAccessHappyParam{"chain_deep_mixed", "get_matrix()[0][:1]"}
     ),
-    [](const testing::TestParamInfo<TensorAccessHappyParam>& info) {
+    [](const testing::TestParamInfo<BracketAccessHappyParam>& info) {
     return info.param.test_id;
     }
 );
 
-struct TensorAccessSadParam {
+struct BracketAccessSadParam {
     std::string test_id;
     std::string source_code;
     ErrorCode expected_error;
 };
 
-class TensorAccessSadPathTest : public ParserTensorAccessTestBase,
-                          public testing::WithParamInterface<TensorAccessSadParam> {
+class BracketAccessSadPathTest : public ParserBracketAccessTestBase,
+                          public testing::WithParamInterface<BracketAccessSadParam> {
 };
 
-TEST_P(TensorAccessSadPathTest, ThrowsCorrectSyntaxError) {
-    const TensorAccessSadParam &param = GetParam();
+TEST_P(BracketAccessSadPathTest, ThrowsCorrectSyntaxError) {
+    const BracketAccessSadParam &param = GetParam();
 
     try {
         parse_code(param.source_code);
@@ -104,12 +104,12 @@ TEST_P(TensorAccessSadPathTest, ThrowsCorrectSyntaxError) {
 
 INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
-    TensorAccessSadPathTest,
+    BracketAccessSadPathTest,
     testing::Values(
-        TensorAccessSadParam{"unclosed_vector_access", "vec[0", ErrorCode::UnmatchedBracket},
-        TensorAccessSadParam{"empty_vector_access", "vec[]", ErrorCode::EmptyVectorAccess}
+        BracketAccessSadParam{"unclosed_vector_access", "vec[0", ErrorCode::UnmatchedBracket},
+        BracketAccessSadParam{"empty_vector_access", "vec[]", ErrorCode::EmptyBracketAccess}
     ),
-    [](const testing::TestParamInfo<TensorAccessSadParam>& info) {
+    [](const testing::TestParamInfo<BracketAccessSadParam>& info) {
     return info.param.test_id;
     }
 );

@@ -348,7 +348,7 @@ namespace valuascript::compiler {
                     } else if (match({TokenType::Dot})) {
                         Token property_token = consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName,
                                                        "Expected property name after '.'.");
-                        expr = std::make_unique<MemberAccess>(std::move(expr), property_token.lexeme);
+                        expr = std::make_unique<DotAccess>(std::move(expr), property_token.lexeme);
                     } else {
                         break;
                     }
@@ -457,11 +457,11 @@ namespace valuascript::compiler {
                     index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
                                                                     std::move(end_expr));
                 } else if (!index_expr) {
-                    throw error(previous(), ErrorCode::EmptyVectorAccess, "Expected an index or slice inside '[]'.");
+                    throw error(previous(), ErrorCode::EmptyBracketAccess, "Expected an index or slice inside '[]'.");
                 }
 
                 consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket, "Expected ']' after vector index.");
-                return std::make_unique<TensorAccess>(std::move(target), std::move(index_expr));
+                return std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
             }
 
             [[nodiscard]] const Token &peek() const {

@@ -62,7 +62,7 @@ never the *Meaning* (Semantics).
 
 * **AST Polymorphism via `std::unique_ptr<Expression>`:**
 * *The Choice:* Every node in the AST holds its children as abstract `Expression` or `Statement` pointers, rather than
-  concrete types (e.g., `VectorAccess` holds an `Expression*` as its target, not a `String`).
+  concrete types (e.g., `BracketAccess` holds an `Expression*` as its target, not a `String`).
 * *The Why:* **Orthogonality**. This guarantees infinite chaining. Because a function call target can be *any*
   expression, ValuaScript automatically supports advanced patterns like `factory_func()(arg)` or `matrix[0][1]` without
   needing special edge-case logic.
