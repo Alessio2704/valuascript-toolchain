@@ -46,11 +46,11 @@ TEST_F(AstDirectiveTest, ValidatesDirectiveWithNoValue) {
 TEST_F(AstDirectiveTest, ValidatesDirectiveWithValueWithoutEquals) {
     // Proves the parser captures a trailing expression even if '=' is omitted.
 
-    auto ast = parse_code("@import \"macro_assumptions.vs\"");
+    auto ast = parse_code("@no_equal \"macro_assumptions.vs\"");
     auto directive = get_directive(ast);
 
     ASSERT_NE(directive, nullptr);
-    EXPECT_EQ(directive->name, "import");
+    EXPECT_EQ(directive->name, "no_equal");
 
     // Verify the value is correctly parsed as a StringLiteral
     auto val = dynamic_cast<StringLiteral*>(directive->value.get());

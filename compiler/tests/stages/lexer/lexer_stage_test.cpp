@@ -23,7 +23,7 @@ std::vector<Token> tokenize_code(const std::string &source_code) {
 TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
     LexerStage lexer_stage;
 
-    std::string source_code = "let a = 1_000.50\nfunc main() { return a } # A comment\n@import \"math\"";
+    std::string source_code = "let a = 1_000.50\nfunc main() { return a } # A comment\n@directive \"math\"";
     std::vector<CompilerStageArtifact> history = {
         {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
         {CompilerStageArtifactCode::SourceCode, source_code}
@@ -90,10 +90,10 @@ TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
 }
 
 TEST(LexerStageTest, TokenizesKeywords) {
-    auto tokens = tokenize_code("let if then else true false and or not func struct return");
+    auto tokens = tokenize_code("let if then else true false and or not func struct return import");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 13);
+    ASSERT_EQ(tokens.size(), 14);
     EXPECT_EQ(tokens[0].type, TokenType::Let);
     EXPECT_EQ(tokens[1].type, TokenType::If);
     EXPECT_EQ(tokens[2].type, TokenType::Then);
@@ -106,6 +106,7 @@ TEST(LexerStageTest, TokenizesKeywords) {
     EXPECT_EQ(tokens[9].type, TokenType::Func);
     EXPECT_EQ(tokens[10].type, TokenType::Struct);
     EXPECT_EQ(tokens[11].type, TokenType::Return);
+    EXPECT_EQ(tokens[12].type, TokenType::Import);
 }
 
 TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {

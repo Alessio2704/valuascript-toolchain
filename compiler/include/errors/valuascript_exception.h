@@ -26,6 +26,8 @@ namespace valuascript::compiler {
         MissingThenToken,
         MissingElseToken,
         UnexpectedToken,
+        ExpectedImportToken,
+        MissingImportPathString,
         GeneralParsingError,
         MissingDirectiveName,
         MissingFunctionName,

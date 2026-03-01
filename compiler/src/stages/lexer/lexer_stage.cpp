@@ -6,6 +6,7 @@
 namespace valuascript::compiler {
     namespace {
         const std::unordered_map<std::string, TokenType> kKeywords = {
+            {"import", TokenType::Import},
             {"let", TokenType::Let},
             {"if", TokenType::If},
             {"then", TokenType::Then},

@@ -78,6 +78,9 @@ INSTANTIATE_TEST_SUITE_P(
         HappyLexerParam{"output_file", "@output_file = \"results.csv\"", 5},
         HappyLexerParam{"module", "@module", 3},
 
+        // Import
+        HappyLexerParam{"import", "import \"file/path\"", 3},
+
         // Structs
         HappyLexerParam{"struct", "struct Assumption { cagr: Decimal }", 8},
         

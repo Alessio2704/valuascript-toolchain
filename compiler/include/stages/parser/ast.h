@@ -56,7 +56,7 @@ namespace valuascript::compiler {
         TokenType op;
         std::unique_ptr<Expression> right;
 
-        BinaryExpression(std::unique_ptr<Expression> l, TokenType o, std::unique_ptr<Expression> r)
+        explicit BinaryExpression(std::unique_ptr<Expression> l, TokenType o, std::unique_ptr<Expression> r)
             : left(std::move(l)), op(o), right(std::move(r)) {
         }
     };
@@ -66,7 +66,7 @@ namespace valuascript::compiler {
         TokenType op;
         std::unique_ptr<Expression> right;
 
-        UnaryExpression(TokenType o, std::unique_ptr<Expression> r)
+        explicit UnaryExpression(TokenType o, std::unique_ptr<Expression> r)
             : op(o), right(std::move(r)) {
         }
     };
@@ -77,7 +77,7 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> then_branch;
         std::unique_ptr<Expression> else_branch;
 
-        ConditionalExpression(std::unique_ptr<Expression> cond,
+        explicit ConditionalExpression(std::unique_ptr<Expression> cond,
                               std::unique_ptr<Expression> thn,
                               std::unique_ptr<Expression> els)
             : condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els)) {
@@ -89,7 +89,7 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> target;
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
-        FunctionCall(std::unique_ptr<Expression> tgt,
+        explicit FunctionCall(std::unique_ptr<Expression> tgt,
                      std::vector<std::pair<std::string, std::unique_ptr<Expression> > > args)
             : target(std::move(tgt)), arguments(std::move(args)) {
         }
@@ -127,7 +127,7 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> index;
 
-        TensorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
+        explicit TensorAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
             : target(std::move(tgt)), index(std::move(idx)) {
         }
     };
@@ -137,7 +137,7 @@ namespace valuascript::compiler {
         std::vector<std::string> targets;
         std::unique_ptr<Expression> value;
 
-        Assignment(std::vector<std::string> tgts, std::unique_ptr<Expression> val)
+        explicit Assignment(std::vector<std::string> tgts, std::unique_ptr<Expression> val)
             : targets(std::move(tgts)), value(std::move(val)) {
         }
     };
@@ -156,8 +156,17 @@ namespace valuascript::compiler {
         std::string name;
         std::unique_ptr<Expression> value;
 
-        Directive(std::string n, std::unique_ptr<Expression> val)
+        explicit Directive(std::string n, std::unique_ptr<Expression> val)
             : name(std::move(n)), value(std::move(val)) {
+        }
+    };
+
+    class ImportStatement : public AstNode {
+    public:
+        std::string path;
+
+        explicit ImportStatement(std::string p)
+            : path(std::move(p)) {
         }
     };
 
@@ -193,7 +202,7 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<Statement> > body;
         std::optional<std::string> docstring;
 
-        FunctionDefinition(std::string n,
+        explicit FunctionDefinition(std::string n,
                            std::vector<FunctionParameter> params,
                            std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
                            std::vector<std::unique_ptr<Statement> > b,
@@ -208,7 +217,7 @@ namespace valuascript::compiler {
         std::string name;
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
 
-        StructDefinition(std::string name,
+        explicit StructDefinition(std::string name,
                          std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
             : name(std::move(name)), fields(std::move(fields)) {
         }
@@ -216,9 +225,10 @@ namespace valuascript::compiler {
 
     class Program : public AstNode {
     public:
+        std::vector<std::unique_ptr<ImportStatement> > import_statements;
         std::vector<std::unique_ptr<Directive> > directives;
         std::vector<std::unique_ptr<Assignment> > execution_steps;
         std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
-        std::vector<std::unique_ptr<StructDefinition>> struct_definitions;
+        std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
     };
 }

@@ -68,7 +68,6 @@ INSTANTIATE_TEST_SUITE_P(
     DirectiveHappyPathTest,
     testing::Values(
         DirectiveHappyParam{"iterations", "@iterations = 1000", "iterations", true},
-        DirectiveHappyParam{"import", "@import \"file.vs\"", "import", true},
         DirectiveHappyParam{"no_equal_1", "@no_equal one", "no_equal", true},
         DirectiveHappyParam{"no_equal_2", "@no_equal 1", "no_equal", true},
         DirectiveHappyParam{"no_equal_3", "@no_equal {a: 1, b: 2}", "no_equal", true},

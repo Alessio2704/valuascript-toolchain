@@ -126,7 +126,19 @@ INSTANTIATE_TEST_SUITE_P(
         ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::
         ChainingNotAllowedForComparisonOperations},
-        AssignmentSadParam{"reserved_keyword", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_1", "let import = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_2", "let let = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_3", "let func = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_4", "let if = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_5", "let then = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_6", "let else = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_7", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_8", "let struct = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_9", "let true = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_10", "let false = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_11", "let and = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_12", "let or = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_13", "let not = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::
         ReservedKeywordAsIdentifier}
 

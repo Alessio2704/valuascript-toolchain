@@ -55,6 +55,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Unclosed Strings
         SadLexerParam{"unclosed_string_1", "let a = \"hello", ErrorCode::UnclosedString},
+        SadLexerParam{"unclosed_string_import", "import \"file/path", ErrorCode::UnclosedString},
         SadLexerParam{"unclosed_docstring", "func test() -> scalar { \"\"\"\"\" return 1 }", ErrorCode::UnclosedString}
     ),
     [](const testing::TestParamInfo<SadLexerParam>& info) {

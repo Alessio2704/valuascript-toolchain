@@ -41,6 +41,7 @@ namespace valuascript::compiler {
         Number, // 123, 12.3, 1_000 (SIGNED_NUMBER, FLOAT, INT)
 
         // Keywords
+        Import, // import
         Let, // let
         If, // if
         Then, // then

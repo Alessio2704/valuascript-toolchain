@@ -23,7 +23,9 @@ namespace valuascript::compiler {
                 auto program = std::make_unique<Program>();
 
                 while (!is_at_end()) {
-                    if (check(TokenType::At)) {
+                    if (check(TokenType::Import)) {
+                        program->import_statements.push_back(parse_import_statement());
+                    } else if (check(TokenType::At)) {
                         program->directives.push_back(parse_directive());
                     } else if (check(TokenType::Let)) {
                         program->execution_steps.push_back(parse_assignment());
@@ -40,6 +42,17 @@ namespace valuascript::compiler {
             }
 
         private:
+            std::unique_ptr<ImportStatement> parse_import_statement() {
+                consume(TokenType::Import, ErrorCode::ExpectedImportToken, "Expected 'import'.");
+
+                const Token &path = consume(TokenType::String, ErrorCode::MissingImportPathString,
+                                            "Syntax Error: Expected path after 'import'.");
+
+                std::string path_string = path.lexeme;
+
+                return std::make_unique<ImportStatement>(path_string);
+            }
+
             std::unique_ptr<Directive> parse_directive() {
                 consume(TokenType::At, ErrorCode::UnexpectedToken, "Expected '@'.");
 
@@ -66,7 +79,8 @@ namespace valuascript::compiler {
                 consume(TokenType::Struct, ErrorCode::ExpectedStructToken, "Expected 'struct' in struct definition.");
                 Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedStructName,
                                            "Expected struct name.");
-                consume(TokenType::LeftBrace, ErrorCode::ExpectedBraceInStructDefinition, "Expected '{' before struct body.");
+                consume(TokenType::LeftBrace, ErrorCode::ExpectedBraceInStructDefinition,
+                        "Expected '{' before struct body.");
 
                 std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
 
@@ -74,7 +88,8 @@ namespace valuascript::compiler {
                     do {
                         Token field_name = consume(TokenType::Identifier, ErrorCode::ExpectedStructFieldName,
                                                    "Expected field name in struct.");
-                        consume(TokenType::Colon, ErrorCode::ExpectedColonAfterStructFieldName, "Expected ':' after field name.");
+                        consume(TokenType::Colon, ErrorCode::ExpectedColonAfterStructFieldName,
+                                "Expected ':' after field name.");
 
                         std::unique_ptr<TypeAnnotation> field_type = parse_type_annotation();
 
@@ -82,7 +97,8 @@ namespace valuascript::compiler {
                     } while (match({TokenType::Comma}));
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition, "Expected '}' after struct body.");
+                consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition,
+                        "Expected '}' after struct body.");
 
 
                 return std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
@@ -487,12 +503,14 @@ namespace valuascript::compiler {
 
             [[nodiscard]] bool is_reserved_keyword(TokenType type) const {
                 switch (type) {
+                    case TokenType::Import:
                     case TokenType::Let:
                     case TokenType::Func:
                     case TokenType::If:
                     case TokenType::Then:
                     case TokenType::Else:
                     case TokenType::Return:
+                    case TokenType::Struct:
                     case TokenType::True:
                     case TokenType::False:
                     case TokenType::And:
