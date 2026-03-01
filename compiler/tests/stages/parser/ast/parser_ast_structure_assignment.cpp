@@ -38,7 +38,7 @@ TEST_F(AstAssignmentTest, ValidatesNestedFunctionCallsOnRHS) {
 
     // 1. Check Target
     ASSERT_EQ(assign_node->targets.size(), 1);
-    EXPECT_EQ(assign_node->targets[0], "result");
+    EXPECT_EQ(assign_node->targets[0].first, "result");
 
     // 2. Check Outer Call
     auto outer_call = dynamic_cast<FunctionCall*>(assign_node->value.get());
@@ -115,8 +115,8 @@ TEST_F(AstAssignmentTest, ValidatesMultipleAssignmentTargets) {
 
     // Check Targets
     ASSERT_EQ(assign_node->targets.size(), 2);
-    EXPECT_EQ(assign_node->targets[0], "x");
-    EXPECT_EQ(assign_node->targets[1], "y");
+    EXPECT_EQ(assign_node->targets[0].first, "x");
+    EXPECT_EQ(assign_node->targets[1].first, "y");
 
     // Check Value
     auto call_val = dynamic_cast<FunctionCall*>(assign_node->value.get());
@@ -324,4 +324,45 @@ TEST_F(AstAssignmentTest, ValidatesDeepFunctionCallWithNamedArguments) {
     auto inner_arg_val = dynamic_cast<StringLiteral*>(arg3_val->arguments[0].second.get());
     ASSERT_NE(inner_arg_val, nullptr);
     EXPECT_EQ(inner_arg_val->value, "\"bear\"");
+}
+
+TEST_F(AstAssignmentTest, ValidatesOptionalTypeAscriptionSingleTarget) {
+    auto ast = parse_code("let model: Result<Model, Error> = get_data()");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+    ASSERT_EQ(assignment->targets.size(), 1);
+
+    EXPECT_EQ(assignment->targets[0].first, "model");
+
+    auto type_ann = assignment->targets[0].second.get();
+    ASSERT_NE(type_ann, nullptr) << "Type annotation should not be null";
+    EXPECT_EQ(type_ann->name, "Result");
+    ASSERT_EQ(type_ann->generic_args.size(), 2);
+    EXPECT_EQ(type_ann->generic_args[0]->name, "Model");
+    EXPECT_EQ(type_ann->generic_args[1]->name, "Error");
+}
+
+TEST_F(AstAssignmentTest, ValidatesMixedTypeAscriptionMultipleTargets) {
+    // Proves the parser correctly aligns types to specific variables in a destructuring assignment
+    auto ast = parse_code("let a, b: integer, c = compute()");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+    ASSERT_EQ(assignment->targets.size(), 3);
+
+    // Target 0: a (No type)
+    EXPECT_EQ(assignment->targets[0].first, "a");
+    EXPECT_EQ(assignment->targets[0].second, nullptr);
+
+    // Target 1: b: integer (Typed)
+    EXPECT_EQ(assignment->targets[1].first, "b");
+    ASSERT_NE(assignment->targets[1].second, nullptr);
+    EXPECT_EQ(assignment->targets[1].second->name, "integer");
+
+    // Target 2: c (No type)
+    EXPECT_EQ(assignment->targets[2].first, "c");
+    EXPECT_EQ(assignment->targets[2].second, nullptr);
 }

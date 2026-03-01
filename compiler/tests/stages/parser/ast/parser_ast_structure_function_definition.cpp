@@ -120,7 +120,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyStatementsExecutionOrder) {
     auto stmt_1 = dynamic_cast<Assignment*>(func->body[0].get());
     ASSERT_NE(stmt_1, nullptr);
     ASSERT_EQ(stmt_1->targets.size(), 1);
-    EXPECT_EQ(stmt_1->targets[0], "a");
+    EXPECT_EQ(stmt_1->targets[0].first, "a");
     auto val_1 = dynamic_cast<NumberLiteral*>(stmt_1->value.get());
     ASSERT_NE(val_1, nullptr);
     EXPECT_EQ(val_1->value, "10");
@@ -129,7 +129,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyStatementsExecutionOrder) {
     auto stmt_2 = dynamic_cast<Assignment*>(func->body[1].get());
     ASSERT_NE(stmt_2, nullptr);
     ASSERT_EQ(stmt_2->targets.size(), 1);
-    EXPECT_EQ(stmt_2->targets[0], "b");
+    EXPECT_EQ(stmt_2->targets[0].first, "b");
     auto val_2 = dynamic_cast<BinaryExpression*>(stmt_2->value.get());
     ASSERT_NE(val_2, nullptr);
     EXPECT_EQ(val_2->op, TokenType::Star);
@@ -183,7 +183,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyWithNestedCallsAndSignatureParams
     // --- Statement 1: let temp = add(...) ---
     auto assign_stmt = dynamic_cast<Assignment*>(func->body[0].get());
     ASSERT_NE(assign_stmt, nullptr);
-    EXPECT_EQ(assign_stmt->targets[0], "temp");
+    EXPECT_EQ(assign_stmt->targets[0].first, "temp");
 
     // The value is the outer function call: add(...)
     auto add_call = dynamic_cast<FunctionCall*>(assign_stmt->value.get());
@@ -230,7 +230,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesConditionalInsideFunctionBody) {
     // --- Statement 1: let res = if ... ---
     auto assign_stmt = dynamic_cast<Assignment*>(func->body[0].get());
     ASSERT_NE(assign_stmt, nullptr);
-    EXPECT_EQ(assign_stmt->targets[0], "res");
+    EXPECT_EQ(assign_stmt->targets[0].first, "res");
 
     auto cond_expr = dynamic_cast<ConditionalExpression*>(assign_stmt->value.get());
     ASSERT_NE(cond_expr, nullptr) << "Assigned value must be a ConditionalExpression.";

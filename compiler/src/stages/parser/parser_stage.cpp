@@ -109,7 +109,7 @@ namespace valuascript::compiler {
             std::unique_ptr<Assignment> parse_assignment() {
                 consume(TokenType::Let, ErrorCode::ExpectedLetToken, "Expected 'let'.");
 
-                std::vector<std::string> targets;
+                std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
                 do {
                     if (is_reserved_keyword(peek().type)) {
                         throw error(peek(), ErrorCode::ReservedKeywordAsIdentifier,
@@ -117,7 +117,14 @@ namespace valuascript::compiler {
                     }
                     const Token &target = consume(TokenType::Identifier, ErrorCode::InvalidIdentifier,
                                                   "Syntax Error: Invalid identifier name.");
-                    targets.push_back(target.lexeme);
+
+                    std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
+                    if (match({TokenType::Colon})) {
+                        type_annotation = parse_type_annotation();
+                    }
+
+                    targets.emplace_back(target.lexeme, std::move(type_annotation));
+
                 } while (match({TokenType::Comma}));
 
                 consume(TokenType::Assign, ErrorCode::IncompleteAssignment,

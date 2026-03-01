@@ -132,14 +132,33 @@ namespace valuascript::compiler {
         }
     };
 
+    class TypeAnnotation : public AstNode {
+    public:
+        std::string name;
+        std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
+
+        explicit TypeAnnotation(std::string n, std::vector<std::unique_ptr<TypeAnnotation> > args = {})
+            : name(std::move(n)), generic_args(std::move(args)) {
+        }
+    };
+
+    class TupleTypeAnnotation : public TypeAnnotation {
+    public:
+        std::vector<std::unique_ptr<TypeAnnotation> > element_types;
+
+        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation> > elements)
+            : TypeAnnotation("tuple"), element_types(std::move(elements)) {
+        }
+    };
+
     class Assignment : public Statement {
     public:
-        std::vector<std::string> targets;
+        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
         std::unique_ptr<Expression> value;
 
-        explicit Assignment(std::vector<std::string> tgts, std::unique_ptr<Expression> val)
-            : targets(std::move(tgts)), value(std::move(val)) {
-        }
+        Assignment(std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets,
+                   std::unique_ptr<Expression> value)
+            : targets(std::move(targets)), value(std::move(value)) {}
     };
 
     class ReturnStatement : public Statement {
@@ -167,25 +186,6 @@ namespace valuascript::compiler {
 
         explicit ImportStatement(std::string p)
             : path(std::move(p)) {
-        }
-    };
-
-    class TypeAnnotation : public AstNode {
-    public:
-        std::string name;
-        std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
-
-        explicit TypeAnnotation(std::string n, std::vector<std::unique_ptr<TypeAnnotation> > args = {})
-            : name(std::move(n)), generic_args(std::move(args)) {
-        }
-    };
-
-    class TupleTypeAnnotation : public TypeAnnotation {
-    public:
-        std::vector<std::unique_ptr<TypeAnnotation> > element_types;
-
-        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation> > elements)
-            : TypeAnnotation("tuple"), element_types(std::move(elements)) {
         }
     };
 
