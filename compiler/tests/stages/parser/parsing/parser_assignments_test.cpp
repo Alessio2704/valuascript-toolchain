@@ -126,12 +126,14 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"missing_let_multi_assignment", "x, y = some_func()", ErrorCode::UnexpectedToken},
         AssignmentSadParam{"missing_var_name", "let = 1", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_type_after_colon", "let a: = 1", ErrorCode::MissingTypeAnnotation},
-        AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ErrorCode::MissingTypeAnnotation},
+        AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ErrorCode::
+        MissingTypeAnnotation},
         AssignmentSadParam{"invalid_cname_for_var_name_1", "let 12 = 1", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ErrorCode::IncompleteAssignment},
         AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals}
         ,
+        AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ErrorCode::ExpectedPropertyName},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::
         ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::

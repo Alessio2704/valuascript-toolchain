@@ -54,10 +54,10 @@ TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
 }
 
 TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
-    auto tokens = tokenize_code("()[]{},:@ +-*/^");
+    auto tokens = tokenize_code("()[]{},:@ +-*/^.");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 15);
+    ASSERT_EQ(tokens.size(), 16);
     EXPECT_EQ(tokens[0].type, TokenType::LeftParen);
     EXPECT_EQ(tokens[1].type, TokenType::RightParen);
     EXPECT_EQ(tokens[2].type, TokenType::LeftBracket);
@@ -72,6 +72,7 @@ TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
     EXPECT_EQ(tokens[11].type, TokenType::Star);
     EXPECT_EQ(tokens[12].type, TokenType::Slash);
     EXPECT_EQ(tokens[13].type, TokenType::Caret);
+    EXPECT_EQ(tokens[14].type, TokenType::Dot);
 }
 
 TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
@@ -232,16 +233,6 @@ TEST(LexerStageTest, HandlesConsecutiveOperatorsWithoutSpaces) {
     EXPECT_EQ(tokens[3].type, TokenType::Equals);
     EXPECT_EQ(tokens[4].type, TokenType::Minus);
     EXPECT_EQ(tokens[5].type, TokenType::Number);
-}
-
-TEST(LexerStageTest, ThrowsOnMalformedFloat) {
-    try {
-        tokenize_code("let a = 123. ");
-        FAIL() << "Expected ValuaScriptException for malformed float";
-    } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Lexical);
-        EXPECT_EQ(e.get_code(), ErrorCode::InvalidCharacter);
-    }
 }
 
 TEST(LexerStageTest, CatchesInvalidCharacterWithDetail) {

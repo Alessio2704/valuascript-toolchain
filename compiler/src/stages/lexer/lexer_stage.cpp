@@ -127,9 +127,19 @@ namespace valuascript::compiler {
 
                 consume_integer_part();
 
-                if (peek() == '.' && std::isdigit(peek_next())) {
-                    advance();
-                    consume_integer_part();
+                if (peek() == '.') {
+                    if (std::isdigit(peek_next())) {
+                        advance();
+                        consume_integer_part();
+                    } else {
+                        advance();
+                        throw ValuaScriptException(
+                            ErrorCategory::Lexical,
+                            ErrorCode::UnterminatedDecimal,
+                            {line_, column_start_, file_path_},
+                            "Syntax Error: Unterminated decimal number. Expected digits after '.'."
+                        );
+                    }
                 }
 
                 add_token(TokenType::Number);
@@ -173,6 +183,34 @@ namespace valuascript::compiler {
                         break;
                     case '^': add_token(TokenType::Caret);
                         break;
+                    case '.': {
+                        if (std::isdigit(peek())) {
+                            bool is_member_access = false;
+
+                            if (!tokens_.empty()) {
+                                TokenType last_type = tokens_.back().type;
+                                if (last_type == TokenType::Identifier ||
+                                    last_type == TokenType::RightParen ||
+                                    last_type == TokenType::RightBracket) {
+                                    is_member_access = true;
+                                    }
+                            }
+
+                            if (is_member_access) {
+                                add_token(TokenType::Dot);
+                            } else {
+                                throw ValuaScriptException(
+                                    ErrorCategory::Lexical,
+                                    ErrorCode::DecimalMissingLeadingZero,
+                                    {line_, column_start_, file_path_},
+                                    "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5')."
+                                );
+                            }
+                        } else {
+                            add_token(TokenType::Dot);
+                        }
+                        break;
+                    }
 
                     case '/':
                         if (match('/')) {

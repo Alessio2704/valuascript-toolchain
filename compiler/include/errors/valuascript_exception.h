@@ -45,6 +45,9 @@ namespace valuascript::compiler {
         ExpectedStructFieldName,
         ExpectedColonAfterStructFieldName,
         UnmatchedBraceInDictionaryLiteral,
+        ExpectedPropertyName,
+        UnterminatedDecimal,
+        DecimalMissingLeadingZero,
         InvalidExpression
     };
 

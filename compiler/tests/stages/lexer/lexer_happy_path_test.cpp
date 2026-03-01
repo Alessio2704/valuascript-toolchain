@@ -83,7 +83,10 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Structs
         HappyLexerParam{"struct", "struct Assumption { cagr: Decimal }", 8},
-        
+
+        // Member Access
+        HappyLexerParam{"member_access", "model.cagr", 4},
+
         // Floats and Separators
         HappyLexerParam{"at_separator", "let a = 1_000", 5},
         HappyLexerParam{"at_float", "let a = 1.3242", 5},

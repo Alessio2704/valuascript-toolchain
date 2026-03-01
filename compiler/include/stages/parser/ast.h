@@ -223,6 +223,15 @@ namespace valuascript::compiler {
         }
     };
 
+    class MemberAccess : public Expression {
+    public:
+        std::unique_ptr<Expression> target;
+        std::string property_name;
+
+        MemberAccess(std::unique_ptr<Expression> target, std::string property_name)
+            : target(std::move(target)), property_name(std::move(property_name)) {}
+    };
+
     class Program : public AstNode {
     public:
         std::vector<std::unique_ptr<ImportStatement> > import_statements;

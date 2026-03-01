@@ -345,6 +345,10 @@ namespace valuascript::compiler {
                         expr = parse_function_call(std::move(expr));
                     } else if (match({TokenType::LeftBracket})) {
                         expr = parse_tensor_access(std::move(expr));
+                    } else if (match({TokenType::Dot})) {
+                        Token property_token = consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName,
+                                                       "Expected property name after '.'.");
+                        expr = std::make_unique<MemberAccess>(std::move(expr), property_token.lexeme);
                     } else {
                         break;
                     }
