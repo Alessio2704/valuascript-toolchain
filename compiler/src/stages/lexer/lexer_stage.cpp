@@ -213,11 +213,7 @@ namespace valuascript::compiler {
                     }
 
                     case '/':
-                        if (match('/')) {
-                            while (peek() != '\n' && !is_at_end()) advance();
-                        } else {
-                            add_token(TokenType::Slash);
-                        }
+                        add_token(TokenType::Slash);
                         break;
 
                     case '#':

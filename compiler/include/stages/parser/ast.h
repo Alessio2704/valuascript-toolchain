@@ -223,6 +223,20 @@ namespace valuascript::compiler {
         }
     };
 
+    class EnumDefinition : public Statement {
+    public:
+        std::string name;
+        std::unique_ptr<TypeAnnotation> underlying_type;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> cases;
+
+        EnumDefinition(std::string name,
+                       std::unique_ptr<TypeAnnotation> underlying_type,
+                       std::vector<std::pair<std::string, std::unique_ptr<Expression>>> cases)
+            : name(std::move(name)),
+              underlying_type(std::move(underlying_type)),
+              cases(std::move(cases)) {}
+    };
+
     class DotAccess : public Expression {
     public:
         std::unique_ptr<Expression> target;
@@ -239,5 +253,6 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<Assignment> > execution_steps;
         std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
         std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
+        std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
     };
 }

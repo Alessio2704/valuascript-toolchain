@@ -48,6 +48,12 @@ namespace valuascript::compiler {
         ExpectedPropertyName,
         UnterminatedDecimal,
         DecimalMissingLeadingZero,
+        ExpectedEnumToken,
+        ExpectedEnumName,
+        ExpectedColonAfterEnumName,
+        ExpectedEnumCaseName,
+        ExpectedLeftBrace,
+        ExpectedRightBrace,
         InvalidExpression
     };
 

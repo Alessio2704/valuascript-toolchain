@@ -54,6 +54,7 @@ namespace valuascript::compiler {
         Not, // not
         Func, // func
         Struct, // struct
+        Enum, // enum
         Return, // return
         EndOfFile
     };
@@ -107,8 +108,13 @@ namespace valuascript::compiler {
             case TokenType::Not: return "Not";
             case TokenType::Func: return "Func";
             case TokenType::Return: return "Return";
+            case TokenType::Percent: return "Percent";
+            case TokenType::Dot: return "Dot";
+            case TokenType::Arrow: return "Arrow";
+            case TokenType::Import: return "Import";
+            case TokenType::Struct: return "Struct";
+            case TokenType::Enum: return "Enum";
             case TokenType::EndOfFile: return "EndOfFile";
-            default: return "Unknown";
         }
     }
 
@@ -122,6 +128,7 @@ namespace valuascript::compiler {
             case TokenType::Else:
             case TokenType::Return:
             case TokenType::Struct:
+            case TokenType::Enum:
             case TokenType::True:
             case TokenType::False:
             case TokenType::And:
@@ -147,6 +154,7 @@ namespace valuascript::compiler {
             {"not", TokenType::Not},
             {"func", TokenType::Func},
             {"struct", TokenType::Struct},
+            {"enum", TokenType::Enum},
             {"return", TokenType::Return},
         };
 

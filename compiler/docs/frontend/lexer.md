@@ -26,7 +26,7 @@ The grammar defines the following token taxonomy:
 | **Punctuation** | `LeftParen`, `RightParen`, `LeftBracket`, `RightBracket`, `LeftBrace`, `RightBrace`, `Comma`, `Colon`, `At`, `Percent`              |
 | **Operators**   | `Plus`, `Minus`, `Star`, `Slash`, `Caret`, `Assign`, `Equals`, `NotEquals`, `Greater`, `GreaterEqual`, `Less`, `LessEqual`, `Arrow` |
 | **Literals**    | `Identifier`, `String`, `DocString`, `Number`                                                                                       |
-| **Keywords**    | `Import`, `Let`, `If`, `Then`, `Else`, `True`, `False`, `And`, `Or`, `Not`, `Func`, `Struct`, `Return`                              |
+| **Keywords**    | `Import`, `Let`, `If`, `Then`, `Else`, `True`, `False`, `And`, `Or`, `Not`, `Func`, `Struct`, `Enum`, `Return`                      |
 | **Metadata**    | `EndOfFile`                                                                                                                         |
 
 ---

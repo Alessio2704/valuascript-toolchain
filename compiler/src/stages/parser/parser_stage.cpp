@@ -33,6 +33,8 @@ namespace valuascript::compiler {
                         program->function_definitions.push_back(parse_function_definition());
                     } else if (check(TokenType::Struct)) {
                         program->struct_definitions.push_back(parse_struct_definition());
+                    } else if (check(TokenType::Enum)) {
+                        program->enum_definitions.push_back(parse_enum_definition());
                     } else {
                         throw error(peek(), ErrorCode::UnexpectedToken,
                                     "Syntax Error: Invalid syntax. Expected '@', 'let', or 'func'.");
@@ -106,10 +108,47 @@ namespace valuascript::compiler {
                 return std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
             }
 
+            std::unique_ptr<EnumDefinition> parse_enum_definition() {
+                consume(TokenType::Enum, ErrorCode::ExpectedEnumToken, "Expected 'enum' keyword.");
+
+                Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedEnumName,
+                                           "Expected enum name.");
+
+                consume(TokenType::Colon, ErrorCode::ExpectedColonAfterEnumName,
+                        "Expected ':' and underlying type after enum name.");
+                auto underlying_type = parse_type_annotation();
+
+                consume(TokenType::LeftBrace, ErrorCode::ExpectedLeftBrace,
+                        "Expected '{' before enum body.");
+
+                std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases;
+
+                if (!check(TokenType::RightBrace)) {
+                    do {
+                        Token case_name = consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseName,
+                                                  "Expected enum case identifier.");
+
+                        std::unique_ptr<Expression> raw_value = nullptr;
+
+                        if (match({TokenType::Assign})) {
+                            raw_value = parse_expression();
+                        }
+
+                        cases.emplace_back(case_name.lexeme, std::move(raw_value));
+                    } while (match({TokenType::Comma}));
+                }
+
+                consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
+                        "Expected '}' after enum body.");
+
+                return std::make_unique<
+                    EnumDefinition>(name_token.lexeme, std::move(underlying_type), std::move(cases));
+            }
+
             std::unique_ptr<Assignment> parse_assignment() {
                 consume(TokenType::Let, ErrorCode::ExpectedLetToken, "Expected 'let'.");
 
-                std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
+                std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
                 do {
                     if (is_reserved_keyword(peek().type)) {
                         throw error(peek(), ErrorCode::ReservedKeywordAsIdentifier,
@@ -124,7 +163,6 @@ namespace valuascript::compiler {
                     }
 
                     targets.emplace_back(target.lexeme, std::move(type_annotation));
-
                 } while (match({TokenType::Comma}));
 
                 consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
