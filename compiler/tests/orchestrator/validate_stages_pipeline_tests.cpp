@@ -6,9 +6,9 @@
 
 using namespace valuascript::compiler;
 
-class Parser : public CompilerStage {
+class ParserMock : public CompilerStage {
 public:
-    Parser() : CompilerStage(
+    ParserMock() : CompilerStage(
         "Parser",
         CompilerStageArtifactCode::Ast,
         {CompilerStageArtifactCode::FilePath}) {
@@ -19,9 +19,9 @@ public:
     }
 };
 
-class SemanticAnalyser : public CompilerStage {
+class SemanticAnalyserMock : public CompilerStage {
 public:
-    SemanticAnalyser() : CompilerStage(
+    SemanticAnalyserMock() : CompilerStage(
         "SemanticAnalyser",
         CompilerStageArtifactCode::SymbolTable,
         {CompilerStageArtifactCode::Ast}) {
@@ -32,9 +32,9 @@ public:
     }
 };
 
-class SymbolTableEnricher : public CompilerStage {
+class SymbolTableEnricherMock : public CompilerStage {
 public:
-    SymbolTableEnricher() : CompilerStage(
+    SymbolTableEnricherMock() : CompilerStage(
         "SymbolTableEnricher",
         CompilerStageArtifactCode::EnrichedSymbolTable,
         {CompilerStageArtifactCode::SymbolTable}) {
@@ -45,9 +45,9 @@ public:
     }
 };
 
-class MultipleDependencyStage : public CompilerStage {
+class MultipleDependencyStageMock : public CompilerStage {
 public:
-    MultipleDependencyStage() : CompilerStage(
+    MultipleDependencyStageMock() : CompilerStage(
         "MultipleDependencyStage",
         CompilerStageArtifactCode::Bytecode,
         {CompilerStageArtifactCode::Ast, CompilerStageArtifactCode::ValidatedSymbolTable}) {
@@ -58,9 +58,9 @@ public:
     }
 };
 
-class Validator : public CompilerStage {
+class ValidatorMock : public CompilerStage {
 public:
-    Validator() : CompilerStage(
+    ValidatorMock() : CompilerStage(
         "Validator",
         CompilerStageArtifactCode::ValidatedSymbolTable,
         {CompilerStageArtifactCode::EnrichedSymbolTable}) {
@@ -71,9 +71,9 @@ public:
     }
 };
 
-class Linter : public CompilerStage {
+class LinterMock : public CompilerStage {
 public:
-    Linter() : CompilerStage(
+    LinterMock() : CompilerStage(
         "Linter",
         CompilerStageArtifactCode::LinterReport,
         {CompilerStageArtifactCode::Ast}) {
@@ -84,76 +84,83 @@ public:
     }
 };
 
-TEST(OrchestratorTest, EmptyPipelineDoesNotThrow) {
-    Orchestrator orchestrator;
-
-    EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
+TEST(ValidateOrchestratorPipelineTest, EmptyPipelineDoesNotThrow) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
+    EXPECT_NO_THROW(validate_stages_pipeline(stages));
 }
 
-TEST(OrchestratorTest, ValidPipelineDoesNotThrow) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, ValidPipelineDoesNotThrow) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<Parser>());
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
-    orchestrator.add_stage(std::make_unique<SymbolTableEnricher>());
+    stages.push_back(std::make_unique<ParserMock>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
+    stages.push_back(std::make_unique<SymbolTableEnricherMock>());
 
-    EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
+    EXPECT_NO_THROW(validate_stages_pipeline(stages));
 }
 
-TEST(OrchestratorTest, ValidPipelineButWrongOrderThrows) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, ValidPipelineButWrongOrderThrows) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<Parser>());
-    orchestrator.add_stage(std::make_unique<SymbolTableEnricher>());
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
+    stages.push_back(std::make_unique<ParserMock>());
+    stages.push_back(std::make_unique<SymbolTableEnricherMock>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
 
-    EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
+    EXPECT_THROW(validate_stages_pipeline(stages), std::logic_error);
 }
 
-TEST(OrchestratorTest, ValidPipelineWithMultipleDependencies) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, ValidPipelineWithMultipleDependencies) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<Parser>());
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
-    orchestrator.add_stage(std::make_unique<SymbolTableEnricher>());
-    orchestrator.add_stage(std::make_unique<Validator>());
-    orchestrator.add_stage(std::make_unique<MultipleDependencyStage>());
+    stages.push_back(std::make_unique<ParserMock>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
+    stages.push_back(std::make_unique<SymbolTableEnricherMock>());
+    stages.push_back(std::make_unique<ValidatorMock>());
+    stages.push_back(std::make_unique<MultipleDependencyStageMock>());
 
-    EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
+    EXPECT_NO_THROW(validate_stages_pipeline(stages));
 }
 
-TEST(OrchestratorTest, ValidPipelineWithMultipleDependenciesButMissingOne) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, ValidPipelineWithMultipleDependenciesButMissingOne) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<Parser>());
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
-    orchestrator.add_stage(std::make_unique<MultipleDependencyStage>());
+    stages.push_back(std::make_unique<ParserMock>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
+    stages.push_back(std::make_unique<MultipleDependencyStageMock>());
 
-    EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
+    EXPECT_THROW(validate_stages_pipeline(stages), std::logic_error);
 }
 
-TEST(OrchestratorTest, MissingDependencyThrowsLogicError1) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, MissingDependencyThrowsLogicError1) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
 
-    EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
+    EXPECT_THROW(validate_stages_pipeline(stages), std::logic_error);
 }
 
-TEST(OrchestratorTest, MissingDependencyThrowsLogicError2) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, MissingDependencyThrowsLogicError2) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<SymbolTableEnricher>());
+    stages.push_back(std::make_unique<SymbolTableEnricherMock>());
 
-    EXPECT_THROW(orchestrator.validate_stages_pipeline(), std::logic_error);
+    EXPECT_THROW(validate_stages_pipeline(stages), std::logic_error);
 }
 
-TEST(OrchestratorTest, MultipleConsumersOfSameArtifactPasses) {
-    Orchestrator orchestrator;
+TEST(ValidateOrchestratorPipelineTest, MultipleConsumersOfSameArtifactPasses) {
+    std::vector<std::unique_ptr<CompilerStage>> stages;
+    stages.clear();
 
-    orchestrator.add_stage(std::make_unique<Parser>());
-    orchestrator.add_stage(std::make_unique<Linter>());
-    orchestrator.add_stage(std::make_unique<SemanticAnalyser>());
+    stages.push_back(std::make_unique<ParserMock>());
+    stages.push_back(std::make_unique<LinterMock>());
+    stages.push_back(std::make_unique<SemanticAnalyserMock>());
 
-    EXPECT_NO_THROW(orchestrator.validate_stages_pipeline());
+    EXPECT_NO_THROW(validate_stages_pipeline(stages));
 }
