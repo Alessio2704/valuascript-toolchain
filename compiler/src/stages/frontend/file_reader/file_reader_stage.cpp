@@ -1,4 +1,4 @@
-#include "stages/file_reader/file_reader_stage.h"
+#include "stages/frontend/file_reader/file_reader_stage.h"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>

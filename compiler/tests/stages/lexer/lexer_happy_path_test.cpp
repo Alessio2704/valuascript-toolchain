@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "stages/lexer/lexer_stage.h"
-#include "stages/lexer/token.h"
+#include "stages/frontend/lexer/lexer_stage.h"
+#include "stages/frontend/lexer/token.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;

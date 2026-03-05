@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "stages/file_reader/file_reader_stage.h"
+#include "stages/frontend/file_reader/file_reader_stage.h"
 #include <fstream>
 
 using namespace valuascript::compiler;

@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "orchestrator/orchestrator.h"
+#include "main_orchestrator/main_orchestrator.h"
 
 using namespace valuascript::compiler;
 
 TEST(ValidateOrchestratorTest, OrchestratorIsConfiguredCorrectly) {
-    Orchestrator orchestrator;
+    MainOrchestrator orchestrator;
     SUCCEED();
 }

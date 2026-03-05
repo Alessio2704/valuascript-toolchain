@@ -1,10 +1,10 @@
-#include "stages/parser/parser_stage.h"
+#include "stages/frontend/parser/parser_stage.h"
 
 #include <memory>
 
 #include "errors/valuascript_exception.h"
-#include "stages/lexer/token.h"
-#include "stages/parser/ast.h"
+#include "stages/frontend/lexer/token.h"
+#include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {
     namespace {

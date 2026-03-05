@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "stages/parser/parser_stage.h"
-#include "stages/lexer/lexer_stage.h"
-#include "stages/parser/ast.h"
+#include "stages/frontend/parser/parser_stage.h"
+#include "stages/frontend/lexer/lexer_stage.h"
+#include "stages/frontend/parser/ast.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;

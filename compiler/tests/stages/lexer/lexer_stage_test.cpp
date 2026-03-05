@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "stages/lexer/lexer_stage.h"
-#include "stages/lexer/token.h"
+#include "stages/frontend/lexer/lexer_stage.h"
+#include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
 #include <string>
 #include <vector>

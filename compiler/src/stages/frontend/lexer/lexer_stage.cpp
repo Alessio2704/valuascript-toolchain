@@ -1,7 +1,6 @@
-#include "stages/lexer/lexer_stage.h"
-#include "stages/lexer/token.h"
+#include "stages/frontend/lexer/lexer_stage.h"
+#include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
-#include <unordered_map>
 
 namespace valuascript::compiler {
     namespace {

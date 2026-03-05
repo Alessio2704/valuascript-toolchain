@@ -1,5 +1,5 @@
 #pragma once
-#include "../../compiler_stage/compiler_stage.h"
+#include "compiler_stage/compiler_stage.h"
 
 namespace valuascript::compiler {
     class LexerStage : public CompilerStage {
