@@ -62,6 +62,8 @@ INSTANTIATE_TEST_SUITE_P(
     AssignmentHappyPathTest,
     testing::Values(
         AssignmentHappyParam{"number", "let a = 1000", 1},
+        AssignmentHappyParam{"number_percentage_1", "let a = 1.5%", 1},
+        AssignmentHappyParam{"number_percentage_2", "let a = 0.000_001%", 1},
         AssignmentHappyParam{"number_explicit_type", "let a: integer = 1000", 1},
         AssignmentHappyParam{"explicit_type_tuple_definition", "let a: (integer, string) = test()", 1},
         AssignmentHappyParam{"explicit_type_tuple_definition_2", "let a: (integer, Model) = test()", 1},

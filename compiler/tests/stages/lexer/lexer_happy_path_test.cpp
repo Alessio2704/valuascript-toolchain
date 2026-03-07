@@ -46,6 +46,9 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         // Assignments
         HappyLexerParam{"number", "let a = 1000", 5},
+        HappyLexerParam{"number_percentage_1", "let a = 5%", 5},
+        HappyLexerParam{"number_percentage_2", "let a = 0.5%", 5},
+        HappyLexerParam{"number_percentage_3", "let a = 1_000.5%", 5},
         HappyLexerParam{"string", "let a = \"string\"", 5},
         HappyLexerParam{"vector_literal", "let a = [1,2,3]", 11},
         HappyLexerParam{"boolean", "let a = true", 5},

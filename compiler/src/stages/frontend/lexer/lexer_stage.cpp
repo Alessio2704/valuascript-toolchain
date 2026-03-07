@@ -141,6 +141,12 @@ namespace valuascript::compiler {
                     }
                 }
 
+                if (peek() == '%') {
+                    advance();
+                    add_token(TokenType::PercentageLiteral);
+                    return;
+                }
+
                 add_token(TokenType::Number);
             }
 
@@ -221,9 +227,6 @@ namespace valuascript::compiler {
 
                     case '@': add_token(TokenType::At);
                         break;
-                    case '%': add_token(TokenType::Percent);
-                        break;
-
                     case '=': add_token(match('=') ? TokenType::Equals : TokenType::Assign);
                         break;
                     case '!': if (match('=')) add_token(TokenType::NotEquals);

@@ -156,6 +156,20 @@ TEST(LexerStageTest, TokenizesNumbersWithSeparators) {
     }
 }
 
+TEST(LexerStageTest, TokenizesNumbersWithPercentage) {
+    const auto tokens = tokenize_code("4% 4.54% 0.54%");
+    ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
+
+    ASSERT_EQ(tokens.size(), 4);
+    EXPECT_EQ(tokens[0].lexeme, "4%");
+    EXPECT_EQ(tokens[1].lexeme, "4.54%");
+    EXPECT_EQ(tokens[2].lexeme, "0.54%");
+
+    for (int i = 0; i < 3; ++i) {
+        EXPECT_EQ(tokens[i].type, TokenType::PercentageLiteral);
+    }
+}
+
 TEST(LexerStageTest, TokenizesStringsAndDocStrings) {
     const auto tokens = tokenize_code("\"hello world\" \"\"\"This is a\nmultiline docstring\"\"\"");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);

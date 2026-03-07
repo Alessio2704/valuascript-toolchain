@@ -397,6 +397,9 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_primary_expression() {
                 if (match({TokenType::Number})) return std::make_unique<NumberLiteral>(previous().lexeme);
+                if (match({TokenType::PercentageLiteral})) return std::make_unique<
+                    PercentageLiteral>(previous().lexeme);
+
                 if (match({TokenType::String})) return std::make_unique<StringLiteral>(previous().lexeme);
                 if (match({TokenType::True, TokenType::False}))
                     return std::make_unique<BooleanLiteral>(

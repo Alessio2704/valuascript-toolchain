@@ -48,6 +48,7 @@ INSTANTIATE_TEST_SUITE_P(
         SadLexerParam{"invalid_char_ampersand", "let a = &", ErrorCode::InvalidCharacter},
 
         // Malformed Numbers
+        SadLexerParam{"percentage_before_number", "x = %1", ErrorCode::InvalidCharacter},
         SadLexerParam{"missing_leading_zero", "let a = .5", ErrorCode::DecimalMissingLeadingZero},
         SadLexerParam{"unterminated_decimal_1", "let a = 1.", ErrorCode::UnterminatedDecimal},
         SadLexerParam{"unterminated_decimal_2", "let a = 1_230.", ErrorCode::UnterminatedDecimal},

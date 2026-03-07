@@ -15,7 +15,6 @@ namespace valuascript::compiler {
         Comma, // ,
         Colon, // :
         At, // @ (for directives like @iterations)
-        Percent,
         Dot,
 
         // Math operators
@@ -40,6 +39,7 @@ namespace valuascript::compiler {
         String, // "..."
         DocString, // """..."""
         Number, // 123, 12.3, 1_000 (SIGNED_NUMBER, FLOAT, INT)
+        PercentageLiteral,
 
         // Keywords
         Import, // import
@@ -113,7 +113,7 @@ namespace valuascript::compiler {
             case TokenType::Mod: return "Mod";
             case TokenType::Func: return "Func";
             case TokenType::Return: return "Return";
-            case TokenType::Percent: return "Percent";
+            case TokenType::PercentageLiteral: return "PercentLiteral";
             case TokenType::Dot: return "Dot";
             case TokenType::Arrow: return "Arrow";
             case TokenType::Import: return "Import";

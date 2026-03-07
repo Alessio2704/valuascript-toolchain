@@ -366,3 +366,79 @@ TEST_F(AstAssignmentTest, ValidatesMixedTypeAscriptionMultipleTargets) {
     EXPECT_EQ(assignment->targets[2].first, "c");
     EXPECT_EQ(assignment->targets[2].second, nullptr);
 }
+
+TEST_F(AstAssignmentTest, ValidatesSimplePercentageLiteral) {
+    auto ast = parse_code("let cagr = 4.55%");
+    ASSERT_EQ(ast->execution_steps.size(), 1);
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    auto pct_literal = dynamic_cast<PercentageLiteral*>(assignment->value.get());
+    ASSERT_NE(pct_literal, nullptr) << "Expected value to be a PercentageLiteral";
+
+    EXPECT_EQ(pct_literal->value, "4.55%");
+}
+
+TEST_F(AstAssignmentTest, ValidatesPercentageInMathExpressions) {
+    // AST Shape: Assignment -> Binary(+) -> Left: Binary(*) [100, 5%], Right: 2%
+
+    auto ast = parse_code("let total = 100 * 5% + 2%");
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    // Root should be the + operator
+    auto root_plus = dynamic_cast<BinaryExpression*>(assignment->value.get());
+    ASSERT_NE(root_plus, nullptr);
+    EXPECT_EQ(root_plus->op, TokenType::Plus);
+
+    // Left side of + is the * operator
+    auto left_star = dynamic_cast<BinaryExpression*>(root_plus->left.get());
+    ASSERT_NE(left_star, nullptr);
+    EXPECT_EQ(left_star->op, TokenType::Star);
+
+    // Left of * is 100
+    auto num_100 = dynamic_cast<NumberLiteral*>(left_star->left.get());
+    ASSERT_NE(num_100, nullptr);
+    EXPECT_EQ(num_100->value, "100");
+
+    // Right of * is 5%
+    auto pct_5 = dynamic_cast<PercentageLiteral*>(left_star->right.get());
+    ASSERT_NE(pct_5, nullptr);
+    EXPECT_EQ(pct_5->value, "5%");
+
+    // Right side of + is 2%
+    auto pct_2 = dynamic_cast<PercentageLiteral*>(root_plus->right.get());
+    ASSERT_NE(pct_2, nullptr);
+    EXPECT_EQ(pct_2->value, "2%");
+}
+
+TEST_F(AstAssignmentTest, ValidatesPercentageInFunctionArgumentsAndGrouping) {
+
+    auto ast = parse_code("let a = calculate_yield(y: (10% + 2.5%) / 2 )");
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    auto func_call = dynamic_cast<FunctionCall*>(assignment->value.get());
+    ASSERT_NE(func_call, nullptr);
+
+    ASSERT_EQ(func_call->arguments.size(), 1);
+
+    // The argument is a division operation
+    auto root_slash = dynamic_cast<BinaryExpression*>(func_call->arguments[0].second.get());
+    ASSERT_NE(root_slash, nullptr);
+    EXPECT_EQ(root_slash->op, TokenType::Slash);
+
+    // The left of the division is the grouped addition
+    auto grouped_plus = dynamic_cast<BinaryExpression*>(root_slash->left.get());
+    ASSERT_NE(grouped_plus, nullptr);
+    EXPECT_EQ(grouped_plus->op, TokenType::Plus);
+
+    auto pct_10 = dynamic_cast<PercentageLiteral*>(grouped_plus->left.get());
+    ASSERT_NE(pct_10, nullptr);
+    EXPECT_EQ(pct_10->value, "10%");
+
+    auto pct_2_5 = dynamic_cast<PercentageLiteral*>(grouped_plus->right.get());
+    ASSERT_NE(pct_2_5, nullptr);
+    EXPECT_EQ(pct_2_5->value, "2.5%");
+}

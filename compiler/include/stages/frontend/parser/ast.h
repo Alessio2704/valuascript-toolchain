@@ -26,6 +26,13 @@ namespace valuascript::compiler {
         }
     };
 
+    class PercentageLiteral : public Expression {
+    public:
+        std::string value;
+
+        explicit PercentageLiteral(std::string value) : value(std::move(value)) {}
+    };
+
     class StringLiteral : public Expression {
     public:
         std::string value;

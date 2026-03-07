@@ -291,3 +291,25 @@ TEST_F(AstSwitchTest, ValidatesTensorLiteralAsCaseResult) {
     ASSERT_NE(def_elem_1, nullptr);
     EXPECT_EQ(def_elem_1->value, "1.0");
 }
+
+TEST_F(AstSwitchTest, ValidatesPercentageInsideSwitchExpression) {
+
+    auto ast = parse_code("let rate = switch (risk_profile) { case HIGH -> 15.5% default -> 4% }");
+
+    auto assignment = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    ASSERT_NE(assignment, nullptr);
+
+    auto switch_expr = dynamic_cast<SwitchExpression*>(assignment->value.get());
+    ASSERT_NE(switch_expr, nullptr);
+
+    // Verify HIGH branch
+    ASSERT_EQ(switch_expr->cases.size(), 1);
+    auto high_result = dynamic_cast<PercentageLiteral*>(switch_expr->cases[0].second.get());
+    ASSERT_NE(high_result, nullptr) << "Expected switch branch result to be a PercentageLiteral";
+    EXPECT_EQ(high_result->value, "15.5%");
+
+    // Verify default branch
+    auto default_result = dynamic_cast<PercentageLiteral*>(switch_expr->default_case.get());
+    ASSERT_NE(default_result, nullptr) << "Expected switch default result to be a PercentageLiteral";
+    EXPECT_EQ(default_result->value, "4%");
+}
