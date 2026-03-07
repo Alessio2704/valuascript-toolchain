@@ -403,6 +403,8 @@ namespace valuascript::compiler {
                         previous().type == TokenType::True);
                 if (match({TokenType::Identifier})) return std::make_unique<IdentifierAccess>(previous().lexeme);
 
+                if (match({TokenType::Switch})) return parse_switch_expression();
+
                 if (match({TokenType::LeftParen})) return parse_tuple_or_grouping();
                 if (match({TokenType::LeftBracket})) return parse_tensor_literal();
                 if (match({TokenType::LeftBrace})) return parse_dict_literal();
@@ -500,6 +502,59 @@ namespace valuascript::compiler {
 
                 consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket, "Expected ']' after vector index.");
                 return std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
+            }
+
+            std::unique_ptr<Expression> parse_switch_expression() {
+                consume(TokenType::LeftParen, ErrorCode::ExpectedLeftParen,
+                        "Expected '(' after 'switch'.");
+                auto target = parse_expression();
+                consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
+                        "Expected ')' after switch target.");
+
+                consume(TokenType::LeftBrace, ErrorCode::ExpectedLeftBrace,
+                        "Expected '{' before switch body.");
+
+                std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
+                std::unique_ptr<Expression> default_case = nullptr;
+
+                while (!check(TokenType::RightBrace) && !is_at_end()) {
+                    if (match({TokenType::Case})) {
+                        std::vector<std::string> case_identifiers;
+
+                        do {
+                            Token id_token = consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseName,
+                                                     "Expected enum case identifier after 'case'.");
+                            case_identifiers.push_back(id_token.lexeme);
+                        } while (match({TokenType::Comma}));
+
+                        consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
+                                "Expected '->' after case identifiers.");
+                        auto result_expr = parse_expression();
+
+                        cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
+                    } else if (match({TokenType::Default})) {
+                        if (default_case != nullptr) {
+                            throw error(peek(), ErrorCode::MultipleDefaultCasesInSwitch,
+                                        "Syntax Error: A switch expression can only have one 'default' case.");
+                        }
+
+                        consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
+                                "Expected '->' after 'default'.");
+                        default_case = parse_expression();
+                    } else {
+                        throw error(peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
+                                    "Syntax Error: Expected 'case' or 'default' inside switch body.");
+                    }
+                }
+
+                consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
+                        "Expected '}' after switch body.");
+
+                return std::make_unique<SwitchExpression>(
+                    std::move(target),
+                    std::move(cases),
+                    std::move(default_case)
+                );
             }
 
             [[nodiscard]] const Token &peek() const {

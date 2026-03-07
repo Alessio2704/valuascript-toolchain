@@ -56,6 +56,9 @@ namespace valuascript::compiler {
         Struct, // struct
         Enum, // enum
         Return, // return
+        Switch,
+        Case,
+        Default,
         EndOfFile
     };
 
@@ -114,6 +117,9 @@ namespace valuascript::compiler {
             case TokenType::Import: return "Import";
             case TokenType::Struct: return "Struct";
             case TokenType::Enum: return "Enum";
+            case TokenType::Switch: return "Switch";
+            case TokenType::Case: return "Case";
+            case TokenType::Default: return "Default";
             case TokenType::EndOfFile: return "EndOfFile";
         }
     }
@@ -134,6 +140,9 @@ namespace valuascript::compiler {
             case TokenType::And:
             case TokenType::Or:
             case TokenType::Not:
+            case TokenType::Switch:
+            case TokenType::Case:
+            case TokenType::Default:
                 return true;
             default:
                 return false;
@@ -155,6 +164,9 @@ namespace valuascript::compiler {
             {"func", TokenType::Func},
             {"struct", TokenType::Struct},
             {"enum", TokenType::Enum},
+            {"switch", TokenType::Switch},
+            {"case", TokenType::Case},
+            {"default", TokenType::Default},
             {"return", TokenType::Return},
         };
 

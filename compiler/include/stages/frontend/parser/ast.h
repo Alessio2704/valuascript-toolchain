@@ -78,8 +78,8 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> else_branch;
 
         explicit ConditionalExpression(std::unique_ptr<Expression> cond,
-                              std::unique_ptr<Expression> thn,
-                              std::unique_ptr<Expression> els)
+                                       std::unique_ptr<Expression> thn,
+                                       std::unique_ptr<Expression> els)
             : condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els)) {
         }
     };
@@ -90,7 +90,7 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
         explicit FunctionCall(std::unique_ptr<Expression> tgt,
-                     std::vector<std::pair<std::string, std::unique_ptr<Expression> > > args)
+                              std::vector<std::pair<std::string, std::unique_ptr<Expression> > > args)
             : target(std::move(tgt)), arguments(std::move(args)) {
         }
     };
@@ -153,12 +153,13 @@ namespace valuascript::compiler {
 
     class Assignment : public Statement {
     public:
-        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
+        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         std::unique_ptr<Expression> value;
 
-        Assignment(std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets,
+        Assignment(std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
                    std::unique_ptr<Expression> value)
-            : targets(std::move(targets)), value(std::move(value)) {}
+            : targets(std::move(targets)), value(std::move(value)) {
+        }
     };
 
     class ReturnStatement : public Statement {
@@ -203,10 +204,10 @@ namespace valuascript::compiler {
         std::optional<std::string> docstring;
 
         explicit FunctionDefinition(std::string n,
-                           std::vector<FunctionParameter> params,
-                           std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
-                           std::vector<std::unique_ptr<Statement> > b,
-                           std::optional<std::string> docs = std::nullopt)
+                                    std::vector<FunctionParameter> params,
+                                    std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
+                                    std::vector<std::unique_ptr<Statement> > b,
+                                    std::optional<std::string> docs = std::nullopt)
             : name(std::move(n)), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs)) {
         }
@@ -218,7 +219,7 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
 
         explicit StructDefinition(std::string name,
-                         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
+                                  std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
             : name(std::move(name)), fields(std::move(fields)) {
         }
     };
@@ -227,14 +228,15 @@ namespace valuascript::compiler {
     public:
         std::string name;
         std::unique_ptr<TypeAnnotation> underlying_type;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> cases;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases;
 
         EnumDefinition(std::string name,
                        std::unique_ptr<TypeAnnotation> underlying_type,
-                       std::vector<std::pair<std::string, std::unique_ptr<Expression>>> cases)
+                       std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases)
             : name(std::move(name)),
               underlying_type(std::move(underlying_type)),
-              cases(std::move(cases)) {}
+              cases(std::move(cases)) {
+        }
     };
 
     class DotAccess : public Expression {
@@ -243,7 +245,23 @@ namespace valuascript::compiler {
         std::string property_name;
 
         DotAccess(std::unique_ptr<Expression> target, std::string property_name)
-            : target(std::move(target)), property_name(std::move(property_name)) {}
+            : target(std::move(target)), property_name(std::move(property_name)) {
+        }
+    };
+
+    class SwitchExpression : public Expression {
+    public:
+        std::unique_ptr<Expression> target;
+        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
+        std::unique_ptr<Expression> default_case;
+
+        SwitchExpression(std::unique_ptr<Expression> target,
+                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases,
+                         std::unique_ptr<Expression> default_case)
+            : target(std::move(target)),
+              cases(std::move(cases)),
+              default_case(std::move(default_case)) {
+        }
     };
 
     class Program : public AstNode {

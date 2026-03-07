@@ -151,6 +151,10 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"reserved_keyword_11", "let and = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"reserved_keyword_12", "let or = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"reserved_keyword_13", "let not = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_14", "let enum = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_15", "let switch = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_16", "let case = a", ErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_17", "let default = a", ErrorCode::ReservedKeywordAsIdentifier},
         AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::
         ReservedKeywordAsIdentifier}
 

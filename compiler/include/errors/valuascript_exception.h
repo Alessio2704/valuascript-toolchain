@@ -54,6 +54,13 @@ namespace valuascript::compiler {
         ExpectedEnumCaseName,
         ExpectedLeftBrace,
         ExpectedRightBrace,
+        ExpectedSwitchKeyword,
+        ExpectedLeftParen,
+        ExpectedRightParen,
+        ExpectedRightArrow,
+        ExpectedRightArrowAfterSwitchCaseIdentifier,
+        MultipleDefaultCasesInSwitch,
+        CaseOrDefaultMissingInSwitch,
         InvalidExpression
     };
 
