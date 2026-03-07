@@ -348,7 +348,7 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_multiplication_expression() {
                 auto expr = parse_power_expression();
-                while (match({TokenType::Star, TokenType::Slash, TokenType::Percent})) {
+                while (match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
                     Token op = previous();
                     auto right = parse_power_expression();
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));

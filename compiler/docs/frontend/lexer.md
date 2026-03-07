@@ -21,13 +21,13 @@ associated lexeme, and source position (line and column) for diagnostic accuracy
 
 The grammar defines the following token taxonomy:
 
-| Category        | Token Types                                                                                                                         |
-|-----------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| **Punctuation** | `LeftParen`, `RightParen`, `LeftBracket`, `RightBracket`, `LeftBrace`, `RightBrace`, `Comma`, `Colon`, `At`, `Percent`              |
-| **Operators**   | `Plus`, `Minus`, `Star`, `Slash`, `Caret`, `Assign`, `Equals`, `NotEquals`, `Greater`, `GreaterEqual`, `Less`, `LessEqual`, `Arrow` |
-| **Literals**    | `Identifier`, `String`, `DocString`, `Number`                                                                                       |
-| **Keywords**    | `Import`, `Let`, `If`, `Then`, `Else`, `True`, `False`, `And`, `Or`, `Not`, `Func`, `Struct`, `Enum`, `Return`                      |
-| **Metadata**    | `EndOfFile`                                                                                                                         |
+| Category        | Token Types                                                                                                                                       |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Punctuation** | `LeftParen`, `RightParen`, `LeftBracket`, `RightBracket`, `LeftBrace`, `RightBrace`, `Comma`, `Colon`, `At`, `Percent`                            |
+| **Operators**   | `Plus`, `Minus`, `Star`, `Slash`, `Caret`, `Assign`, `Equals`, `NotEquals`, `Greater`, `GreaterEqual`, `Less`, `LessEqual`, `Arrow`               |
+| **Literals**    | `Identifier`, `String`, `DocString`, `Number`                                                                                                     |
+| **Keywords**    | `Import`, `Let`, `If`, `Then`, `Else`, `True`, `False`, `And`, `Or`, `Not`, `Mod`, `Func`, `Struct`, `Enum`, `Switch`, `Case`,`Default`, `Return` |
+| **Metadata**    | `EndOfFile`                                                                                                                                       |
 
 ---
 

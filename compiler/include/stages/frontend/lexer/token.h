@@ -52,6 +52,7 @@ namespace valuascript::compiler {
         And, // and
         Or, // or
         Not, // not
+        Mod,
         Func, // func
         Struct, // struct
         Enum, // enum
@@ -109,6 +110,7 @@ namespace valuascript::compiler {
             case TokenType::And: return "And";
             case TokenType::Or: return "Or";
             case TokenType::Not: return "Not";
+            case TokenType::Mod: return "Mod";
             case TokenType::Func: return "Func";
             case TokenType::Return: return "Return";
             case TokenType::Percent: return "Percent";
@@ -140,6 +142,7 @@ namespace valuascript::compiler {
             case TokenType::And:
             case TokenType::Or:
             case TokenType::Not:
+            case TokenType::Mod:
             case TokenType::Switch:
             case TokenType::Case:
             case TokenType::Default:
@@ -161,6 +164,7 @@ namespace valuascript::compiler {
             {"and", TokenType::And},
             {"or", TokenType::Or},
             {"not", TokenType::Not},
+            {"mod", TokenType::Mod},
             {"func", TokenType::Func},
             {"struct", TokenType::Struct},
             {"enum", TokenType::Enum},

@@ -252,16 +252,15 @@ TEST_F(AstMathPrecedenceTest, ValidatesEqualityPrecedence) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesModuloPrecedence) {
-    // Code: let a = 10 % 3 * 2
     // Expected AST Shape:
     //          (*)
     //         /   \
-    //       (%)   (2)
+    //       (mod)   (2)
     //      /   \
     //   (10)   (3)
-    // Evaluates as (10 % 3) * 2 = 2. If it were right-associative, it would be 10 % (3 * 2) = 4.
+    // Evaluates as (10 mod 3) * 2 = 2. If it were right-associative, it would be 10 mod (3 * 2) = 4.
 
-    auto ast = parse_code("let a = 10 % 3 * 2");
+    auto ast = parse_code("let a = 10 mod 3 * 2");
     auto root_expr = dynamic_cast<BinaryExpression*>(get_root_expr(ast));
 
     // 1. Root MUST be Multiplication (due to left-associativity of same-precedence operators)
@@ -271,7 +270,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesModuloPrecedence) {
     // 2. Left MUST be Modulo
     auto left_mod = dynamic_cast<BinaryExpression*>(root_expr->left.get());
     ASSERT_NE(left_mod, nullptr);
-    EXPECT_EQ(left_mod->op, TokenType::Percent);
+    EXPECT_EQ(left_mod->op, TokenType::Mod);
 
     auto mod_left = dynamic_cast<NumberLiteral*>(left_mod->left.get());
     auto mod_right = dynamic_cast<NumberLiteral*>(left_mod->right.get());
