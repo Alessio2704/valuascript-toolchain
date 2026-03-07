@@ -91,10 +91,10 @@ TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
 }
 
 TEST(LexerStageTest, TokenizesKeywords) {
-    auto tokens = tokenize_code("let if then else true false and or not func struct return import enum switch case default mod");
+    auto tokens = tokenize_code("let if then else true false and or not func struct return import enum switch case default mod var");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 19);
+    ASSERT_EQ(tokens.size(), 20);
     EXPECT_EQ(tokens[0].type, TokenType::Let);
     EXPECT_EQ(tokens[1].type, TokenType::If);
     EXPECT_EQ(tokens[2].type, TokenType::Then);
@@ -113,6 +113,7 @@ TEST(LexerStageTest, TokenizesKeywords) {
     EXPECT_EQ(tokens[15].type, TokenType::Case);
     EXPECT_EQ(tokens[16].type, TokenType::Default);
     EXPECT_EQ(tokens[17].type, TokenType::Mod);
+    EXPECT_EQ(tokens[18].type, TokenType::Var);
 }
 
 TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {

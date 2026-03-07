@@ -162,10 +162,11 @@ namespace valuascript::compiler {
     public:
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         std::unique_ptr<Expression> value;
+        bool is_mutable;
 
         Assignment(std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
-                   std::unique_ptr<Expression> value)
-            : targets(std::move(targets)), value(std::move(value)) {
+                   std::unique_ptr<Expression> value, bool is_mutable)
+            : targets(std::move(targets)), value(std::move(value)), is_mutable(is_mutable) {
         }
     };
 

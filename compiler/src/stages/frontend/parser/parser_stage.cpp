@@ -27,7 +27,7 @@ namespace valuascript::compiler {
                         program->import_statements.push_back(parse_import_statement());
                     } else if (check(TokenType::At)) {
                         program->directives.push_back(parse_directive());
-                    } else if (check(TokenType::Let)) {
+                    } else if (check(TokenType::Let) || check(TokenType::Var)) {
                         program->execution_steps.push_back(parse_assignment());
                     } else if (check(TokenType::Func)) {
                         program->function_definitions.push_back(parse_function_definition());
@@ -37,7 +37,7 @@ namespace valuascript::compiler {
                         program->enum_definitions.push_back(parse_enum_definition());
                     } else {
                         throw error(peek(), ErrorCode::UnexpectedToken,
-                                    "Syntax Error: Invalid syntax. Expected '@', 'let', or 'func'.");
+                                    "Syntax Error: Invalid syntax. Expected '@', 'let', 'var', 'enum', 'struct' or 'func'.");
                     }
                 }
                 return program;
@@ -146,7 +146,16 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Assignment> parse_assignment() {
-                consume(TokenType::Let, ErrorCode::ExpectedLetToken, "Expected 'let'.");
+                bool is_mutable = false;
+
+                if (match({TokenType::Let})) {
+                    is_mutable = false;
+                } else if (match({TokenType::Var})) {
+                    is_mutable = true;
+                } else {
+                    throw error(peek(), ErrorCode::ExpectedLetOrVarToken,
+                                     "Syntax Error: Expected 'let' or 'var'.");
+                }
 
                 std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
                 do {
@@ -174,7 +183,7 @@ namespace valuascript::compiler {
                 }
 
                 auto value = parse_expression();
-                return std::make_unique<Assignment>(std::move(targets), std::move(value));
+                return std::make_unique<Assignment>(std::move(targets), std::move(value), is_mutable);
             }
 
             std::unique_ptr<TypeAnnotation> parse_type_annotation() {

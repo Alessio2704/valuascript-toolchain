@@ -19,7 +19,7 @@ namespace valuascript::compiler {
         UnmatchedParenthesisInTuple,
         UnmatchedBracket,
         ReservedKeywordAsIdentifier,
-        ExpectedLetToken,
+        ExpectedLetOrVarToken,
         ExpectedReturnStatement,
         MissingColonAfterParameter,
         MissingColonAfterArgument,

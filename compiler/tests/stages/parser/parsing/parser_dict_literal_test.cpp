@@ -66,7 +66,8 @@ INSTANTIATE_TEST_SUITE_P(
         DictLiteralHappyParam{"dict", "{ name: \"one\", age: 20 }"},
         DictLiteralHappyParam{"dict_complex", "{ name: func_call(), age: 20 }"},
         DictLiteralHappyParam{"dict_complex_1", "{ name: func_call(), age: matrix[0][:] }"},
-        DictLiteralHappyParam{"dict_complex_2", "{ name: func_call(), age: matrix[0][:], money: if a() then b else if c() then d(c: 12) else 10 }"}
+        DictLiteralHappyParam{"dict_complex_2", "{ name: func_call(), age: matrix[0][:], money: if a() then b else if c() then d(c: 12) else 10 }"},
+        DictLiteralHappyParam{"dict_complex_3", "{ name: \"one\", age: 20, assets: [one, two, three], obj: {a: 1, b: 2} }"}
     ),
     [](const testing::TestParamInfo<DictLiteralHappyParam>& info) {
     return info.param.test_id;

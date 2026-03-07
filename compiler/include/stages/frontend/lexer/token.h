@@ -44,6 +44,7 @@ namespace valuascript::compiler {
         // Keywords
         Import, // import
         Let, // let
+        Var, // var
         If, // if
         Then, // then
         Else, // else
@@ -102,6 +103,7 @@ namespace valuascript::compiler {
             case TokenType::DocString: return "DocString";
             case TokenType::Number: return "Number";
             case TokenType::Let: return "Let";
+            case TokenType::Var: return "Var";
             case TokenType::If: return "If";
             case TokenType::Then: return "Then";
             case TokenType::Else: return "Else";
@@ -130,6 +132,7 @@ namespace valuascript::compiler {
         switch (type) {
             case TokenType::Import:
             case TokenType::Let:
+            case TokenType::Var:
             case TokenType::Func:
             case TokenType::If:
             case TokenType::Then:
@@ -156,6 +159,7 @@ namespace valuascript::compiler {
         static const std::unordered_map<std::string, TokenType> kKeywords = {
             {"import", TokenType::Import},
             {"let", TokenType::Let},
+            {"var", TokenType::Var},
             {"if", TokenType::If},
             {"then", TokenType::Then},
             {"else", TokenType::Else},
