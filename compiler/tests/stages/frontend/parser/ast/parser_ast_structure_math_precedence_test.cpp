@@ -24,7 +24,7 @@ protected:
         return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
     }
 
-    Expression* get_root_expr(const std::shared_ptr<Program>& ast) {
+    Expression *get_root_expr(const std::shared_ptr<Program> &ast) {
         auto const assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
         return assignment->value.get();
     }
@@ -32,15 +32,16 @@ protected:
 
 
 TEST_F(AstMathPrecedenceTest, ValidatesStandardPrecedence) {
-    // Code: let a = 1 + 2 * 3 ^ 4
-    // Expected AST Shape:
-    //       (+)
-    //      /   \
-    //    (1)   (*)
-    //         /   \
-    //       (2)   (^)
-    //            /   \
-    //          (3)   (4)
+    /*
+     Expected AST Shape:
+             (+)
+            /   \
+          (1)   (*)
+               /   \
+             (2)   (^)
+                  /   \
+                (3)   (4)
+    */
 
     auto ast = parse_code("let a = 1 + 2 * 3 ^ 4");
     auto root_expr = get_root_expr(ast);
@@ -67,13 +68,15 @@ TEST_F(AstMathPrecedenceTest, ValidatesStandardPrecedence) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativitySubtraction) {
-    // Code: let a = 10 - 5 - 2
-    // Expected AST Shape (Left-Associative):
-    //         (-)
-    //        /   \
-    //      (-)   (2)
-    //     /   \
-    //  (10)   (5)
+    /*
+     Code: let a = 10 - 5 - 2
+     Expected AST Shape (Left-Associative):
+             (-)
+            /   \
+          (-)   (2)
+         /   \
+      (10)   (5)
+    */
 
     auto ast = parse_code("let a = 10 - 5 - 2");
     auto outer_sub = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
@@ -95,14 +98,15 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativitySubtraction) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativityDivision) {
-    // Code: let a = 20 / 5 / 2
-    // Evaluates as (20 / 5) / 2 = 2, NOT 20 / (5 / 2).
-    // Expected AST:
-    //         (/)
-    //        /   \
-    //      (/)   (2)
-    //     /   \
-    //  (20)   (5)
+    /*
+     Evaluates as (20 / 5) / 2 = 2, NOT 20 / (5 / 2).
+     Expected AST:
+             (/)
+            /   \
+          (/)   (2)
+         /   \
+      (20)   (5)
+    */
 
     auto ast = parse_code("let a = 20 / 5 / 2");
     auto outer_div = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
@@ -120,14 +124,15 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativityDivision) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesUnaryMinusPrecedence) {
-    // Code: let a = -5 * 2
-    // Unary minus has higher precedence than multiplication.
-    // Expected AST:
-    //        (*)
-    //       /   \
-    //     (-)   (2)
-    //      |
-    //     (5)
+    /*
+      Unary minus has higher precedence than multiplication.
+      Expected AST:
+             (*)
+            /   \
+          (-)   (2)
+           |
+          (5)
+     */
 
     auto ast = parse_code("let a = -5 * 2");
     auto mul_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
@@ -145,13 +150,14 @@ TEST_F(AstMathPrecedenceTest, ValidatesUnaryMinusPrecedence) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesParenthesesOverride) {
-    // Code: let a = (1 + 2) * 3
-    // Expected AST Shape:
-    //       (*)
-    //      /   \
-    //    (+)   (3)
-    //   /   \
-    // (1)   (2)
+    /*
+     Expected AST Shape:
+           (*)
+          /   \
+        (+)   (3)
+       /   \
+     (1)   (2)
+    */
 
     auto ast = parse_code("let a = (1 + 2) * 3");
     auto mul_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
@@ -165,15 +171,16 @@ TEST_F(AstMathPrecedenceTest, ValidatesParenthesesOverride) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesDeepParenthesesNesting) {
-    // Code: let a = ((1 + 2) * (3 - 4)) / 5
-    // Expected AST Shape:
-    //            (/)
-    //           /   \
-    //         (*)   (5)
-    //        /   \
-    //      (+)   (-)
-    //     /  \   /  \
-    //   (1) (2)(3) (4)
+    /*
+     Expected AST Shape:
+                (/)
+               /   \
+             (*)   (5)
+            /   \
+          (+)   (-)
+         /  \   /  \
+       (1) (2)(3) (4)
+    */
 
     auto ast = parse_code("let a = ((1 + 2) * (3 - 4)) / 5");
     auto div_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
@@ -198,83 +205,87 @@ TEST_F(AstMathPrecedenceTest, ValidatesDeepParenthesesNesting) {
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesRelationalPrecedence) {
-    // Code: let a = 1 + 2 > 3 * 4
-    // Expected AST Shape:
-    //          (>)
-    //         /   \
-    //       (+)   (*)
-    //      /  \   /  \
-    //    (1) (2)(3)  (4)
-    // Relational operators must have lower precedence than + and *
+    /*
+     Expected AST Shape:
+              (>)
+             /   \
+           (+)   (*)
+          /  \   /  \
+        (1) (2)(3)  (4)
+     Relational operators must have lower precedence than + and *
+    */
 
     auto ast = parse_code("let a = 1 + 2 > 3 * 4");
-    auto root_expr = dynamic_cast<BinaryExpression*>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
 
     // 1. Root MUST be Greater Than
     ASSERT_NE(root_expr, nullptr);
     EXPECT_EQ(root_expr->op, TokenType::Greater);
 
     // 2. Left MUST be Addition
-    auto left_add = dynamic_cast<BinaryExpression*>(root_expr->left.get());
+    auto left_add = dynamic_cast<BinaryExpression *>(root_expr->left.get());
     ASSERT_NE(left_add, nullptr);
     EXPECT_EQ(left_add->op, TokenType::Plus);
 
     // 3. Right MUST be Multiplication
-    auto right_mul = dynamic_cast<BinaryExpression*>(root_expr->right.get());
+    auto right_mul = dynamic_cast<BinaryExpression *>(root_expr->right.get());
     ASSERT_NE(right_mul, nullptr);
     EXPECT_EQ(right_mul->op, TokenType::Star);
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesEqualityPrecedence) {
-    // Code: let a = x == y + 1
-    // Expected AST Shape:
-    //          (==)
-    //         /    \
-    //       (x)    (+)
-    //             /   \
-    //           (y)   (1)
+    /*
+     Expected AST Shape:
+              (==)
+             /    \
+           (x)    (+)
+                 /   \
+               (y)   (1)
+    */
 
     auto ast = parse_code("let a = x == y + 1");
-    auto root_expr = dynamic_cast<BinaryExpression*>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
 
     // 1. Root MUST be Equals
     ASSERT_NE(root_expr, nullptr);
     EXPECT_EQ(root_expr->op, TokenType::Equals);
 
     // 2. Left MUST be identifier 'x'
-    auto left_id = dynamic_cast<IdentifierAccess*>(root_expr->left.get());
+    auto left_id = dynamic_cast<IdentifierAccess *>(root_expr->left.get());
     ASSERT_NE(left_id, nullptr);
     EXPECT_EQ(left_id->name, "x");
 
     // 3. Right MUST be Addition
-    auto right_add = dynamic_cast<BinaryExpression*>(root_expr->right.get());
+    auto right_add = dynamic_cast<BinaryExpression *>(root_expr->right.get());
     ASSERT_NE(right_add, nullptr);
     EXPECT_EQ(right_add->op, TokenType::Plus);
 }
 
 TEST_F(AstMathPrecedenceTest, ValidatesModuloPrecedence) {
-    // Expected AST Shape:
-    //          (*)
-    //         /   \
-    //       (mod)   (2)
-    //      /   \
-    //   (10)   (3)
-    // Evaluates as (10 mod 3) * 2 = 2. If it were right-associative, it would be 10 mod (3 * 2) = 4.
+    /*
+     Expected AST Shape:
+              (*)
+             /   \
+           (mod)   (2)
+          /   \
+       (10)   (3)
+     Evaluates as (10 mod 3) * 2 = 2. If it were right-associative, it would be 10 mod (3 * 2) = 4.
+    */
 
     auto ast = parse_code("let a = 10 mod 3 * 2");
-    auto root_expr = dynamic_cast<BinaryExpression*>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
 
     // 1. Root MUST be Multiplication (due to left-associativity of same-precedence operators)
     ASSERT_NE(root_expr, nullptr);
     EXPECT_EQ(root_expr->op, TokenType::Star);
 
     // 2. Left MUST be Modulo
-    auto left_mod = dynamic_cast<BinaryExpression*>(root_expr->left.get());
+    auto left_mod = dynamic_cast<BinaryExpression *>(root_expr->left.get());
     ASSERT_NE(left_mod, nullptr);
     EXPECT_EQ(left_mod->op, TokenType::Mod);
 
-    auto mod_left = dynamic_cast<NumberLiteral*>(left_mod->left.get());
-    auto mod_right = dynamic_cast<NumberLiteral*>(left_mod->right.get());
+    auto mod_left = dynamic_cast<NumberLiteral *>(left_mod->left.get());
+    auto mod_right = dynamic_cast<NumberLiteral *>(left_mod->right.get());
     ASSERT_NE(mod_left, nullptr);
     ASSERT_NE(mod_right, nullptr);
     EXPECT_EQ(mod_left->value, "10");

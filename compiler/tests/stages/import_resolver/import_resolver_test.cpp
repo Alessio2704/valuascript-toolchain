@@ -66,11 +66,14 @@ TEST_F(ImportResolverTest, ResolvesLinearDependencyChain) {
 }
 
 TEST_F(ImportResolverTest, ResolvesDiamondDependencyGraph) {
+    /*
     //     A
     //    / \
     //   B   C
     //    \ /
     //     D
+    */
+
     std::string d_path = create_file("d.vs", "let d = 4");
     std::string c_path = create_file("c.vs", "import \"d.vs\"\nlet c = 3");
     std::string b_path = create_file("b.vs", "import \"d.vs\"\nlet b = 2");

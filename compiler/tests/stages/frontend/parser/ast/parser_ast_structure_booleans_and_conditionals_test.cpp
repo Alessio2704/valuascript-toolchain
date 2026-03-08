@@ -32,15 +32,16 @@ protected:
 };
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanPrecedence) {
-    // Code: let a = x or y and not z
-    // Expected AST Shape:
-    //         (or)
-    //        /    \
-    //      (x)   (and)
-    //           /     \
-    //         (y)    (not)
-    //                  |
-    //                 (z)
+    /*
+     Expected AST Shape:
+             (or)
+            /    \
+          (x)   (and)
+               /     \
+             (y)    (not)
+                      |
+                     (z)
+    */
 
     auto ast = parse_code("let a = x or y and not z");
     auto root_expr = get_root_expr(ast);
@@ -77,13 +78,14 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanPrecedence) {
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanGrouping) {
-    // Code: let a = (x or y) and z
-    // Expected AST Shape:
-    //         (and)
-    //        /     \
-    //      (or)    (z)
-    //     /    \
-    //   (x)    (y)
+    /*
+     Expected AST Shape:
+             (and)
+            /     \
+          (or)    (z)
+         /    \
+       (x)    (y)
+    */
 
     auto ast = parse_code("let a = (x or y) and z");
     auto root_expr = get_root_expr(ast);
@@ -98,14 +100,15 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanGrouping) {
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesSimpleConditional) {
-    // Code: let a = if x > 0 then 10 else 20
-    // Expected AST Shape:
-    // Conditional
-    //  |- Cond: (>)
-    //  |       /   \
-    //  |     (x)   (0)
-    //  |- Then: (10)
-    //  |- Else: (20)
+    /*
+     Expected AST Shape:
+     Conditional
+      |- Cond: (>)
+      |       /   \
+      |     (x)   (0)
+      |- Then: (10)
+      |- Else: (20)
+    */
 
     auto ast = parse_code("let a = if x > 0 then 10 else 20");
     auto root_expr = get_root_expr(ast);
@@ -127,13 +130,14 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesSimpleConditional) {
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesNestedConditionals) {
-    // Code: let a = if x then 1 else if y then 2 else 3
-    // Expected AST Shape:
-    // Conditional (Cond: x)
-    //  |- Then: 1
-    //  |- Else: Conditional (Cond: y)
-    //             |- Then: 2
-    //             |- Else: 3
+    /*
+     Expected AST Shape:
+     Conditional (Cond: x)
+      |- Then: 1
+      |- Else: Conditional (Cond: y)
+                 |- Then: 2
+                 |- Else: 3
+    */
 
     auto ast = parse_code("let a = if x then 1 else if y then 2 else 3");
     auto root_expr = get_root_expr(ast);
@@ -158,12 +162,13 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesNestedConditionals) {
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesFunctionCallsInAllBranches) {
-    // Code: let a = if is_ready() then start() else stop()
-    // Expected AST Shape:
-    // Conditional
-    //  |- Cond: FunctionCall (is_ready)
-    //  |- Then: FunctionCall (start)
-    //  |- Else: FunctionCall (stop)
+    /*
+     Expected AST Shape:
+     Conditional
+      |- Cond: FunctionCall (is_ready)
+      |- Then: FunctionCall (start)
+      |- Else: FunctionCall (stop)
+    */
 
     auto ast = parse_code("let a = if is_ready() then start() else stop()");
     auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
@@ -193,7 +198,6 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesFunctionCallsInAllBranches) {
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWithParams) {
-    // Code: let a = if get_value(x, 1) == 100 then onSuccess() else onError()
     // Tests that a binary expression correctly wraps a function call with arguments
     // inside the condition slot.
 
@@ -229,7 +233,6 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWith
 }
 
 TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
-    // Code: let a = if check(fetch(url)) then process(transform(data)) else fallback(get_default())
     // Tests that function parameters can safely be other function calls within conditional branches.
 
     auto ast = parse_code("let a = if check(c: fetch(u: url)) then process(p: transform(d: data)) else fallback(f: get_default())");

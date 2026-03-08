@@ -202,7 +202,7 @@ TEST(LexerStageTest, IgnoresWhitespaceAndComments) {
 }
 
 TEST(LexerStageTest, TracksLineAndColumnAccurately) {
-    constexpr std::string code =
+    const std::string code =
             "let a\n" // Line 1: 'let' at col 1, 'a' at col 5
             "  return\n"; // Line 2: 'return' at col 3
 
