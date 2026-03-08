@@ -35,9 +35,11 @@ namespace valuascript::compiler {
                         program->struct_definitions.push_back(parse_struct_definition());
                     } else if (check(TokenType::Enum)) {
                         program->enum_definitions.push_back(parse_enum_definition());
+                    } else if (check(TokenType::Identifier)) {
+                        program->execution_steps.push_back(parse_expression_statement());
                     } else {
                         throw error(peek(), ErrorCode::UnexpectedToken,
-                                    "Syntax Error: Invalid syntax. Expected '@', 'let', 'var', 'enum', 'struct' or 'func'.");
+                                    "Syntax Error: Invalid syntax. Expected '@', 'let', 'var', 'enum', 'struct', 'func' or an identifier.");
                     }
                 }
                 return program;
@@ -154,7 +156,7 @@ namespace valuascript::compiler {
                     is_mutable = true;
                 } else {
                     throw error(peek(), ErrorCode::ExpectedLetOrVarToken,
-                                     "Syntax Error: Expected 'let' or 'var'.");
+                                "Syntax Error: Expected 'let' or 'var'.");
                 }
 
                 std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
@@ -177,7 +179,7 @@ namespace valuascript::compiler {
                 consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
                         "Syntax Error: Incomplete assignment. Expected '='.");
 
-                if (is_at_end() || check(TokenType::Let) || check(TokenType::Func) || check(TokenType::At)) {
+                if (is_at_end() || check(TokenType::Let) || check(TokenType::Var) || check(TokenType::Func) || check(TokenType::At)) {
                     throw error(previous(), ErrorCode::MissingValueAfterEquals,
                                 "Syntax Error: Missing value after '='.");
                 }
@@ -270,8 +272,34 @@ namespace valuascript::compiler {
                                                             std::move(body), std::move(docstring));
             }
 
+            std::unique_ptr<Statement> parse_expression_statement() {
+                auto expr = parse_expression();
+
+                if (match({TokenType::Comma})) {
+                    throw error(previous(), ErrorCode::MultiReassignmentNotSupported,
+                                "Syntax Error: Multiple reassignment is not supported. You must reassign variables individually.");
+                }
+
+                if (match({TokenType::Assign})) {
+                    if (!is_valid_lvalue(expr.get())) {
+                        throw error(previous(), ErrorCode::InvalidLeftSideExpressionInReassignment,
+                                    "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.");
+                    }
+
+                    auto value = parse_expression();
+                    return std::make_unique<Reassignment>(std::move(expr), std::move(value));
+                }
+
+                if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr) {
+                    throw error(previous(), ErrorCode::InvalidStandaloneStatement,
+                                "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
+                }
+
+                return std::make_unique<ExpressionStatement>(std::move(expr));
+            }
+
             std::unique_ptr<Statement> parse_statement() {
-                if (check(TokenType::Let)) {
+                if (check(TokenType::Let) || check(TokenType::Var)) {
                     return parse_assignment();
                 }
 
@@ -285,8 +313,7 @@ namespace valuascript::compiler {
                     return std::make_unique<ReturnStatement>(std::move(return_values));
                 }
 
-                throw error(peek(), ErrorCode::UnexpectedToken,
-                            "Syntax Error: Expected statement ('let' or 'return').");
+                return parse_expression_statement();
             }
 
             std::unique_ptr<Expression> parse_expression() {
@@ -406,8 +433,9 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_primary_expression() {
                 if (match({TokenType::Number})) return std::make_unique<NumberLiteral>(previous().lexeme);
-                if (match({TokenType::PercentageLiteral})) return std::make_unique<
-                    PercentageLiteral>(previous().lexeme);
+                if (match({TokenType::PercentageLiteral}))
+                    return std::make_unique<
+                        PercentageLiteral>(previous().lexeme);
 
                 if (match({TokenType::String})) return std::make_unique<StringLiteral>(previous().lexeme);
                 if (match({TokenType::True, TokenType::False}))
@@ -567,6 +595,14 @@ namespace valuascript::compiler {
                     std::move(cases),
                     std::move(default_case)
                 );
+            }
+
+            bool is_valid_lvalue(const Expression *expr) {
+                if (dynamic_cast<const IdentifierAccess *>(expr) != nullptr) return true;
+                if (dynamic_cast<const DotAccess *>(expr) != nullptr) return true;
+                if (dynamic_cast<const BracketAccess *>(expr) != nullptr) return true;
+
+                return false;
             }
 
             [[nodiscard]] const Token &peek() const {

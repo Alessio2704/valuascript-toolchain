@@ -116,11 +116,10 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     DirectiveSadPathTest,
     testing::Values(
-        DirectiveSadParam{"missing_at", "iterations = 1000", ErrorCode::UnexpectedToken},
         DirectiveSadParam{"other_from_at", "*iterations = 1000", ErrorCode::UnexpectedToken},
         DirectiveSadParam{"missing_after_name_at", "@ = 1000", ErrorCode::MissingDirectiveName},
         DirectiveSadParam{"missing_value_after_eq", "@iterations = ", ErrorCode::MissingValueAfterEquals},
-        DirectiveSadParam{"missing_at_valueless_directive", "module", ErrorCode::UnexpectedToken},
+        DirectiveSadParam{"missing_at_valueless_directive", "module", ErrorCode::InvalidStandaloneStatement},
         DirectiveSadParam{"other_from_at_valueless_directive", "*module", ErrorCode::UnexpectedToken},
         DirectiveSadParam{"missing_import_directive", "@", ErrorCode::MissingDirectiveName},
         DirectiveSadParam{"missing_after_name_at_valueless_directive", "@ \"file.vs\"", ErrorCode::MissingDirectiveName}

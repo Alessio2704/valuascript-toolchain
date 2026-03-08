@@ -138,7 +138,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotation},
         FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedParenthesisInTuple},
 
-        FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::UnexpectedToken}
+        FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::InvalidStandaloneStatement}
     ),
     [](const testing::TestParamInfo<FunctionSadParam>& info) {
     return info.param.test_id;

@@ -51,7 +51,7 @@ TEST_P(AssignmentHappyPathTest, ParsesSuccessfully) {
         EXPECT_EQ(ast->directives.size(), 0);
         EXPECT_EQ(ast->function_definitions.size(), 0);
 
-        auto &assignment = ast->execution_steps[0];
+        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
         EXPECT_EQ(assignment->targets.size(), param.expected_target_count);
         EXPECT_NE(assignment->value, nullptr) << "Expected assignment to have a value expression.";
     }
@@ -124,8 +124,6 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     AssignmentSadPathTest,
     testing::Values(
-        AssignmentSadParam{"missing_let", "x = 1", ErrorCode::UnexpectedToken},
-        AssignmentSadParam{"missing_let_multi_assignment", "x, y = some_func()", ErrorCode::UnexpectedToken},
         AssignmentSadParam{"missing_var_name", "let = 1", ErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_type_after_colon", "let a: = 1", ErrorCode::MissingTypeAnnotation},
         AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ErrorCode::

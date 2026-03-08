@@ -34,7 +34,7 @@ struct DotAccessHappyParam {
 };
 
 class DotAccessHappyPathTest : public ParserDotAccessTestBase,
-                                  public testing::WithParamInterface<DotAccessHappyParam> {
+                               public testing::WithParamInterface<DotAccessHappyParam> {
 };
 
 TEST_P(DotAccessHappyPathTest, ParsesSuccessfully) {
@@ -50,7 +50,7 @@ TEST_P(DotAccessHappyPathTest, ParsesSuccessfully) {
         EXPECT_EQ(ast->directives.size(), 0);
         EXPECT_EQ(ast->function_definitions.size(), 0);
 
-        auto &assignment = ast->execution_steps[0];
+        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
         EXPECT_EQ(assignment->targets.size(), 1);
         EXPECT_NE(assignment->value, nullptr) << "Expected assignment to have a value expression.";
     }
@@ -85,7 +85,7 @@ struct DotAccessSadParam {
 };
 
 class DotAccessSadPathTest : public ParserDotAccessTestBase,
-                                public testing::WithParamInterface<DotAccessSadParam> {
+                             public testing::WithParamInterface<DotAccessSadParam> {
 };
 
 TEST_P(DotAccessSadPathTest, ThrowsCorrectSyntaxError) {

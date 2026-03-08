@@ -26,7 +26,8 @@ protected:
     }
 
     Expression* get_root_expr(const std::shared_ptr<Program>& ast) {
-        return ast->execution_steps[0]->value.get();
+        auto const assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
+        return assignment->value.get();
     }
 };
 

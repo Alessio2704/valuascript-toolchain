@@ -30,7 +30,8 @@ namespace valuascript::compiler {
     public:
         std::string value;
 
-        explicit PercentageLiteral(std::string value) : value(std::move(value)) {}
+        explicit PercentageLiteral(std::string value) : value(std::move(value)) {
+        }
     };
 
     class StringLiteral : public Expression {
@@ -170,6 +171,25 @@ namespace valuascript::compiler {
         }
     };
 
+    class Reassignment : public Statement {
+    public:
+        std::unique_ptr<Expression> target;
+        std::unique_ptr<Expression> value;
+
+        Reassignment(std::unique_ptr<Expression> target, std::unique_ptr<Expression> value)
+            : target(std::move(target)), value(std::move(value)) {
+        }
+    };
+
+    class ExpressionStatement : public Statement {
+    public:
+        std::unique_ptr<Expression> expr;
+
+        explicit ExpressionStatement(std::unique_ptr<Expression> expr)
+            : expr(std::move(expr)) {
+        }
+    };
+
     class ReturnStatement : public Statement {
     public:
         std::vector<std::unique_ptr<Expression> > values;
@@ -276,7 +296,7 @@ namespace valuascript::compiler {
     public:
         std::vector<std::unique_ptr<ImportStatement> > import_statements;
         std::vector<std::unique_ptr<Directive> > directives;
-        std::vector<std::unique_ptr<Assignment> > execution_steps;
+        std::vector<std::unique_ptr<Statement> > execution_steps;
         std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
         std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
         std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;

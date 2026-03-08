@@ -61,6 +61,9 @@ namespace valuascript::compiler {
         ExpectedRightArrowAfterSwitchCaseIdentifier,
         MultipleDefaultCasesInSwitch,
         CaseOrDefaultMissingInSwitch,
+        InvalidLeftSideExpressionInReassignment,
+        InvalidStandaloneStatement,
+        MultiReassignmentNotSupported,
         InvalidExpression
     };
 

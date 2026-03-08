@@ -52,7 +52,7 @@ TEST_P(BracketAccessHappyPathTest, ParsesSuccessfully) {
         EXPECT_EQ(ast->directives.size(), 0);
         EXPECT_EQ(ast->function_definitions.size(), 0);
 
-        auto &assignment = ast->execution_steps[0];
+        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
         EXPECT_EQ(assignment->targets.size(), 1);
     }
 }

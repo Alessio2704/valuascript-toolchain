@@ -51,9 +51,10 @@ TEST_P(FunctionCallHappyPathTest, ParsesSuccessfully) {
         EXPECT_EQ(ast->execution_steps.size(), 1);
         EXPECT_EQ(ast->directives.size(), 0);
 
-        ASSERT_EQ(ast->execution_steps[0]->targets.size(), 1);
-        ASSERT_EQ(ast->execution_steps[0]->targets[0].first, "result");
-        auto func_call = dynamic_cast<FunctionCall *>(ast->execution_steps[0]->value.get());
+        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
+        ASSERT_EQ(assignment->targets.size(), 1);
+        ASSERT_EQ(assignment->targets[0].first, "result");
+        auto func_call = dynamic_cast<FunctionCall *>(assignment->value.get());
         auto func_target = dynamic_cast<IdentifierAccess *>(func_call->target.get());
         ASSERT_EQ(func_target->name, "test");
         ASSERT_EQ(func_call->arguments.size(), param.param_num);
