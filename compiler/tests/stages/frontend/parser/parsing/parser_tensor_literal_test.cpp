@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "../../../../include/errors/valuascript_exception.h"
 #include "stages/frontend/parser/parser_stage.h"
 #include "stages/frontend/parser/ast.h"
 #include "stages/frontend/lexer/lexer_stage.h"

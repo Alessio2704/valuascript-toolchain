@@ -4,7 +4,7 @@
 
 
 namespace valuascript::compiler {
-    enum class ErrorCategory { Lexical, Syntax, Semantic, Internal };
+    enum class ErrorCategory { Lexical, Syntax, Semantic, Import, Internal };
 
     enum class ErrorCode {
         // --- Lexer Errors ---
@@ -64,7 +64,11 @@ namespace valuascript::compiler {
         InvalidLeftSideExpressionInReassignment,
         InvalidStandaloneStatement,
         MultiReassignmentNotSupported,
-        InvalidExpression
+        InvalidExpression,
+
+        // --- Import Resolver Errors ---
+        CircularImportDetected,
+        ImportFileNotFound
     };
 
     struct ErrorLocation {

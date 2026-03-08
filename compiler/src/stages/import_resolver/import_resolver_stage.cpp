@@ -21,8 +21,14 @@ namespace valuascript::compiler {
 
     void ImportResolverStage::resolve_recursive(const std::string& current_file, ResolvedProjectArtifact& project) {
         if (resolving_.contains(current_file)) {
-            throw std::runtime_error("Circular import detected involving: " + current_file);
+            throw ValuaScriptException(
+                ErrorCategory::Import,
+                ErrorCode::CircularImportDetected,
+                {0, 0, current_file},
+                "Import Error: Circular import detected involving '" + current_file + "'."
+            );
         }
+
         if (resolved_.contains(current_file)) {
             return;
         }
@@ -36,7 +42,23 @@ namespace valuascript::compiler {
         );
 
         for (const auto& import_stmt : ast->import_statements) {
-            std::string next_file = normalize_path(current_file, import_stmt->path);
+            std::string clean_path = import_stmt->path;
+
+            if (clean_path.size() >= 2 && clean_path.front() == '"' && clean_path.back() == '"') {
+                clean_path = clean_path.substr(1, clean_path.size() - 2);
+            }
+
+            std::string next_file = normalize_path(current_file, clean_path);
+
+            if (!std::filesystem::exists(next_file)) {
+                throw ValuaScriptException(
+                    ErrorCategory::Import,
+                    ErrorCode::ImportFileNotFound,
+                    {0, 0, current_file},
+                    "Import Error: Cannot find module '" + clean_path + "'."
+                );
+            }
+
             resolve_recursive(next_file, project);
         }
 
