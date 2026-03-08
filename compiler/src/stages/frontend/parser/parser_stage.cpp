@@ -21,6 +21,7 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Program> parse_program() {
                 auto program = std::make_unique<Program>();
+                const Token &start_token = peek();
 
                 while (!is_at_end()) {
                     if (check(TokenType::Import)) {
@@ -42,23 +43,28 @@ namespace valuascript::compiler {
                                     "Syntax Error: Invalid syntax. Expected '@', 'let', 'var', 'enum', 'struct', 'func' or an identifier.");
                     }
                 }
+
+                program->span = make_span(start_token, previous());
                 return program;
             }
 
         private:
             std::unique_ptr<ImportStatement> parse_import_statement() {
-                consume(TokenType::Import, ErrorCode::ExpectedImportToken, "Expected 'import'.");
+                const Token &start_token = consume(TokenType::Import, ErrorCode::ExpectedImportToken,
+                                                   "Expected 'import'.");
 
                 const Token &path = consume(TokenType::String, ErrorCode::MissingImportPathString,
                                             "Syntax Error: Expected path after 'import'.");
 
                 std::string path_string = path.lexeme;
 
-                return std::make_unique<ImportStatement>(path_string);
+                auto stmt = std::make_unique<ImportStatement>(path_string);
+                stmt->span = make_span(start_token, path);
+                return stmt;
             }
 
             std::unique_ptr<Directive> parse_directive() {
-                consume(TokenType::At, ErrorCode::UnexpectedToken, "Expected '@'.");
+                const Token &start_token = consume(TokenType::At, ErrorCode::UnexpectedToken, "Expected '@'.");
 
                 const Token &name_token = consume(TokenType::Identifier, ErrorCode::MissingDirectiveName,
                                                   "Syntax Error: Expected directive name after '@'.");
@@ -76,11 +82,14 @@ namespace valuascript::compiler {
                     value = parse_expression();
                 }
 
-                return std::make_unique<Directive>(directive_name, std::move(value));
+                auto dir = std::make_unique<Directive>(directive_name, std::move(value));
+                dir->span = make_span(start_token, previous());
+                return dir;
             }
 
             std::unique_ptr<StructDefinition> parse_struct_definition() {
-                consume(TokenType::Struct, ErrorCode::ExpectedStructToken, "Expected 'struct' in struct definition.");
+                const Token &start_token = consume(TokenType::Struct, ErrorCode::ExpectedStructToken,
+                                                   "Expected 'struct' in struct definition.");
 
                 Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedStructName,
                                            "Expected struct name.");
@@ -103,15 +112,17 @@ namespace valuascript::compiler {
                     } while (match({TokenType::Comma}));
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition,
-                        "Expected '}' after struct body.");
+                const Token &end_token = consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition,
+                                                 "Expected '}' after struct body.");
 
-
-                return std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
+                auto struct_def = std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
+                struct_def->span = make_span(start_token, end_token);
+                return struct_def;
             }
 
             std::unique_ptr<EnumDefinition> parse_enum_definition() {
-                consume(TokenType::Enum, ErrorCode::ExpectedEnumToken, "Expected 'enum' keyword.");
+                const Token &start_token = consume(TokenType::Enum, ErrorCode::ExpectedEnumToken,
+                                                   "Expected 'enum' keyword.");
 
                 Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedEnumName,
                                            "Expected enum name.");
@@ -140,14 +151,17 @@ namespace valuascript::compiler {
                     } while (match({TokenType::Comma}));
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
-                        "Expected '}' after enum body.");
+                const Token &end_token = consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
+                                                 "Expected '}' after enum body.");
 
-                return std::make_unique<
-                    EnumDefinition>(name_token.lexeme, std::move(underlying_type), std::move(cases));
+                auto enum_def = std::make_unique<EnumDefinition>(name_token.lexeme, std::move(underlying_type),
+                                                                 std::move(cases));
+                enum_def->span = make_span(start_token, end_token);
+                return enum_def;
             }
 
             std::unique_ptr<Assignment> parse_assignment() {
+                const Token &start_token = peek();
                 bool is_mutable = false;
 
                 if (match({TokenType::Let})) {
@@ -179,16 +193,21 @@ namespace valuascript::compiler {
                 consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
                         "Syntax Error: Incomplete assignment. Expected '='.");
 
-                if (is_at_end() || check(TokenType::Let) || check(TokenType::Var) || check(TokenType::Func) || check(TokenType::At)) {
+                if (is_at_end() || check(TokenType::Let) || check(TokenType::Var) || check(TokenType::Func) || check(
+                        TokenType::At)) {
                     throw error(previous(), ErrorCode::MissingValueAfterEquals,
                                 "Syntax Error: Missing value after '='.");
                 }
 
                 auto value = parse_expression();
-                return std::make_unique<Assignment>(std::move(targets), std::move(value), is_mutable);
+                auto assign = std::make_unique<Assignment>(std::move(targets), std::move(value), is_mutable);
+                assign->span = make_span(start_token, previous());
+                return assign;
             }
 
             std::unique_ptr<TypeAnnotation> parse_type_annotation() {
+                const Token &start_token = peek();
+
                 if (match({TokenType::LeftParen})) {
                     std::vector<std::unique_ptr<TypeAnnotation> > elements;
 
@@ -198,9 +217,12 @@ namespace valuascript::compiler {
                         } while (match({TokenType::Comma}));
                     }
 
-                    consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
-                            "Expected ')' after tuple type elements.");
-                    return std::make_unique<TupleTypeAnnotation>(std::move(elements));
+                    const Token &end_token = consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
+                                                     "Expected ')' after tuple type elements.");
+
+                    auto tuple_type = std::make_unique<TupleTypeAnnotation>(std::move(elements));
+                    tuple_type->span = make_span(start_token, end_token);
+                    return tuple_type;
                 }
 
                 Token name_token = consume(TokenType::Identifier, ErrorCode::MissingTypeAnnotation,
@@ -217,11 +239,13 @@ namespace valuascript::compiler {
                             "Expected '>' after generic type arguments.");
                 }
 
-                return std::make_unique<TypeAnnotation>(name_token.lexeme, std::move(generic_args));
+                auto type_ann = std::make_unique<TypeAnnotation>(name_token.lexeme, std::move(generic_args));
+                type_ann->span = make_span(start_token, previous());
+                return type_ann;
             }
 
             std::unique_ptr<FunctionDefinition> parse_function_definition() {
-                consume(TokenType::Func, ErrorCode::UnexpectedToken, "Expected 'func'.");
+                const Token &start_token = consume(TokenType::Func, ErrorCode::UnexpectedToken, "Expected 'func'.");
 
                 const Token &name = consume(TokenType::Identifier, ErrorCode::MissingFunctionName,
                                             "Syntax Error: Expected function name.");
@@ -266,14 +290,19 @@ namespace valuascript::compiler {
                     body.push_back(parse_statement());
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::UnmatchedBracket, "Expected '}' after function body.");
+                const Token &end_token = consume(TokenType::RightBrace, ErrorCode::UnmatchedBracket,
+                                                 "Expected '}' after function body.");
 
-                return std::make_unique<FunctionDefinition>(name.lexeme, std::move(params), std::move(return_types),
-                                                            std::move(body), std::move(docstring));
+                auto func_def = std::make_unique<FunctionDefinition>(name.lexeme, std::move(params),
+                                                                     std::move(return_types),
+                                                                     std::move(body), std::move(docstring));
+                func_def->span = make_span(start_token, end_token);
+                return func_def;
             }
 
             std::unique_ptr<Statement> parse_expression_statement() {
                 auto expr = parse_expression();
+                SourceSpan start_span = expr->span;
 
                 if (match({TokenType::Comma})) {
                     throw error(previous(), ErrorCode::MultiReassignmentNotSupported,
@@ -287,15 +316,21 @@ namespace valuascript::compiler {
                     }
 
                     auto value = parse_expression();
-                    return std::make_unique<Reassignment>(std::move(expr), std::move(value));
+                    SourceSpan end_span = value->span;
+
+                    auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
+                    reassignment->span = combine_spans(start_span, end_span);
+                    return reassignment;
                 }
 
-                if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr) {
+                if (dynamic_cast<FunctionCall *>(expr.get()) == nullptr) {
                     throw error(previous(), ErrorCode::InvalidStandaloneStatement,
                                 "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
                 }
 
-                return std::make_unique<ExpressionStatement>(std::move(expr));
+                auto expr_stmt = std::make_unique<ExpressionStatement>(std::move(expr));
+                expr_stmt->span = start_span;
+                return expr_stmt;
             }
 
             std::unique_ptr<Statement> parse_statement() {
@@ -304,13 +339,16 @@ namespace valuascript::compiler {
                 }
 
                 if (match({TokenType::Return})) {
+                    const Token &start_token = previous();
                     std::vector<std::unique_ptr<Expression> > return_values;
 
                     do {
                         return_values.push_back(parse_expression());
                     } while (match({TokenType::Comma}));
 
-                    return std::make_unique<ReturnStatement>(std::move(return_values));
+                    auto ret_stmt = std::make_unique<ReturnStatement>(std::move(return_values));
+                    ret_stmt->span = make_span(start_token, previous());
+                    return ret_stmt;
                 }
 
                 return parse_expression_statement();
@@ -318,13 +356,17 @@ namespace valuascript::compiler {
 
             std::unique_ptr<Expression> parse_expression() {
                 if (match({TokenType::If})) {
+                    const Token &start_token = previous();
                     auto condition = parse_or_expression();
                     consume(TokenType::Then, ErrorCode::MissingThenToken, "Expected 'then' after condition.");
                     auto then_branch = parse_or_expression();
                     consume(TokenType::Else, ErrorCode::MissingElseToken, "Expected 'else' after then branch.");
                     auto else_branch = parse_expression();
-                    return std::make_unique<ConditionalExpression>(std::move(condition), std::move(then_branch),
-                                                                   std::move(else_branch));
+
+                    auto cond_expr = std::make_unique<ConditionalExpression>(
+                        std::move(condition), std::move(then_branch), std::move(else_branch));
+                    cond_expr->span = make_span(start_token, previous());
+                    return cond_expr;
                 }
                 return parse_or_expression();
             }
@@ -334,7 +376,9 @@ namespace valuascript::compiler {
                 while (match({TokenType::Or})) {
                     Token op = previous();
                     auto right = parse_and_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
                 }
                 return expr;
             }
@@ -344,7 +388,9 @@ namespace valuascript::compiler {
                 while (match({TokenType::And})) {
                     Token op = previous();
                     auto right = parse_comparison_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
                 }
                 return expr;
             }
@@ -358,7 +404,9 @@ namespace valuascript::compiler {
                 })) {
                     Token op = previous();
                     auto right = parse_addition_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
 
                     if (match({
                         TokenType::Equals, TokenType::NotEquals, TokenType::Greater,
@@ -377,7 +425,9 @@ namespace valuascript::compiler {
                 while (match({TokenType::Plus, TokenType::Minus})) {
                     Token op = previous();
                     auto right = parse_multiplication_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
                 }
                 return expr;
             }
@@ -387,7 +437,9 @@ namespace valuascript::compiler {
                 while (match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
                     Token op = previous();
                     auto right = parse_power_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
                 }
                 return expr;
             }
@@ -397,7 +449,9 @@ namespace valuascript::compiler {
                 while (match({TokenType::Caret})) {
                     Token op = previous();
                     auto right = parse_unary_expression();
+                    SourceSpan combined = combine_spans(expr->span, right->span);
                     expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
+                    expr->span = combined;
                 }
                 return expr;
             }
@@ -405,7 +459,10 @@ namespace valuascript::compiler {
             std::unique_ptr<Expression> parse_unary_expression() {
                 if (match({TokenType::Minus, TokenType::Plus, TokenType::Not})) {
                     Token op = previous();
-                    return std::make_unique<UnaryExpression>(op.type, parse_unary_expression());
+                    auto right = parse_unary_expression();
+                    auto unary = std::make_unique<UnaryExpression>(op.type, std::move(right));
+                    unary->span = make_span(op, previous());
+                    return unary;
                 }
 
                 return parse_postfix_expression();
@@ -415,6 +472,8 @@ namespace valuascript::compiler {
                 auto expr = parse_primary_expression();
 
                 while (true) {
+                    SourceSpan start_span = expr->span;
+
                     if (match({TokenType::LeftParen})) {
                         expr = parse_function_call(std::move(expr));
                     } else if (match({TokenType::LeftBracket})) {
@@ -423,6 +482,7 @@ namespace valuascript::compiler {
                         Token property_token = consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName,
                                                        "Expected property name after '.'.");
                         expr = std::make_unique<DotAccess>(std::move(expr), property_token.lexeme);
+                        expr->span = combine_spans(start_span, make_span(property_token, property_token));
                     } else {
                         break;
                     }
@@ -432,16 +492,32 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Expression> parse_primary_expression() {
-                if (match({TokenType::Number})) return std::make_unique<NumberLiteral>(previous().lexeme);
-                if (match({TokenType::PercentageLiteral}))
-                    return std::make_unique<
-                        PercentageLiteral>(previous().lexeme);
+                if (match({TokenType::Number})) {
+                    auto node = std::make_unique<NumberLiteral>(previous().lexeme);
+                    node->span = make_span(previous(), previous());
+                    return node;
+                }
+                if (match({TokenType::PercentageLiteral})) {
+                    auto node = std::make_unique<PercentageLiteral>(previous().lexeme);
+                    node->span = make_span(previous(), previous());
+                    return node;
+                }
 
-                if (match({TokenType::String})) return std::make_unique<StringLiteral>(previous().lexeme);
-                if (match({TokenType::True, TokenType::False}))
-                    return std::make_unique<BooleanLiteral>(
-                        previous().type == TokenType::True);
-                if (match({TokenType::Identifier})) return std::make_unique<IdentifierAccess>(previous().lexeme);
+                if (match({TokenType::String})) {
+                    auto node = std::make_unique<StringLiteral>(previous().lexeme);
+                    node->span = make_span(previous(), previous());
+                    return node;
+                }
+                if (match({TokenType::True, TokenType::False})) {
+                    auto node = std::make_unique<BooleanLiteral>(previous().type == TokenType::True);
+                    node->span = make_span(previous(), previous());
+                    return node;
+                }
+                if (match({TokenType::Identifier})) {
+                    auto node = std::make_unique<IdentifierAccess>(previous().lexeme);
+                    node->span = make_span(previous(), previous());
+                    return node;
+                }
 
                 if (match({TokenType::Switch})) return parse_switch_expression();
 
@@ -453,8 +529,12 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Expression> parse_tuple_or_grouping() {
+                const Token &start_token = previous();
+
                 if (match({TokenType::RightParen})) {
-                    return std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression> >{});
+                    auto node = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression> >{});
+                    node->span = make_span(start_token, previous());
+                    return node;
                 }
 
                 auto expr = parse_expression();
@@ -467,27 +547,37 @@ namespace valuascript::compiler {
                         elements.push_back(parse_expression());
                     } while (match({TokenType::Comma}));
 
-                    consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
-                            "Expected ')' after tuple elements.");
-                    return std::make_unique<TupleLiteral>(std::move(elements));
+                    const Token &end_token = consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
+                                                     "Expected ')' after tuple elements.");
+                    auto node = std::make_unique<TupleLiteral>(std::move(elements));
+                    node->span = make_span(start_token, end_token);
+                    return node;
                 }
 
-                consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis, "Expected ')' after expression.");
+                const Token &end_token = consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+                                                 "Expected ')' after expression.");
+                expr->span = make_span(start_token, end_token);
                 return expr;
             }
 
             std::unique_ptr<Expression> parse_tensor_literal() {
+                const Token &start_token = previous();
                 std::vector<std::unique_ptr<Expression> > elements;
                 if (!check(TokenType::RightBracket)) {
                     do {
                         elements.push_back(parse_expression());
                     } while (match({TokenType::Comma}));
                 }
-                consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket, "Expected ']' after vector elements.");
-                return std::make_unique<TensorLiteral>(std::move(elements));
+                const Token &end_token = consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
+                                                 "Expected ']' after vector elements.");
+
+                auto node = std::make_unique<TensorLiteral>(std::move(elements));
+                node->span = make_span(start_token, end_token);
+                return node;
             }
 
             std::unique_ptr<Expression> parse_dict_literal() {
+                const Token &start_token = previous();
                 std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
 
                 if (!check(TokenType::RightBrace)) {
@@ -500,12 +590,16 @@ namespace valuascript::compiler {
                     } while (match({TokenType::Comma}));
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral,
-                        "Expected '}' after dictionary literal.");
-                return std::make_unique<DictLiteral>(std::move(pairs));
+                const Token &end_token = consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral,
+                                                 "Expected '}' after dictionary literal.");
+
+                auto node = std::make_unique<DictLiteral>(std::move(pairs));
+                node->span = make_span(start_token, end_token);
+                return node;
             }
 
             std::unique_ptr<Expression> parse_function_call(std::unique_ptr<Expression> target) {
+                SourceSpan target_span = target->span;
                 std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
                 if (!check(TokenType::RightParen)) {
@@ -518,11 +612,16 @@ namespace valuascript::compiler {
                     } while (match({TokenType::Comma}));
                 }
 
-                consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis, "Expected ')' after arguments.");
-                return std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
+                const Token &end_token = consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+                                                 "Expected ')' after arguments.");
+
+                auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
+                func_call->span = combine_spans(target_span, make_span(end_token, end_token));
+                return func_call;
             }
 
             std::unique_ptr<Expression> parse_tensor_access(std::unique_ptr<Expression> target) {
+                SourceSpan target_span = target->span;
                 std::unique_ptr<Expression> index_expr = nullptr;
 
                 if (!check(TokenType::Colon) && !check(TokenType::RightBracket)) {
@@ -534,17 +633,27 @@ namespace valuascript::compiler {
                     if (!check(TokenType::RightBracket)) {
                         end_expr = parse_expression();
                     }
+
+                    SourceSpan colon_span = index_expr ? index_expr->span : target_span;
+                    SourceSpan slice_end_span = end_expr ? end_expr->span : make_span(previous(), previous());
+
                     index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
                                                                     std::move(end_expr));
+                    index_expr->span = combine_spans(colon_span, slice_end_span);
                 } else if (!index_expr) {
                     throw error(previous(), ErrorCode::EmptyBracketAccess, "Expected an index or slice inside '[]'.");
                 }
 
-                consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket, "Expected ']' after vector index.");
-                return std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
+                const Token &end_token = consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
+                                                 "Expected ']' after vector index.");
+
+                auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
+                bracket_access->span = combine_spans(target_span, make_span(end_token, end_token));
+                return bracket_access;
             }
 
             std::unique_ptr<Expression> parse_switch_expression() {
+                const Token &start_token = previous();
                 consume(TokenType::LeftParen, ErrorCode::ExpectedLeftParen,
                         "Expected '(' after 'switch'.");
                 auto target = parse_expression();
@@ -587,17 +696,19 @@ namespace valuascript::compiler {
                     }
                 }
 
-                consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
-                        "Expected '}' after switch body.");
+                const Token &end_token = consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
+                                                 "Expected '}' after switch body.");
 
-                return std::make_unique<SwitchExpression>(
+                auto switch_expr = std::make_unique<SwitchExpression>(
                     std::move(target),
                     std::move(cases),
                     std::move(default_case)
                 );
+                switch_expr->span = make_span(start_token, end_token);
+                return switch_expr;
             }
 
-            bool is_valid_lvalue(const Expression *expr) {
+            static bool is_valid_lvalue(const Expression *expr) {
                 if (dynamic_cast<const IdentifierAccess *>(expr) != nullptr) return true;
                 if (dynamic_cast<const DotAccess *>(expr) != nullptr) return true;
                 if (dynamic_cast<const BracketAccess *>(expr) != nullptr) return true;
@@ -640,6 +751,18 @@ namespace valuascript::compiler {
             const Token &consume(const TokenType type, const ErrorCode code, const std::string &message) {
                 if (check(type)) return advance();
                 throw error(peek(), code, message);
+            }
+
+            [[nodiscard]] SourceSpan make_span(const Token &start_token, const Token &end_token) const {
+                size_t end_col = end_token.column;
+                if (end_token.type != TokenType::EndOfFile) {
+                    end_col += end_token.lexeme.length();
+                }
+                return {start_token.line, start_token.column, end_token.line, end_col, file_path_};
+            }
+
+            [[nodiscard]] SourceSpan combine_spans(const SourceSpan &start, const SourceSpan &end) const {
+                return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
             }
 
             [[nodiscard]] ValuaScriptException error(const Token &token, const ErrorCode code,

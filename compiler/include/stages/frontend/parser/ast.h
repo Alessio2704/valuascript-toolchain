@@ -7,8 +7,18 @@
 #include "../lexer/token.h"
 
 namespace valuascript::compiler {
+
+    struct SourceSpan {
+        size_t line_start = 0;
+        size_t column_start = 0;
+        size_t line_end = 0;
+        size_t column_end = 0;
+        std::string file_path;
+    };
+
     class AstNode {
     public:
+        SourceSpan span;
         virtual ~AstNode() = default;
     };
 
