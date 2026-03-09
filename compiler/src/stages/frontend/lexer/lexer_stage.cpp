@@ -218,11 +218,14 @@ namespace valuascript::compiler {
                     }
 
                     case '/':
-                        add_token(TokenType::Slash);
+                        if (match('/')) {
+                            while (peek() != '\n' && !is_at_end()) advance();
+                        } else {
+                            add_token(TokenType::Slash);
+                        }
                         break;
-
-                    case '#':
-                        while (peek() != '\n' && !is_at_end()) advance();
+                        
+                    case '#': add_token(TokenType::Hash);
                         break;
 
                     case '@': add_token(TokenType::At);

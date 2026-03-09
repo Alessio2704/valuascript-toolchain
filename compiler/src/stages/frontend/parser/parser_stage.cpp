@@ -26,21 +26,29 @@ namespace valuascript::compiler {
                 while (!is_at_end()) {
                     if (check(TokenType::Import)) {
                         program->import_statements.push_back(parse_import_statement());
-                    } else if (check(TokenType::At)) {
+                    } else if (check(TokenType::Hash)) {
                         program->directives.push_back(parse_directive());
-                    } else if (check(TokenType::Let) || check(TokenType::Var)) {
-                        program->execution_steps.push_back(parse_assignment());
-                    } else if (check(TokenType::Func)) {
-                        program->function_definitions.push_back(parse_function_definition());
-                    } else if (check(TokenType::Struct)) {
-                        program->struct_definitions.push_back(parse_struct_definition());
-                    } else if (check(TokenType::Enum)) {
-                        program->enum_definitions.push_back(parse_enum_definition());
+                    } else if (check(TokenType::At) || check(TokenType::Let) || check(TokenType::Var) ||
+                               check(TokenType::Func) || check(TokenType::Struct) || check(TokenType::Enum)) {
+                        std::vector<Modifier> modifiers = parse_modifiers();
+
+                        if (check(TokenType::Let) || check(TokenType::Var)) {
+                            program->execution_steps.push_back(parse_assignment(std::move(modifiers)));
+                        } else if (check(TokenType::Func)) {
+                            program->function_definitions.push_back(parse_function_definition(std::move(modifiers)));
+                        } else if (check(TokenType::Struct)) {
+                            program->struct_definitions.push_back(parse_struct_definition(std::move(modifiers)));
+                        } else if (check(TokenType::Enum)) {
+                            program->enum_definitions.push_back(parse_enum_definition(std::move(modifiers)));
+                        } else {
+                            throw error(peek(), ErrorCode::UnexpectedToken,
+                                        "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).");
+                        }
                     } else if (check(TokenType::Identifier)) {
                         program->execution_steps.push_back(parse_expression_statement());
                     } else {
                         throw error(peek(), ErrorCode::UnexpectedToken,
-                                    "Syntax Error: Invalid syntax. Expected '@', 'let', 'var', 'enum', 'struct', 'func' or an identifier.");
+                                    "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.");
                     }
                 }
 
@@ -64,21 +72,22 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Directive> parse_directive() {
-                const Token &start_token = consume(TokenType::At, ErrorCode::UnexpectedToken, "Expected '@'.");
+                const Token &start_token = consume(TokenType::Hash, ErrorCode::UnexpectedToken, "Expected '#'.");
 
                 const Token &name_token = consume(TokenType::Identifier, ErrorCode::MissingDirectiveName,
-                                                  "Syntax Error: Expected directive name after '@'.");
+                                                  "Syntax Error: Expected directive name after '#'.");
 
                 std::string directive_name = name_token.lexeme;
                 std::unique_ptr<Expression> value = nullptr;
 
                 if (match({TokenType::Assign})) {
-                    if (is_at_end() || check(TokenType::At) || check(TokenType::Let) || check(TokenType::Func)) {
+                    if (is_at_end() || check(TokenType::Hash) || check(TokenType::Let) || check(TokenType::Func)) {
                         throw error(previous(), ErrorCode::MissingValueAfterEquals,
                                     "Syntax Error: Missing value after '='.");
                     }
                     value = parse_expression();
-                } else if (!is_at_end() && !check(TokenType::At) && !check(TokenType::Let) && !check(TokenType::Func)) {
+                } else if (!is_at_end() && !check(TokenType::Hash) && !check(TokenType::Let) && !check(TokenType::Var)
+                           && !check(TokenType::Func)) {
                     value = parse_expression();
                 }
 
@@ -87,7 +96,39 @@ namespace valuascript::compiler {
                 return dir;
             }
 
-            std::unique_ptr<StructDefinition> parse_struct_definition() {
+            std::vector<Modifier> parse_modifiers() {
+                std::vector<Modifier> modifiers;
+                while (match({TokenType::At})) {
+                    const Token &start_token = previous();
+                    Token name_token = consume(TokenType::Identifier, ErrorCode::ExpectedModifierName,
+                                               "Syntax Error: Expected modifier name after '@'.");
+
+                    std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+
+                    if (match({TokenType::LeftParen})) {
+                        if (!check(TokenType::RightParen)) {
+                            do {
+                                Token arg_name = consume(TokenType::Identifier, ErrorCode::MissingArgumentName,
+                                                         "Expected argument name in modifier.");
+                                consume(TokenType::Colon, ErrorCode::MissingColonAfterArgument,
+                                        "Expected ':' after argument name.");
+                                arguments.emplace_back(arg_name.lexeme, parse_expression());
+                            } while (match({TokenType::Comma}));
+                        }
+                        consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+                                "Expected ')' after modifier arguments.");
+                    }
+
+                    Modifier mod;
+                    mod.name = name_token.lexeme;
+                    mod.arguments = std::move(arguments);
+                    mod.span = make_span(start_token, previous());
+                    modifiers.push_back(std::move(mod));
+                }
+                return modifiers;
+            }
+
+            std::unique_ptr<StructDefinition> parse_struct_definition(std::vector<Modifier> modifiers) {
                 const Token &start_token = consume(TokenType::Struct, ErrorCode::ExpectedStructToken,
                                                    "Expected 'struct' in struct definition.");
 
@@ -115,12 +156,13 @@ namespace valuascript::compiler {
                 const Token &end_token = consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition,
                                                  "Expected '}' after struct body.");
 
-                auto struct_def = std::make_unique<StructDefinition>(name_token.lexeme, std::move(fields));
+                auto struct_def = std::make_unique<StructDefinition>(std::move(modifiers), name_token.lexeme,
+                                                                     std::move(fields));
                 struct_def->span = make_span(start_token, end_token);
                 return struct_def;
             }
 
-            std::unique_ptr<EnumDefinition> parse_enum_definition() {
+            std::unique_ptr<EnumDefinition> parse_enum_definition(std::vector<Modifier> modifiers) {
                 const Token &start_token = consume(TokenType::Enum, ErrorCode::ExpectedEnumToken,
                                                    "Expected 'enum' keyword.");
 
@@ -154,23 +196,21 @@ namespace valuascript::compiler {
                 const Token &end_token = consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
                                                  "Expected '}' after enum body.");
 
-                auto enum_def = std::make_unique<EnumDefinition>(name_token.lexeme, std::move(underlying_type),
+                auto enum_def = std::make_unique<EnumDefinition>(std::move(modifiers), name_token.lexeme,
+                                                                 std::move(underlying_type),
                                                                  std::move(cases));
                 enum_def->span = make_span(start_token, end_token);
                 return enum_def;
             }
 
-            std::unique_ptr<Assignment> parse_assignment() {
+            std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers) {
                 const Token &start_token = peek();
-                bool is_mutable = false;
 
+                bool is_mutable = false;
                 if (match({TokenType::Let})) {
                     is_mutable = false;
                 } else if (match({TokenType::Var})) {
                     is_mutable = true;
-                } else {
-                    throw error(peek(), ErrorCode::ExpectedLetOrVarToken,
-                                "Syntax Error: Expected 'let' or 'var'.");
                 }
 
                 std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
@@ -200,7 +240,8 @@ namespace valuascript::compiler {
                 }
 
                 auto value = parse_expression();
-                auto assign = std::make_unique<Assignment>(std::move(targets), std::move(value), is_mutable);
+                auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
+                                                           is_mutable);
                 assign->span = make_span(start_token, previous());
                 return assign;
             }
@@ -244,7 +285,7 @@ namespace valuascript::compiler {
                 return type_ann;
             }
 
-            std::unique_ptr<FunctionDefinition> parse_function_definition() {
+            std::unique_ptr<FunctionDefinition> parse_function_definition(std::vector<Modifier> modifiers) {
                 const Token &start_token = consume(TokenType::Func, ErrorCode::UnexpectedToken, "Expected 'func'.");
 
                 const Token &name = consume(TokenType::Identifier, ErrorCode::MissingFunctionName,
@@ -293,7 +334,8 @@ namespace valuascript::compiler {
                 const Token &end_token = consume(TokenType::RightBrace, ErrorCode::UnmatchedBracket,
                                                  "Expected '}' after function body.");
 
-                auto func_def = std::make_unique<FunctionDefinition>(name.lexeme, std::move(params),
+                auto func_def = std::make_unique<FunctionDefinition>(std::move(modifiers), name.lexeme,
+                                                                     std::move(params),
                                                                      std::move(return_types),
                                                                      std::move(body), std::move(docstring));
                 func_def->span = make_span(start_token, end_token);
@@ -334,8 +376,18 @@ namespace valuascript::compiler {
             }
 
             std::unique_ptr<Statement> parse_statement() {
+                std::vector<Modifier> modifiers;
+                if (check(TokenType::At)) {
+                    modifiers = parse_modifiers();
+                }
+
                 if (check(TokenType::Let) || check(TokenType::Var)) {
-                    return parse_assignment();
+                    return parse_assignment(std::move(modifiers));
+                }
+
+                if (!modifiers.empty()) {
+                    throw error(peek(), ErrorCode::UnexpectedToken,
+                                "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
                 }
 
                 if (match({TokenType::Return})) {

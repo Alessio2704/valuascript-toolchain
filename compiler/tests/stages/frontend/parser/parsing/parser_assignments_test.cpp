@@ -89,7 +89,9 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentHappyParam{"gte_expr", "let a = x >= y", 1},
         AssignmentHappyParam{"lte_expr", "let a = x <= y", 1},
         AssignmentHappyParam{"pow_expr", "let a = x^y", 1},
-        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1}
+        AssignmentHappyParam{"parenthesis_in_assignment", "let a = (x + y) * z", 1},
+        AssignmentHappyParam{"assignment_with_decorator", "@export let a = (x + y) * z", 1},
+        AssignmentHappyParam{"assignment_with_decorator_multiple", "@export let a, b = (1, 2)", 2}
     ),
     [](const testing::TestParamInfo<AssignmentHappyParam>& info) {
     return info.param.test_id;
@@ -134,6 +136,7 @@ INSTANTIATE_TEST_SUITE_P(
         AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals}
         ,
         AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ErrorCode::ExpectedPropertyName},
+        AssignmentSadParam{"missing_modifier_name", "@ let a = model", ErrorCode::ExpectedModifierName},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::
         ChainingNotAllowedForComparisonOperations},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::

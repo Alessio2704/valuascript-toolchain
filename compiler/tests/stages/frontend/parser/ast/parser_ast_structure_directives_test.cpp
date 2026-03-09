@@ -33,7 +33,7 @@ protected:
 TEST_F(AstDirectiveTest, ValidatesDirectiveWithNoValue) {
     // Proves the parser correctly identifies the directive name and leaves the value pointer null.
 
-    auto ast = parse_code("@strict");
+    auto ast = parse_code("#strict");
     auto directive = get_directive(ast);
 
     ASSERT_NE(directive, nullptr) << "Execution step must be a Directive node";
@@ -46,7 +46,7 @@ TEST_F(AstDirectiveTest, ValidatesDirectiveWithNoValue) {
 TEST_F(AstDirectiveTest, ValidatesDirectiveWithValueWithoutEquals) {
     // Proves the parser captures a trailing expression even if '=' is omitted.
 
-    auto ast = parse_code("@no_equal \"macro_assumptions.vs\"");
+    auto ast = parse_code("#no_equal \"macro_assumptions.vs\"");
     auto directive = get_directive(ast);
 
     ASSERT_NE(directive, nullptr);
@@ -63,7 +63,7 @@ TEST_F(AstDirectiveTest, ValidatesDirectiveWithValueWithoutEquals) {
 TEST_F(AstDirectiveTest, ValidatesDirectiveWithValueWithEquals) {
     // Proves the parser gracefully consumes the optional '=' and accurately captures the right-hand value.
 
-    auto ast = parse_code("@default_wacc = 0.08");
+    auto ast = parse_code("#default_wacc = 0.08");
     auto directive = get_directive(ast);
 
     ASSERT_NE(directive, nullptr);
@@ -78,7 +78,7 @@ TEST_F(AstDirectiveTest, ValidatesDirectiveWithValueWithEquals) {
 TEST_F(AstDirectiveTest, ValidatesDirectiveWithComplexExpressionValue) {
     // Proves the directive value isn't limited to primitives, but accepts full expressions.
 
-    auto ast = parse_code("@timeout = 60 * 5");
+    auto ast = parse_code("#timeout = 60 * 5");
     auto directive = get_directive(ast);
 
     ASSERT_NE(directive, nullptr);

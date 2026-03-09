@@ -14,7 +14,8 @@ namespace valuascript::compiler {
         RightBrace, // }
         Comma, // ,
         Colon, // :
-        At, // @ (for directives like @iterations)
+        At, // @
+        Hash,
         Dot,
 
         // Math operators
@@ -86,6 +87,7 @@ namespace valuascript::compiler {
             case TokenType::Comma: return "Comma";
             case TokenType::Colon: return "Colon";
             case TokenType::At: return "At";
+            case TokenType::Hash: return "Hash";
             case TokenType::Plus: return "Plus";
             case TokenType::Minus: return "Minus";
             case TokenType::Star: return "Star";

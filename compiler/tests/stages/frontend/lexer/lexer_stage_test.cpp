@@ -23,7 +23,7 @@ std::vector<Token> tokenize_code(const std::string &source_code) {
 TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
     LexerStage lexer_stage;
 
-    std::string source_code = "let a = 1_000.50\nfunc main() { return a } # A comment\n@directive \"math\"";
+    std::string source_code = "let a = 1_000.50\nfunc main() { return a } // A comment\n@directive \"math\"";
     std::vector<CompilerStageArtifact> history = {
         {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
         {CompilerStageArtifactCode::SourceCode, source_code}
@@ -54,10 +54,10 @@ TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
 }
 
 TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
-    auto tokens = tokenize_code("()[]{},:@ +-*/^.");
+    auto tokens = tokenize_code("()[]{},:@ +-*/^.#");
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-    ASSERT_EQ(tokens.size(), 16);
+    ASSERT_EQ(tokens.size(), 17);
     EXPECT_EQ(tokens[0].type, TokenType::LeftParen);
     EXPECT_EQ(tokens[1].type, TokenType::RightParen);
     EXPECT_EQ(tokens[2].type, TokenType::LeftBracket);
@@ -73,6 +73,7 @@ TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
     EXPECT_EQ(tokens[12].type, TokenType::Slash);
     EXPECT_EQ(tokens[13].type, TokenType::Caret);
     EXPECT_EQ(tokens[14].type, TokenType::Dot);
+    EXPECT_EQ(tokens[15].type, TokenType::Hash);
 }
 
 TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
@@ -186,7 +187,7 @@ TEST(LexerStageTest, TokenizesStringsAndDocStrings) {
 TEST(LexerStageTest, IgnoresWhitespaceAndComments) {
     const std::string code =
             "let a = 5\n"
-            "# This is a comment\n"
+            "// This is a comment\n"
             "    \t return a";
 
     const auto tokens = tokenize_code(code);

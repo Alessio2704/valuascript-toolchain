@@ -15,6 +15,7 @@ namespace valuascript::compiler {
         // --- Parser Errors ---
         MissingValueAfterEquals,
         IncompleteAssignment,
+        ExpectedModifierName,
         UnmatchedParenthesis,
         UnmatchedParenthesisInTuple,
         UnmatchedBracket,

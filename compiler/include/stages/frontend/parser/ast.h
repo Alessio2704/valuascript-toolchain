@@ -1,13 +1,13 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <memory>
 #include <optional>
 #include "../lexer/token.h"
 
 namespace valuascript::compiler {
-
     struct SourceSpan {
         size_t line_start = 0;
         size_t column_start = 0;
@@ -19,6 +19,7 @@ namespace valuascript::compiler {
     class AstNode {
     public:
         SourceSpan span;
+
         virtual ~AstNode() = default;
     };
 
@@ -169,15 +170,24 @@ namespace valuascript::compiler {
         }
     };
 
+    struct Modifier {
+        std::string name;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+        SourceSpan span;
+    };
+
     class Assignment : public Statement {
     public:
+        std::vector<Modifier> modifiers;
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         std::unique_ptr<Expression> value;
         bool is_mutable;
 
-        Assignment(std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
+        Assignment(std::vector<Modifier> modifiers,
+                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
                    std::unique_ptr<Expression> value, bool is_mutable)
-            : targets(std::move(targets)), value(std::move(value)), is_mutable(is_mutable) {
+            : modifiers(std::move(modifiers)), targets(std::move(targets)), value(std::move(value)),
+              is_mutable(is_mutable) {
         }
     };
 
@@ -235,43 +245,50 @@ namespace valuascript::compiler {
 
     class FunctionDefinition : public AstNode {
     public:
+        std::vector<Modifier> modifiers;
         std::string name;
         std::vector<FunctionParameter> parameters;
         std::vector<std::unique_ptr<TypeAnnotation> > return_types;
         std::vector<std::unique_ptr<Statement> > body;
         std::optional<std::string> docstring;
 
-        explicit FunctionDefinition(std::string n,
+        explicit FunctionDefinition(std::vector<Modifier> modifiers,
+                                    std::string n,
                                     std::vector<FunctionParameter> params,
                                     std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
                                     std::vector<std::unique_ptr<Statement> > b,
                                     std::optional<std::string> docs = std::nullopt)
-            : name(std::move(n)), parameters(std::move(params)),
+            : modifiers(std::move(modifiers)), name(std::move(n)), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs)) {
         }
     };
 
     class StructDefinition : public AstNode {
     public:
+        std::vector<Modifier> modifiers;
         std::string name;
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
 
-        explicit StructDefinition(std::string name,
+        explicit StructDefinition(std::vector<Modifier> modifiers,
+                                  std::string name,
                                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
-            : name(std::move(name)), fields(std::move(fields)) {
+            : modifiers(std::move(modifiers)), name(std::move(name)), fields(std::move(fields)) {
         }
     };
 
     class EnumDefinition : public Statement {
     public:
+        std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<TypeAnnotation> underlying_type;
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases;
 
-        EnumDefinition(std::string name,
+        EnumDefinition(std::vector<Modifier> modifiers,
+                       std::string name,
                        std::unique_ptr<TypeAnnotation> underlying_type,
                        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases)
-            : name(std::move(name)),
+            : modifiers(std::move(modifiers)),
+              name(std::move(name)),
               underlying_type(std::move(underlying_type)),
               cases(std::move(cases)) {
         }

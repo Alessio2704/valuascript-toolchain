@@ -76,10 +76,10 @@ INSTANTIATE_TEST_SUITE_P(
         HappyLexerParam{"parenthesis_in_assignment", "let a = (x + y) * z", 11},
         
         // Directives
-        HappyLexerParam{"iterations", "@iterations = 1000", 5},
-        HappyLexerParam{"output", "@output = my_var", 5},
-        HappyLexerParam{"output_file", "@output_file = \"results.csv\"", 5},
-        HappyLexerParam{"module", "@module", 3},
+        HappyLexerParam{"iterations", "#iterations = 1000", 5},
+        HappyLexerParam{"output", "#output = my_var", 5},
+        HappyLexerParam{"output_file", "#output_file = \"results.csv\"", 5},
+        HappyLexerParam{"module", "#module", 3},
 
         // Import
         HappyLexerParam{"import", "import \"file/path\"", 3},
@@ -105,7 +105,7 @@ INSTANTIATE_TEST_SUITE_P(
         
         // File structure
         HappyLexerParam{"empty_file", "", 1},
-        HappyLexerParam{"only_comment", "# comment", 1},
+        HappyLexerParam{"only_comment", "// comment", 1},
         HappyLexerParam{"tabs_and_spaces", "\t\t   ", 1}
     ),
     [](const testing::TestParamInfo<HappyLexerParam>& info) {
