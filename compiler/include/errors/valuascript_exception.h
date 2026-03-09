@@ -89,7 +89,7 @@ namespace valuascript::compiler {
     public:
         ValuaScriptException(ErrorCategory cat, ErrorCode code, ErrorLocation loc, std::string msg)
             : category_(cat), code_(code), location_(std::move(loc)), message_(std::move(msg)) {
-            formatted_message_ = "[" + location_.file_path + ":" + std::to_string(location_.line) + "] " + message_;
+            formatted_message_ = "[" + location_.file_path + ":" + std::to_string(location_.line) + ":" + std::to_string(location_.column) + "] " + message_;
         }
 
         [[nodiscard]] const char *what() const noexcept override { return formatted_message_.c_str(); }
