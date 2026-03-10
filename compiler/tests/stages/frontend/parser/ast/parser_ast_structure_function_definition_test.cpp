@@ -1,38 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstFunctionDefinitionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-
-    // Helper to extract the first function definition
-    FunctionDefinition *get_first_func(const std::shared_ptr<Program> &ast) {
-        if (ast->function_definitions.empty()) return nullptr;
-        return ast->function_definitions[0].get();
-    }
-};
-
-TEST_F(AstFunctionDefinitionTest, ValidatesSignatureAndDocstring) {
-    // Code: func calculate(x: scalar, y: boolean) -> (scalar, scalar) { """Computes values""" }
+TEST_F(AstBaseTest, ValidatesSignatureAndDocstring) {
 
     auto ast = parse_code(R"(func calculate(x: scalar, y: boolean) -> (scalar, scalar) { """Computes values""" })");
     auto func = get_first_func(ast);
@@ -68,7 +37,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesSignatureAndDocstring) {
     EXPECT_EQ(func->body.size(), 0);
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenerics) {
+TEST_F(AstBaseTest, ValidatesDeeplyNestedGenerics) {
     // Code: func process(data: map<string, vector<vector<scalar>>>) -> scalar {}
     // Tests that TypeAnnotation nodes nest infinitely without dropping context.
 
@@ -102,7 +71,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenerics) {
     EXPECT_TRUE(deepest_scalar->generic_args.empty());
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesBodyStatementsExecutionOrder) {
+TEST_F(AstBaseTest, ValidatesBodyStatementsExecutionOrder) {
     // Code:
     // func compute() -> scalar {
     //     let a = 10
@@ -142,7 +111,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyStatementsExecutionOrder) {
     EXPECT_EQ(ret_1->name, "b");
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesTupleReturnStatement) {
+TEST_F(AstBaseTest, ValidatesTupleReturnStatement) {
     // Code: func bounds() -> (scalar, scalar) { return 10, 20 }
 
     auto ast = parse_code("func bounds() -> (scalar, scalar) { return 10, 20 }");
@@ -165,7 +134,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesTupleReturnStatement) {
     EXPECT_EQ(ret_2->value, "20");
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesBodyWithNestedCallsAndSignatureParams) {
+TEST_F(AstBaseTest, ValidatesBodyWithNestedCallsAndSignatureParams) {
     // Code:
     // func compute(x: scalar, y: scalar) -> scalar {
     //     let temp = add(x, multiply(y, 2))
@@ -214,7 +183,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesBodyWithNestedCallsAndSignatureParams
     EXPECT_EQ(arg_2->value, "2");
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesConditionalInsideFunctionBody) {
+TEST_F(AstBaseTest, ValidatesConditionalInsideFunctionBody) {
     // Code:
     // func max(a: scalar, b: scalar) -> scalar {
     //     let res = if a > b then a else b
@@ -269,7 +238,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesConditionalInsideFunctionBody) {
     EXPECT_EQ(ret_val->name, "res");
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenericsAndTuples) {
+TEST_F(AstBaseTest, ValidatesDeeplyNestedGenericsAndTuples) {
     // Proves the parser correctly orchestrates:
     // 1. A parameter that is a tuple containing a base type and a generic type.
     // 2. A multiple-return signature (Go-style).
@@ -331,7 +300,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesDeeplyNestedGenericsAndTuples) {
     EXPECT_EQ(dynamic_cast<TupleTypeAnnotation*>(ret1_type), nullptr);
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesMultipleGenericArgumentsInSignature) {
+TEST_F(AstBaseTest, ValidatesMultipleGenericArgumentsInSignature) {
     // Proves the parser correctly identifies and nests multiple comma-separated
     // generic arguments for both function parameters and return types.
 
@@ -387,7 +356,7 @@ TEST_F(AstFunctionDefinitionTest, ValidatesMultipleGenericArgumentsInSignature) 
     EXPECT_TRUE(return_generic_1->generic_args.empty()) << "Generic arg E should not have its own nested generics";
 }
 
-TEST_F(AstFunctionDefinitionTest, ValidatesMultipleReturnFunction) {
+TEST_F(AstBaseTest, ValidatesMultipleReturnFunction) {
     // Proves the parser correctly identifies and parses multiple value returning functions
 
     auto ast = parse_code("func test(a: Input<A, B>) -> Result<T, E>, scalar {}");

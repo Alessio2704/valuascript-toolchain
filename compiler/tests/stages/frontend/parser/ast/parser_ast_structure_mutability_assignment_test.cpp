@@ -1,31 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstMutabilityAssignmentTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-};
-
-TEST_F(AstMutabilityAssignmentTest, LetKeywordProducesImmutableNode) {
+TEST_F(AstBaseTest, LetKeywordProducesImmutableNode) {
     auto ast = parse_code("let tax_rate = 20%");
 
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -36,7 +12,7 @@ TEST_F(AstMutabilityAssignmentTest, LetKeywordProducesImmutableNode) {
     EXPECT_FALSE(declaration->is_mutable) << "Expected 'let' to flag the node as immutable.";
 }
 
-TEST_F(AstMutabilityAssignmentTest, VarKeywordProducesMutableNode) {
+TEST_F(AstBaseTest, VarKeywordProducesMutableNode) {
     // Exact same structure, different keyword
     auto ast = parse_code("var index = 0");
 
@@ -48,7 +24,7 @@ TEST_F(AstMutabilityAssignmentTest, VarKeywordProducesMutableNode) {
     EXPECT_TRUE(declaration->is_mutable) << "Expected 'var' to flag the node as mutable.";
 }
 
-TEST_F(AstMutabilityAssignmentTest, LetKeywordDistributesImmutabilityToAllTargets) {
+TEST_F(AstBaseTest, LetKeywordDistributesImmutabilityToAllTargets) {
     auto ast = parse_code("let base_rate, risk_premium = my_func()");
 
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -65,7 +41,7 @@ TEST_F(AstMutabilityAssignmentTest, LetKeywordDistributesImmutabilityToAllTarget
     EXPECT_FALSE(assignment->is_mutable) << "Expected 'let' to flag all targets as immutable.";
 }
 
-TEST_F(AstMutabilityAssignmentTest, VarKeywordDistributesMutabilityToAllTargets) {
+TEST_F(AstBaseTest, VarKeywordDistributesMutabilityToAllTargets) {
     auto ast = parse_code("var base_rate, risk_premium = my_func()");
 
     ASSERT_EQ(ast->execution_steps.size(), 1);

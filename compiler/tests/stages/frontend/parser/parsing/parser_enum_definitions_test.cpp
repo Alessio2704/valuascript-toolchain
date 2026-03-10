@@ -1,37 +1,16 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserEnumDefinitionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-};
 
 struct EnumHappyParam {
     std::string test_id;
     std::string source_code;
 };
 
-class EnumHappyTest : public ParserEnumDefinitionTest,
+class EnumHappyTest : public test::AstBaseTest,
                       public testing::WithParamInterface<EnumHappyParam> {
 };
 
@@ -70,7 +49,7 @@ struct EnumSadParam {
     ErrorCode expected_error;
 };
 
-class EnumSadTest : public ParserEnumDefinitionTest,
+class EnumSadTest : public test::AstBaseTest,
                     public testing::WithParamInterface<EnumSadParam> {
 };
 

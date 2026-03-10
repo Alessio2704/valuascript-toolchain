@@ -1,39 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstBracketAccessTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    Expression* get_assigned_value(const std::shared_ptr<Program>& ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
-        if (!assign) return nullptr;
-        return assign->value.get();
-    }
-};
-
-TEST_F(AstBracketAccessTest, ValidatesDeepIdentifierAccess) {
-    // Code: let val = matrix[0][1][2]
+TEST_F(AstBaseTest, ValidatesDeepIdentifierAccess) {
     // Proves the infinite while(true) loop in parse_atom correctly chains left-to-right.
     // The outermost node must be the [2] access.
 
@@ -55,8 +23,7 @@ TEST_F(AstBracketAccessTest, ValidatesDeepIdentifierAccess) {
     EXPECT_EQ(target_id->name, "matrix");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesFunctionCallAsTarget) {
-    // Code: let val = get_projections(ticker)[5]
+TEST_F(AstBaseTest, ValidatesFunctionCallAsTarget) {
     // Proves we can immediately index into the return value of a function.
 
     auto ast = parse_code("let val = get_projections(a: ticker)[5]");
@@ -70,8 +37,7 @@ TEST_F(AstBracketAccessTest, ValidatesFunctionCallAsTarget) {
     ASSERT_EQ(func_call->arguments.size(), 1);
 }
 
-TEST_F(AstBracketAccessTest, ValidatesParenthesizedBinaryOperationAsTarget) {
-    // Code: let val = (base_case + bull_case)[0]
+TEST_F(AstBaseTest, ValidatesParenthesizedBinaryOperationAsTarget) {
     // Proves that grouping parentheses correctly wrap a binary operation into a valid target.
 
     auto ast = parse_code("let val = (base_case + bull_case)[0]");
@@ -86,8 +52,7 @@ TEST_F(AstBracketAccessTest, ValidatesParenthesizedBinaryOperationAsTarget) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(bin_op->right.get())->name, "bull_case");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesUnaryPrecedenceWithAccess) {
-    // Code: let val = -matrix[0]
+TEST_F(AstBaseTest, ValidatesUnaryPrecedenceWithAccess) {
     // CRITICAL PRECEDENCE TEST: Postfix [] is higher than Prefix -.
     // The AST root must be Unary(-), and its child must be BracketAccess([0]).
 
@@ -105,8 +70,7 @@ TEST_F(AstBracketAccessTest, ValidatesUnaryPrecedenceWithAccess) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(access->index.get())->value, "0");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesComplexExpressionAsIndex) {
-    // Code: let val = data[get_offset() + 2]
+TEST_F(AstBaseTest, ValidatesComplexExpressionAsIndex) {
     // Proves the index itself can be a highly complex, nested expression.
 
     auto ast = parse_code("let val = data[get_offset() + 2]");
@@ -124,8 +88,7 @@ TEST_F(AstBracketAccessTest, ValidatesComplexExpressionAsIndex) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(index_bin_op->right.get())->value, "2");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesExactTargetChainingForMultiDimensionalAccess) {
-    // Code: let val = tensor[5][10][15]
+TEST_F(AstBaseTest, ValidatesExactTargetChainingForMultiDimensionalAccess) {
     // This test forensically unpacks the memory pointers to prove that
     // the target of [15] is the [10] access, the target of [10] is the [5] access,
     // and the target of [5] is the base identifier "tensor".
@@ -174,7 +137,7 @@ TEST_F(AstBracketAccessTest, ValidatesExactTargetChainingForMultiDimensionalAcce
     EXPECT_EQ(base_target->name, "tensor");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesDeepTensorSliceAccess) {
+TEST_F(AstBaseTest, ValidatesDeepTensorSliceAccess) {
     // Proves that the colon operator correctly binds as a BinaryExpression
     // INSIDE the BracketAccess index, and respects math precedence on its right side.
 
@@ -210,7 +173,7 @@ TEST_F(AstBracketAccessTest, ValidatesDeepTensorSliceAccess) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(end_node->right.get())->value, "1");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesSliceMissingLeftBound) {
+TEST_F(AstBaseTest, ValidatesSliceMissingLeftBound) {
     // Proves the parser correctly assigns nullptr to the left side of the colon.
 
     auto ast = parse_code("let slice = matrix[: 5]");
@@ -233,7 +196,7 @@ TEST_F(AstBracketAccessTest, ValidatesSliceMissingLeftBound) {
     EXPECT_EQ(right_node->value, "5");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesSliceMissingRightBound) {
+TEST_F(AstBaseTest, ValidatesSliceMissingRightBound) {
     // Proves the parser correctly assigns nullptr to the right side of the colon.
 
     auto ast = parse_code("let slice = matrix[1 :]");
@@ -256,7 +219,7 @@ TEST_F(AstBracketAccessTest, ValidatesSliceMissingRightBound) {
     EXPECT_EQ(slice_op->right.get(), nullptr) << "Right bound must be implicitly null";
 }
 
-TEST_F(AstBracketAccessTest, ValidatesSliceMissingBothBounds) {
+TEST_F(AstBaseTest, ValidatesSliceMissingBothBounds) {
     // Proves a full tensor clone operation results in double nullptrs.
 
     auto ast = parse_code("let clone = matrix[:]");
@@ -277,7 +240,7 @@ TEST_F(AstBracketAccessTest, ValidatesSliceMissingBothBounds) {
     EXPECT_EQ(slice_op->right.get(), nullptr) << "Right bound must be implicitly null";
 }
 
-TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnTupleLiteral) {
+TEST_F(AstBaseTest, ValidatesBracketAccessOnTupleLiteral) {
     // Proves that the target of a BracketAccess can be a raw TupleLiteral expression.
 
     auto ast = parse_code("let val = (10, 20)[0]");
@@ -309,7 +272,7 @@ TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnTupleLiteral) {
     EXPECT_EQ(second_element->value, "20");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnFunctionCall) {
+TEST_F(AstBaseTest, ValidatesBracketAccessOnFunctionCall) {
     // Proves that BracketAccess seamlessly chains off a FunctionCall.
 
     auto ast = parse_code("let val = get_pair()[1]");
@@ -336,7 +299,7 @@ TEST_F(AstBracketAccessTest, ValidatesBracketAccessOnFunctionCall) {
     EXPECT_EQ(func_target->name, "get_pair");
 }
 
-TEST_F(AstBracketAccessTest, ValidatesMixedBracketAndDotAccess) {
+TEST_F(AstBaseTest, ValidatesMixedBracketAndDotAccess) {
     // AST Shape: DotAccess( BracketAccess( FunctionCall( DotAccess(model, fetch_bounds) ), 1 ), max )
 
     auto ast = parse_code("let val = model.fetch_bounds()[1].max");

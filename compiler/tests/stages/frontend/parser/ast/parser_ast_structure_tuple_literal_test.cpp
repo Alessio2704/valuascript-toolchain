@@ -1,39 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-
-class AstTupleLiteralTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-
-    Expression *get_assigned_value(const std::shared_ptr<Program> &ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        auto assign = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        if (!assign) return nullptr;
-        return assign->value.get();
-    }
-};
-
-TEST_F(AstTupleLiteralTest, ValidatesEmptyTuple) {
+TEST_F(AstBaseTest, ValidatesEmptyTuple) {
     // Proves the prefix parser correctly intercepts empty parentheses and builds a 0-element tuple.
 
     auto ast = parse_code("let empty = ()");
@@ -43,7 +11,7 @@ TEST_F(AstTupleLiteralTest, ValidatesEmptyTuple) {
     EXPECT_EQ(tuple_val->elements.size(), 0) << "Empty tuple must have 0 elements";
 }
 
-TEST_F(AstTupleLiteralTest, ValidatesFlatHeterogeneousTuple) {
+TEST_F(AstBaseTest, ValidatesFlatHeterogeneousTuple) {
     // Proves a tuple can hold entirely different primitive shapes side-by-side.
 
     auto ast = parse_code("let data = (1, \"AAPL\", base_rate)");
@@ -68,7 +36,7 @@ TEST_F(AstTupleLiteralTest, ValidatesFlatHeterogeneousTuple) {
     EXPECT_EQ(elem2->name, "base_rate");
 }
 
-TEST_F(AstTupleLiteralTest, ValidatesNestedTuples) {
+TEST_F(AstBaseTest, ValidatesNestedTuples) {
     // Proves that tuples can geometrically hold other tuples without pointer collapse.
 
     auto ast = parse_code("let nested = ((1, 2), (3, 4))");
@@ -92,7 +60,7 @@ TEST_F(AstTupleLiteralTest, ValidatesNestedTuples) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(inner1->elements[1].get())->value, "4");
 }
 
-TEST_F(AstTupleLiteralTest, ValidatesTupleWithComplexExpressions) {
+TEST_F(AstBaseTest, ValidatesTupleWithComplexExpressions) {
     // Proves tuples correctly delegate inner math operations and function calls down the tree.
 
     auto ast = parse_code("let complex = (wacc * 100, fetch_data(ticker: \"MSFT\"))");
@@ -118,7 +86,7 @@ TEST_F(AstTupleLiteralTest, ValidatesTupleWithComplexExpressions) {
     EXPECT_EQ(dynamic_cast<StringLiteral*>(func_call->arguments[0].second.get())->value, "\"MSFT\"");
 }
 
-TEST_F(AstTupleLiteralTest, ValidatesTupleVsGroupingDistinction) {
+TEST_F(AstBaseTest, ValidatesTupleVsGroupingDistinction) {
     // Proves the parser correctly distinguishes between mathematical grouping parentheses
     // and nested tuple parentheses within the exact same AST level.
 
@@ -160,7 +128,7 @@ TEST_F(AstTupleLiteralTest, ValidatesTupleVsGroupingDistinction) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(elem2_tuple->elements[2].get())->value, "3");
 }
 
-TEST_F(AstTupleLiteralTest, ValidatesTupleWithDeepMathPrecedence) {
+TEST_F(AstBaseTest, ValidatesTupleWithDeepMathPrecedence) {
     // Proves that redundant grouping parentheses are stripped, but necessary
     // grouping parentheses correctly override standard operator precedence.
 

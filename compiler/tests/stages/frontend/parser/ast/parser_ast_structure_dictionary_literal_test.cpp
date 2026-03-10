@@ -1,38 +1,8 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
 
-using namespace valuascript;
-using namespace valuascript::compiler;
+using namespace valuascript::compiler::test;
 
-class AstDictLiteralTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-        
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-    
-    Expression* get_assigned_value(const std::shared_ptr<Program>& ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
-        if (!assign) return nullptr;
-        return assign->value.get();
-    }
-};
-
-TEST_F(AstDictLiteralTest, ValidatesEmptyDictionary) {
+TEST_F(AstBaseTest, ValidatesEmptyDictionary) {
     // Proves the parser correctly identifies opening and closing braces with no contents.
     
     auto ast = parse_code("let empty = {}");
@@ -42,7 +12,7 @@ TEST_F(AstDictLiteralTest, ValidatesEmptyDictionary) {
     EXPECT_EQ(dict_val->pairs.size(), 0) << "Empty dictionary must have 0 pairs";
 }
 
-TEST_F(AstDictLiteralTest, ValidatesFlatDictionary) {
+TEST_F(AstBaseTest, ValidatesFlatDictionary) {
     // Proves the parser accurately captures key-value pairs with primitive expressions.
     
     auto ast = parse_code("let model = { cagr: 0.05, yrs: 10 }");
@@ -64,7 +34,7 @@ TEST_F(AstDictLiteralTest, ValidatesFlatDictionary) {
     EXPECT_EQ(val1->value, "10");
 }
 
-TEST_F(AstDictLiteralTest, ValidatesNestedDictionaryWithComplexExpressions) {
+TEST_F(AstBaseTest, ValidatesNestedDictionaryWithComplexExpressions) {
     // Proves that dictionaries safely house nested dictionaries and math expressions
     // without corrupting the parser's internal loop state.
     
@@ -99,7 +69,7 @@ TEST_F(AstDictLiteralTest, ValidatesNestedDictionaryWithComplexExpressions) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(math_op->right.get())->value, "1.2");
 }
 
-TEST_F(AstDictLiteralTest, ValidatesOmnibusDictionaryWithAllExpressionTypes) {
+TEST_F(AstBaseTest, ValidatesOmnibusDictionaryWithAllExpressionTypes) {
     // Proves the DictLiteral seamlessly delegates parsing to every corner of the expression grammar.
 
     std::string code =

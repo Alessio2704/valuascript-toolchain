@@ -1,36 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstReassignmentTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    Assignment* get_first_assignment(const std::shared_ptr<Program>& ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        return dynamic_cast<Assignment*>(ast->execution_steps[0].get());
-    }
-};
-
-TEST_F(AstReassignmentTest, ValidatesDeepReassignmentGeometry) {
+TEST_F(AstBaseTest, ValidatesDeepReassignmentGeometry) {
     // Proves the target is correctly parsed as: BracketAccess -> DotAccess -> Identifier
 
     auto ast = parse_code("portfolio.assets[0] = 100");
@@ -64,7 +35,7 @@ TEST_F(AstReassignmentTest, ValidatesDeepReassignmentGeometry) {
     EXPECT_EQ(target_id->name, "portfolio");
 }
 
-TEST_F(AstReassignmentTest, ValidatesExpressionStatementGeometry) {
+TEST_F(AstBaseTest, ValidatesExpressionStatementGeometry) {
 
     auto ast = parse_code("sys.init()");
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -84,7 +55,7 @@ TEST_F(AstReassignmentTest, ValidatesExpressionStatementGeometry) {
     EXPECT_EQ(target_id->name, "sys");
 }
 
-TEST_F(AstReassignmentTest, ValidatesMultiDimensionalBracketReassignment) {
+TEST_F(AstBaseTest, ValidatesMultiDimensionalBracketReassignment) {
 
     auto ast = parse_code("matrix[0][1] = 42");
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -118,7 +89,7 @@ TEST_F(AstReassignmentTest, ValidatesMultiDimensionalBracketReassignment) {
     EXPECT_EQ(root_id->name, "matrix");
 }
 
-TEST_F(AstReassignmentTest, ValidatesReassignmentToFunctionCallProperty) {
+TEST_F(AstBaseTest, ValidatesReassignmentToFunctionCallProperty) {
 
     auto ast = parse_code("get_config().threshold = 10.5");
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -141,7 +112,7 @@ TEST_F(AstReassignmentTest, ValidatesReassignmentToFunctionCallProperty) {
     EXPECT_EQ(func_call->arguments.size(), 0);
 }
 
-TEST_F(AstReassignmentTest, ValidatesDeepChainedMethodCallExpressionStatement) {
+TEST_F(AstBaseTest, ValidatesDeepChainedMethodCallExpressionStatement) {
 
     auto ast = parse_code("system.modules[0].initialize(s: true)");
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -179,7 +150,7 @@ TEST_F(AstReassignmentTest, ValidatesDeepChainedMethodCallExpressionStatement) {
     EXPECT_EQ(root_id->name, "system");
 }
 
-TEST_F(AstReassignmentTest, ValidatesSwitchExpressionAsReassignmentValue) {
+TEST_F(AstBaseTest, ValidatesSwitchExpressionAsReassignmentValue) {
 
     auto ast = parse_code("state.status = switch (res) { case UP -> 1 default -> 0 }");
     ASSERT_EQ(ast->execution_steps.size(), 1);

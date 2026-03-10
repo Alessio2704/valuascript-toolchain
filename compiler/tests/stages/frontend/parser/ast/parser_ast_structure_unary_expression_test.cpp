@@ -1,38 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstUnaryExpressionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-        
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-    
-    Expression* get_assigned_value(const std::shared_ptr<Program>& ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
-        if (!assign) return nullptr;
-        return assign->value.get();
-    }
-};
-
-TEST_F(AstUnaryExpressionTest, ValidatesArithmeticNegation) {
+TEST_F(AstBaseTest, ValidatesArithmeticNegation) {
     // Proves the parser correctly identifies a unary minus instead of a binary subtraction.
     
     auto ast = parse_code("let neg = -5");
@@ -46,7 +15,7 @@ TEST_F(AstUnaryExpressionTest, ValidatesArithmeticNegation) {
     EXPECT_EQ(right_val->value, "5");
 }
 
-TEST_F(AstUnaryExpressionTest, ValidatesLogicalInversion) {
+TEST_F(AstBaseTest, ValidatesLogicalInversion) {
     // Proves the logical NOT operator binds correctly to an identifier.
     
     auto ast = parse_code("let inv = not is_active");
@@ -60,7 +29,7 @@ TEST_F(AstUnaryExpressionTest, ValidatesLogicalInversion) {
     EXPECT_EQ(right_val->name, "is_active");
 }
 
-TEST_F(AstUnaryExpressionTest, ValidatesUnaryPrecedenceOverBinary) {
+TEST_F(AstBaseTest, ValidatesUnaryPrecedenceOverBinary) {
     // Proves that unary minus binds tighter than multiplication.
     // The AST root MUST be '*', and its left child MUST be the UnaryExpression '-a'.
     
@@ -82,7 +51,7 @@ TEST_F(AstUnaryExpressionTest, ValidatesUnaryPrecedenceOverBinary) {
     EXPECT_EQ(right_id->name, "b");
 }
 
-TEST_F(AstUnaryExpressionTest, ValidatesNestedUnaryChaining) {
+TEST_F(AstBaseTest, ValidatesNestedUnaryChaining) {
     // Proves that unary operators can recursively stack on themselves perfectly right-to-left.
     
     auto ast = parse_code("let double_neg = not not flag");
@@ -102,7 +71,7 @@ TEST_F(AstUnaryExpressionTest, ValidatesNestedUnaryChaining) {
     EXPECT_EQ(target_id->name, "flag");
 }
 
-TEST_F(AstUnaryExpressionTest, ValidatesDeeplyNestedUnaryAndBinaryMath) {
+TEST_F(AstBaseTest, ValidatesDeeplyNestedUnaryAndBinaryMath) {
     // Proves flawless execution of the Pratt parsing precedence table across
     // unary binding, mathematical groupings, high-precedence binary operators (*, /),
     // and low-precedence binary operators (-).
@@ -154,7 +123,7 @@ TEST_F(AstUnaryExpressionTest, ValidatesDeeplyNestedUnaryAndBinaryMath) {
     EXPECT_EQ(id_e->name, "e");
 }
 
-TEST_F(AstUnaryExpressionTest, ValidatesDeeplyNestedUnaryAndBinaryMath_2) {
+TEST_F(AstBaseTest, ValidatesDeeplyNestedUnaryAndBinaryMath_2) {
     // This is a regression test variant of the above -> it has no parenthesis around the not
 
     auto ast = parse_code("let complex = -a * (b + c) - not d / e");

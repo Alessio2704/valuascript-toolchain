@@ -1,37 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-
-class AstBooleanAndConditionalsTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    Expression* get_root_expr(const std::shared_ptr<Program>& ast) {
-        auto const assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        return assignment->value.get();
-    }
-};
-
-TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanPrecedence) {
+TEST_F(AstBaseTest, ValidatesBooleanPrecedence) {
     /*
      Expected AST Shape:
              (or)
@@ -44,7 +14,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanPrecedence) {
     */
 
     auto ast = parse_code("let a = x or y and not z");
-    auto root_expr = get_root_expr(ast);
+    auto root_expr = get_assigned_value(ast);
 
     // 1. Root is OR
     auto or_node = dynamic_cast<BinaryExpression*>(root_expr);
@@ -77,7 +47,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanPrecedence) {
     EXPECT_EQ(id_z->name, "z");
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanGrouping) {
+TEST_F(AstBaseTest, ValidatesBooleanGrouping) {
     /*
      Expected AST Shape:
              (and)
@@ -88,7 +58,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanGrouping) {
     */
 
     auto ast = parse_code("let a = (x or y) and z");
-    auto root_expr = get_root_expr(ast);
+    auto root_expr = get_assigned_value(ast);
 
     auto and_node = dynamic_cast<BinaryExpression*>(root_expr);
     ASSERT_NE(and_node, nullptr);
@@ -99,7 +69,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesBooleanGrouping) {
     EXPECT_EQ(or_node->op, TokenType::Or);
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesSimpleConditional) {
+TEST_F(AstBaseTest, ValidatesSimpleConditional) {
     /*
      Expected AST Shape:
      Conditional
@@ -111,7 +81,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesSimpleConditional) {
     */
 
     auto ast = parse_code("let a = if x > 0 then 10 else 20");
-    auto root_expr = get_root_expr(ast);
+    auto root_expr = get_assigned_value(ast);
 
     auto cond_expr = dynamic_cast<ConditionalExpression*>(root_expr);
     ASSERT_NE(cond_expr, nullptr);
@@ -129,7 +99,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesSimpleConditional) {
     EXPECT_EQ(else_node->value, "20");
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesNestedConditionals) {
+TEST_F(AstBaseTest, ValidatesNestedConditionals) {
     /*
      Expected AST Shape:
      Conditional (Cond: x)
@@ -140,7 +110,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesNestedConditionals) {
     */
 
     auto ast = parse_code("let a = if x then 1 else if y then 2 else 3");
-    auto root_expr = get_root_expr(ast);
+    auto root_expr = get_assigned_value(ast);
 
     auto outer_cond = dynamic_cast<ConditionalExpression*>(root_expr);
     ASSERT_NE(outer_cond, nullptr);
@@ -161,7 +131,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesNestedConditionals) {
     EXPECT_EQ(inner_else->value, "3");
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesFunctionCallsInAllBranches) {
+TEST_F(AstBaseTest, ValidatesFunctionCallsInAllBranches) {
     /*
      Expected AST Shape:
      Conditional
@@ -171,7 +141,7 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesFunctionCallsInAllBranches) {
     */
 
     auto ast = parse_code("let a = if is_ready() then start() else stop()");
-    auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
+    auto root_cond = dynamic_cast<ConditionalExpression*>(get_assigned_value(ast));
     ASSERT_NE(root_cond, nullptr);
 
     // 1. Condition is a function call
@@ -197,12 +167,12 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesFunctionCallsInAllBranches) {
     EXPECT_EQ(else_target->name, "stop");
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWithParams) {
+TEST_F(AstBaseTest, ValidatesComparisonAgainstFunctionCallWithParams) {
     // Tests that a binary expression correctly wraps a function call with arguments
     // inside the condition slot.
 
     auto ast = parse_code("let a = if get_value(a: x, b: 1) == 100 then onSuccess() else onError()");
-    auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
+    auto root_cond = dynamic_cast<ConditionalExpression*>(get_assigned_value(ast));
     ASSERT_NE(root_cond, nullptr);
 
     // 1. Condition is an Equality check
@@ -232,11 +202,11 @@ TEST_F(AstBooleanAndConditionalsTest, ValidatesComparisonAgainstFunctionCallWith
     EXPECT_EQ(right_num->value, "100");
 }
 
-TEST_F(AstBooleanAndConditionalsTest, ValidatesExtremeFunctionNesting) {
+TEST_F(AstBaseTest, ValidatesExtremeFunctionNesting) {
     // Tests that function parameters can safely be other function calls within conditional branches.
 
     auto ast = parse_code("let a = if check(c: fetch(u: url)) then process(p: transform(d: data)) else fallback(f: get_default())");
-    auto root_cond = dynamic_cast<ConditionalExpression*>(get_root_expr(ast));
+    auto root_cond = dynamic_cast<ConditionalExpression*>(get_assigned_value(ast));
     ASSERT_NE(root_cond, nullptr);
 
     // 1. Condition: check(fetch(url))

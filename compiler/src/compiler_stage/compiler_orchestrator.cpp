@@ -4,11 +4,11 @@
 
 namespace valuascript::compiler {
 
-    CompilerStageArtifact CompilerOrchestrator::run(const std::vector<CompilerStageArtifact>& input_artifacts) {
+    CompilerStageArtifact CompilerOrchestrator::run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact>& input_artifacts) {
         std::vector<CompilerStageArtifact> local_artifacts = input_artifacts;
 
         for (const auto& stage : stages_) {
-            CompilerStageArtifact new_artifact = stage->run(local_artifacts);
+            CompilerStageArtifact new_artifact = stage->run(context, local_artifacts);
             local_artifacts.push_back(std::move(new_artifact));
         }
 
@@ -24,10 +24,10 @@ namespace valuascript::compiler {
         return *it;
     }
 
-    CompilerStageArtifact CompilerOrchestrator::run_from_file(const std::string& file_path) {
+    CompilerStageArtifact CompilerOrchestrator::run_from_file(std::shared_ptr<CompilerContext> context, const std::string& file_path) {
         std::vector<CompilerStageArtifact> initial_artifacts = {
             {CompilerStageArtifactCode::FilePath, file_path}
         };
-        return run(initial_artifacts);
+        return run(context, initial_artifacts);
     }
 }

@@ -19,7 +19,7 @@ namespace valuascript::compiler {
         return std::filesystem::weakly_canonical(base_dir / import_path).string();
     }
 
-    void ImportResolverStage::resolve_recursive(const std::string& current_file, ResolvedProjectArtifact& project) {
+    void ImportResolverStage::resolve_recursive(std::shared_ptr<CompilerContext> context, const std::string& current_file, ResolvedProjectArtifact& project) {
         if (resolving_.contains(current_file)) {
             throw ValuaScriptException(
                 ErrorCategory::Import,
@@ -35,7 +35,7 @@ namespace valuascript::compiler {
 
         resolving_.insert(current_file);
 
-        CompilerStageArtifact ast_artifact = frontend_.run_from_file(current_file);
+        CompilerStageArtifact ast_artifact = frontend_.run_from_file(context, current_file);
 
         auto ast = extract_artifact_data<std::shared_ptr<Program>>(
             {ast_artifact}, CompilerStageArtifactCode::Ast
@@ -59,7 +59,7 @@ namespace valuascript::compiler {
                 );
             }
 
-            resolve_recursive(next_file, project);
+            resolve_recursive(context, next_file, project);
         }
 
         project.modules[current_file] = ast;
@@ -69,7 +69,7 @@ namespace valuascript::compiler {
         resolved_.insert(current_file);
     }
 
-    CompilerStageArtifact ImportResolverStage::run(const std::vector<CompilerStageArtifact>& artifacts) {
+    CompilerStageArtifact ImportResolverStage::run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact>& artifacts) {
         auto entry_file = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );
@@ -80,7 +80,7 @@ namespace valuascript::compiler {
         resolving_.clear();
         resolved_.clear();
 
-        resolve_recursive(entry_file, project);
+        resolve_recursive(context, entry_file, project);
 
         return {CompilerStageArtifactCode::ResolvedProject, project};
     }

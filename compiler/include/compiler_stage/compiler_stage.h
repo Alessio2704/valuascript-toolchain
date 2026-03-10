@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include "compiler_context.h"
+
 namespace valuascript::compiler {
     enum class CompilerStageArtifactCode {
         FilePath,
@@ -58,7 +60,7 @@ namespace valuascript::compiler {
 
         virtual ~CompilerStage() = default;
 
-        virtual CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &artifacts) = 0;
+        virtual CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &artifacts) = 0;
 
         [[nodiscard]] const std::string &get_name() const { return name_; }
         [[nodiscard]] CompilerStageArtifactCode get_output_artifact() const { return output_artifact_; }

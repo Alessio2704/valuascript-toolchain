@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <stdexcept>
 
+#include "ImportResolverBase.h"
 #include "errors/valuascript_exception.h"
 #include "stages/import_resolver/import_resolver_stage.h"
 
@@ -36,17 +37,6 @@ protected:
         out.close();
 
         return std::filesystem::weakly_canonical(full_path).string();
-    }
-
-    ResolvedProjectArtifact run_resolver(const std::string& entry_file) {
-        std::vector<CompilerStageArtifact> input_artifacts = {
-            {CompilerStageArtifactCode::FilePath, entry_file}
-        };
-
-        auto output = resolver.run(input_artifacts);
-        return extract_artifact_data<ResolvedProjectArtifact>(
-            {output}, CompilerStageArtifactCode::ResolvedProject
-        );
     }
 };
 
@@ -350,7 +340,7 @@ TEST_F(ImportResolverTest, ResolvesAlphabetValuationIntegrationProject) {
     std::string main_path = create_file("main.vs", main_file);
 
     // -- RUN THE RESOLVER --
-    auto project = run_resolver(main_path);
+    auto project = test::run_resolver(main_path);
 
     // -- VERIFY THE GRAPH GEOMETRY --
 

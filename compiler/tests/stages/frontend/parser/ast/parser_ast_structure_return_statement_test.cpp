@@ -1,40 +1,11 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstFunctionReturnTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-        
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-    
-    FunctionDefinition* get_function(const std::shared_ptr<Program>& ast) {
-        if (ast->function_definitions.empty()) return nullptr;
-        return dynamic_cast<FunctionDefinition*>(ast->function_definitions[0].get());
-    }
-};
-
-TEST_F(AstFunctionReturnTest, ValidatesPrimitiveReturn) {
+TEST_F(AstBaseTest, ValidatesPrimitiveReturn) {
     // Proves a standard primitive literal is wrapped correctly.
     
     auto ast = parse_code("func get_rate() -> scalar { return 0.05 }");
-    auto func = get_function(ast);
+    auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
     
     auto ret_stmt = dynamic_cast<ReturnStatement*>(func->body[0].get());
@@ -45,11 +16,11 @@ TEST_F(AstFunctionReturnTest, ValidatesPrimitiveReturn) {
     EXPECT_EQ(num_val->value, "0.05");
 }
 
-TEST_F(AstFunctionReturnTest, ValidatesComplexMathAndFunctionCallReturn) {
+TEST_F(AstBaseTest, ValidatesComplexMathAndFunctionCallReturn) {
     // Proves maximum orthogonality: the return statement successfully captures a highly nested expression tree.
     
     auto ast = parse_code("func calculate(wacc: scalar) -> scalar { return base_rate + get_premium(w: wacc) }");
-    auto func = get_function(ast);
+    auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
     
     auto ret_stmt = dynamic_cast<ReturnStatement*>(func->body[0].get());
@@ -74,12 +45,12 @@ TEST_F(AstFunctionReturnTest, ValidatesComplexMathAndFunctionCallReturn) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(right_call->arguments[0].second.get())->name, "wacc");
 }
 
-TEST_F(AstFunctionReturnTest, ValidatesComplexTupleReturn) {
+TEST_F(AstBaseTest, ValidatesComplexTupleReturn) {
     // Proves that parenthesis-wrapped comma-separated lists correctly parse into a TupleLiteral,
     // and that the elements inside retain perfect operator precedence and named-argument bindings.
 
     auto ast = parse_code("func get_data() -> (scalar, scalar, scalar) { return (1, a + b * func_call(x: 1), c) }");
-    auto func = get_function(ast);
+    auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
 
     auto ret_stmt = dynamic_cast<ReturnStatement*>(func->body[0].get());
@@ -141,12 +112,12 @@ TEST_F(AstFunctionReturnTest, ValidatesComplexTupleReturn) {
     EXPECT_EQ(elem2->name, "c");
 }
 
-TEST_F(AstFunctionReturnTest, ValidatesMultipleReturnValues) {
+TEST_F(AstBaseTest, ValidatesMultipleReturnValues) {
     // Proves that the ReturnStatement natively supports multiple disjointed return values,
     // successfully isolating a TupleLiteral as the first return value and a NumberLiteral as the second.
 
     auto ast = parse_code("func get_mixed_data() -> something { return (1, 2), 3 }");
-    auto func = get_function(ast);
+    auto func = get_first_func(ast);
     ASSERT_NE(func, nullptr);
 
     auto ret_stmt = dynamic_cast<ReturnStatement*>(func->body[0].get());

@@ -1,32 +1,9 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/parser/ast.h"
-#include "stages/frontend/lexer/lexer_stage.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserAssignmentTestBase : public testing::Test {
-protected:
-    static std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> lexer_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        auto lexer_result = lexer.run(lexer_history);
-
-        ParserStage parser;
-        std::vector<CompilerStageArtifact> parser_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        };
-        auto parser_result = parser.run(parser_history);
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-};
 
 struct AssignmentHappyParam {
     std::string test_id;
@@ -34,7 +11,7 @@ struct AssignmentHappyParam {
     size_t expected_target_count;
 };
 
-class AssignmentHappyPathTest : public ParserAssignmentTestBase,
+class AssignmentHappyPathTest : public test::AstBaseTest,
                                 public testing::WithParamInterface<AssignmentHappyParam> {
 };
 
@@ -104,7 +81,7 @@ struct AssignmentSadParam {
     ErrorCode expected_error;
 };
 
-class AssignmentSadPathTest : public ParserAssignmentTestBase,
+class AssignmentSadPathTest : public test::AstBaseTest,
                               public testing::WithParamInterface<AssignmentSadParam> {
 };
 

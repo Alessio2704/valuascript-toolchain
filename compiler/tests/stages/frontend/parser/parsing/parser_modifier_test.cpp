@@ -1,13 +1,9 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-enum class TargetNodeType { Assignment, Function, Struct, Enum };
 
 struct ModifierHappyParam {
     std::string test_name;
@@ -18,46 +14,10 @@ struct ModifierHappyParam {
     size_t first_modifier_arg_count;
 };
 
-class ModifierHappyPathTest : public testing::TestWithParam<ModifierHappyParam> {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    const std::vector<Modifier>* get_modifiers(const std::shared_ptr<Program>& ast, TargetNodeType type) {
-        switch (type) {
-            case TargetNodeType::Assignment:
-                if (!ast->execution_steps.empty()) {
-                    if (const auto assign = dynamic_cast<Assignment*>(ast->execution_steps[0].get())) {
-                        return &assign->modifiers;
-                    }
-                }
-                break;
-            case TargetNodeType::Function:
-                if (!ast->function_definitions.empty()) return &ast->function_definitions[0]->modifiers;
-                break;
-            case TargetNodeType::Struct:
-                if (!ast->struct_definitions.empty()) return &ast->struct_definitions[0]->modifiers;
-                break;
-            case TargetNodeType::Enum:
-                if (!ast->enum_definitions.empty()) return &ast->enum_definitions[0]->modifiers;
-                break;
-        }
-        return {};
-    }
+class ModifierHappyPathTest : public test::AstBaseTest,
+                                public testing::WithParamInterface<ModifierHappyParam> {
 };
+
 
 TEST_P(ModifierHappyPathTest, ValidatesModifierParsing) {
     auto param = GetParam();
@@ -107,36 +67,20 @@ struct ModifierSadParam {
     ErrorCode expected_error;
 };
 
-class ModifierSadPathTest : public testing::TestWithParam<ModifierSadParam> {
-protected:
-    void expect_parser_error(const std::string& code, ErrorCode expected_code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        try {
-            parser.run({
-                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-                lexer_result
-            });
-            FAIL() << "Expected ValuaScriptException to be thrown, but parsing succeeded.";
-        } catch (const ValuaScriptException& e) {
-            EXPECT_EQ(e.get_code(), expected_code)
-                << "Expected error code " << static_cast<int>(expected_code)
-                << " but got " << static_cast<int>(e.get_code())
-                << ". Message: " << e.what();
-        } catch (const std::exception& e) {
-            FAIL() << "Caught unexpected exception type: " << e.what();
-        }
-    }
+class ModifierSadPathTest : public test::AstBaseTest,
+                                public testing::WithParamInterface<ModifierSadParam> {
 };
 
 TEST_P(ModifierSadPathTest, ThrowsCorrectSyntaxError) {
     auto param = GetParam();
-    expect_parser_error(param.source_code, param.expected_error);
+    try {
+        parse_code(param.source_code);
+        FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
+    } catch (const ValuaScriptException &e) {
+        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax);
+        EXPECT_EQ(e.get_code(), param.expected_error)
+            << "Error code mismatch on test: " << param.test_name;
+    }
 }
 
 INSTANTIATE_TEST_SUITE_P(

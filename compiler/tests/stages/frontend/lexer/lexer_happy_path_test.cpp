@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+
+#include "LexerBaseTest.h"
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "stages/frontend/lexer/token.h"
 
@@ -12,16 +14,6 @@ struct HappyLexerParam {
 };
 
 class LexerHappyPathTest : public testing::TestWithParam<HappyLexerParam> {
-protected:
-    static std::vector<Token> tokenize(const std::string& code) {
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        auto result = lexer.run(history);
-        return std::any_cast<std::vector<Token>>(result.data);
-    }
 };
 
 TEST_P(LexerHappyPathTest, TokenizesSuccessfully) {
@@ -29,7 +21,7 @@ TEST_P(LexerHappyPathTest, TokenizesSuccessfully) {
     
     std::vector<Token> tokens;
     EXPECT_NO_THROW({
-        tokens = tokenize(param.source_code);
+        tokens = test::tokenize_code(param.source_code);
     }) << "Lexer threw an exception on test: " << param.test_id;
 
     if (!tokens.empty()) {

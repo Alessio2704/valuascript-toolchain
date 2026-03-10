@@ -1,34 +1,9 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/parser/ast.h"
-#include "stages/frontend/lexer/lexer_stage.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserImportStatementTestBase : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &expression) {
-        std::string code = expression;
-
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> lexer_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        auto lexer_result = lexer.run(lexer_history);
-
-        ParserStage parser;
-        std::vector<CompilerStageArtifact> parser_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        };
-        auto parser_result = parser.run(parser_history);
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-};
 
 struct ImportStatementHappyParam {
     std::string test_id;
@@ -36,7 +11,7 @@ struct ImportStatementHappyParam {
     std::string path;
 };
 
-class ImportStatementHappyPathTest : public ParserImportStatementTestBase,
+class ImportStatementHappyPathTest : public test::AstBaseTest,
                            public testing::WithParamInterface<ImportStatementHappyParam> {
 };
 
@@ -75,7 +50,7 @@ struct ImportStatementSadParam {
     ErrorCode expected_error;
 };
 
-class ImportStatementSadPathTest : public ParserImportStatementTestBase,
+class ImportStatementSadPathTest : public test::AstBaseTest,
                          public testing::WithParamInterface<ImportStatementSadParam> {
 };
 

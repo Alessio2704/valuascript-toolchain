@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+
+#include "LexerBaseTest.h"
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "errors/valuascript_exception.h"
 
@@ -12,22 +14,13 @@ struct SadLexerParam {
 };
 
 class LexerSadPathTest : public testing::TestWithParam<SadLexerParam> {
-protected:
-    static void run_lexer(const std::string& code) {
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        lexer.run(history);
-    }
 };
 
 TEST_P(LexerSadPathTest, ThrowsCorrectLexicalError) {
     const SadLexerParam& param = GetParam();
 
     try {
-        run_lexer(param.source_code);
+        test::tokenize_code(param.source_code);
         FAIL() << "Lexer should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException& e) {
         EXPECT_EQ(e.get_category(), ErrorCategory::Lexical)

@@ -1,38 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstStructDefinitionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-
-    StructDefinition *get_struct_definition(const std::shared_ptr<Program> &ast) {
-        if (ast->struct_definitions.empty()) return nullptr;
-        auto struct_def = dynamic_cast<StructDefinition *>(ast->struct_definitions[0].get());
-        if (!struct_def) return nullptr;
-        return struct_def;
-    }
-};
-
-TEST_F(AstStructDefinitionTest, ValidatesStructDefinitionAndProgramSegregation) {
+TEST_F(AstBaseTest, ValidatesStructDefinitionAndProgramSegregation) {
 
     auto ast = parse_code("struct Assumption { cagr: Decimal, yrs: Integer, name: String }");
 
@@ -57,7 +26,7 @@ TEST_F(AstStructDefinitionTest, ValidatesStructDefinitionAndProgramSegregation) 
     EXPECT_EQ(struct_def->fields[2].second->name, "String");
 }
 
-TEST_F(AstStructDefinitionTest, ValidatesStructWithDeeplyNestedComplexTypes) {
+TEST_F(AstBaseTest, ValidatesStructWithDeeplyNestedComplexTypes) {
     // Proves that StructDefinition fields perfectly leverage the recursive type parser,
     // seamlessly handling generics, tuples, and nested combinations.
 

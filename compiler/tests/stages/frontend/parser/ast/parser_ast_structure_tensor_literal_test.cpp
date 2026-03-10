@@ -1,38 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstTensorLiteralTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-
-    TensorLiteral *get_assigned_vector(const std::shared_ptr<Program> &ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        auto assign = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        if (!assign) return nullptr;
-        return dynamic_cast<TensorLiteral *>(assign->value.get());
-    }
-};
-
-TEST_F(AstTensorLiteralTest, Validates1DVector) {
+TEST_F(AstBaseTest, Validates1DVector) {
     auto ast = parse_code("let v = [100, 110, 121]");
     auto vec = get_assigned_vector(ast);
     ASSERT_NE(vec, nullptr);
@@ -51,7 +20,7 @@ TEST_F(AstTensorLiteralTest, Validates1DVector) {
     EXPECT_EQ(elem2->value, "121");
 }
 
-TEST_F(AstTensorLiteralTest, Validates2DMatrix) {
+TEST_F(AstBaseTest, Validates2DMatrix) {
     auto ast = parse_code("let m = [[1, 2], [3, 4]]");
     auto matrix = get_assigned_vector(ast);
     ASSERT_NE(matrix, nullptr);
@@ -72,7 +41,7 @@ TEST_F(AstTensorLiteralTest, Validates2DMatrix) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(row1->elements[1].get())->value, "4");
 }
 
-TEST_F(AstTensorLiteralTest, Validates3DTensor) {
+TEST_F(AstBaseTest, Validates3DTensor) {
     auto ast = parse_code("let t = [[[1], [2]], [[3], [4]]]");
 
     auto tensor3d = get_assigned_vector(ast);
@@ -91,7 +60,7 @@ TEST_F(AstTensorLiteralTest, Validates3DTensor) {
     EXPECT_EQ(val->value, "2") << "Deep geometry failed to map to the correct value";
 }
 
-TEST_F(AstTensorLiteralTest, ValidatesOrthogonalityInsideVectors) {
+TEST_F(AstBaseTest, ValidatesOrthogonalityInsideVectors) {
     // Proves that the parser doesn't just expect numbers, but any valid expression shape.
     auto ast = parse_code("let mixed = [wacc * 100, get_fcf(), [1, 2][0]]");
     auto mixed = get_assigned_vector(ast);
@@ -116,7 +85,7 @@ TEST_F(AstTensorLiteralTest, ValidatesOrthogonalityInsideVectors) {
     EXPECT_EQ(inline_vec->elements.size(), 2);
 }
 
-TEST_F(AstTensorLiteralTest, ValidatesEmptyVectors) {
+TEST_F(AstBaseTest, ValidatesEmptyVectors) {
     // Edge case: must not crash when no elements are present.
     auto ast = parse_code("let empty = []");
     auto empty_vec = get_assigned_vector(ast);

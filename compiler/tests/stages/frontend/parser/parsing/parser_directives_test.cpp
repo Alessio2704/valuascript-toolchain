@@ -1,33 +1,9 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/parser/ast.h"
-#include "stages/frontend/lexer/lexer_stage.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
-#include <vector>
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserDirectiveTestBase : public testing::Test {
-protected:
-    static std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> lexer_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        const auto lexer_result = lexer.run(lexer_history);
-
-        ParserStage parser;
-        const std::vector<CompilerStageArtifact> parser_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        };
-        auto [artifact_code, data] = parser.run(parser_history);
-
-        return std::any_cast<std::shared_ptr<Program>>(data);
-    }
-};
 
 struct DirectiveHappyParam {
     std::string test_id;
@@ -36,7 +12,7 @@ struct DirectiveHappyParam {
     bool expects_value;
 };
 
-class DirectiveHappyPathTest : public ParserDirectiveTestBase,
+class DirectiveHappyPathTest : public test::AstBaseTest,
                                public testing::WithParamInterface<DirectiveHappyParam> {};
 
 TEST_P(DirectiveHappyPathTest, ParsesSuccessfully) {
@@ -95,7 +71,7 @@ struct DirectiveSadParam {
     ErrorCode expected_error;
 };
 
-class DirectiveSadPathTest : public ParserDirectiveTestBase,
+class DirectiveSadPathTest : public test::AstBaseTest,
                              public testing::WithParamInterface<DirectiveSadParam> {};
 
 TEST_P(DirectiveSadPathTest, ThrowsCorrectSyntaxError) {

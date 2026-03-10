@@ -1,30 +1,9 @@
 #include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserStructDefinitionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-        
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-};
 
 struct StructHappyParam {
     std::string test_id;
@@ -33,7 +12,7 @@ struct StructHappyParam {
     size_t expected_field_count;
 };
 
-class StructHappyPathTest : public ParserStructDefinitionTest, 
+class StructHappyPathTest : public test::AstBaseTest,
                             public testing::WithParamInterface<StructHappyParam> {};
 
 TEST_P(StructHappyPathTest, ParsesSuccessfully) {
@@ -72,7 +51,7 @@ struct StructErrorParam {
     ErrorCode expected_error;
 };
 
-class StructErrorPathTest : public ParserStructDefinitionTest, 
+class StructErrorPathTest : public test::AstBaseTest,
                             public testing::WithParamInterface<StructErrorParam> {};
 
 TEST_P(StructErrorPathTest, FailsWithCorrectSyntaxError) {

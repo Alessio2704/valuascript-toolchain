@@ -1,36 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstDotAccessTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    Assignment* get_first_assignment(const std::shared_ptr<Program>& ast) {
-        if (ast->execution_steps.empty()) return nullptr;
-        return dynamic_cast<Assignment*>(ast->execution_steps[0].get());
-    }
-};
-
-TEST_F(AstDotAccessTest, ValidatesDeepDotAccessLeftAssociativity) {
+TEST_F(AstBaseTest, ValidatesDeepDotAccessLeftAssociativity) {
 
     auto ast = parse_code("let value = company.department.manager");
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -54,7 +25,7 @@ TEST_F(AstDotAccessTest, ValidatesDeepDotAccessLeftAssociativity) {
     EXPECT_EQ(company_id->name, "company");
 }
 
-TEST_F(AstDotAccessTest, ValidatesMixedPostfixChaining) {
+TEST_F(AstBaseTest, ValidatesMixedPostfixChaining) {
     // AST Shape: DotAccess( BracketAccess( FunctionCall( DotAccess(api, get_data), 1 ), 0 ), value )
 
     auto ast = parse_code("let result = api.get_data(id: 1)[0].value");
@@ -90,7 +61,7 @@ TEST_F(AstDotAccessTest, ValidatesMixedPostfixChaining) {
     EXPECT_EQ(api_id->name, "api");
 }
 
-TEST_F(AstDotAccessTest, ValidatesDotAccessPrecedenceOverMath) {
+TEST_F(AstBaseTest, ValidatesDotAccessPrecedenceOverMath) {
     // AST Shape: BinaryExpression( *, DotAccess(box, width), DotAccess(box, height) )
 
     auto ast = parse_code("let area = box.width * box.height");

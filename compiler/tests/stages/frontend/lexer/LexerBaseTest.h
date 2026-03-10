@@ -1,0 +1,25 @@
+#pragma once
+#include "stages/frontend/lexer/lexer_stage.h"
+#include "stages/frontend/lexer/token.h"
+#include "errors/valuascript_exception.h"
+#include <string>
+#include <vector>
+
+using namespace valuascript;
+using namespace valuascript::compiler;
+
+namespace valuascript::compiler::test {
+    inline std::vector<Token> tokenize_code(const std::string &source_code) {
+        LexerStage lexer_stage;
+
+        auto context = std::make_shared<CompilerContext>();
+
+        const std::vector<CompilerStageArtifact> history = {
+            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+            {CompilerStageArtifactCode::SourceCode, source_code}
+        };
+
+        auto [code, data] = lexer_stage.run(context, history);
+        return std::any_cast<std::vector<Token> >(data);
+    }
+}

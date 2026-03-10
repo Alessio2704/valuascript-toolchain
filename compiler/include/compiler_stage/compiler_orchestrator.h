@@ -24,8 +24,8 @@ namespace valuascript::compiler {
             validate_stages_pipeline(stages_, get_dependencies());
         }
 
-        CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &input_artifacts) override;
+        CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &input_artifacts) override;
 
-        CompilerStageArtifact run_from_file(const std::string &file_path);
+        CompilerStageArtifact run_from_file(std::shared_ptr<CompilerContext> context, const std::string &file_path);
     };
 }

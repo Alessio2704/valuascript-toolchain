@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <stdexcept>
 
+#include "ImportResolverBase.h"
 #include "errors/valuascript_exception.h"
 #include "stages/import_resolver/import_resolver_stage.h"
 
@@ -37,17 +38,6 @@ protected:
         
         return std::filesystem::weakly_canonical(full_path).string();
     }
-
-    ResolvedProjectArtifact run_resolver(const std::string& entry_file) {
-        std::vector<CompilerStageArtifact> input_artifacts = {
-            {CompilerStageArtifactCode::FilePath, entry_file}
-        };
-        
-        auto output = resolver.run(input_artifacts);
-        return extract_artifact_data<ResolvedProjectArtifact>(
-            {output}, CompilerStageArtifactCode::ResolvedProject
-        );
-    }
 };
 
 TEST_F(ImportResolverTest, ResolvesLinearDependencyChain) {
@@ -55,7 +45,7 @@ TEST_F(ImportResolverTest, ResolvesLinearDependencyChain) {
     std::string b_path = create_file("b.vs", "import \"c.vs\"\nlet b_val = 20");
     std::string a_path = create_file("a.vs", "import \"b.vs\"\nlet a_val = 10");
 
-    auto project = run_resolver(a_path);
+    auto project = test::run_resolver(a_path);
 
     EXPECT_EQ(project.modules.size(), 3);
 
@@ -79,7 +69,7 @@ TEST_F(ImportResolverTest, ResolvesDiamondDependencyGraph) {
     std::string b_path = create_file("b.vs", "import \"d.vs\"\nlet b = 2");
     std::string a_path = create_file("a.vs", "import \"b.vs\"\nimport \"c.vs\"\nlet a = 1");
 
-    auto project = run_resolver(a_path);
+    auto project = test::run_resolver(a_path);
 
     // D should be parsed exactly once, meaning 4 total modules
     EXPECT_EQ(project.modules.size(), 4);
@@ -101,7 +91,7 @@ TEST_F(ImportResolverTest, ResolvesRelativePathsAcrossDirectories) {
     std::string math_path = create_file("utils/math.vs", "import \"../constants.vs\"\nlet double_pi = pi * 2");
     std::string main_path = create_file("main.vs", "import \"utils/math.vs\"\nlet area = double_pi");
 
-    auto project = run_resolver(main_path);
+    auto project = test::run_resolver(main_path);
 
     ASSERT_EQ(project.topological_order.size(), 3);
     EXPECT_EQ(project.topological_order[0], const_path);
@@ -115,7 +105,7 @@ TEST_F(ImportResolverTest, ThrowsOnDirectCircularDependency) {
     std::string a_path = create_file("a.vs", "import \"b.vs\"");
 
     try {
-        run_resolver(a_path);
+        test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for circular import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
         EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
@@ -129,7 +119,7 @@ TEST_F(ImportResolverTest, ThrowsOnSelfImport) {
     std::string a_path = create_file("a.vs", "import \"a.vs\"");
 
     try {
-        run_resolver(a_path);
+        test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for self import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
         EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
@@ -144,7 +134,7 @@ TEST_F(ImportResolverTest, ThrowsOnDeepCircularDependency) {
     std::string a_path = create_file("a.vs", "import \"b.vs\"");
 
     try {
-        run_resolver(a_path);
+        test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for deep circular import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
         EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
@@ -156,7 +146,7 @@ TEST_F(ImportResolverTest, ThrowsOnMissingFile) {
     std::string a_path = create_file("a.vs", "import \"ghost.vs\"");
 
     try {
-        run_resolver(a_path);
+        test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for missing file, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
         EXPECT_EQ(e.get_code(), ErrorCode::ImportFileNotFound);
@@ -178,7 +168,7 @@ TEST_F(ImportResolverTest, ResolvesComplexRelativePathBacktracking) {
     std::string feature_path = create_file("features/deep/feature.vs", "import \"../../core/base.vs\"\nlet f = version");
     std::string main_path = create_file("main.vs", "import \"features/deep/feature.vs\"\nlet m = f");
 
-    auto project = run_resolver(main_path);
+    auto project = test::run_resolver(main_path);
 
     ASSERT_EQ(project.topological_order.size(), 3);
     EXPECT_EQ(project.topological_order[0], base_path);
@@ -193,7 +183,7 @@ TEST_F(ImportResolverTest, NormalizesRedundantPathsToSameModule) {
     std::string utils_path = create_file("utils.vs", "let u = 10");
     std::string main_path = create_file("main.vs", "import \"utils.vs\"\nimport \"./utils.vs\"\nlet m = u");
 
-    auto project = run_resolver(main_path);
+    auto project = test::run_resolver(main_path);
 
     // It should only parse 2 files, not 3
     EXPECT_EQ(project.modules.size(), 2);
@@ -222,7 +212,7 @@ TEST_F(ImportResolverTest, ResolvesMassiveStarTopology) {
 
     std::string main_path = create_file("main.vs", main_content);
 
-    auto project = run_resolver(main_path);
+    auto project = test::run_resolver(main_path);
 
     // 1 main + 5 intermediates + 1 core = 7 total modules
     EXPECT_EQ(project.modules.size(), 7);

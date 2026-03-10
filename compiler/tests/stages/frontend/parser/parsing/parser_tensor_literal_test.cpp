@@ -1,42 +1,16 @@
 #include <gtest/gtest.h>
-
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/parser/ast.h"
-#include "stages/frontend/lexer/lexer_stage.h"
+#include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
-
-class ParserTensorLiteralTestBase : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &expression) {
-        std::string code = "let result = " + expression;
-
-        LexerStage lexer;
-        std::vector<CompilerStageArtifact> lexer_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        };
-        auto lexer_result = lexer.run(lexer_history);
-
-        ParserStage parser;
-        std::vector<CompilerStageArtifact> parser_history = {
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        };
-        auto parser_result = parser.run(parser_history);
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-};
 
 struct TensorLiteralHappyParam {
     std::string test_id;
     std::string source_code;
 };
 
-class TensorLiteralHappyPathTest : public ParserTensorLiteralTestBase,
+class TensorLiteralHappyPathTest : public test::AstBaseTest,
                             public testing::WithParamInterface<TensorLiteralHappyParam> {
 };
 
@@ -45,7 +19,7 @@ TEST_P(TensorLiteralHappyPathTest, ParsesSuccessfully) {
 
     std::shared_ptr<Program> ast;
     EXPECT_NO_THROW({
-        ast = parse_code(param.source_code);
+        ast = parse_expression_as_assignment(param.source_code);
         }) << "Parser threw an exception on valid assignment test: " << param.test_id;
 
     if (ast) {
@@ -79,7 +53,7 @@ struct TensorLiteralSadParam {
     ErrorCode expected_error;
 };
 
-class TensorLiteralSadPathTest : public ParserTensorLiteralTestBase,
+class TensorLiteralSadPathTest : public test::AstBaseTest,
                           public testing::WithParamInterface<TensorLiteralSadParam> {
 };
 
@@ -87,7 +61,7 @@ TEST_P(TensorLiteralSadPathTest, ThrowsCorrectSyntaxError) {
     const TensorLiteralSadParam &param = GetParam();
 
     try {
-        parse_code(param.source_code);
+        parse_expression_as_assignment(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
         EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)

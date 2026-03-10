@@ -1,31 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstModifierDeepTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-};
-
-TEST_F(AstModifierDeepTest, ValidatesSimpleModifierOnAssignment) {
+TEST_F(AstBaseTest, ValidatesSimpleModifierOnAssignment) {
     auto ast = parse_code("@export let config = 100");
     
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -39,7 +15,7 @@ TEST_F(AstModifierDeepTest, ValidatesSimpleModifierOnAssignment) {
     EXPECT_TRUE(mod.arguments.empty());
 }
 
-TEST_F(AstModifierDeepTest, ValidatesModifierWithEmptyParentheses) {
+TEST_F(AstBaseTest, ValidatesModifierWithEmptyParentheses) {
     auto ast = parse_code("@inject() var service = get_service()");
     
     ASSERT_EQ(ast->execution_steps.size(), 1);
@@ -54,7 +30,7 @@ TEST_F(AstModifierDeepTest, ValidatesModifierWithEmptyParentheses) {
     EXPECT_TRUE(mod.arguments.empty());
 }
 
-TEST_F(AstModifierDeepTest, ValidatesModifierWithPrimitiveArgumentsOnFunction) {
+TEST_F(AstBaseTest, ValidatesModifierWithPrimitiveArgumentsOnFunction) {
     auto ast = parse_code(R"(@api(route: "/users", method: "GET", timeout: 30) func get_users() -> void {})");
     
     ASSERT_EQ(ast->function_definitions.size(), 1);
@@ -85,7 +61,7 @@ TEST_F(AstModifierDeepTest, ValidatesModifierWithPrimitiveArgumentsOnFunction) {
     EXPECT_EQ(arg2_val->value, "30");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesStackedModifiersOnStruct) {
+TEST_F(AstBaseTest, ValidatesStackedModifiersOnStruct) {
     auto ast = parse_code("@serializable @packed(align: 4) struct Data { id: int }");
     
     ASSERT_EQ(ast->struct_definitions.size(), 1);
@@ -108,7 +84,7 @@ TEST_F(AstModifierDeepTest, ValidatesStackedModifiersOnStruct) {
     EXPECT_EQ(align_val->value, "4");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesModifierWithComplexExpressionsOnEnum) {
+TEST_F(AstBaseTest, ValidatesModifierWithComplexExpressionsOnEnum) {
     // Proves that modifier arguments recursively use the full expression parser
     auto ast = parse_code("@config(timeout: 60 * 2, fallback: get_default()) enum State: int { A = 1 }");
     
@@ -142,7 +118,7 @@ TEST_F(AstModifierDeepTest, ValidatesModifierWithComplexExpressionsOnEnum) {
     EXPECT_TRUE(call_expr->arguments.empty());
 }
 
-TEST_F(AstModifierDeepTest, ValidatesModifierWithTensorLiteral) {
+TEST_F(AstBaseTest, ValidatesModifierWithTensorLiteral) {
     auto ast = parse_code("@matrix(shape: [2, 3]) let m = 0");
     
     auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
@@ -160,7 +136,7 @@ TEST_F(AstModifierDeepTest, ValidatesModifierWithTensorLiteral) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(tensor_val->elements[1].get())->value, "3");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesNestedDictLiteralInModifier) {
+TEST_F(AstBaseTest, ValidatesNestedDictLiteralInModifier) {
     auto ast = parse_code("@meta(config: { retries: 3, flags: { active: true, safe: false } }) let x = 1");
     auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     const auto& mod = assign_node->modifiers[0];
@@ -187,7 +163,7 @@ TEST_F(AstModifierDeepTest, ValidatesNestedDictLiteralInModifier) {
     EXPECT_EQ(dynamic_cast<BooleanLiteral*>(inner_dict->pairs[1].second.get())->value, false);
 }
 
-TEST_F(AstModifierDeepTest, ValidatesTupleLiteralInModifier) {
+TEST_F(AstBaseTest, ValidatesTupleLiteralInModifier) {
     auto ast = parse_code("@position(coords: (10.5, -20.0, 5)) let obj = 0");
     auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     const auto& mod = assign_node->modifiers[0];
@@ -207,7 +183,7 @@ TEST_F(AstModifierDeepTest, ValidatesTupleLiteralInModifier) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(tuple_lit->elements[2].get())->value, "5");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesNestedTensorLiteralInModifier) {
+TEST_F(AstBaseTest, ValidatesNestedTensorLiteralInModifier) {
     auto ast = parse_code("@kernel(weights: [[1, 0], [0, 1]]) func process() -> void {}");
     auto func_node = ast->function_definitions[0].get();
     const auto& mod = func_node->modifiers[0];
@@ -232,7 +208,7 @@ TEST_F(AstModifierDeepTest, ValidatesNestedTensorLiteralInModifier) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(inner_tensor_2->elements[1].get())->value, "1");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesDeepDotAccessInModifier) {
+TEST_F(AstBaseTest, ValidatesDeepDotAccessInModifier) {
     auto ast = parse_code("@ui(theme: App.Theme.Dark, icon: Icons.Warning) struct Window {}");
     auto struct_node = ast->struct_definitions[0].get();
     const auto& mod = struct_node->modifiers[0];
@@ -261,7 +237,7 @@ TEST_F(AstModifierDeepTest, ValidatesDeepDotAccessInModifier) {
     EXPECT_EQ(dynamic_cast<IdentifierAccess*>(icon_dot->target.get())->name, "Icons");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesBracketAccessAndSlicingInModifier) {
+TEST_F(AstBaseTest, ValidatesBracketAccessAndSlicingInModifier) {
     auto ast = parse_code("@memory(chunk: buffer[0:256], offset: limits[5]) let block = 0");
     auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
     const auto& mod = assign_node->modifiers[0];
@@ -288,7 +264,7 @@ TEST_F(AstModifierDeepTest, ValidatesBracketAccessAndSlicingInModifier) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(index_access->index.get())->value, "5");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesFunctionCallWithArgumentsInModifier) {
+TEST_F(AstBaseTest, ValidatesFunctionCallWithArgumentsInModifier) {
     auto ast = parse_code("@retry(strategy: exponential_backoff(base: 2, max: 10)) func fetch() -> void {}");
     auto func_node = ast->function_definitions[0].get();
     const auto& mod = func_node->modifiers[0];
@@ -307,7 +283,7 @@ TEST_F(AstModifierDeepTest, ValidatesFunctionCallWithArgumentsInModifier) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(func_call->arguments[1].second.get())->value, "10");
 }
 
-TEST_F(AstModifierDeepTest, ValidatesOmnibusModifierStressTest) {
+TEST_F(AstBaseTest, ValidatesOmnibusModifierStressTest) {
     // Tests a modifier wrapping a dict, containing a function call, containing a tuple and dot/bracket access
     std::string code =
         "@complex(payload: {"

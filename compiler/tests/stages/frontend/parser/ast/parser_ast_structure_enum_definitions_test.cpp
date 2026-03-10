@@ -1,37 +1,7 @@
-#include <gtest/gtest.h>
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
-
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstEnumDefinitionTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string& code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
-    }
-
-    EnumDefinition* get_first_enum(const std::shared_ptr<Program>& ast) {
-        if (ast->enum_definitions.empty()) return nullptr;
-        return dynamic_cast<EnumDefinition*>(ast->enum_definitions[0].get());
-    }
-};
-
-TEST_F(AstEnumDefinitionTest, ValidatesImplicitEnumDefinition) {
+TEST_F(AstBaseTest, ValidatesImplicitEnumDefinition) {
 
     auto ast = parse_code("enum Direction: string { UP, DOWN }");
 
@@ -53,7 +23,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesImplicitEnumDefinition) {
     EXPECT_EQ(enum_def->cases[1].second, nullptr) << "Implicit case must have a null expression pointer.";
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesMixedAndExplicitEnumDefinition) {
+TEST_F(AstBaseTest, ValidatesMixedAndExplicitEnumDefinition) {
 
     auto ast = parse_code("enum StatusCode: integer { OK = 200, UNKNOWN, ERROR = 400 + 4 }");
 
@@ -89,7 +59,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesMixedAndExplicitEnumDefinition) {
     EXPECT_EQ(right_val->value, "4");
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEnumWithComplexUnderlyingType) {
+TEST_F(AstBaseTest, ValidatesEnumWithComplexUnderlyingType) {
 
     auto ast = parse_code("enum State: Result<string, Error> { SUCCESS, FAILURE }");
 
@@ -111,7 +81,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesEnumWithComplexUnderlyingType) {
     EXPECT_EQ(enum_def->cases[1].first, "FAILURE");
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEmptyEnumDefinition) {
+TEST_F(AstBaseTest, ValidatesEmptyEnumDefinition) {
     // Proves the parser handles immediate brace closure without crashing
 
     auto ast = parse_code("enum Phantom: string {}");
@@ -126,7 +96,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesEmptyEnumDefinition) {
     EXPECT_TRUE(enum_def->cases.empty());
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEnumWithDeepPostfixExpression) {
+TEST_F(AstBaseTest, ValidatesEnumWithDeepPostfixExpression) {
     // AST Shape of Value: BracketAccess( FunctionCall( DotAccess(sys, get_fallback) ), 0 )
 
     auto ast = parse_code("enum Config: string { DEFAULT = sys.get_fallback()[0] }");
@@ -160,7 +130,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesEnumWithDeepPostfixExpression) {
     EXPECT_EQ(sys_id->name, "sys");
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEnumUsageAsDotAccess) {
+TEST_F(AstBaseTest, ValidatesEnumUsageAsDotAccess) {
     // Proves that enum cases are seamlessly handled by the generalized DotAccess node without new parser logic.
 
     auto ast = parse_code("enum MyEnum: string { ONE } \n let a = my_func(a: MyEnum.ONE)");
@@ -194,7 +164,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesEnumUsageAsDotAccess) {
     EXPECT_EQ(enum_id->name, "MyEnum");
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEnumAsTypeAnnotation) {
+TEST_F(AstBaseTest, ValidatesEnumAsTypeAnnotation) {
     // Proves the type parser treats the enum name identically to built-in types or structs.
 
     auto ast = parse_code("let dir: Direction = Direction.UP");
@@ -219,7 +189,7 @@ TEST_F(AstEnumDefinitionTest, ValidatesEnumAsTypeAnnotation) {
     EXPECT_EQ(target_id->name, "Direction");
 }
 
-TEST_F(AstEnumDefinitionTest, ValidatesEnumWithUnaryExpression) {
+TEST_F(AstBaseTest, ValidatesEnumWithUnaryExpression) {
     // Proves unary operators work seamlessly in case values.
 
     auto ast = parse_code("enum Position: integer { SHORT = -1, FLAT = 0, LONG = 1 }");

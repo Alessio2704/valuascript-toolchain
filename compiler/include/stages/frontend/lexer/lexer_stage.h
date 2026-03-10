@@ -6,6 +6,6 @@ namespace valuascript::compiler {
     public:
         LexerStage();
 
-        CompilerStageArtifact run(const std::vector<CompilerStageArtifact> &artifacts) override;
+        CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &artifacts) override;
     };
 }

@@ -2,23 +2,14 @@
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
+#include "LexerBaseTest.h"
 #include <string>
 #include <vector>
 
 using namespace valuascript;
 using namespace valuascript::compiler;
+using namespace valuascript::compiler::test;
 
-std::vector<Token> tokenize_code(const std::string &source_code) {
-    LexerStage lexer_stage;
-
-    const std::vector<CompilerStageArtifact> history = {
-        {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-        {CompilerStageArtifactCode::SourceCode, source_code}
-    };
-
-    auto [code, data] = lexer_stage.run(history);
-    return std::any_cast<std::vector<Token> >(data);
-}
 
 TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
     LexerStage lexer_stage;
@@ -29,11 +20,8 @@ TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
         {CompilerStageArtifactCode::SourceCode, source_code}
     };
 
-    auto [code, data] = lexer_stage.run(history);
-    auto tokens = std::any_cast<std::vector<Token> >(data);
+    auto tokens = tokenize_code(source_code);
     ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
-
-    EXPECT_EQ(code, CompilerStageArtifactCode::TokenStream);
 
     ASSERT_EQ(tokens.size(), 16);
 

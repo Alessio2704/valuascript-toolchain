@@ -1,31 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstSwitchTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-};
-
-TEST_F(AstSwitchTest, ValidatesStandardSwitchGeometry) {
+TEST_F(AstBaseTest, ValidatesStandardSwitchGeometry) {
     auto ast = parse_code("let val = switch (state) { case UP, SUS -> 10 case DOWN -> 20 default -> 30 }");
     ASSERT_EQ(ast->execution_steps.size(), 1);
 
@@ -59,7 +35,7 @@ TEST_F(AstSwitchTest, ValidatesStandardSwitchGeometry) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(switch_expr->default_case.get())->value, "30");
 }
 
-TEST_F(AstSwitchTest, ValidatesSwitchWithNoDefault) {
+TEST_F(AstBaseTest, ValidatesSwitchWithNoDefault) {
     auto ast = parse_code("let val = switch (state) { case OPEN -> 1 }");
     ASSERT_EQ(ast->execution_steps.size(), 1);
 
@@ -77,7 +53,7 @@ TEST_F(AstSwitchTest, ValidatesSwitchWithNoDefault) {
     EXPECT_EQ(switch_expr->default_case, nullptr);
 }
 
-TEST_F(AstSwitchTest, ValidatesSwitchWithComplexExpressions) {
+TEST_F(AstBaseTest, ValidatesSwitchWithComplexExpressions) {
 
     auto ast = parse_code("let val = switch (sys.get_state()) { case ACTIVE -> base * 2 default -> 0 }");
 
@@ -103,7 +79,7 @@ TEST_F(AstSwitchTest, ValidatesSwitchWithComplexExpressions) {
     EXPECT_EQ(left_id->name, "base");
 }
 
-TEST_F(AstSwitchTest, ValidatesSwitchPrattBindingPrecedence) {
+TEST_F(AstBaseTest, ValidatesSwitchPrattBindingPrecedence) {
     // AST Shape: Assignment -> Binary(+) -> Left: 100, Right: Binary(*) -> Left: Switch, Right: 5
 
     auto ast = parse_code("let val = 100 + switch (dir) { case UP -> 1 default -> -1 } * 5");
@@ -133,7 +109,7 @@ TEST_F(AstSwitchTest, ValidatesSwitchPrattBindingPrecedence) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(right_star->right.get())->value, "5");
 }
 
-TEST_F(AstSwitchTest, ValidatesDeeplyNestedSwitchExpressions) {
+TEST_F(AstBaseTest, ValidatesDeeplyNestedSwitchExpressions) {
 
     auto ast = parse_code("let a = switch (x) { case A -> switch (y) { case B -> 1 default -> 2 } default -> 3 }");
 
@@ -164,7 +140,7 @@ TEST_F(AstSwitchTest, ValidatesDeeplyNestedSwitchExpressions) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(outer_switch->default_case.get())->value, "3");
 }
 
-TEST_F(AstSwitchTest, ValidatesSwitchInsideFunctionArguments) {
+TEST_F(AstBaseTest, ValidatesSwitchInsideFunctionArguments) {
 
     auto ast = parse_code("let a = process(p: switch (dir) { case UP, DOWN -> 1 }, s: 42)");
 
@@ -191,7 +167,7 @@ TEST_F(AstSwitchTest, ValidatesSwitchInsideFunctionArguments) {
     EXPECT_EQ(num_arg->value, "42");
 }
 
-TEST_F(AstSwitchTest, ValidatesDictLiteralAsCaseResult) {
+TEST_F(AstBaseTest, ValidatesDictLiteralAsCaseResult) {
 
     auto ast = parse_code("let a = switch (res) { case UP -> { score: 100 } default -> { score: 0 } }");
 
@@ -216,7 +192,7 @@ TEST_F(AstSwitchTest, ValidatesDictLiteralAsCaseResult) {
     EXPECT_EQ(dynamic_cast<NumberLiteral*>(default_result->pairs[0].second.get())->value, "0");
 }
 
-TEST_F(AstSwitchTest, ValidatesPostfixChainingOnSwitch) {
+TEST_F(AstBaseTest, ValidatesPostfixChainingOnSwitch) {
     // Evaluates the switch to an object, calls build() on it, and accesses index 0.
 
     auto ast = parse_code("let a = switch (res) { case UP -> factory default -> fallback }.build()[0]");
@@ -244,7 +220,7 @@ TEST_F(AstSwitchTest, ValidatesPostfixChainingOnSwitch) {
     EXPECT_EQ(switch_expr->cases[0].first[0], "UP");
 }
 
-TEST_F(AstSwitchTest, ValidatesTensorLiteralAsCaseResult) {
+TEST_F(AstBaseTest, ValidatesTensorLiteralAsCaseResult) {
     // Proves that commas inside the vector literal do not interfere with the switch parser's comma logic.
 
     auto ast = parse_code("let weights = switch (state) { case UP, SUS -> [1.5, 0.5] default -> [1.0, 1.0] }");
@@ -292,7 +268,7 @@ TEST_F(AstSwitchTest, ValidatesTensorLiteralAsCaseResult) {
     EXPECT_EQ(def_elem_1->value, "1.0");
 }
 
-TEST_F(AstSwitchTest, ValidatesPercentageInsideSwitchExpression) {
+TEST_F(AstBaseTest, ValidatesPercentageInsideSwitchExpression) {
 
     auto ast = parse_code("let rate = switch (risk_profile) { case HIGH -> 15.5% default -> 4% }");
 

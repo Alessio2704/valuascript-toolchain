@@ -1,37 +1,7 @@
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/ast.h"
+#include "../ast_base_test.h"
+using namespace valuascript::compiler::test;
 
-using namespace valuascript;
-using namespace valuascript::compiler;
-
-class AstMathPrecedenceTest : public testing::Test {
-protected:
-    std::shared_ptr<Program> parse_code(const std::string &code) {
-        LexerStage lexer;
-        auto lexer_result = lexer.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            {CompilerStageArtifactCode::SourceCode, code}
-        });
-
-        ParserStage parser;
-        auto parser_result = parser.run({
-            {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-            lexer_result
-        });
-
-        return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
-    }
-
-    Expression *get_root_expr(const std::shared_ptr<Program> &ast) {
-        auto const assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        return assignment->value.get();
-    }
-};
-
-
-TEST_F(AstMathPrecedenceTest, ValidatesStandardPrecedence) {
+TEST_F(AstBaseTest, ValidatesStandardPrecedence) {
     /*
      Expected AST Shape:
              (+)
@@ -44,7 +14,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesStandardPrecedence) {
     */
 
     auto ast = parse_code("let a = 1 + 2 * 3 ^ 4");
-    auto root_expr = get_root_expr(ast);
+    auto root_expr = get_assigned_value(ast);
 
     // 1. Root must be Addition
     auto add_node = dynamic_cast<BinaryExpression *>(root_expr);
@@ -67,7 +37,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesStandardPrecedence) {
     EXPECT_EQ(pow_node->op, TokenType::Caret);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativitySubtraction) {
+TEST_F(AstBaseTest, ValidatesLeftAssociativitySubtraction) {
     /*
      Code: let a = 10 - 5 - 2
      Expected AST Shape (Left-Associative):
@@ -79,7 +49,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativitySubtraction) {
     */
 
     auto ast = parse_code("let a = 10 - 5 - 2");
-    auto outer_sub = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto outer_sub = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     ASSERT_NE(outer_sub, nullptr);
     EXPECT_EQ(outer_sub->op, TokenType::Minus);
@@ -97,7 +67,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativitySubtraction) {
     EXPECT_EQ(inner_left->value, "10");
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativityDivision) {
+TEST_F(AstBaseTest, ValidatesLeftAssociativityDivision) {
     /*
      Evaluates as (20 / 5) / 2 = 2, NOT 20 / (5 / 2).
      Expected AST:
@@ -109,7 +79,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativityDivision) {
     */
 
     auto ast = parse_code("let a = 20 / 5 / 2");
-    auto outer_div = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto outer_div = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     ASSERT_NE(outer_div, nullptr);
     EXPECT_EQ(outer_div->op, TokenType::Slash);
@@ -123,7 +93,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesLeftAssociativityDivision) {
     EXPECT_EQ(inner_div->op, TokenType::Slash);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesUnaryMinusPrecedence) {
+TEST_F(AstBaseTest, ValidatesUnaryMinusPrecedence) {
     /*
       Unary minus has higher precedence than multiplication.
       Expected AST:
@@ -135,7 +105,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesUnaryMinusPrecedence) {
      */
 
     auto ast = parse_code("let a = -5 * 2");
-    auto mul_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto mul_node = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     ASSERT_NE(mul_node, nullptr);
     EXPECT_EQ(mul_node->op, TokenType::Star);
@@ -149,7 +119,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesUnaryMinusPrecedence) {
     EXPECT_EQ(num_5->value, "5");
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesParenthesesOverride) {
+TEST_F(AstBaseTest, ValidatesParenthesesOverride) {
     /*
      Expected AST Shape:
            (*)
@@ -160,7 +130,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesParenthesesOverride) {
     */
 
     auto ast = parse_code("let a = (1 + 2) * 3");
-    auto mul_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto mul_node = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     ASSERT_NE(mul_node, nullptr) << "Root is not Multiplication";
     EXPECT_EQ(mul_node->op, TokenType::Star);
@@ -170,7 +140,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesParenthesesOverride) {
     EXPECT_EQ(add_node->op, TokenType::Plus);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesDeepParenthesesNesting) {
+TEST_F(AstBaseTest, ValidatesDeepParenthesesNesting) {
     /*
      Expected AST Shape:
                 (/)
@@ -183,7 +153,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesDeepParenthesesNesting) {
     */
 
     auto ast = parse_code("let a = ((1 + 2) * (3 - 4)) / 5");
-    auto div_node = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto div_node = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     ASSERT_NE(div_node, nullptr);
     EXPECT_EQ(div_node->op, TokenType::Slash);
@@ -204,7 +174,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesDeepParenthesesNesting) {
     EXPECT_EQ(sub_node->op, TokenType::Minus);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesRelationalPrecedence) {
+TEST_F(AstBaseTest, ValidatesRelationalPrecedence) {
     /*
      Expected AST Shape:
               (>)
@@ -216,7 +186,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesRelationalPrecedence) {
     */
 
     auto ast = parse_code("let a = 1 + 2 > 3 * 4");
-    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     // 1. Root MUST be Greater Than
     ASSERT_NE(root_expr, nullptr);
@@ -233,7 +203,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesRelationalPrecedence) {
     EXPECT_EQ(right_mul->op, TokenType::Star);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesEqualityPrecedence) {
+TEST_F(AstBaseTest, ValidatesEqualityPrecedence) {
     /*
      Expected AST Shape:
               (==)
@@ -244,7 +214,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesEqualityPrecedence) {
     */
 
     auto ast = parse_code("let a = x == y + 1");
-    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     // 1. Root MUST be Equals
     ASSERT_NE(root_expr, nullptr);
@@ -261,7 +231,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesEqualityPrecedence) {
     EXPECT_EQ(right_add->op, TokenType::Plus);
 }
 
-TEST_F(AstMathPrecedenceTest, ValidatesModuloPrecedence) {
+TEST_F(AstBaseTest, ValidatesModuloPrecedence) {
     /*
      Expected AST Shape:
               (*)
@@ -273,7 +243,7 @@ TEST_F(AstMathPrecedenceTest, ValidatesModuloPrecedence) {
     */
 
     auto ast = parse_code("let a = 10 mod 3 * 2");
-    auto root_expr = dynamic_cast<BinaryExpression *>(get_root_expr(ast));
+    auto root_expr = dynamic_cast<BinaryExpression *>(get_assigned_value(ast));
 
     // 1. Root MUST be Multiplication (due to left-associativity of same-precedence operators)
     ASSERT_NE(root_expr, nullptr);
