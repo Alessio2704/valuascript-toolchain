@@ -3,7 +3,8 @@
 #include "stages/frontend/parser/parser.h"
 
 namespace valuascript::compiler {
-    TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path, std::shared_ptr<CompilerContext> context)
+    TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path,
+                             std::shared_ptr<CompilerContext> context)
         : tokens_(tokens), file_path_(std::move(file_path)), context_(std::move(context)) {
     }
 
@@ -72,7 +73,7 @@ namespace valuascript::compiler {
         ValuaScriptException ex(
             ErrorCategory::Syntax,
             code,
-            {err_line, err_column, file_path_},
+            {err_line, err_column, err_line, err_column, file_path_},
             message
         );
 

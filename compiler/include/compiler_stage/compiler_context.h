@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "errors/valuascript_exception.h"
 
 namespace valuascript::compiler {
@@ -24,6 +25,7 @@ namespace valuascript::compiler {
     struct  CompilerContext {
         CompilerSettings settings;
         DiagnosticReporter diagnostics;
+        std::map<std::string, std::string> source_registry;
 
         void handle_error(const ValuaScriptException& ex) {
             diagnostics.report_error(ex);

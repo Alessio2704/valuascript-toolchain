@@ -2,12 +2,13 @@
 #include <string>
 #include <utility>
 
+#include "stages/frontend/parser/ast.h"
+
 
 namespace valuascript::compiler {
     enum class ErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
 
     enum class ErrorCode {
-
         // --- File Reader Errors ---
         FileNotFound,
 
@@ -86,19 +87,22 @@ namespace valuascript::compiler {
     private:
         ErrorCategory category_;
         ErrorCode code_;
-        ErrorLocation location_;
+        SourceSpan span_;
         std::string message_;
         std::string formatted_message_;
 
     public:
-        ValuaScriptException(ErrorCategory cat, ErrorCode code, ErrorLocation loc, std::string msg)
-            : category_(cat), code_(code), location_(std::move(loc)), message_(std::move(msg)) {
-            formatted_message_ = "[" + location_.file_path + ":" + std::to_string(location_.line) + ":" + std::to_string(location_.column) + "] " + message_;
+        ValuaScriptException(ErrorCategory cat, ErrorCode code, SourceSpan span, std::string msg)
+            : category_(cat), code_(code), span_(std::move(span)), message_(std::move(msg)) {
         }
 
-        [[nodiscard]] const char *what() const noexcept override { return formatted_message_.c_str(); }
-        [[nodiscard]] ErrorCode get_code() const { return code_; }
+        [[nodiscard]] const char *what() const noexcept override {
+            return message_.c_str();
+        }
+
         [[nodiscard]] ErrorCategory get_category() const { return category_; }
-        [[nodiscard]] ErrorLocation get_location() const { return location_; }
+        [[nodiscard]] ErrorCode get_code() const { return code_; }
+
+        [[nodiscard]] const SourceSpan &get_location() const { return span_; }
     };
 }

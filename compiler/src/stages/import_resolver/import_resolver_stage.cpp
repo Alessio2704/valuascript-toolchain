@@ -25,7 +25,7 @@ namespace valuascript::compiler {
             ValuaScriptException ex(
                 ErrorCategory::Import,
                 ErrorCode::CircularImportDetected,
-                {0, 0, current_file},
+                {0, 0, 0, 0, current_file},
                 "Import Error: Circular import detected involving '" + current_file + "'."
             );
 
@@ -58,7 +58,7 @@ namespace valuascript::compiler {
                 ValuaScriptException ex(
                     ErrorCategory::Import,
                     ErrorCode::ImportFileNotFound,
-                    {0, 0, current_file},
+                    {0, 0, 0, 0, current_file},
                     "Import Error: Cannot find module '" + clean_path + "'."
                 );
 

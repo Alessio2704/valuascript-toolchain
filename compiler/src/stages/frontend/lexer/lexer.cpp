@@ -9,7 +9,7 @@ namespace valuascript::compiler {
         ValuaScriptException ex(
             ErrorCategory::Lexical,
             code,
-            {line_start_, column_start_, file_path_},
+            {line_start_, column_start_, line_, column_current_, file_path_},
             message
         );
 
