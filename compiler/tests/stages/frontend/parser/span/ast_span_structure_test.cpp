@@ -323,3 +323,68 @@ TEST_F(AstSpanTest, ValidatesComplexDictLiteralAndNestedSpans) {
     ASSERT_NE(inner_val, nullptr);
     assert_span(inner_val->span, 9, 22, 9, 34); // 'not not flag'
 }
+
+TEST_F(AstSpanTest, ValidatesChainedAccessAndCallSpans) {
+    auto ast = parse_code("let chain = user.get_roles()[0].name");
+    auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+
+    // The outermost expression is the .name DotAccess
+    auto final_dot = dynamic_cast<DotAccess*>(assign_node->value.get());
+    ASSERT_NE(final_dot, nullptr);
+    assert_span(final_dot->span, 1, 13, 1, 37); // 'user...name'
+
+    // The target of .name is the [0] BracketAccess
+    auto bracket_access = dynamic_cast<BracketAccess*>(final_dot->target.get());
+    ASSERT_NE(bracket_access, nullptr);
+    assert_span(bracket_access->span, 1, 13, 1, 32); // 'user.get_roles()[0]'
+
+    // The target of [0] is the get_roles() FunctionCall
+    auto func_call = dynamic_cast<FunctionCall*>(bracket_access->target.get());
+    ASSERT_NE(func_call, nullptr);
+    assert_span(func_call->span, 1, 13, 1, 29); // 'user.get_roles()'
+
+    // The target of the function call is the .get_roles DotAccess
+    auto method_dot = dynamic_cast<DotAccess*>(func_call->target.get());
+    ASSERT_NE(method_dot, nullptr);
+    assert_span(method_dot->span, 1, 13, 1, 27); // 'user.get_roles'
+
+    // The base target is the identifier 'user'
+    auto root_id = dynamic_cast<IdentifierAccess*>(method_dot->target.get());
+    ASSERT_NE(root_id, nullptr);
+    assert_span(root_id->span, 1, 13, 1, 17); // 'user'
+}
+
+TEST_F(AstSpanTest, ValidatesEmptyStructuresSpans) {
+    std::string code =
+        "let empty_arr = []\n"
+        "let empty_dict = {}";
+
+    auto ast = parse_code(code);
+
+    // Empty tensor
+    auto assign_arr = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+    auto tensor = dynamic_cast<TensorLiteral*>(assign_arr->value.get());
+    ASSERT_NE(tensor, nullptr);
+    assert_span(tensor->span, 1, 17, 1, 19); // '[]'
+
+    // Empty dict
+    auto assign_dict = dynamic_cast<Assignment*>(ast->execution_steps[1].get());
+    auto dict = dynamic_cast<DictLiteral*>(assign_dict->value.get());
+    ASSERT_NE(dict, nullptr);
+    assert_span(dict->span, 2, 18, 2, 20); // '{}'
+}
+
+TEST_F(AstSpanTest, ValidatesDeepTypeAnnotationSpans) {
+    auto ast = parse_code("let matrix: matrix<int> = [[1]]");
+    auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+
+    // Outermost type annotation 'matrix<int>'
+    auto outer_type = assign_node->targets[0].second.get();
+    ASSERT_NE(outer_type, nullptr);
+    assert_span(outer_type->span, 1, 13, 1, 24);
+
+    // The value '[[1]]'
+    auto outer_tensor = dynamic_cast<TensorLiteral*>(assign_node->value.get());
+    ASSERT_NE(outer_tensor, nullptr);
+    assert_span(outer_tensor->span, 1, 27, 1, 32);
+}

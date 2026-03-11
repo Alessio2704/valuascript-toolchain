@@ -15,7 +15,7 @@ namespace valuascript::compiler {
             artifacts, CompilerStageArtifactCode::TokenStream);
         const auto file_path = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::FilePath);
 
-        TokenCursor cursor(tokens, file_path);
+        TokenCursor cursor(tokens, file_path, context);
         Parser parser(std::move(cursor));
 
         std::shared_ptr<Program> ast = parser.parse_program();

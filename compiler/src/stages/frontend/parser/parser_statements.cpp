@@ -14,14 +14,14 @@ namespace valuascript::compiler {
 
             case TokenType::Return:
                 if (!modifiers.empty()) {
-                    throw cursor_.error(cursor_.peek(), ErrorCode::UnexpectedToken,
+                    cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
                 }
                 return parse_return_statement();
 
             default:
                 if (!modifiers.empty()) {
-                    throw cursor_.error(cursor_.peek(), ErrorCode::UnexpectedToken,
+                    cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
                 }
                 return parse_expression_statement();
@@ -41,7 +41,7 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
             if (is_reserved_keyword(cursor_.peek().type)) {
-                throw cursor_.error(cursor_.peek(), ErrorCode::ReservedKeywordAsIdentifier,
+                cursor_.report_error(cursor_.peek(), ErrorCode::ReservedKeywordAsIdentifier,
                                     "Syntax Error: Cannot use a reserved keyword as a variable name.");
             }
             const Token &target = cursor_.consume(TokenType::Identifier, ErrorCode::InvalidIdentifier,
@@ -60,7 +60,7 @@ namespace valuascript::compiler {
 
         if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) || cursor_.
             check(TokenType::Func) || cursor_.check(TokenType::At)) {
-            throw cursor_.error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
+            cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
                                 "Syntax Error: Missing value after '='.");
         }
 
@@ -76,13 +76,13 @@ namespace valuascript::compiler {
         SourceSpan start_span = expr->span;
 
         if (cursor_.match({TokenType::Comma})) {
-            throw cursor_.error(cursor_.previous(), ErrorCode::MultiReassignmentNotSupported,
+            cursor_.report_error(cursor_.previous(), ErrorCode::MultiReassignmentNotSupported,
                                 "Syntax Error: Multiple reassignment is not supported. You must reassign variables individually.");
         }
 
         if (cursor_.match({TokenType::Assign})) {
             if (!is_valid_lvalue(expr.get())) {
-                throw cursor_.error(cursor_.previous(), ErrorCode::InvalidLeftSideExpressionInReassignment,
+                cursor_.report_error(cursor_.previous(), ErrorCode::InvalidLeftSideExpressionInReassignment,
                                     "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.");
             }
 
@@ -95,7 +95,7 @@ namespace valuascript::compiler {
         }
 
         if (dynamic_cast<FunctionCall *>(expr.get()) == nullptr) {
-            throw cursor_.error(cursor_.previous(), ErrorCode::InvalidStandaloneStatement,
+            cursor_.report_error(cursor_.previous(), ErrorCode::InvalidStandaloneStatement,
                                 "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
         }
 

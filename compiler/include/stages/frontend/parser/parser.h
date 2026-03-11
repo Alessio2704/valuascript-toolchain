@@ -6,6 +6,13 @@
 #include "stages/frontend/parser/token_cursor.h"
 
 namespace valuascript::compiler {
+
+    struct ParseSyncException : std::exception {
+        [[nodiscard]] const char* what() const noexcept override {
+            return "Parser panic mode triggered.";
+        }
+    };
+
     class Parser {
     private:
         TokenCursor cursor_;
@@ -76,5 +83,7 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> parse_switch_expression();
 
         static bool is_valid_lvalue(const Expression *expr);
+
+        void synchronize();
     };
 }

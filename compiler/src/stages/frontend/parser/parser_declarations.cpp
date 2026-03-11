@@ -19,7 +19,7 @@ namespace valuascript::compiler {
                 program->enum_definitions.push_back(parse_enum_definition(std::move(modifiers)));
                 break;
             default:
-                throw cursor_.error(cursor_.peek(), ErrorCode::UnexpectedToken,
+                cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
                                     "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).");
         }
     }
@@ -46,7 +46,7 @@ namespace valuascript::compiler {
         if (cursor_.match({TokenType::Assign})) {
             if (cursor_.is_at_end() || cursor_.check(TokenType::Hash) || cursor_.check(TokenType::Let) || cursor_.check(
                     TokenType::Func)) {
-                throw cursor_.error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
+                cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
                                     "Syntax Error: Missing value after '='.");
             }
             value = parse_expression();
@@ -155,7 +155,7 @@ namespace valuascript::compiler {
         const Token &start_token = cursor_.consume(TokenType::Func, ErrorCode::UnexpectedToken, "Expected 'func'.");
         const Token &name = cursor_.consume(TokenType::Identifier, ErrorCode::MissingFunctionName,
                                             "Syntax Error: Expected function name.");
-        cursor_.consume(TokenType::LeftParen, ErrorCode::UnmatchedBracket, "Expected '(' after function name.");
+        cursor_.consume(TokenType::LeftParen, ErrorCode::ExpectedLeftParen, "Expected '(' after function name.");
 
         std::vector<FunctionParameter> params;
         if (!cursor_.check(TokenType::RightParen)) {
@@ -167,7 +167,7 @@ namespace valuascript::compiler {
                 params.push_back({param_name.lexeme, parse_type_annotation()});
             } while (cursor_.match({TokenType::Comma}));
         }
-        cursor_.consume(TokenType::RightParen, ErrorCode::UnmatchedBracket, "Expected ')' after parameters.");
+        cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen, "Expected ')' after parameters.");
         cursor_.consume(TokenType::Arrow, ErrorCode::MissingArrowInFunction, "Expected '->' before return type.");
 
         std::vector<std::unique_ptr<TypeAnnotation> > return_types;
@@ -176,7 +176,7 @@ namespace valuascript::compiler {
             return_types.push_back(parse_type_annotation());
         }
 
-        cursor_.consume(TokenType::LeftBrace, ErrorCode::UnmatchedBracket, "Expected '{' before function body.");
+        cursor_.consume(TokenType::LeftBrace, ErrorCode::ExpectedLeftBrace, "Expected '{' before function body.");
 
         std::optional<std::string> docstring = std::nullopt;
         if (cursor_.check(TokenType::DocString)) {
@@ -188,7 +188,7 @@ namespace valuascript::compiler {
             body.push_back(parse_statement());
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::UnmatchedBracket,
+        const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
                                                  "Expected '}' after function body.");
         auto func_def = std::make_unique<FunctionDefinition>(std::move(modifiers), name.lexeme, std::move(params),
                                                              std::move(return_types), std::move(body),

@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             asset_name_suffix: linux-x64
             vse_name: vse
             vsc_name: vsc
@@ -24,6 +24,7 @@ jobs:
             vsc_name: vsc
           - os: windows-latest
             asset_name_suffix: windows-x64
+            msvc_arch: x64
             vse_name: vse.exe
             vsc_name: vsc.exe
           - os: macos-15-intel
@@ -36,6 +37,7 @@ jobs:
             vsc_name: vsc
           - os: windows-11-arm
             asset_name_suffix: windows-arm64
+            msvc_arch: arm64
             vse_name: vse.exe
             vsc_name: vsc.exe
 

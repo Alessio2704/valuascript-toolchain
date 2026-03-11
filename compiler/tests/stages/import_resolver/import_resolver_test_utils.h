@@ -1,7 +1,4 @@
 #pragma once
-#include <gtest/gtest.h>
-#include "stages/frontend/parser/parser_stage.h"
-#include "stages/frontend/lexer/lexer_stage.h"
 #include "stages/frontend/parser/ast.h"
 #include "stages/import_resolver/import_resolver_stage.h"
 #include "stages/import_resolver/resolved_project_artifact.h"

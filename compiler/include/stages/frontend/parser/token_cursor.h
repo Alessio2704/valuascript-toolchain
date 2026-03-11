@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <initializer_list>
+
+#include "compiler_stage/compiler_context.h"
 #include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
 #include "stages/frontend/parser/ast.h"
@@ -13,9 +15,10 @@ namespace valuascript::compiler {
         const std::vector<Token> &tokens_;
         std::string file_path_;
         size_t current_ = 0;
+        std::shared_ptr<CompilerContext> context_;
 
     public:
-        TokenCursor(const std::vector<Token> &tokens, std::string file_path);
+        TokenCursor(const std::vector<Token> &tokens, std::string file_path, std::shared_ptr<CompilerContext> context);
 
         [[nodiscard]] const Token &peek() const;
 
@@ -35,6 +38,6 @@ namespace valuascript::compiler {
 
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan &start, const SourceSpan &end) const;
 
-        [[nodiscard]] ValuaScriptException error(const Token &token, ErrorCode code, const std::string &message) const;
+        [[noreturn]] void report_error(const Token &token, ErrorCode code, const std::string &message) const;
     };
 }

@@ -4,58 +4,49 @@ description: "Checks out code, builds and tests the project"
 runs:
   using: "composite"
   steps:
-    # --- Consolidated Build and Test for Linux ---
-    - name: Build and Test C++ Engine (Linux via Docker)
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ runner.os }}-${{ matrix.asset_name_suffix || 'default' }}
+
+    - name: Install Ninja (Linux)
       if: runner.os == 'Linux'
       shell: bash
+      run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+    - name: Configure CMake (Linux & macOS)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      shell: bash
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace \
-          ubuntu:22.04 \
-          bash -c "
-            set -e
-            # --- Install Prerequisites & Latest CMake from Kitware ---
-            apt-get update
-            apt-get install -y build-essential git wget gpg
-            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-            echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
-            apt-get update
-            apt-get install -y cmake
-        
-            # --- Configure, Build, and Test ---
-            cd /workspace
-            echo '--- Configuring CMake inside container ---'
-            cmake -B build -DCMAKE_BUILD_TYPE=Release
-            echo '--- Building project inside container ---'
-            cmake --build build -j --config Release
-            echo '--- Running C++ tests inside container ---'
-            cd build
-            ctest --verbose --output-on-failure
-          "
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
-    # --- Non-Linux Build Steps ---
-    - name: Configure CMake (macOS)
-      if: runner.os == 'macOS'
+    - name: Set up MSVC Developer Command Prompt
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.msvc_arch }}
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
       shell: bash
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: |
+        MSYS_NO_PATHCONV=1 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=cl \
+          -DCMAKE_CXX_COMPILER=cl \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_FLAGS="/Z7 /MP /EHsc" \
+          -DCMAKE_EXE_LINKER_FLAGS="/INCREMENTAL:NO /OPT:REF /OPT:ICF /DEBUG:NONE" \
+          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded \
+          -DINTERPROCEDURAL_OPTIMIZATION=OFF
 
-    - name: Configure CMake (Windows x64)
-      if: matrix.asset_name_suffix == 'windows-x64'
-      shell: bash
-      run: cmake -B build -G "Visual Studio 17 2022" -A x64
-
-    - name: Configure CMake (Windows ARM64)
-      if: matrix.asset_name_suffix == 'windows-arm64'
-      shell: bash
-      run: cmake -B build -G "Visual Studio 17 2022" -A ARM64
-
-    - name: Build CMake Project (non-Linux)
-      if: runner.os != 'Linux'
+    - name: Build CMake Project
       shell: bash
       run: cmake --build build --config Release -j
 
-    # --- Non-Linux Test Step ---
-    - name: Run C++ Engine Tests (macOS & Windows)
-      if: runner.os != 'Linux'
+    - name: Run C++ Engine Tests
       shell: bash
       run: |
         cd build

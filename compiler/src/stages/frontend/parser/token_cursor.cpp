@@ -1,8 +1,10 @@
 #include "stages/frontend/parser/token_cursor.h"
 
+#include "stages/frontend/parser/parser.h"
+
 namespace valuascript::compiler {
-    TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path)
-        : tokens_(tokens), file_path_(std::move(file_path)) {
+    TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path, std::shared_ptr<CompilerContext> context)
+        : tokens_(tokens), file_path_(std::move(file_path)), context_(std::move(context)) {
     }
 
     const Token &TokenCursor::peek() const {
@@ -39,7 +41,7 @@ namespace valuascript::compiler {
 
     const Token &TokenCursor::consume(TokenType type, ErrorCode code, const std::string &message) {
         if (check(type)) return advance();
-        throw error(peek(), code, message);
+        report_error(peek(), code, message);
     }
 
     SourceSpan TokenCursor::make_span(const Token &start_token, const Token &end_token) const {
@@ -54,12 +56,27 @@ namespace valuascript::compiler {
         return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
     }
 
-    ValuaScriptException TokenCursor::error(const Token &token, ErrorCode code, const std::string &message) const {
-        return ValuaScriptException(
+    [[noreturn]] void TokenCursor::report_error(const Token &token, ErrorCode code, const std::string &message) const {
+        size_t err_line = token.line;
+        size_t err_column = token.column;
+
+        if (current_ > 0) {
+            const Token &prev = tokens_[current_ - 1];
+
+            if (token.line > prev.line || token.type == TokenType::EndOfFile) {
+                err_line = prev.line;
+                err_column = prev.column + prev.lexeme.size();
+            }
+        }
+
+        ValuaScriptException ex(
             ErrorCategory::Syntax,
             code,
-            {token.line, token.column, file_path_},
+            {err_line, err_column, file_path_},
             message
         );
+
+        context_->handle_error(ex);
+        throw ParseSyncException();
     }
 }

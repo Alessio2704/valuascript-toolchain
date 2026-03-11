@@ -94,7 +94,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionCallSadParam{"func_missing_argument_value", "test(a: )", ErrorCode::InvalidExpression},
         FunctionCallSadParam{"func_missing_argument_after_comma", "test(a: 1, )", ErrorCode::
         MissingArgumentName},
-        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::UnmatchedParenthesis}
+        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParen}
     ),
     [](const testing::TestParamInfo<FunctionCallSadParam>& info) {
     return info.param.test_id;

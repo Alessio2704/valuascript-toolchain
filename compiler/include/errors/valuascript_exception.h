@@ -9,7 +9,6 @@ namespace valuascript::compiler {
     enum class ErrorCode {
 
         // --- File Reader Errors ---
-
         FileNotFound,
 
         // --- Lexer Errors ---

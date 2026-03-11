@@ -81,7 +81,7 @@ INSTANTIATE_TEST_SUITE_P(
         ExpressionSadParam{"missing_rhs_comparison", "a > ", ErrorCode::InvalidExpression},
         ExpressionSadParam{"missing_unary_operand", "not ", ErrorCode::InvalidExpression},
 
-        ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ErrorCode::UnmatchedParenthesis},
+        ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ErrorCode::ExpectedRightParen},
         ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ErrorCode::UnexpectedToken},
         ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ErrorCode::UnmatchedBracket},
 

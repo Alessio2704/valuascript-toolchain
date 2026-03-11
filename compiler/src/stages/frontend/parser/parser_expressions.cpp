@@ -59,7 +59,7 @@ namespace valuascript::compiler {
                 TokenType::Equals, TokenType::NotEquals, TokenType::Greater, TokenType::GreaterEqual, TokenType::Less,
                 TokenType::LessEqual
             })) {
-                throw cursor_.error(cursor_.previous(), ErrorCode::ChainingNotAllowedForComparisonOperations,
+                cursor_.report_error(cursor_.previous(), ErrorCode::ChainingNotAllowedForComparisonOperations,
                                     "Syntax Error: Chaining comparison operators is not allowed.");
             }
         }
@@ -181,8 +181,9 @@ namespace valuascript::compiler {
                 cursor_.advance();
                 return parse_dict_literal();
             default:
-                throw cursor_.error(cursor_.peek(), ErrorCode::InvalidExpression,
+                cursor_.report_error(cursor_.peek(), ErrorCode::InvalidExpression,
                                     "Syntax Error: Expected an expression.");
+                return nullptr;
         }
     }
 
@@ -212,7 +213,7 @@ namespace valuascript::compiler {
             return node;
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
                                                  "Expected ')' after expression.");
         expr->span = cursor_.make_span(start_token, end_token);
         return expr;
@@ -269,7 +270,7 @@ namespace valuascript::compiler {
             } while (cursor_.match({TokenType::Comma}));
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
+        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
                                                  "Expected ')' after arguments.");
         auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
         func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
@@ -299,7 +300,7 @@ namespace valuascript::compiler {
                                                             std::move(end_expr));
             index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
         } else if (!index_expr) {
-            throw cursor_.error(cursor_.previous(), ErrorCode::EmptyBracketAccess,
+            cursor_.report_error(cursor_.previous(), ErrorCode::EmptyBracketAccess,
                                 "Expected an index or slice inside '[]'.");
         }
 
@@ -335,14 +336,14 @@ namespace valuascript::compiler {
                 cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
             } else if (cursor_.match({TokenType::Default})) {
                 if (default_case != nullptr) {
-                    throw cursor_.error(cursor_.peek(), ErrorCode::MultipleDefaultCasesInSwitch,
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MultipleDefaultCasesInSwitch,
                                         "Syntax Error: A switch expression can only have one 'default' case.");
                 }
                 cursor_.consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
                                 "Expected '->' after 'default'.");
                 default_case = parse_expression();
             } else {
-                throw cursor_.error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
+                cursor_.report_error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
                                     "Syntax Error: Expected 'case' or 'default' inside switch body.");
             }
         }
