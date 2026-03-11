@@ -2,8 +2,7 @@
 #include <string>
 
 #include "token.h"
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "compiler_stage/compiler_context.h"
+#include "../../../compiler_context/compiler_context.h"
 #include "errors/valuascript_exception.h"
 
 namespace valuascript::compiler {
@@ -20,7 +19,7 @@ namespace valuascript::compiler {
         size_t column_start_ = 1;
         size_t column_current_ = 1;
 
-        void report_error(const ErrorCode code, const std::string &message) const;
+        void report_error(const ErrorCode &code, const std::string &message) const;
 
     public:
         Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context);

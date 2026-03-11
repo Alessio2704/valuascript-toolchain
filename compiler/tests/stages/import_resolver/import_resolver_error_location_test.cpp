@@ -4,7 +4,7 @@
 
 #include "../../../include/errors/valuascript_exception.h"
 #include "stages/import_resolver/import_resolver_stage.h"
-#include "compiler_stage/compiler_context.h"
+#include "../../../include/compiler_context/compiler_context.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript::compiler;

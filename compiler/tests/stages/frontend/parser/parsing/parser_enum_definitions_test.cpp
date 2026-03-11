@@ -32,6 +32,8 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         EnumHappyParam{"implicit_values", "enum OptionType: string { call, put }"},
         EnumHappyParam{"explicit_strings", "enum Direction: string { UP = \"up\", DOWN = \"down\" }"},
+        EnumHappyParam{"explicit_vector", "enum Test: vector<int> { ONE = [1,2,3,4], TWO = [5,6,7,8] }"},
+        EnumHappyParam{"explicit_matrix", "enum Test: vector<int> { ONE = [[1,2],[3,4]], TWO = [[5,6],[7,8]] }"},
         EnumHappyParam{"explicit_numbers", "enum Status: integer { ACTIVE = 1, PENDING = 2 }"},
         EnumHappyParam{"mixed_values", "enum Codes: integer { START = 100, CONTINUE, END = 999 }"},
         EnumHappyParam{"expression_values", "enum Math: decimal { PI = 3.14, TAU = 3.14 * 2.0 }"},

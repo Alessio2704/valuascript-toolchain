@@ -8,43 +8,10 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include "compiler_context.h"
+#include "compiler_stage_artifact.h"
+#include "../compiler_context/compiler_context.h"
 
 namespace valuascript::compiler {
-    enum class CompilerStageArtifactCode {
-        FilePath,
-        SourceCode,
-        TokenStream,
-        Ast,
-        ResolvedProject,
-        SymbolTable,
-        Bytecode,
-        LinterReport
-    };
-
-    struct CompilerStageArtifact {
-        CompilerStageArtifactCode code;
-        std::any data;
-    };
-
-    template<typename ExpectedType>
-    ExpectedType extract_artifact_data(const std::vector<CompilerStageArtifact> &artifacts,
-                                       CompilerStageArtifactCode target_code) {
-        auto it = std::find_if(artifacts.begin(), artifacts.end(), [target_code](const CompilerStageArtifact &a) {
-            return a.code == target_code;
-        });
-
-        if (it == artifacts.end()) {
-            throw std::runtime_error("Extraction Failed: Artifact code not found in pipeline history.");
-        }
-
-        try {
-            return std::any_cast<ExpectedType>(it->data);
-        } catch (const std::bad_any_cast &) {
-            throw std::runtime_error("Extraction Failed: Artifact type mismatch during cast.");
-        }
-    }
-
     class CompilerStage {
     private:
         std::string name_;
@@ -60,7 +27,8 @@ namespace valuascript::compiler {
 
         virtual ~CompilerStage() = default;
 
-        virtual CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &artifacts) = 0;
+        virtual CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context,
+                                          const std::vector<CompilerStageArtifact> &artifacts) = 0;
 
         [[nodiscard]] const std::string &get_name() const { return name_; }
         [[nodiscard]] CompilerStageArtifactCode get_output_artifact() const { return output_artifact_; }

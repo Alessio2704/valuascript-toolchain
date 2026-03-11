@@ -4,7 +4,7 @@
 #include <string>
 #include <initializer_list>
 
-#include "compiler_stage/compiler_context.h"
+#include "../../../compiler_context/compiler_context.h"
 #include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
 #include "stages/frontend/parser/ast.h"

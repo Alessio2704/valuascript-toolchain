@@ -5,7 +5,7 @@ namespace valuascript::compiler {
         : source_(std::move(source)), file_path_(std::move(file_path)), context_(std::move(context)) {
     }
 
-    void Lexer::report_error(const ErrorCode code, const std::string &message) const {
+    void Lexer::report_error(const ErrorCode& code, const std::string &message) const {
         ValuaScriptException ex(
             ErrorCategory::Lexical,
             code,

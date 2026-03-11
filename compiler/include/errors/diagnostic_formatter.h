@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "valuascript_exception.h"
+#include "../compiler_context/compiler_context.h"
 
 namespace valuascript::compiler {
     class DiagnosticFormatter {
@@ -13,7 +14,7 @@ namespace valuascript::compiler {
         static constexpr const char *BOLD = "\033[1m";
 
         static void print_errors(const std::vector<ValuaScriptException> &errors,
-                                               const std::map<std::string, std::string> &registry);
+                                               const SourceRegistry &registry);
 
         static std::string format_error(const ValuaScriptException &err, const std::string &source_code);
 

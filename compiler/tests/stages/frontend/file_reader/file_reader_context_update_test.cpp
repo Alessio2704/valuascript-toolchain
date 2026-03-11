@@ -2,7 +2,7 @@
 #include <fstream>
 #include <memory>
 #include "stages/frontend/file_reader/file_reader_stage.h"
-#include "compiler_stage/compiler_context.h"
+#include "../../../../include/compiler_context/compiler_context.h"
 
 using namespace valuascript::compiler;
 

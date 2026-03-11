@@ -6,9 +6,9 @@
 
 namespace valuascript::compiler {
     void DiagnosticFormatter::print_errors(const std::vector<ValuaScriptException> &errors,
-                                           const std::map<std::string, std::string> &registry) {
+                                           const SourceRegistry &registry) {
         for (const auto &err: errors) {
-            auto loc = err.get_location();
+            const auto& loc = err.get_location();
             std::string source_code;
 
             if (registry.contains(loc.file_path)) {

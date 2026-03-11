@@ -29,7 +29,7 @@ namespace valuascript::compiler {
         std::ostringstream buffer;
         buffer << file_stream.rdbuf();
 
-        context->source_registry[file_path] = buffer.str();
+        context->update_source_registry(file_path, buffer.str());
 
         return {CompilerStageArtifactCode::SourceCode, buffer.str()};
     }
