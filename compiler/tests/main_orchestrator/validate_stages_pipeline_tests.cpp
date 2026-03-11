@@ -13,7 +13,7 @@ public:
         {CompilerStageArtifactCode::FilePath}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::SourceCode, {}};
     }
 };
@@ -27,7 +27,7 @@ public:
         {CompilerStageArtifactCode::SourceCode}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::TokenStream, {}};
     }
 };
@@ -41,7 +41,7 @@ public:
         {CompilerStageArtifactCode::FilePath, CompilerStageArtifactCode::SourceCode}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::Ast, {}};
     }
 };
@@ -54,7 +54,7 @@ public:
         {CompilerStageArtifactCode::Ast, CompilerStageArtifactCode::FilePath}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::ResolvedProject, {}};
     }
 };
@@ -67,7 +67,7 @@ public:
         {CompilerStageArtifactCode::ResolvedProject}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::SymbolTable, {}};
     }
 };
@@ -80,7 +80,7 @@ public:
         {CompilerStageArtifactCode::SymbolTable}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::Bytecode, {}};
     }
 };
@@ -93,7 +93,7 @@ public:
         {CompilerStageArtifactCode::ResolvedProject}) {
     }
 
-    CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &) override {
+    CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &) override {
         return {CompilerStageArtifactCode::LinterReport, {}};
     }
 };

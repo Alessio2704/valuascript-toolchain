@@ -9,22 +9,35 @@ namespace valuascript::compiler {
             std::string source_;
             std::string file_path_;
             std::vector<Token> tokens_;
-
+            std::shared_ptr<CompilerContext> context_;
             size_t start_ = 0;
             size_t current_ = 0;
             size_t line_ = 1;
+            size_t line_start_ = 1;
             size_t column_start_ = 1;
             size_t column_current_ = 1;
 
+            void report_error(const ErrorCode code, const std::string &message) const {
+                ValuaScriptException ex(
+                    ErrorCategory::Lexical,
+                    code,
+                    {line_start_, column_start_, file_path_},
+                    message
+                );
+
+                context_->handle_error(ex);
+            }
+
         public:
-            Lexer(std::string source, std::string file_path)
-                : source_(std::move(source)), file_path_(std::move(file_path)) {
+            Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context)
+                : source_(std::move(source)), file_path_(std::move(file_path)), context_(std::move(context)) {
             }
 
             std::vector<Token> tokenize() {
                 while (!is_at_end()) {
                     start_ = current_;
                     column_start_ = column_current_;
+                    line_start_ = line_;
                     scan_token();
                 }
                 tokens_.emplace_back(TokenType::EndOfFile, "", line_, column_current_);
@@ -78,6 +91,11 @@ namespace valuascript::compiler {
                         break;
                     }
 
+                    if (!is_docstring && peek() == '\n') {
+                        report_error(ErrorCode::UnclosedString, "Syntax Error: Unclosed string literal.");
+                        return;
+                    }
+
                     if (peek() == '\n') {
                         line_++;
                         column_current_ = 1;
@@ -87,12 +105,8 @@ namespace valuascript::compiler {
                 }
 
                 if (is_at_end()) {
-                    throw ValuaScriptException(
-                        ErrorCategory::Lexical,
-                        ErrorCode::UnclosedString,
-                        {line_, column_start_, file_path_},
-                        "Syntax Error: Unclosed string literal."
-                    );
+                    report_error(ErrorCode::UnclosedString, "Syntax Error: Unclosed string literal.");
+                    return;
                 }
 
                 if (is_docstring) {
@@ -112,10 +126,8 @@ namespace valuascript::compiler {
                         if (peek() == '_') {
                             if (!std::isdigit(peek_next())) {
                                 advance();
-                                throw ValuaScriptException(
-                                    ErrorCategory::Lexical,
+                                report_error(
                                     ErrorCode::InvalidCharacter,
-                                    {line_, column_start_, file_path_},
                                     "Syntax Error: Invalid character '_' found."
                                 );
                             }
@@ -132,10 +144,8 @@ namespace valuascript::compiler {
                         consume_integer_part();
                     } else {
                         advance();
-                        throw ValuaScriptException(
-                            ErrorCategory::Lexical,
+                        report_error(
                             ErrorCode::UnterminatedDecimal,
-                            {line_, column_start_, file_path_},
                             "Syntax Error: Unterminated decimal number. Expected digits after '.'."
                         );
                     }
@@ -198,16 +208,14 @@ namespace valuascript::compiler {
                                     last_type == TokenType::RightParen ||
                                     last_type == TokenType::RightBracket) {
                                     is_member_access = true;
-                                    }
+                                }
                             }
 
                             if (is_member_access) {
                                 add_token(TokenType::Dot);
                             } else {
-                                throw ValuaScriptException(
-                                    ErrorCategory::Lexical,
+                                report_error(
                                     ErrorCode::DecimalMissingLeadingZero,
-                                    {line_, column_start_, file_path_},
                                     "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5')."
                                 );
                             }
@@ -224,7 +232,7 @@ namespace valuascript::compiler {
                             add_token(TokenType::Slash);
                         }
                         break;
-                        
+
                     case '#': add_token(TokenType::Hash);
                         break;
 
@@ -261,10 +269,8 @@ namespace valuascript::compiler {
                             msg += c;
                             msg += "' found.";
 
-                            throw ValuaScriptException(
-                                ErrorCategory::Lexical,
+                            report_error(
                                 ErrorCode::InvalidCharacter,
-                                {line_, column_start_, file_path_},
                                 msg
                             );
                         }
@@ -282,11 +288,12 @@ namespace valuascript::compiler {
         ) {
     }
 
-    CompilerStageArtifact LexerStage::run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &artifacts) {
+    CompilerStageArtifact LexerStage::run(const std::shared_ptr<CompilerContext> &context,
+                                          const std::vector<CompilerStageArtifact> &artifacts) {
         const auto source = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::SourceCode);
         const auto file_path = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::FilePath);
 
-        Lexer lexer(source, file_path);
+        Lexer lexer(source, file_path, context);
         std::vector<Token> tokens = lexer.tokenize();
 
         return {CompilerStageArtifactCode::TokenStream, tokens};

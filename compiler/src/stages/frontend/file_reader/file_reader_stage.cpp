@@ -12,7 +12,7 @@ namespace valuascript::compiler {
         ) {
     }
 
-    CompilerStageArtifact FileReaderStage::run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact> &artifacts) {
+    CompilerStageArtifact FileReaderStage::run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &artifacts) {
         auto file_path = extract_artifact_data<std::string>(
             artifacts,
             CompilerStageArtifactCode::FilePath

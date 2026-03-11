@@ -21,8 +21,16 @@ namespace valuascript::compiler {
         [[nodiscard]] const std::vector<ValuaScriptException>& get_errors() const { return errors_; }
     };
 
-    struct CompilerContext {
+    struct  CompilerContext {
         CompilerSettings settings;
         DiagnosticReporter diagnostics;
+
+        void handle_error(const ValuaScriptException& ex) {
+            diagnostics.report_error(ex);
+
+            if (settings.fail_fast) {
+                throw ex;
+            }
+        }
     };
 }

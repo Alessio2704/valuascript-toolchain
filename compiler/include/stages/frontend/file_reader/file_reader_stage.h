@@ -6,7 +6,7 @@ namespace valuascript::compiler {
     public:
         FileReaderStage();
 
-        CompilerStageArtifact run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact>& artifacts) override;
+        CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact>& artifacts) override;
     };
 
 }

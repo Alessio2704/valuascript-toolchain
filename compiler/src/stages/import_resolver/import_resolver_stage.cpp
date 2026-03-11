@@ -19,7 +19,7 @@ namespace valuascript::compiler {
         return std::filesystem::weakly_canonical(base_dir / import_path).string();
     }
 
-    void ImportResolverStage::resolve_recursive(std::shared_ptr<CompilerContext> context, const std::string& current_file, ResolvedProjectArtifact& project) {
+    void ImportResolverStage::resolve_recursive(const std::shared_ptr<CompilerContext>& context, const std::string& current_file, ResolvedProjectArtifact& project) {
         if (resolving_.contains(current_file)) {
             throw ValuaScriptException(
                 ErrorCategory::Import,
@@ -69,7 +69,7 @@ namespace valuascript::compiler {
         resolved_.insert(current_file);
     }
 
-    CompilerStageArtifact ImportResolverStage::run(std::shared_ptr<CompilerContext> context, const std::vector<CompilerStageArtifact>& artifacts) {
+    CompilerStageArtifact ImportResolverStage::run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact>& artifacts) {
         auto entry_file = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );

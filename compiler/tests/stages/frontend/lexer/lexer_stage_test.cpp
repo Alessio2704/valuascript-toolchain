@@ -2,7 +2,7 @@
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "stages/frontend/lexer/token.h"
 #include "errors/valuascript_exception.h"
-#include "LexerBaseTest.h"
+#include "lexer_tests_utils.h"
 #include <string>
 #include <vector>
 
