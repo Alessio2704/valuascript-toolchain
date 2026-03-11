@@ -4,9 +4,14 @@
 
 
 namespace valuascript::compiler {
-    enum class ErrorCategory { Lexical, Syntax, Semantic, Import, Internal };
+    enum class ErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
 
     enum class ErrorCode {
+
+        // --- File Reader Errors ---
+
+        FileNotFound,
+
         // --- Lexer Errors ---
         InvalidCharacter,
         UnclosedString,

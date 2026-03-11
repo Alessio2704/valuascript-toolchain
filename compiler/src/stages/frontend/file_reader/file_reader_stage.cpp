@@ -20,7 +20,8 @@ namespace valuascript::compiler {
 
         std::ifstream file_stream(file_path);
         if (!file_stream.is_open()) {
-            throw std::runtime_error("FileReaderStage Error: Cannot open file at path '" + file_path + "'");
+            ValuaScriptException ex(ErrorCategory::File, ErrorCode::FileNotFound, {0,0,file_path}, "FileReaderStage Error: Cannot open file at path '" + file_path + "'");
+            context->handle_error(ex);
         }
 
         std::ostringstream buffer;

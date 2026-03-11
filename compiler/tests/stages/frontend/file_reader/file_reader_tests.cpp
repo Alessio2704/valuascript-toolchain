@@ -42,5 +42,5 @@ TEST_F(FileReaderBaseTest, SuccessfullyReadsFile) {
 }
 
 TEST_F(FileReaderBaseTest, ThrowsOnMissingFile) {
-    EXPECT_THROW(read_file("non_existent_file.vs"), std::runtime_error);
+    EXPECT_THROW(read_file("non_existent_file.vs"), ValuaScriptException);
 }
