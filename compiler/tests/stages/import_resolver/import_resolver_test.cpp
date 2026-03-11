@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "ImportResolverBase.h"
+#include "import_resolver_test_utils.h"
 #include "errors/valuascript_exception.h"
 #include "stages/import_resolver/import_resolver_stage.h"
 

@@ -47,6 +47,8 @@ protected:
             const auto &actual = actual_errors[i];
             const auto &expected = param.expected_errors[i];
 
+            EXPECT_EQ(actual.get_category(), ErrorCategory::Lexical);
+
             EXPECT_EQ(actual.get_code(), expected.code)
                 << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
                 << "\nActual Code: " << static_cast<int>(actual.get_code())
