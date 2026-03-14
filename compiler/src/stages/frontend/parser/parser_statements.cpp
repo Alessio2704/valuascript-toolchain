@@ -7,36 +7,39 @@ namespace valuascript::compiler {
             modifiers = parse_modifiers();
         }
 
+        std::unique_ptr<Statement> stmt;
+
         switch (cursor_.peek().type) {
             case TokenType::Let:
             case TokenType::Var:
-                return parse_assignment(std::move(modifiers));
+                stmt = parse_assignment(std::move(modifiers));
+                break;
 
             case TokenType::Return:
                 if (!modifiers.empty()) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
+                                         "Syntax Error: Modifiers can only be attached to variable declarations.");
                 }
-                return parse_return_statement();
+                stmt = parse_return_statement();
+                break;
 
             default:
                 if (!modifiers.empty()) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
+                                         "Syntax Error: Modifiers can only be attached to variable declarations.");
                 }
-                return parse_expression_statement();
+                stmt = parse_expression_statement();
+                break;
         }
+
+        verify_statement_end();
+        return stmt;
     }
 
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.peek();
-        bool is_mutable = false;
-
-        if (cursor_.match({TokenType::Let})) {
-            is_mutable = false;
-        } else if (cursor_.match({TokenType::Var})) {
-            is_mutable = true;
-        }
+        bool is_mutable = cursor_.match({TokenType::Var});
+        if (!is_mutable) cursor_.consume(TokenType::Let, ErrorCode::UnexpectedToken, "Expected 'let' or 'var'.");
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
@@ -54,11 +57,11 @@ namespace valuascript::compiler {
 
             targets.emplace_back(target.lexeme, std::move(type_annotation));
 
-            if (cursor_.match({TokenType::Comma})) {
-            } else if (cursor_.peek().type == TokenType::Identifier) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaInMultiAssignment,
-                                     "Syntax Error: Missing comma ',' between variable names in declaration.");
-            } else {
+            if (!cursor_.match({TokenType::Comma})) {
+                if (cursor_.peek().type == TokenType::Identifier) {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaInMultiAssignment,
+                                         "Syntax Error: Missing comma ',' between variable names.");
+                }
                 break;
             }
         } while (true);
@@ -66,15 +69,15 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
                         "Syntax Error: Incomplete assignment. Expected '='.");
 
-        if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) || cursor_.
-            check(TokenType::Func) || cursor_.check(TokenType::At)) {
+        if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) ||
+            cursor_.check(TokenType::Func) || cursor_.check(TokenType::At)) {
             cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
                                  "Syntax Error: Missing value after '='.");
         }
 
         auto value = parse_expression();
 
-        check_trailing_expression();
+        verify_statement_end();
 
         auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
                                                    is_mutable);
@@ -88,7 +91,7 @@ namespace valuascript::compiler {
 
         if (cursor_.match({TokenType::Comma})) {
             cursor_.report_error(cursor_.previous(), ErrorCode::MultiReassignmentNotSupported,
-                                 "Syntax Error: Multiple reassignment is not supported. You must reassign variables individually.");
+                                 "Syntax Error: Multiple reassignment is not supported. Reassign variables individually.");
         }
 
         if (cursor_.match({TokenType::Assign})) {
@@ -100,7 +103,7 @@ namespace valuascript::compiler {
             auto value = parse_expression();
             SourceSpan end_span = value->span;
 
-            check_trailing_expression();
+            verify_statement_end();
 
             auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
             reassignment->span = cursor_.combine_spans(start_span, end_span);
@@ -112,7 +115,7 @@ namespace valuascript::compiler {
                                  "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
         }
 
-        check_trailing_expression();
+        verify_statement_end();
 
         auto expr_stmt = std::make_unique<ExpressionStatement>(std::move(expr));
         expr_stmt->span = start_span;
@@ -127,7 +130,7 @@ namespace valuascript::compiler {
             return_values.push_back(parse_expression());
         } while (cursor_.match({TokenType::Comma}));
 
-        check_trailing_expression();
+        verify_statement_end();
 
         auto ret_stmt = std::make_unique<ReturnStatement>(std::move(return_values));
         ret_stmt->span = cursor_.make_span(start_token, cursor_.previous());

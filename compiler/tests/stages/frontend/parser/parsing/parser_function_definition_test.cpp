@@ -104,18 +104,15 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionSadParam{"malformed_arrow_2", "func test() scalar > {}", ErrorCode::MissingArrowInFunction},
         FunctionSadParam{"missing_left_brace", "func test() -> scalar }", ErrorCode::ExpectedLeftBrace},
         FunctionSadParam{"missing_right_brace", "func test() -> scalar { return 1", ErrorCode::ExpectedRightBrace},
-
         FunctionSadParam{"missing_param_name", "func test(: scalar) -> scalar {}", ErrorCode::MissingParameterName},
         FunctionSadParam{"missing_colon", "func test(a scalar) -> scalar {}", ErrorCode::MissingColonAfterParameter},
         FunctionSadParam{"missing_param_type", "func test(a: ) -> scalar {}", ErrorCode::MissingTypeAnnotation},
-        FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: boolean) -> scalar {}", ErrorCode::
-        ExpectedRightParen}, // Fails expecting ')' after first param
         FunctionSadParam{"unclosed_generic", "func test(a: vector<scalar) -> scalar {}", ErrorCode::UnmatchedBracket},
-
         FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotation},
         FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedParenthesisInTuple},
-
-        FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::InvalidStandaloneStatement}
+        FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::InvalidStandaloneStatement},
+        FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: decimal) -> scalar { return 1 + 1 }", ErrorCode::ExpectedCommaSeparatorInParameterList},
+        FunctionSadParam{"missing_comma_return", "func test(a: scalar, b: decimal) -> scalar decimal { return 1 + 1 }", ErrorCode::ExpectedCommaSeparatorInReturnTypeList}
     ),
     [](const testing::TestParamInfo<FunctionSadParam>& info) {
     return info.param.test_id;

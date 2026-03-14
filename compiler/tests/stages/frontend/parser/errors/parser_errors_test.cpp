@@ -201,7 +201,8 @@ INSTANTIATE_TEST_SUITE_P(
         "let res = a ([1, 2])\n"
         "let res = a ({1, 2})\n"
         "let res = a ([[1, 2], [3, 4])\n"
-        "let res = a (-5)\n",
+        "let res = a (-5)\n"
+        "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
         {
         {ErrorCode::MissingOperatorOrArgumentName, 1, 15},
         {ErrorCode::MissingOperator, 2, 20},
@@ -217,6 +218,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ErrorCode::MissingOperatorOrArgumentName, 16, 14},
         {ErrorCode::MissingOperatorOrArgumentName, 17, 14},
         {ErrorCode::MissingOperatorOrArgumentName, 18, 14},
+        {ErrorCode::MissingOperatorOrArgumentName, 19, 38},
         }
         },
         ParserMultiErrorTestCase{
@@ -226,7 +228,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let x = trailing_comma(a: 1, )\n"
         "func true() -> { return }",
         {
-        {ErrorCode::ExpectedRightParen, 1, 22},
+        {ErrorCode::ExpectedCommaSeparatorInParameterList, 1, 22},
         {ErrorCode::MissingOperator, 2, 30},
         {ErrorCode::TrailingCommaInFunctionCall, 3, 29},
         {ErrorCode::MissingFunctionName, 4, 10}

@@ -48,6 +48,25 @@ namespace valuascript::compiler::test {
             return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
         }
 
+        std::shared_ptr<Program> parse_expression_as_type_annotation(const std::string &expression) {
+            std::string code = "let result: " + expression + " = 1";
+
+            auto context = std::make_shared<CompilerContext>();
+            LexerStage lexer;
+            auto lexer_result = lexer.run(context, {
+                                              {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+                                              {CompilerStageArtifactCode::SourceCode, code}
+                                          });
+
+            ParserStage parser;
+            auto parser_result = parser.run(context, {
+                                                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+                                                lexer_result
+                                            });
+
+            return std::any_cast<std::shared_ptr<Program> >(parser_result.data);
+        }
+
         Assignment *get_first_assignment(const std::shared_ptr<Program> &ast) {
             if (ast->execution_steps.empty()) return nullptr;
             return dynamic_cast<Assignment *>(ast->execution_steps[0].get());

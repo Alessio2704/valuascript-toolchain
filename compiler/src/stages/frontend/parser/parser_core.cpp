@@ -93,13 +93,70 @@ namespace valuascript::compiler {
         }
     }
 
-    void Parser::check_trailing_expression() const {
+    void Parser::verify_statement_end() const {
         if (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line) {
             if (is_expression_start(cursor_.peek().type)) {
                 cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
                                      "Syntax Error: Missing operator between expressions.");
             }
         }
+    }
+
+        std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
+        TokenType closing_token, std::optional<ErrorCode> trailing_comma_err) {
+        std::vector<std::unique_ptr<Expression> > elements;
+
+        while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
+            if (!is_expression_start(cursor_.peek().type)) break;
+
+            elements.push_back(parse_expression());
+
+            if (cursor_.match({TokenType::Comma})) {
+                if (cursor_.check(closing_token) && trailing_comma_err) {
+                    cursor_.report_error(cursor_.previous(), *trailing_comma_err,
+                                         "Syntax Error: Trailing comma in list.");
+                }
+            } else if (!cursor_.check(closing_token)) {
+                if (is_expression_start(cursor_.peek().type)) {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                         "Syntax Error: Missing comma ',' or operator between expressions.");
+                } else {
+                    break;
+                }
+            }
+        }
+        return elements;
+    }
+
+    std::vector<std::pair<std::string, std::unique_ptr<Expression> > > Parser::parse_key_value_list(
+        TokenType closing_token,
+        ErrorCode key_err, const std::string &key_msg,
+        ErrorCode colon_err, const std::string &colon_msg,
+        ErrorCode missing_comma_err,
+        std::optional<ErrorCode> trailing_comma_err) {
+        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
+
+        while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
+            Token key_token = cursor_.consume(TokenType::Identifier, key_err, key_msg);
+            cursor_.consume(TokenType::Colon, colon_err, colon_msg);
+
+            pairs.emplace_back(key_token.lexeme, parse_expression());
+
+            if (cursor_.match({TokenType::Comma})) {
+                if (cursor_.check(closing_token) && trailing_comma_err) {
+                    cursor_.report_error(cursor_.previous(), *trailing_comma_err, "Syntax Error: Trailing comma.");
+                }
+            } else if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
+                cursor_.report_error(cursor_.peek(), missing_comma_err,
+                                     "Syntax Error: Missing comma ',' between fields.");
+            } else if (!cursor_.check(closing_token) && is_expression_start(cursor_.peek().type)) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                     "Syntax Error: Missing operator between expressions.");
+            } else {
+                break;
+            }
+        }
+        return pairs;
     }
 
     void Parser::synchronize() {

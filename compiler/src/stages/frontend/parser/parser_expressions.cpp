@@ -195,35 +195,16 @@ namespace valuascript::compiler {
             return node;
         }
 
-        auto expr = parse_expression();
+        auto first_expr = parse_expression();
+
         if (cursor_.match({TokenType::Comma})) {
             std::vector<std::unique_ptr<Expression> > elements;
-            elements.push_back(std::move(expr));
+            elements.push_back(std::move(first_expr));
 
-            if (cursor_.check(TokenType::RightParen)) {
-                cursor_.report_error(cursor_.previous(), ErrorCode::TrailingCommaInTuple,
-                                     "Syntax Error: Trailing comma in tuple literal.");
-            }
+            auto remaining_elements = parse_expression_list(TokenType::RightParen, ErrorCode::TrailingCommaInTuple);
 
-            while (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
-                if (!is_expression_start(cursor_.peek().type)) {
-                    break;
-                }
-
-                elements.push_back(parse_expression());
-
-                if (cursor_.match({TokenType::Comma})) {
-                    if (cursor_.check(TokenType::RightParen)) {
-                        cursor_.report_error(cursor_.previous(), ErrorCode::TrailingCommaInTuple,
-                                             "Syntax Error: Trailing comma in tuple literal.");
-                    }
-                } else if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing comma ',' or operator between expressions.");
-                } else {
-                    break;
-                }
-            }
+            elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
+                            std::make_move_iterator(remaining_elements.end()));
 
             const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesisInTuple,
                                                      "Expected ')' after tuple elements.");
@@ -234,37 +215,23 @@ namespace valuascript::compiler {
 
         if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
             cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                 "Syntax Error: Missing operator between expressions.");
+                                 "Syntax Error: Missing operator between expressions inside grouping.");
         }
 
         const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
                                                  "Expected ')' after expression.");
-        expr->span = cursor_.make_span(start_token, end_token);
-        return expr;
+        first_expr->span = cursor_.make_span(start_token, end_token);
+        return first_expr;
     }
 
     std::unique_ptr<Expression> Parser::parse_tensor_literal() {
         const Token &start_token = cursor_.previous();
-        std::vector<std::unique_ptr<Expression> > elements;
 
-        while (!cursor_.check(TokenType::RightBracket) && !cursor_.is_at_end()) {
-            if (!is_expression_start(cursor_.peek().type)) {
-                break;
-            }
-
-            elements.push_back(parse_expression());
-
-            if (cursor_.match({TokenType::Comma})) {
-            } else if (!cursor_.check(TokenType::RightBracket) && is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                     "Syntax Error: Missing comma ',' or operator between expressions.");
-            } else {
-                break;
-            }
-        }
+        auto elements = parse_expression_list(TokenType::RightBracket);
 
         const Token &end_token = cursor_.consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
                                                  "Expected ']' after vector elements.");
+
         auto node = std::make_unique<TensorLiteral>(std::move(elements));
         node->span = cursor_.make_span(start_token, end_token);
         return node;
@@ -272,27 +239,12 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_dict_literal() {
         const Token &start_token = cursor_.previous();
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
 
-        while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-            Token key_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedDictionaryKey,
-                                              "Expected key in dictionary.");
-            cursor_.consume(TokenType::Colon, ErrorCode::ExpectedColonAfterDictionaryKey,
-                            "Expected ':' after dictionary key.");
-
-            pairs.emplace_back(key_token.lexeme, parse_expression());
-
-            if (cursor_.match({TokenType::Comma})) {
-            } else if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral,
-                                     "Syntax Error: Missing comma ',' between dictionary fields.");
-            } else if (!cursor_.check(TokenType::RightBrace) && is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                     "Syntax Error: Missing operator between expressions.");
-            } else {
-                break;
-            }
-        }
+        auto pairs = parse_key_value_list(
+            TokenType::RightBrace,
+            ErrorCode::ExpectedDictionaryKey, "Expected key in dictionary.",
+            ErrorCode::ExpectedColonAfterDictionaryKey, "Expected ':' after dictionary key.",
+            ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral);
 
         const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral,
                                                  "Expected '}' after dictionary literal.");
@@ -303,86 +255,64 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target) {
         SourceSpan target_span = target->span;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+        if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
+            const TokenType p0 = cursor_.peek().type;
+            const TokenType p1 = cursor_.peek(1).type;
 
-        while (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
-            if (arguments.empty()) {
-                const TokenType p0 = cursor_.peek().type;
-                const TokenType p1 = cursor_.peek(1).type;
-
-                if (p0 == TokenType::Identifier) {
-                    if (p1 != TokenType::Colon && is_binary_operator(p1)) {
-                        cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
-                                             "Syntax Error: Missing operator (like '*') before '(', or missing argument name.");
-                    }
+            if (p0 == TokenType::Identifier) {
+                if (p1 != TokenType::Colon && is_binary_operator(p1)) {
+                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
+                                         "Syntax Error: Missing operator (like '*') before '(', or missing argument name.");
+                }
+            } else {
+                if (is_expression_start(p0)) {
+                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
+                                         "Syntax Error: Missing operator (like '*') before '(', or expected argument name.");
                 } else {
-                    if (is_expression_start(p0)) {
-                        cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
-                                             "Syntax Error: Missing operator (like '*') before '(', or expected argument name.");
-                    }
-
                     cursor_.report_error(cursor_.peek(), ErrorCode::MissingArgumentName,
                                          "Syntax Error: Expected an argument name (e.g., 'name: value') or a closing ')'.");
                 }
             }
-
-            Token arg_name = cursor_.consume(TokenType::Identifier, ErrorCode::MissingArgumentName,
-                                             "Expected argument name in function call.");
-            cursor_.consume(TokenType::Colon, ErrorCode::MissingColonAfterArgument,
-                            "Expected ':' after argument name.");
-            arguments.emplace_back(arg_name.lexeme, parse_expression());
-
-            if (!cursor_.match({TokenType::Comma})) {
-                if (cursor_.peek().type == TokenType::Identifier && cursor_.peek(1).type == TokenType::Colon) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
-                                         "Syntax Error: Missing comma ',' after argument.");
-                }
-
-                if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing operator between expressions.");
-                }
-
-                break;
-            }
-
-            if (cursor_.match({TokenType::Comma, TokenType::RightParen})) {
-                cursor_.report_error(cursor_.previous(2), ErrorCode::TrailingCommaInFunctionCall,
-                                     "Syntax Error: Trailing comma in function call.");
-            }
         }
+
+        auto arguments = parse_key_value_list(
+            TokenType::RightParen,
+            ErrorCode::MissingArgumentName, "Expected argument name in function call.",
+            ErrorCode::MissingColonAfterArgument, "Expected ':' after argument name.",
+            ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
+            ErrorCode::TrailingCommaInFunctionCall);
 
         const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
                                                  "Expected ')' after arguments.");
+
         auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
         func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
         return func_call;
     }
 
-
     std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
         SourceSpan target_span = target->span;
-        std::unique_ptr<Expression> index_expr = nullptr;
 
-        if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
-            index_expr = parse_expression();
+        auto parse_bound = [&]() -> std::unique_ptr<Expression> {
+            if (cursor_.check(TokenType::Colon) || cursor_.check(TokenType::RightBracket)) {
+                return nullptr;
+            }
+
+            auto expr = parse_expression();
+
             if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
                 if (is_expression_start(cursor_.peek().type)) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing operator between expressions.");
+                                         "Syntax Error: Missing operator or expected ':' or ']' in tensor access.");
                 }
             }
-        }
+            return expr;
+        };
+
+        std::unique_ptr<Expression> index_expr = parse_bound();
 
         if (cursor_.match({TokenType::Colon})) {
-            std::unique_ptr<Expression> end_expr = nullptr;
-            if (!cursor_.check(TokenType::RightBracket)) {
-                end_expr = parse_expression();
-                if (!cursor_.check(TokenType::RightBracket) && is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing operator between expressions.");
-                }
-            }
+            std::unique_ptr<Expression> end_expr = parse_bound();
 
             SourceSpan colon_span = index_expr ? index_expr->span : target_span;
             SourceSpan slice_end_span = end_expr
@@ -398,7 +328,8 @@ namespace valuascript::compiler {
         }
 
         const Token &end_token = cursor_.consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
-                                                 "Expected ']' after vector index.");
+                                                 "Expected ']' after tensor index.");
+
         auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
         bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
         return bracket_access;
@@ -414,6 +345,24 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case = nullptr;
 
+        auto parse_branch_result = [&]() -> std::unique_ptr<Expression> {
+            cursor_.consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
+                            "Expected '->' before case result.");
+            auto expr = parse_expression();
+
+            if (!cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) && !cursor_.
+                check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+                if (is_expression_start(cursor_.peek().type)) {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                         "Syntax Error: Missing operator between expressions in switch case result.");
+                } else {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
+                                         "Syntax Error: Expected 'case', 'default', or '}' after case result.");
+                }
+            }
+            return expr;
+        };
+
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
             if (cursor_.match({TokenType::Case})) {
                 std::vector<std::string> case_identifiers;
@@ -421,28 +370,28 @@ namespace valuascript::compiler {
                     Token id_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseName,
                                                      "Expected enum case identifier after 'case'.");
                     case_identifiers.push_back(id_token.lexeme);
-                } while (cursor_.match({TokenType::Comma}));
 
-                cursor_.consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
-                                "Expected '->' after case identifiers.");
-                auto result_expr = parse_expression();
+                    if (cursor_.match({TokenType::Comma})) {
+                    } else if (cursor_.check(TokenType::Identifier)) {
+                        cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                             "Syntax Error: Missing comma ',' between case identifiers.");
+                    } else {
+                        break;
+                    }
+                } while (true);
+
+                auto result_expr = parse_branch_result();
                 cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
             } else if (cursor_.match({TokenType::Default})) {
                 if (default_case != nullptr) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::MultipleDefaultCasesInSwitch,
                                          "Syntax Error: A switch expression can only have one 'default' case.");
                 }
-                cursor_.consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier,
-                                "Expected '->' after 'default'.");
-                default_case = parse_expression();
+
+                default_case = parse_branch_result();
             } else {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing operator between expressions.");
-                } else {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
-                                         "Syntax Error: Expected 'case' or 'default' inside switch body.");
-                }
+                cursor_.report_error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitch,
+                                     "Syntax Error: Expected 'case' or 'default' inside switch body.");
             }
         }
 

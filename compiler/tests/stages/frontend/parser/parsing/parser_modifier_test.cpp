@@ -95,6 +95,7 @@ INSTANTIATE_TEST_SUITE_P(
         ModifierSadParam{"MissingArgumentName", "@bind(: \"slider\") let x = 1", ErrorCode::MissingArgumentName},
         ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", ErrorCode::UnmatchedParenthesis},
         ModifierSadParam{"DoubleAtSign", "@@export let x = 1", ErrorCode::ExpectedModifierName},
+        ModifierSadParam{"missing_comma_in_param", "@export(a: 1 b: 2) let x = 1", ErrorCode::MissingCommaSeparatorForArgumentsInModifier},
         ModifierSadParam{"missing_operator_1", "@export(a: 1 2) let x = 1", ErrorCode::MissingOperator},
         ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", ErrorCode::MissingOperator},
         ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", ErrorCode::MissingOperator},
