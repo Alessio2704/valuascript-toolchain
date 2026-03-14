@@ -37,6 +37,7 @@ INSTANTIATE_TEST_SUITE_P(
     DictLiteralHappyPathTest,
     testing::Values(
         DictLiteralHappyParam{"dict", "{ name: \"one\", age: 20 }"},
+        DictLiteralHappyParam{"dict_trailing_comma", "{ name: \"one\", age: 20, }"},
         DictLiteralHappyParam{"dict_complex", "{ name: func_call(), age: 20 }"},
         DictLiteralHappyParam{"dict_complex_1", "{ name: func_call(), age: matrix[0][:] }"},
         DictLiteralHappyParam{"dict_complex_2",
@@ -79,13 +80,16 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         DictLiteralSadParam{"dict_missing_brace", "{a: 1", ErrorCode::
         UnmatchedBraceInDictionaryLiteral},
+        DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", ErrorCode::
+        ExpectedCommaSeparatorInDictionaryLiteral},
         DictLiteralSadParam{"dict_missing_key", "{1}", ErrorCode::
         ExpectedDictionaryKey},
         DictLiteralSadParam{"dict_missing_colon", "{a 1}", ErrorCode::
         ExpectedColonAfterDictionaryKey},
         DictLiteralSadParam{"dict_empty", "{a}", ErrorCode::
         ExpectedColonAfterDictionaryKey},
-        DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ErrorCode::ExpectedDictionaryKey}
+        DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ErrorCode::ExpectedDictionaryKey},
+        DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<DictLiteralSadParam>& info) {
     return info.param.test_id;

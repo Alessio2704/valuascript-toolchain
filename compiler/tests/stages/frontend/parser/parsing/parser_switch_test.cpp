@@ -97,7 +97,11 @@ INSTANTIATE_TEST_SUITE_P(
         SwitchSadParam{"duplicate_default", "let a = switch (res) { default -> 1 default -> 2 }",
        ErrorCode::MultipleDefaultCasesInSwitch},
         SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-        ErrorCode::CaseOrDefaultMissingInSwitch}
+        ErrorCode::CaseOrDefaultMissingInSwitch},
+        SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", ErrorCode::MissingOperator},
+        SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", ErrorCode::MissingOperatorOrArgumentName},
+        SwitchSadParam{"missing_operator_3", "let a = switch (res) { case UP -> 1 + a() (2 + 3) }", ErrorCode::MissingOperatorOrArgumentName},
+        SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", ErrorCode::MissingOperator}
 
     ),
     [](const testing::TestParamInfo<SwitchSadParam>& info) {

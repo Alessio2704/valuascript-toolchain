@@ -94,7 +94,12 @@ INSTANTIATE_TEST_SUITE_P(
         ModifierSadParam{"MissingColonInArg", "@bind(ui \"slider\") let x = 1", ErrorCode::MissingColonAfterArgument},
         ModifierSadParam{"MissingArgumentName", "@bind(: \"slider\") let x = 1", ErrorCode::MissingArgumentName},
         ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", ErrorCode::UnmatchedParenthesis},
-        ModifierSadParam{"DoubleAtSign", "@@export let x = 1", ErrorCode::ExpectedModifierName}
+        ModifierSadParam{"DoubleAtSign", "@@export let x = 1", ErrorCode::ExpectedModifierName},
+        ModifierSadParam{"missing_operator_1", "@export(a: 1 2) let x = 1", ErrorCode::MissingOperator},
+        ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", ErrorCode::MissingOperator},
+        ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", ErrorCode::MissingOperator},
+        ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", ErrorCode::MissingOperatorOrArgumentName},
+        ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<ModifierSadParam>& info) {
         return info.param.test_name;

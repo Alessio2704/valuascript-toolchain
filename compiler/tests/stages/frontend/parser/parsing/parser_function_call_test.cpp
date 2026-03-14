@@ -89,12 +89,13 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     FunctionCallSadPathTest,
     testing::Values(
-        FunctionCallSadParam{"func_missing_argument", "test(1)", ErrorCode::MissingArgumentName},
+        FunctionCallSadParam{"func_missing_argument", "test(1)", ErrorCode::MissingOperatorOrArgumentName},
         FunctionCallSadParam{"func_missing_colon", "test(a 1)", ErrorCode::MissingColonAfterArgument},
         FunctionCallSadParam{"func_missing_argument_value", "test(a: )", ErrorCode::InvalidExpression},
-        FunctionCallSadParam{"func_missing_argument_after_comma", "test(a: 1, )", ErrorCode::
-        MissingArgumentName},
-        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParen}
+        FunctionCallSadParam{"func_trailing_comma", "test(a: 1, )", ErrorCode::
+        TrailingCommaInFunctionCall},
+        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParen},
+        FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall}
     ),
     [](const testing::TestParamInfo<FunctionCallSadParam>& info) {
     return info.param.test_id;

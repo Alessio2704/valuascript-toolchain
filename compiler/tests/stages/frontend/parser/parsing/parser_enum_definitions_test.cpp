@@ -38,7 +38,8 @@ INSTANTIATE_TEST_SUITE_P(
         EnumHappyParam{"mixed_values", "enum Codes: integer { START = 100, CONTINUE, END = 999 }"},
         EnumHappyParam{"expression_values", "enum Math: decimal { PI = 3.14, TAU = 3.14 * 2.0 }"},
         EnumHappyParam{"empty_enum", "enum Phantom: string {}"},
-        EnumHappyParam{"custom_type", "enum Complex: Result<decimal, string> { OK, ERR }"}
+        EnumHappyParam{"custom_type", "enum Complex: Result<decimal, string> { OK, ERR }"},
+        EnumHappyParam{"trailing_comma", "enum Colors: string { red, blue, }"}
     ),
     [](const testing::TestParamInfo<EnumHappyParam>& info) {
     return info.param.test_id;
@@ -81,7 +82,8 @@ INSTANTIATE_TEST_SUITE_P(
         EnumSadParam{"invalid_case_name_string", "enum Option: string { \"call\" }", ErrorCode::ExpectedEnumCaseName},
         EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ErrorCode::ExpectedRightBrace},
         EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ErrorCode::InvalidExpression},
-        EnumSadParam{"trailing_comma", "enum Colors: string { red, blue, }", ErrorCode::ExpectedEnumCaseName},
+        EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ErrorCode::
+        ExpectedCommaSeparatorInEnum},
         EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ErrorCode::ExpectedEnumCaseName}
     ),
     [](const testing::TestParamInfo<EnumSadParam>& info) {

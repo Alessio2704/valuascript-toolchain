@@ -82,7 +82,12 @@ INSTANTIATE_TEST_SUITE_P(
     BracketAccessSadPathTest,
     testing::Values(
         BracketAccessSadParam{"unclosed_vector_access", "vec[0", ErrorCode::UnmatchedBracket},
-        BracketAccessSadParam{"empty_vector_access", "vec[]", ErrorCode::EmptyBracketAccess}
+        BracketAccessSadParam{"empty_vector_access", "vec[]", ErrorCode::EmptyBracketAccess},
+        BracketAccessSadParam{"missing_operator_1", "vec[1 2]", ErrorCode::MissingOperator},
+        BracketAccessSadParam{"missing_operator_2", "vec[1 + 2 3]", ErrorCode::MissingOperator},
+        BracketAccessSadParam{"missing_operator_3", "vec[1 + (2 3)]", ErrorCode::MissingOperator},
+        BracketAccessSadParam{"missing_operator_4", "vec[1  (2 + 3)]", ErrorCode::MissingOperatorOrArgumentName},
+        BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<BracketAccessSadParam>& info) {
     return info.param.test_id;

@@ -40,7 +40,8 @@ INSTANTIATE_TEST_SUITE_P(
     TensorLiteralHappyParam{"matrix_literal", "[[1,2], [3, 4]]"},
     TensorLiteralHappyParam{"vector_literal_identifiers", "[a, b, c]"},
     TensorLiteralHappyParam{"vector_literal_complex", "[(a, b, c), d, if e then f else g]"},
-    TensorLiteralHappyParam{"vector_literal_complex_2", "[(a, b, c()), d(a: 1), if e then f else g()]"}
+    TensorLiteralHappyParam{"vector_literal_complex_2", "[(a, b, c()), d(a: 1), if e then f else g()]"},
+    TensorLiteralHappyParam{"vector_literal_complex_3", "[(a, b, c()), d(a: 1), switch (b) { default -> 10 } ]"}
     ),
     [](const testing::TestParamInfo<TensorLiteralHappyParam>& info) {
     return info.param.test_id;

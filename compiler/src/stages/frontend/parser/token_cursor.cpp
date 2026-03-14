@@ -8,12 +8,12 @@ namespace valuascript::compiler {
         : tokens_(tokens), file_path_(std::move(file_path)), context_(std::move(context)) {
     }
 
-    const Token &TokenCursor::peek() const {
-        return tokens_[current_];
+    const Token &TokenCursor::peek(int num) const {
+        return tokens_[current_ + num];
     }
 
-    const Token &TokenCursor::previous() const {
-        return tokens_[current_ - 1];
+    const Token &TokenCursor::previous(const int num) const {
+        return tokens_[current_ - num];
     }
 
     bool TokenCursor::is_at_end() const {
@@ -59,24 +59,25 @@ namespace valuascript::compiler {
 
     [[noreturn]] void TokenCursor::report_error(const Token &token, ErrorCode code, const std::string &message) const {
         size_t err_line = token.line;
-        size_t err_column = token.column;
+        size_t err_column_start = token.column;
+
+        size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
 
         if (current_ > 0) {
             const Token &prev = tokens_[current_ - 1];
-
             if (token.line > prev.line || token.type == TokenType::EndOfFile) {
                 err_line = prev.line;
-                err_column = prev.column + prev.lexeme.size();
+                err_column_start = prev.column + prev.lexeme.size();
+                err_column_end = err_column_start + 1;
             }
         }
 
         ValuaScriptException ex(
             ErrorCategory::Syntax,
             code,
-            {err_line, err_column, err_line, err_column, file_path_},
+            {err_line, err_column_start, err_line, err_column_end, file_path_},
             message
         );
-
         context_->handle_error(ex);
         throw ParseSyncException();
     }

@@ -38,7 +38,8 @@ INSTANTIATE_TEST_SUITE_P(
         StructHappyParam{"empty_struct", "struct Empty {}", "Empty", 0},
         StructHappyParam{"single_field", "struct Wrapper { val: scalar }", "Wrapper", 1},
         StructHappyParam{"multiple_fields", "struct Point { x: integer, y: integer }", "Point", 2},
-        StructHappyParam{"complex_types", "struct Model { rates: Vector<scalar>, bounds: (integer, integer) }", "Model", 2}
+        StructHappyParam{"complex_types", "struct Model { rates: Vector<scalar>, bounds: (integer, integer) }", "Model", 2},
+        StructHappyParam{"trailing_comma", "struct Trailing { a: scalar, }", "Trailing", 1}
     ),
     [](const testing::TestParamInfo<StructHappyParam>& info) {
         return info.param.test_id;
@@ -76,8 +77,7 @@ INSTANTIATE_TEST_SUITE_P(
         StructErrorParam{"missing_left_brace", "struct Point x: integer }", ErrorCode::ExpectedBraceInStructDefinition},
         StructErrorParam{"missing_colon", "struct Point { x integer }", ErrorCode::ExpectedColonAfterStructFieldName},
         StructErrorParam{"missing_type", "struct Point { x: , y: integer }", ErrorCode::MissingTypeAnnotation},
-        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ErrorCode::ExpectedBraceInStructDefinition},
-        StructErrorParam{"trailing_comma", "struct Trailing { a: scalar, }",ErrorCode::ExpectedStructFieldName}
+        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ErrorCode::ExpectedBraceInStructDefinition}
     ),
     [](const testing::TestParamInfo<StructErrorParam>& info) {
         return info.param.test_id;

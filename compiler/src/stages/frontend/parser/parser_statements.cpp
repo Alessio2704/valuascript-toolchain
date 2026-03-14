@@ -15,14 +15,14 @@ namespace valuascript::compiler {
             case TokenType::Return:
                 if (!modifiers.empty()) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                        "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
+                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
                 }
                 return parse_return_statement();
 
             default:
                 if (!modifiers.empty()) {
                     cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                        "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
+                                         "Syntax Error: Modifiers can only be attached to variable declarations (let, var).");
                 }
                 return parse_expression_statement();
         }
@@ -42,7 +42,7 @@ namespace valuascript::compiler {
         do {
             if (is_reserved_keyword(cursor_.peek().type)) {
                 cursor_.report_error(cursor_.peek(), ErrorCode::ReservedKeywordAsIdentifier,
-                                    "Syntax Error: Cannot use a reserved keyword as a variable name.");
+                                     "Syntax Error: Cannot use a reserved keyword as a variable name.");
             }
             const Token &target = cursor_.consume(TokenType::Identifier, ErrorCode::InvalidIdentifier,
                                                   "Syntax Error: Invalid identifier name.");
@@ -53,7 +53,15 @@ namespace valuascript::compiler {
             }
 
             targets.emplace_back(target.lexeme, std::move(type_annotation));
-        } while (cursor_.match({TokenType::Comma}));
+
+            if (cursor_.match({TokenType::Comma})) {
+            } else if (cursor_.peek().type == TokenType::Identifier) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaInMultiAssignment,
+                                     "Syntax Error: Missing comma ',' between variable names in declaration.");
+            } else {
+                break;
+            }
+        } while (true);
 
         cursor_.consume(TokenType::Assign, ErrorCode::IncompleteAssignment,
                         "Syntax Error: Incomplete assignment. Expected '='.");
@@ -61,10 +69,13 @@ namespace valuascript::compiler {
         if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) || cursor_.
             check(TokenType::Func) || cursor_.check(TokenType::At)) {
             cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
-                                "Syntax Error: Missing value after '='.");
+                                 "Syntax Error: Missing value after '='.");
         }
 
         auto value = parse_expression();
+
+        check_trailing_expression();
+
         auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
                                                    is_mutable);
         assign->span = cursor_.make_span(start_token, cursor_.previous());
@@ -77,17 +88,19 @@ namespace valuascript::compiler {
 
         if (cursor_.match({TokenType::Comma})) {
             cursor_.report_error(cursor_.previous(), ErrorCode::MultiReassignmentNotSupported,
-                                "Syntax Error: Multiple reassignment is not supported. You must reassign variables individually.");
+                                 "Syntax Error: Multiple reassignment is not supported. You must reassign variables individually.");
         }
 
         if (cursor_.match({TokenType::Assign})) {
             if (!is_valid_lvalue(expr.get())) {
                 cursor_.report_error(cursor_.previous(), ErrorCode::InvalidLeftSideExpressionInReassignment,
-                                    "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.");
+                                     "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.");
             }
 
             auto value = parse_expression();
             SourceSpan end_span = value->span;
+
+            check_trailing_expression();
 
             auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
             reassignment->span = cursor_.combine_spans(start_span, end_span);
@@ -96,8 +109,10 @@ namespace valuascript::compiler {
 
         if (dynamic_cast<FunctionCall *>(expr.get()) == nullptr) {
             cursor_.report_error(cursor_.previous(), ErrorCode::InvalidStandaloneStatement,
-                                "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
+                                 "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.");
         }
+
+        check_trailing_expression();
 
         auto expr_stmt = std::make_unique<ExpressionStatement>(std::move(expr));
         expr_stmt->span = start_span;
@@ -111,6 +126,8 @@ namespace valuascript::compiler {
         do {
             return_values.push_back(parse_expression());
         } while (cursor_.match({TokenType::Comma}));
+
+        check_trailing_expression();
 
         auto ret_stmt = std::make_unique<ReturnStatement>(std::move(return_values));
         ret_stmt->span = cursor_.make_span(start_token, cursor_.previous());

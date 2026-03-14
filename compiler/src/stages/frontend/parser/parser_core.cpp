@@ -8,7 +8,7 @@ namespace valuascript::compiler {
         auto program = std::make_unique<Program>();
         const Token &start_token = cursor_.peek();
 
-        while (!cursor_.is_at_end()){
+        while (!cursor_.is_at_end()) {
             try {
                 switch (cursor_.peek().type) {
                     case TokenType::Import:
@@ -48,8 +48,61 @@ namespace valuascript::compiler {
         return false;
     }
 
-    void Parser::synchronize() {
+    bool Parser::is_expression_start(const TokenType type) {
+        switch (type) {
+            case TokenType::Number:
+            case TokenType::PercentageLiteral:
+            case TokenType::String:
+            case TokenType::DocString:
+            case TokenType::True:
+            case TokenType::False:
+            case TokenType::Identifier:
+            case TokenType::Switch:
+            case TokenType::If:
+            case TokenType::LeftParen:
+            case TokenType::LeftBracket:
+            case TokenType::LeftBrace:
+            case TokenType::Minus:
+            case TokenType::Plus:
+            case TokenType::Not:
+                return true;
+            default:
+                return false;
+        }
+    }
 
+    bool Parser::is_binary_operator(TokenType type) {
+        switch (type) {
+            case TokenType::Plus:
+            case TokenType::Minus:
+            case TokenType::Star:
+            case TokenType::Slash:
+            case TokenType::Mod:
+            case TokenType::Caret:
+            case TokenType::Equals:
+            case TokenType::NotEquals:
+            case TokenType::Less:
+            case TokenType::LessEqual:
+            case TokenType::Greater:
+            case TokenType::GreaterEqual:
+            case TokenType::And:
+            case TokenType::Or:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    void Parser::check_trailing_expression() const {
+        if (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line) {
+            if (is_expression_start(cursor_.peek().type)) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                     "Syntax Error: Missing operator between expressions.");
+            }
+        }
+    }
+
+    void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
             switch (cursor_.peek().type) {
                 case TokenType::Let:
@@ -58,8 +111,8 @@ namespace valuascript::compiler {
                 case TokenType::Struct:
                 case TokenType::Enum:
                 case TokenType::Import:
-                case TokenType::Return:
-                case TokenType::If:
+                case TokenType::At:
+                case TokenType::Hash:
                     return;
                 default:
                     break;

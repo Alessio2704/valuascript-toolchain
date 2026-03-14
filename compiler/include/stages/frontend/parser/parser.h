@@ -84,6 +84,12 @@ namespace valuascript::compiler {
 
         static bool is_valid_lvalue(const Expression *expr);
 
+        static bool is_expression_start(TokenType type);
+
+        static bool is_binary_operator(TokenType type);
+
+        void check_trailing_expression() const;
+
         void synchronize();
     };
 }

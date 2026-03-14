@@ -73,8 +73,14 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     TupleSadPathTest,
     testing::Values(
-    TupleSadParam{"tuple_missing_second_value", "(a, ", ErrorCode::InvalidExpression},
-    TupleSadParam{"tuple_parenthesis", "(a, b", ErrorCode::UnmatchedParenthesisInTuple}
+    TupleSadParam{"tuple_missing_second_value_1", "(1, ", ErrorCode::UnmatchedParenthesisInTuple},
+    TupleSadParam{"tuple_missing_second_value_2", "(a, ", ErrorCode::UnmatchedParenthesisInTuple},
+    TupleSadParam{"tuple_parenthesis", "(a, b", ErrorCode::UnmatchedParenthesisInTuple},
+    TupleSadParam{"tuple_trailing_comma", "(a, b,)", ErrorCode::TrailingCommaInTuple},
+    TupleSadParam{"missing_operator_1", "(a b)", ErrorCode::MissingOperator},
+    TupleSadParam{"missing_operator_2", "(a, b c)", ErrorCode::MissingOperator},
+    TupleSadParam{"missing_operator_3", "(a, b (c + d))", ErrorCode::MissingOperatorOrArgumentName},
+    TupleSadParam{"missing_operator_4", "(a, b + (c  d))", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<TupleSadParam>& info) {
     return info.param.test_id;

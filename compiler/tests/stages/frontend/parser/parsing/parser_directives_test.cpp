@@ -98,7 +98,12 @@ INSTANTIATE_TEST_SUITE_P(
         DirectiveSadParam{"missing_at_valueless_directive", "module", ErrorCode::InvalidStandaloneStatement},
         DirectiveSadParam{"other_from_at_valueless_directive", "*module", ErrorCode::UnexpectedToken},
         DirectiveSadParam{"missing_import_directive", "#", ErrorCode::MissingDirectiveName},
-        DirectiveSadParam{"missing_after_name_at_valueless_directive", "# \"file.vs\"", ErrorCode::MissingDirectiveName}
+        DirectiveSadParam{"missing_after_name_at_valueless_directive", "# \"file.vs\"", ErrorCode::MissingDirectiveName},
+        DirectiveSadParam{"missing_operator_1", "#iterations = 1000 1", ErrorCode::MissingOperator},
+        DirectiveSadParam{"missing_operator_2", "#iterations = 1000 + 1 2", ErrorCode::MissingOperator},
+        DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", ErrorCode::MissingOperator},
+        DirectiveSadParam{"missing_operator_4", "#iterations = 1000  (1 + 2)", ErrorCode::MissingOperatorOrArgumentName},
+        DirectiveSadParam{"missing_operator_5", "#iterations = 1000 a() + b()", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<DirectiveSadParam>& info) {
         return info.param.test_id;

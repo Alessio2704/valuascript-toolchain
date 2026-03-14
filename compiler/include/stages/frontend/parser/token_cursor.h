@@ -20,9 +20,9 @@ namespace valuascript::compiler {
     public:
         TokenCursor(const std::vector<Token> &tokens, std::string file_path, std::shared_ptr<CompilerContext> context);
 
-        [[nodiscard]] const Token &peek() const;
+        [[nodiscard]] const Token &peek(int num = 0) const;
 
-        [[nodiscard]] const Token &previous() const;
+        [[nodiscard]] const Token &previous(int num = 1) const;
 
         [[nodiscard]] bool is_at_end() const;
 
@@ -39,5 +39,6 @@ namespace valuascript::compiler {
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan &start, const SourceSpan &end) const;
 
         [[noreturn]] void report_error(const Token &token, ErrorCode code, const std::string &message) const;
+
     };
 }

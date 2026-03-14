@@ -20,7 +20,7 @@ namespace valuascript::compiler {
                 break;
             default:
                 cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                    "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).");
+                                     "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).");
         }
     }
 
@@ -47,12 +47,14 @@ namespace valuascript::compiler {
             if (cursor_.is_at_end() || cursor_.check(TokenType::Hash) || cursor_.check(TokenType::Let) || cursor_.check(
                     TokenType::Func)) {
                 cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals,
-                                    "Syntax Error: Missing value after '='.");
+                                     "Syntax Error: Missing value after '='.");
             }
             value = parse_expression();
+            check_trailing_expression();
         } else if (!cursor_.is_at_end() && !cursor_.check(TokenType::Hash) && !cursor_.check(TokenType::Let) && !cursor_
                    .check(TokenType::Var) && !cursor_.check(TokenType::Func)) {
             value = parse_expression();
+            check_trailing_expression();
         }
 
         auto dir = std::make_unique<Directive>(directive_name, std::move(value));
@@ -70,15 +72,25 @@ namespace valuascript::compiler {
             std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
             if (cursor_.match({TokenType::LeftParen})) {
-                if (!cursor_.check(TokenType::RightParen)) {
-                    do {
-                        Token arg_name = cursor_.consume(TokenType::Identifier, ErrorCode::MissingArgumentName,
-                                                         "Expected argument name in modifier.");
-                        cursor_.consume(TokenType::Colon, ErrorCode::MissingColonAfterArgument,
-                                        "Expected ':' after argument name.");
-                        arguments.emplace_back(arg_name.lexeme, parse_expression());
-                    } while (cursor_.match({TokenType::Comma}));
+                while (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
+                    Token arg_name = cursor_.consume(TokenType::Identifier, ErrorCode::MissingArgumentName,
+                                                     "Expected argument name in modifier.");
+                    cursor_.consume(TokenType::Colon, ErrorCode::MissingColonAfterArgument,
+                                    "Expected ':' after argument name.");
+                    arguments.emplace_back(arg_name.lexeme, parse_expression());
+
+                    if (cursor_.match({TokenType::Comma})) {
+                    } else if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
+                        cursor_.report_error(cursor_.peek(), ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
+                                             "Syntax Error: Missing comma ',' after modifier argument.");
+                    } else if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
+                        cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                             "Syntax Error: Missing operator between expressions.");
+                    } else {
+                        break;
+                    }
                 }
+
                 cursor_.consume(TokenType::RightParen, ErrorCode::UnmatchedParenthesis,
                                 "Expected ')' after modifier arguments.");
             }
@@ -101,14 +113,21 @@ namespace valuascript::compiler {
                         "Expected '{' before struct body.");
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
-        if (!cursor_.check(TokenType::RightBrace)) {
-            do {
-                Token field_name = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedStructFieldName,
-                                                   "Expected field name in struct.");
-                cursor_.consume(TokenType::Colon, ErrorCode::ExpectedColonAfterStructFieldName,
-                                "Expected ':' after field name.");
-                fields.emplace_back(field_name.lexeme, parse_type_annotation());
-            } while (cursor_.match({TokenType::Comma}));
+
+        while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+            Token field_name = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedStructFieldName,
+                                               "Expected field name in struct.");
+            cursor_.consume(TokenType::Colon, ErrorCode::ExpectedColonAfterStructFieldName,
+                            "Expected ':' after field name.");
+            fields.emplace_back(field_name.lexeme, parse_type_annotation());
+
+            if (cursor_.match({TokenType::Comma})) {
+            } else if (cursor_.check(TokenType::Identifier)) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaSeparatorInStruct,
+                                     "Syntax Error: Missing comma ',' between struct fields.");
+            } else {
+                break;
+            }
         }
 
         const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::ExpectedBraceInStructDefinition,
@@ -131,16 +150,23 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::LeftBrace, ErrorCode::ExpectedLeftBrace, "Expected '{' before enum body.");
 
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases;
-        if (!cursor_.check(TokenType::RightBrace)) {
-            do {
-                Token case_name = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseName,
-                                                  "Expected enum case identifier.");
-                std::unique_ptr<Expression> raw_value = nullptr;
-                if (cursor_.match({TokenType::Assign})) {
-                    raw_value = parse_expression();
-                }
-                cases.emplace_back(case_name.lexeme, std::move(raw_value));
-            } while (cursor_.match({TokenType::Comma}));
+
+        while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+            Token case_name = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseName,
+                                              "Expected enum case identifier.");
+            std::unique_ptr<Expression> raw_value = nullptr;
+            if (cursor_.match({TokenType::Assign})) {
+                raw_value = parse_expression();
+            }
+            cases.emplace_back(case_name.lexeme, std::move(raw_value));
+
+            if (cursor_.match({TokenType::Comma})) {
+            } else if (cursor_.check(TokenType::Identifier)) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaSeparatorInEnum,
+                                     "Syntax Error: Missing comma ',' between enum cases.");
+            } else {
+                break;
+            }
         }
 
         const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::ExpectedRightBrace,
