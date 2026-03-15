@@ -78,15 +78,15 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     SwitchSadPathTest,
     testing::Values(
-        SwitchSadParam{"missing_left_paren", "let a = switch res) { case UP -> 1 }", ErrorCode::ExpectedLeftParen},
+        SwitchSadParam{"missing_left_paren", "let a = switch res) { case UP -> 1 }", ErrorCode::ExpectedLeftParenAfterSwitch},
         SwitchSadParam{"missing_right_paren", "let a = switch (res { case UP -> 1 }",
-        ErrorCode::ExpectedRightParen},
-        SwitchSadParam{"missing_left_brace", "let a = switch (res) case UP -> 1 }", ErrorCode::ExpectedLeftBrace},
-        SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", ErrorCode::ExpectedRightBrace},
+        ErrorCode::ExpectedRightParenAfterSwitchTarget},
+        SwitchSadParam{"missing_left_brace", "let a = switch (res) case UP -> 1 }", ErrorCode::ExpectedLeftBraceBeforeSwitchBody},
+        SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", ErrorCode::ExpectedRightBraceAfterSwitchBody},
         SwitchSadParam{"number_as_case", "let a = switch (res) { case 1 -> 10 }",
-        ErrorCode::ExpectedEnumCaseName},
+        ErrorCode::ExpectedEnumCaseNameAfterCase},
         SwitchSadParam{"string_as_case", "let a = switch (res) { case \"UP\" -> 10 }",
-        ErrorCode::ExpectedEnumCaseName},
+        ErrorCode::ExpectedEnumCaseNameAfterCase},
         SwitchSadParam{"expression_as_case", "let a = switch (res) { case a + b -> 10 }",
         ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier},
         SwitchSadParam{"missing_arrow_case", "let a = switch (res) { case UP 10 }",
@@ -97,11 +97,11 @@ INSTANTIATE_TEST_SUITE_P(
         SwitchSadParam{"duplicate_default", "let a = switch (res) { default -> 1 default -> 2 }",
        ErrorCode::MultipleDefaultCasesInSwitch},
         SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-        ErrorCode::CaseOrDefaultMissingInSwitch},
-        SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", ErrorCode::MissingOperator},
+        ErrorCode::ExpectedCaseOrDefaultInsideSwitchBody},
+        SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", ErrorCode::MissingOperatorInSwitchCaseResult},
         SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", ErrorCode::MissingOperatorOrArgumentName},
         SwitchSadParam{"missing_operator_3", "let a = switch (res) { case UP -> 1 + a() (2 + 3) }", ErrorCode::MissingOperatorOrArgumentName},
-        SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", ErrorCode::MissingOperator}
+        SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", ErrorCode::MissingOperatorInSwitchCaseResult}
 
     ),
     [](const testing::TestParamInfo<SwitchSadParam>& info) {

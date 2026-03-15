@@ -15,8 +15,8 @@ namespace valuascript::compiler {
         Comma, // ,
         Colon, // :
         At, // @
-        Hash,
-        Dot,
+        Hash, // #
+        Dot, // .
 
         // Math operators
         Plus, // +
@@ -40,7 +40,7 @@ namespace valuascript::compiler {
         String, // "..."
         DocString, // """..."""
         Number, // 123, 12.3, 1_000 (SIGNED_NUMBER, FLOAT, INT)
-        PercentageLiteral,
+        PercentageLiteral, // 1%,
 
         // Keywords
         Import, // import
@@ -54,14 +54,14 @@ namespace valuascript::compiler {
         And, // and
         Or, // or
         Not, // not
-        Mod,
+        Mod, // mod
         Func, // func
         Struct, // struct
         Enum, // enum
         Return, // return
-        Switch,
-        Case,
-        Default,
+        Switch, // switch
+        Case, // case
+        Default, // default
         EndOfFile
     };
 
@@ -128,6 +128,7 @@ namespace valuascript::compiler {
             case TokenType::Default: return "Default";
             case TokenType::EndOfFile: return "EndOfFile";
         }
+        return "Unknown";
     }
 
     inline bool is_reserved_keyword(const TokenType type) {
@@ -157,7 +158,7 @@ namespace valuascript::compiler {
         }
     }
 
-    inline std::optional<TokenType> get_keyword_type(const std::string& lexeme) {
+    inline std::optional<TokenType> get_keyword_type(const std::string &lexeme) {
         static const std::unordered_map<std::string, TokenType> kKeywords = {
             {"import", TokenType::Import},
             {"let", TokenType::Let},

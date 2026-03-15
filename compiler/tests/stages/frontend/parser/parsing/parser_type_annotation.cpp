@@ -80,7 +80,7 @@ INSTANTIATE_TEST_SUITE_P(
     TypeAnnotationSadParam{"missing_comma_generic", "result<scalar decimal>", ErrorCode::ExpectedCommaSeparatorInGenericArgs},
     TypeAnnotationSadParam{"missing_comma_tuple_type", "(scalar decimal)", ErrorCode::ExpectedCommaSeparatorInTupleType},
     TypeAnnotationSadParam{"missing_right_paren_tuple_type", "(scalar, decimal", ErrorCode::UnmatchedParenthesisInTuple},
-    TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", ErrorCode::UnmatchedBracket}
+    TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", ErrorCode::UnmatchedBracketAfterGenericArgs}
     ),
     [](const testing::TestParamInfo<TypeAnnotationSadParam>& info) {
     return info.param.test_id;

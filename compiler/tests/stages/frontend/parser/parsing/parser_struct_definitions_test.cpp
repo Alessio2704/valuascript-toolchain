@@ -77,7 +77,7 @@ INSTANTIATE_TEST_SUITE_P(
         StructErrorParam{"missing_left_brace", "struct Point x: integer }", ErrorCode::ExpectedBraceInStructDefinition},
         StructErrorParam{"missing_colon", "struct Point { x integer }", ErrorCode::ExpectedColonAfterStructFieldName},
         StructErrorParam{"missing_type", "struct Point { x: , y: integer }", ErrorCode::MissingTypeAnnotation},
-        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ErrorCode::ExpectedBraceInStructDefinition}
+        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ErrorCode::ExpectedRightBraceAfterStructBody}
     ),
     [](const testing::TestParamInfo<StructErrorParam>& info) {
         return info.param.test_id;

@@ -2,8 +2,9 @@
 #include <string>
 
 #include "token.h"
-#include "../../../compiler_context/compiler_context.h"
+#include "compiler_context/compiler_context.h"
 #include "errors/valuascript_exception.h"
+#include "errors/error_messages.h"
 
 namespace valuascript::compiler {
     class Lexer {
@@ -18,8 +19,6 @@ namespace valuascript::compiler {
         size_t line_start_ = 1;
         size_t column_start_ = 1;
         size_t column_current_ = 1;
-
-        void report_error(const ErrorCode &code, const std::string &message) const;
 
     public:
         Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context);
@@ -63,5 +62,19 @@ namespace valuascript::compiler {
         void scan_identifier();
 
         void scan_token();
+
+        template<typename... Args>
+        void report_error(const ErrorCode &code, Args &&... args) const {
+            std::string message = format_error_message(code, std::forward<Args>(args)...);
+
+            ValuaScriptException ex(
+                ErrorCategory::Lexical,
+                code,
+                {line_start_, column_start_, line_, column_current_, file_path_},
+                std::move(message)
+            );
+
+            context_->handle_error(ex);
+        }
     };
 }

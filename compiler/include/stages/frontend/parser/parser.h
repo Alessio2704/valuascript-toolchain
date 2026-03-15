@@ -6,12 +6,6 @@
 #include "stages/frontend/parser/token_cursor.h"
 
 namespace valuascript::compiler {
-    struct ParseSyncException : std::exception {
-        [[nodiscard]] const char *what() const noexcept override {
-            return "Parser panic mode triggered.";
-        }
-    };
-
     class Parser {
     private:
         TokenCursor cursor_;
@@ -22,22 +16,14 @@ namespace valuascript::compiler {
         std::unique_ptr<Program> parse_program();
 
     private:
-
         enum class Precedence {
-            None = 0,
-            Or = 1,         // or
-            And = 2,        // and
-            Comparison = 3, // ==, !=, <, >, <=, >=
-            Term = 4,       // +, -
-            Factor = 5,     // *, /, %
-            Power = 6       // ^
+            None = 0, Or = 1, And = 2, Comparison = 3, Term = 4, Factor = 5, Power = 6
         };
 
-        static Precedence get_operator_precedence(TokenType type) ;
+        static Precedence get_operator_precedence(TokenType type);
 
         [[nodiscard]] static bool is_right_associative(TokenType type);
 
-        // Core & Declarations
         void parse_top_level_declaration(Program *program);
 
         std::vector<Modifier> parse_modifiers();
@@ -54,7 +40,6 @@ namespace valuascript::compiler {
 
         std::unique_ptr<TypeAnnotation> parse_type_annotation();
 
-        // Statements
         std::unique_ptr<Statement> parse_statement();
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
@@ -62,8 +47,6 @@ namespace valuascript::compiler {
         std::unique_ptr<Statement> parse_expression_statement();
 
         std::unique_ptr<ReturnStatement> parse_return_statement();
-
-        // Expressions
 
         std::unique_ptr<Expression> parse_expression(Precedence precedence = Precedence::Or);
 
@@ -97,34 +80,31 @@ namespace valuascript::compiler {
 
         void verify_statement_end() const;
 
+        void synchronize();
+
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
             TokenType closing_token,
             std::optional<ErrorCode> trailing_comma_err = std::nullopt);
 
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > parse_key_value_list(
             TokenType closing_token,
-            ErrorCode key_err, const std::string &key_msg,
-            ErrorCode colon_err, const std::string &colon_msg,
+            ErrorCode key_err,
+            ErrorCode colon_err,
             ErrorCode missing_comma_err,
             std::optional<ErrorCode> trailing_comma_err = std::nullopt);
-
-        void synchronize();
 
         template<typename T, typename ElementParser>
         std::vector<T> parse_comma_separated_list(
             TokenType closing_token,
             ErrorCode missing_comma_err,
-            const std::string &missing_comma_msg,
             ElementParser parse_element) {
             std::vector<T> elements;
-
             while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
                 elements.push_back(parse_element());
-
                 if (cursor_.match({TokenType::Comma})) {
                 } else if (!cursor_.check(closing_token)) {
                     if (cursor_.check(TokenType::Identifier)) {
-                        cursor_.report_error(cursor_.peek(), missing_comma_err, missing_comma_msg);
+                        cursor_.report_error(cursor_.peek(), missing_comma_err);
                     } else {
                         break;
                     }

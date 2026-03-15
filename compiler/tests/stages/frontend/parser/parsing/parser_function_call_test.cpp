@@ -94,7 +94,7 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionCallSadParam{"func_missing_argument_value", "test(a: )", ErrorCode::InvalidExpression},
         FunctionCallSadParam{"func_trailing_comma", "test(a: 1, )", ErrorCode::
         TrailingCommaInFunctionCall},
-        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParen},
+        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParenAfterArguments},
         FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall}
     ),
     [](const testing::TestParamInfo<FunctionCallSadParam>& info) {

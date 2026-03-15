@@ -29,8 +29,7 @@ namespace valuascript::compiler {
                         program->execution_steps.push_back(parse_expression_statement());
                         break;
                     default:
-                        cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedToken,
-                                             "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.");
+                        cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedTopLevelToken);
                 }
             } catch (const ParseSyncException &) {
                 synchronize();
@@ -96,30 +95,25 @@ namespace valuascript::compiler {
     void Parser::verify_statement_end() const {
         if (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line) {
             if (is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                     "Syntax Error: Missing operator between expressions.");
+                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator);
             }
         }
     }
 
-        std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
+    std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
         TokenType closing_token, std::optional<ErrorCode> trailing_comma_err) {
         std::vector<std::unique_ptr<Expression> > elements;
-
         while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
             if (!is_expression_start(cursor_.peek().type)) break;
 
             elements.push_back(parse_expression());
-
             if (cursor_.match({TokenType::Comma})) {
                 if (cursor_.check(closing_token) && trailing_comma_err) {
-                    cursor_.report_error(cursor_.previous(), *trailing_comma_err,
-                                         "Syntax Error: Trailing comma in list.");
+                    cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                 }
             } else if (!cursor_.check(closing_token)) {
                 if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing comma ',' or operator between expressions.");
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingCommaOrOperatorBetweenExpressions);
                 } else {
                     break;
                 }
@@ -129,29 +123,23 @@ namespace valuascript::compiler {
     }
 
     std::vector<std::pair<std::string, std::unique_ptr<Expression> > > Parser::parse_key_value_list(
-        TokenType closing_token,
-        ErrorCode key_err, const std::string &key_msg,
-        ErrorCode colon_err, const std::string &colon_msg,
-        ErrorCode missing_comma_err,
-        std::optional<ErrorCode> trailing_comma_err) {
+        TokenType closing_token, ErrorCode key_err, ErrorCode colon_err,
+        ErrorCode missing_comma_err, std::optional<ErrorCode> trailing_comma_err) {
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
-
         while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
-            Token key_token = cursor_.consume(TokenType::Identifier, key_err, key_msg);
-            cursor_.consume(TokenType::Colon, colon_err, colon_msg);
+            Token key_token = cursor_.consume(TokenType::Identifier, key_err);
+            cursor_.consume(TokenType::Colon, colon_err);
 
             pairs.emplace_back(key_token.lexeme, parse_expression());
 
             if (cursor_.match({TokenType::Comma})) {
                 if (cursor_.check(closing_token) && trailing_comma_err) {
-                    cursor_.report_error(cursor_.previous(), *trailing_comma_err, "Syntax Error: Trailing comma.");
+                    cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                 }
             } else if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
-                cursor_.report_error(cursor_.peek(), missing_comma_err,
-                                     "Syntax Error: Missing comma ',' between fields.");
+                cursor_.report_error(cursor_.peek(), missing_comma_err);
             } else if (!cursor_.check(closing_token) && is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                     "Syntax Error: Missing operator between expressions.");
+                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator);
             } else {
                 break;
             }
@@ -174,7 +162,6 @@ namespace valuascript::compiler {
                 default:
                     break;
             }
-
             cursor_.advance();
         }
     }

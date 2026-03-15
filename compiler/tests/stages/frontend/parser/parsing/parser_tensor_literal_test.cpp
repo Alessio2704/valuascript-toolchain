@@ -76,10 +76,10 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     TensorLiteralSadPathTest,
     testing::Values(
-    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ErrorCode::UnmatchedBracket},
-    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ErrorCode::UnmatchedBracket},
-    TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ErrorCode::MissingOperator},
-    TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ErrorCode::MissingOperator}
+    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ErrorCode::UnmatchedBracketAfterVectorElements},
+    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ErrorCode::UnmatchedBracketAfterVectorElements},
+    TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ErrorCode::UnexpectedCommaInBracketAccess},
+    TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ErrorCode::UnexpectedCommaInBracketAccess}
     ),
     [](const testing::TestParamInfo<TensorLiteralSadParam>& info) {
     return info.param.test_id;

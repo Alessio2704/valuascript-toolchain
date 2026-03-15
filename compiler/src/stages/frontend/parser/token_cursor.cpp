@@ -1,5 +1,4 @@
 #include "stages/frontend/parser/token_cursor.h"
-
 #include "stages/frontend/parser/parser.h"
 
 namespace valuascript::compiler {
@@ -40,9 +39,9 @@ namespace valuascript::compiler {
         return false;
     }
 
-    const Token &TokenCursor::consume(TokenType type, ErrorCode code, const std::string &message) {
+    const Token &TokenCursor::consume(TokenType type, ErrorCode code) {
         if (check(type)) return advance();
-        report_error(peek(), code, message);
+        report_error(peek(), code);
     }
 
     SourceSpan TokenCursor::make_span(const Token &start_token, const Token &end_token) const {
@@ -57,13 +56,12 @@ namespace valuascript::compiler {
         return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
     }
 
-    [[noreturn]] void TokenCursor::report_error(const Token &token, ErrorCode code, const std::string &message) const {
+    [[noreturn]] void TokenCursor::report_error(const Token &token, ErrorCode code, bool force_token_location) const {
         size_t err_line = token.line;
         size_t err_column_start = token.column;
-
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
 
-        if (current_ > 0) {
+        if (!force_token_location && current_ > 0) {
             const Token &prev = tokens_[current_ - 1];
             if (token.line > prev.line || token.type == TokenType::EndOfFile) {
                 err_line = prev.line;
@@ -72,11 +70,13 @@ namespace valuascript::compiler {
             }
         }
 
+        std::string message = format_error_message(code);
+
         ValuaScriptException ex(
             ErrorCategory::Syntax,
             code,
             {err_line, err_column_start, err_line, err_column_end, file_path_},
-            message
+            std::move(message)
         );
         context_->handle_error(ex);
         throw ParseSyncException();

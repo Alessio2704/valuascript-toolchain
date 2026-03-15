@@ -97,22 +97,26 @@ INSTANTIATE_TEST_SUITE_P(
     FunctionSadPathTest,
     testing::Values(
         FunctionSadParam{"missing_func_name", "func () -> scalar {}", ErrorCode::MissingFunctionName},
-        FunctionSadParam{"missing_left_paren", "func test) -> scalar {}", ErrorCode::ExpectedLeftParen},
-        FunctionSadParam{"missing_right_paren", "func test(a: scalar -> scalar {}", ErrorCode::ExpectedRightParen},
+        FunctionSadParam{"missing_left_paren", "func test) -> scalar {}", ErrorCode::ExpectedLeftParenAfterFunctionName},
+        FunctionSadParam{"missing_right_paren", "func test(a: scalar -> scalar {}", ErrorCode::ExpectedRightParenAfterParameters},
         FunctionSadParam{"missing_arrow", "func test() scalar {}", ErrorCode::MissingArrowInFunction},
         FunctionSadParam{"malformed_arrow_1", "func test() scalar - {}", ErrorCode::MissingArrowInFunction},
         FunctionSadParam{"malformed_arrow_2", "func test() scalar > {}", ErrorCode::MissingArrowInFunction},
-        FunctionSadParam{"missing_left_brace", "func test() -> scalar }", ErrorCode::ExpectedLeftBrace},
-        FunctionSadParam{"missing_right_brace", "func test() -> scalar { return 1", ErrorCode::ExpectedRightBrace},
+        FunctionSadParam{"missing_left_brace", "func test() -> scalar }", ErrorCode::ExpectedLeftBraceBeforeFunctionBody},
+        FunctionSadParam{"missing_right_brace", "func test() -> scalar { return 1", ErrorCode::ExpectedRightBraceAfterFunctionBody},
         FunctionSadParam{"missing_param_name", "func test(: scalar) -> scalar {}", ErrorCode::MissingParameterName},
         FunctionSadParam{"missing_colon", "func test(a scalar) -> scalar {}", ErrorCode::MissingColonAfterParameter},
         FunctionSadParam{"missing_param_type", "func test(a: ) -> scalar {}", ErrorCode::MissingTypeAnnotation},
-        FunctionSadParam{"unclosed_generic", "func test(a: vector<scalar) -> scalar {}", ErrorCode::UnmatchedBracket},
-        FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotation},
+        FunctionSadParam{"unclosed_generic", "func test(a: vector<scalar) -> scalar {}", ErrorCode::UnmatchedBracketAfterGenericArgs},
+        FunctionSadParam{"missing_return_type", "func test() -> {}", ErrorCode::MissingTypeAnnotationAfterArrow},
         FunctionSadParam{"unclosed_tuple_return", "func test() -> (scalar, bool {}", ErrorCode::UnmatchedParenthesisInTuple},
         FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ErrorCode::InvalidStandaloneStatement},
         FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: decimal) -> scalar { return 1 + 1 }", ErrorCode::ExpectedCommaSeparatorInParameterList},
-        FunctionSadParam{"missing_comma_return", "func test(a: scalar, b: decimal) -> scalar decimal { return 1 + 1 }", ErrorCode::ExpectedCommaSeparatorInReturnTypeList}
+        FunctionSadParam{"missing_comma_return", "func test(a: scalar, b: decimal) -> scalar decimal { return 1 + 1 }", ErrorCode::ExpectedCommaSeparatorInReturnTypeList},
+        FunctionSadParam{"top_level_declaration_in_func_1", "func test(a: s) -> s { return 1 \n let a = b()\n enum Test: s {}\n", ErrorCode::TopLevelDeclarationInsideFunction},
+        FunctionSadParam{"top_level_declaration_in_func_2", "func test(a: s) -> s { return 1 \n let a = b()\n struct Test: s {}\n", ErrorCode::TopLevelDeclarationInsideFunction},
+        FunctionSadParam{"top_level_declaration_in_func_3", "func test(a: s) -> s { return 1 \n let a = b()\n #dir\n", ErrorCode::TopLevelDeclarationInsideFunction},
+        FunctionSadParam{"top_level_declaration_in_func_4", "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n", ErrorCode::TopLevelDeclarationInsideFunction}
     ),
     [](const testing::TestParamInfo<FunctionSadParam>& info) {
     return info.param.test_id;

@@ -5,17 +5,6 @@ namespace valuascript::compiler {
         : source_(std::move(source)), file_path_(std::move(file_path)), context_(std::move(context)) {
     }
 
-    void Lexer::report_error(const ErrorCode& code, const std::string &message) const {
-        ValuaScriptException ex(
-            ErrorCategory::Lexical,
-            code,
-            {line_start_, column_start_, line_, column_current_, file_path_},
-            message
-        );
-
-        context_->handle_error(ex);
-    }
-
     std::vector<Token> Lexer::tokenize() {
         while (!is_at_end()) {
             start_ = current_;
@@ -46,7 +35,7 @@ namespace valuascript::compiler {
             }
 
             if (!is_docstring && peek() == '\n') {
-                report_error(ErrorCode::UnclosedString, "Syntax Error: Unclosed string literal.");
+                report_error(ErrorCode::UnclosedString);
                 return;
             }
 
@@ -59,7 +48,7 @@ namespace valuascript::compiler {
         }
 
         if (is_at_end()) {
-            report_error(ErrorCode::UnclosedString, "Syntax Error: Unclosed string literal.");
+            report_error(ErrorCode::UnclosedString);
             return;
         }
 
@@ -80,10 +69,7 @@ namespace valuascript::compiler {
                 if (peek() == '_') {
                     if (!std::isdigit(peek_next())) {
                         advance();
-                        report_error(
-                            ErrorCode::InvalidCharacter,
-                            "Syntax Error: Invalid character '_' found."
-                        );
+                        report_error(ErrorCode::InvalidCharacter, "_");
                     }
                 }
                 advance();
@@ -98,10 +84,7 @@ namespace valuascript::compiler {
                 consume_integer_part();
             } else {
                 advance();
-                report_error(
-                    ErrorCode::UnterminatedDecimal,
-                    "Syntax Error: Unterminated decimal number. Expected digits after '.'."
-                );
+                report_error(ErrorCode::UnterminatedDecimal);
             }
         }
 
@@ -168,10 +151,7 @@ namespace valuascript::compiler {
                     if (is_member_access) {
                         add_token(TokenType::Dot);
                     } else {
-                        report_error(
-                            ErrorCode::DecimalMissingLeadingZero,
-                            "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5')."
-                        );
+                        report_error(ErrorCode::DecimalMissingLeadingZero);
                     }
                 } else {
                     add_token(TokenType::Dot);
@@ -219,14 +199,7 @@ namespace valuascript::compiler {
                 } else if (std::isalpha(c) || c == '_') {
                     scan_identifier();
                 } else {
-                    std::string msg = "Syntax Error: Invalid character '";
-                    msg += c;
-                    msg += "' found.";
-
-                    report_error(
-                        ErrorCode::InvalidCharacter,
-                        msg
-                    );
+                    report_error(ErrorCode::InvalidCharacter, c);
                 }
                 break;
         }

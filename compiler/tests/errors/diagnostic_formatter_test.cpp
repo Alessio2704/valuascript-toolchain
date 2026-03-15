@@ -47,7 +47,7 @@ TEST_F(DiagnosticFormatterTest, AlignsSquigglesCorrectly) {
 TEST_F(DiagnosticFormatterTest, HandlesMissingSourceLineGracefully) {
     std::string source = "let a = 10\nlet b = 20";
     // Error is on line 5, but source only has 2 lines
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 5, 1, 1);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 5, 1, 1);
 
     std::string raw_output = DiagnosticFormatter::format_error(err, source);
     std::string clean_output = strip_ansi(raw_output);
@@ -58,7 +58,7 @@ TEST_F(DiagnosticFormatterTest, HandlesMissingSourceLineGracefully) {
 TEST_F(DiagnosticFormatterTest, HandlesColumnOneCorrectly) {
     std::string source = "} stray brace";
     // Error exactly at column 1 (needs 0 indent spaces)
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 1, 1, 1);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 1, 1);
 
     std::string raw_output = DiagnosticFormatter::format_error(err, source);
     std::string clean_output = strip_ansi(raw_output);
@@ -94,7 +94,7 @@ TEST_F(DiagnosticFormatterTest, SurvivesInvertedOrCorruptedSpans) {
     std::string source = "let bad_span = 10";
 
     // Parser bug: column_start is 10, but column_end is 5
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 1, 10, 5);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 10, 5);
 
     // This should not crash or allocate a billion squiggles
     std::string raw_output = DiagnosticFormatter::format_error(err, source);
@@ -110,7 +110,7 @@ TEST_F(DiagnosticFormatterTest, HandlesMultiLineSpansByPointingToStart) {
     std::string source = "let dict = {\n  a: 1\n";
 
     // Span starts on line 1, ends on line 3
-    auto err = create_dummy_error(ErrorCode::ExpectedRightBrace, 1, 12, 1);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 12, 1);
 
     std::string raw_output = DiagnosticFormatter::format_error(err, source);
     std::string clean_output = strip_ansi(raw_output);
@@ -141,7 +141,7 @@ TEST_F(DiagnosticFormatterTest, SafelyHandlesEmptySourceStrings) {
     std::string source = "";
 
     // Error at 1:1 (e.g., Expected declaration)
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 1, 1, 1);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 1, 1);
 
     std::string raw_output = DiagnosticFormatter::format_error(err, source);
     std::string clean_output = strip_ansi(raw_output);
@@ -154,7 +154,7 @@ TEST_F(DiagnosticFormatterTest, MathematicallyProvesSingleCharacterSpan) {
     std::string source = "let a = 1;";
     // Span exactly on the '=' at column 7
     // Math: col_end (7) - col_start (7) = 0. Length must default to 1 ("^").
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 1, 7, 7);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 7, 7);
 
     std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 
@@ -190,7 +190,7 @@ TEST_F(DiagnosticFormatterTest, MathematicallyProvesMultiLineFallback) {
     // Span covering a block from Line 1, Col 11 to Line 3, Col 1
     // Math: line_start (1) != line_end (3).
     // The formatter MUST abort length calculation and fallback to length 1 ("^").
-    auto err = create_dummy_error(ErrorCode::ExpectedRightBrace, 1, 11, 1);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 11, 1);
 
     // Manually override the line_end since the dummy helper assumes single-line
     auto span = err.get_location();
@@ -211,7 +211,7 @@ TEST_F(DiagnosticFormatterTest, MathematicallyProvesCorruptedSpanFallback) {
     // Parser bug simulation: token length calculated backwards
     // Math: col_end (2) < col_start (8). col_end - col_start would overflow an unsigned int.
     // The formatter MUST catch this and fallback to length 1 ("^").
-    auto err = create_dummy_error(ErrorCode::UnexpectedToken, 1, 8, 2);
+    auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 8, 2);
 
     std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 

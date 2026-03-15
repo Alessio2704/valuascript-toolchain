@@ -71,7 +71,7 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     ImportStatementSadPathTest,
     testing::Values(
-    ImportStatementSadParam{"missing_import", " \"file/path\"", ErrorCode::UnexpectedToken},
+    ImportStatementSadParam{"missing_import", " \"file/path\"", ErrorCode::UnexpectedTopLevelToken},
     ImportStatementSadParam{"docstring", "import \"\"\"file/path\"\"\"", ErrorCode::MissingImportPathString},
     ImportStatementSadParam{"identifier", "import identifier", ErrorCode::MissingImportPathString},
     ImportStatementSadParam{"number", "import 1", ErrorCode::MissingImportPathString},

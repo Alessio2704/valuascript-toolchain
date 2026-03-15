@@ -137,7 +137,7 @@ INSTANTIATE_TEST_SUITE_P(
         {
         {ErrorCode::MissingThenToken, 1, 21},
         {ErrorCode::ChainingNotAllowedForComparisonOperations, 2, 18},
-        {ErrorCode::ExpectedEnumCaseName, 3, 30},
+        {ErrorCode::ExpectedEnumCaseNameAfterCase, 3, 30},
         {ErrorCode::MultipleDefaultCasesInSwitch, 4, 47}
         }
         },
@@ -150,7 +150,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let valid2 = 200\n"
         "let a = { a: 1 b: 2}",
         {
-        {ErrorCode::MissingOperator, 2, 21},
+        {ErrorCode::MissingOperatorInsideGrouping, 2, 21},
         {ErrorCode::ExpectedStructName, 4, 9},
         {ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 17}
         }
@@ -165,21 +165,19 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = { key: \"value\" \n"
         "let valid_4 = 400\n",
         {
-        {ErrorCode::ExpectedRightParen, 1, 18},
-        {ErrorCode::UnmatchedBracket, 4, 18},
+        {ErrorCode::ExpectedRightParenAfterExpression, 1, 18},
+        {ErrorCode::UnmatchedBracketAfterVectorElements, 4, 18},
         {ErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 24}
         }
         },
         ParserMultiErrorTestCase{
         "Regression_1",
-        "let a = (10 + 20 \n"
         "let b = { \"key\" 10 }\n"
         "let a = func_call(\n\n"
         "let b = some_other()",
         {
-        {ErrorCode::ExpectedRightParen, 1, 18},
-        {ErrorCode::ExpectedDictionaryKey, 2, 16},
-        {ErrorCode::MissingArgumentName, 3, 20}
+        {ErrorCode::ExpectedDictionaryKey, 1, 16},
+        {ErrorCode::ExpectedArgumentNameOrClosingParen, 2, 20}
         }
         },
         ParserMultiErrorTestCase{
@@ -205,13 +203,13 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
         {
         {ErrorCode::MissingOperatorOrArgumentName, 1, 15},
-        {ErrorCode::MissingOperator, 2, 20},
+        {ErrorCode::MissingOperatorInsideGrouping, 2, 20},
         {ErrorCode::MissingOperatorOrArgumentName, 3, 18},
-        {ErrorCode::MissingOperator, 4, 23},
-        {ErrorCode::MissingOperator, 5, 23},
+        {ErrorCode::MissingOperatorInsideGrouping, 4, 23},
+        {ErrorCode::MissingOperatorInsideGrouping, 5, 23},
         {ErrorCode::MissingOperatorOrArgumentName, 6, 17},
-        {ErrorCode::MissingOperator, 7, 25},
-        {ErrorCode::MissingOperator, 8, 25},
+        {ErrorCode::MissingOperatorInsideGrouping, 7, 25},
+        {ErrorCode::MissingOperatorInsideGrouping, 8, 25},
         {ErrorCode::MissingOperatorOrArgumentName, 10, 19},
         {ErrorCode::MissingOperatorOrArgumentName, 13, 19},
         {ErrorCode::MissingOperatorOrArgumentName, 15, 14},
@@ -241,7 +239,7 @@ INSTANTIATE_TEST_SUITE_P(
         "func bad_return() -> { }\n",
         {
         {ErrorCode::MissingTypeAnnotation, 1, 9},
-        {ErrorCode::MissingTypeAnnotation, 2, 23}
+        {ErrorCode::MissingTypeAnnotationAfterArrow, 2, 23}
         }
         },
 
@@ -255,7 +253,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ErrorCode::InvalidExpression, 1, 13},
         {ErrorCode::InvalidExpression, 2, 11},
         {ErrorCode::InvalidExpression, 3, 15},
-        {ErrorCode::ExpectedRightParen, 4, 17}
+        {ErrorCode::ExpectedRightParenAfterExpression, 4, 17}
         }
         },
 
@@ -281,9 +279,21 @@ INSTANTIATE_TEST_SUITE_P(
         "func valid2() -> int { return 0 }\n"
         "* let bad_start = 0\n",
         {
-        {ErrorCode::UnexpectedToken, 1, 2},
-        {ErrorCode::UnexpectedToken, 2, 16}, // Tripped by the '\n' at the end of line 2
-        {ErrorCode::UnexpectedToken, 4, 35} // Tripped by the '\n' at the end of line 4
+        {ErrorCode::UnexpectedTopLevelToken, 1, 2},
+        {ErrorCode::UnexpectedTopLevelToken, 2, 16}, // Tripped by the '\n' at the end of line 2
+        {ErrorCode::UnexpectedTopLevelToken, 4, 35} // Tripped by the '\n' at the end of line 4
+        }
+        },
+        ParserMultiErrorTestCase{
+        "Regression_2",
+        "func test() -> scalar { return 1\n"
+        "// -- R&D Capitalization --\n"
+        "let value_of_research_assets, current_year_amortization = get_rd()\n"
+        "// -- WACC --\n"
+        "let wacc = get_wacc()\n"
+        "enum Scenario: scalar { LOW, BASE, HIGH }\n",
+        {
+        {ErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
         }
         }
     ),

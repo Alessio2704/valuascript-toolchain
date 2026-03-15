@@ -1,7 +1,7 @@
 #include "stages/frontend/file_reader/file_reader_stage.h"
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
+#include "errors/error_messages.h"
 
 namespace valuascript::compiler {
     FileReaderStage::FileReaderStage()
@@ -21,8 +21,12 @@ namespace valuascript::compiler {
 
         std::ifstream file_stream(file_path);
         if (!file_stream.is_open()) {
-            ValuaScriptException ex(ErrorCategory::File, ErrorCode::FileNotFound, {0, 0, 0, 0, file_path},
-                                    "FileReaderStage Error: Cannot open file at path '" + file_path + "'");
+            ValuaScriptException ex(
+                ErrorCategory::Import,
+                ErrorCode::ImportFileNotFound,
+                {0, 0, 0, 0, file_path},
+                format_error_message(ErrorCode::ImportFileNotFound, file_path)
+            );
             context->handle_error(ex);
         }
 
