@@ -77,7 +77,9 @@ INSTANTIATE_TEST_SUITE_P(
     TensorLiteralSadPathTest,
     testing::Values(
     TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ErrorCode::UnmatchedBracket},
-    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ErrorCode::UnmatchedBracket}
+    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ErrorCode::UnmatchedBracket},
+    TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ErrorCode::MissingOperator},
+    TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<TensorLiteralSadParam>& info) {
     return info.param.test_id;

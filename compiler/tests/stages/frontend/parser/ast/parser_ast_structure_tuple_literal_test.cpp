@@ -11,6 +11,17 @@ TEST_F(AstBaseTest, ValidatesEmptyTuple) {
     EXPECT_EQ(tuple_val->elements.size(), 0) << "Empty tuple must have 0 elements";
 }
 
+TEST_F(AstBaseTest, ValidatesSingleElementInParenthesisIsNotATupleLiteral) {
+
+    auto ast = parse_code("let single = (1)");
+    auto tuple_val = dynamic_cast<TupleLiteral *>(get_assigned_value(ast));
+
+    ASSERT_EQ(tuple_val, nullptr) << "Assigned value must not be a TupleLiteral";
+
+    auto value = dynamic_cast<NumberLiteral*>(get_assigned_value(ast));
+    ASSERT_EQ(value->value, "1");
+}
+
 TEST_F(AstBaseTest, ValidatesFlatHeterogeneousTuple) {
     // Proves a tuple can hold entirely different primitive shapes side-by-side.
 

@@ -1,105 +1,31 @@
 #include "stages/frontend/parser/parser.h"
 
 namespace valuascript::compiler {
-    std::unique_ptr<Expression> Parser::parse_expression() {
-        if (cursor_.match({TokenType::If})) {
-            const Token &start_token = cursor_.previous();
-            auto condition = parse_or_expression();
-            cursor_.consume(TokenType::Then, ErrorCode::MissingThenToken, "Expected 'then' after condition.");
-            auto then_branch = parse_or_expression();
-            cursor_.consume(TokenType::Else, ErrorCode::MissingElseToken, "Expected 'else' after then branch.");
-            auto else_branch = parse_expression();
+    std::unique_ptr<Expression> Parser::parse_expression(const Precedence precedence) {
+        auto left = parse_unary_expression();
 
-            auto cond_expr = std::make_unique<ConditionalExpression>(std::move(condition), std::move(then_branch),
-                                                                     std::move(else_branch));
-            cond_expr->span = cursor_.make_span(start_token, cursor_.previous());
-            return cond_expr;
-        }
-        return parse_or_expression();
-    }
+        while (get_operator_precedence(cursor_.peek().type) >= precedence) {
+            Token op = cursor_.advance();
+            Precedence op_precedence = get_operator_precedence(op.type);
 
-    std::unique_ptr<Expression> Parser::parse_or_expression() {
-        auto expr = parse_and_expression();
-        while (cursor_.match({TokenType::Or})) {
-            Token op = cursor_.previous();
-            auto right = parse_and_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-        }
-        return expr;
-    }
+            const Precedence next_precedence = is_right_associative(op.type)
+                                                   ? op_precedence
+                                                   : static_cast<Precedence>(static_cast<int>(op_precedence) + 1);
 
-    std::unique_ptr<Expression> Parser::parse_and_expression() {
-        auto expr = parse_comparison_expression();
-        while (cursor_.match({TokenType::And})) {
-            Token op = cursor_.previous();
-            auto right = parse_comparison_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-        }
-        return expr;
-    }
+            auto right = parse_expression(next_precedence);
+            const SourceSpan combined = cursor_.combine_spans(left->span, right->span);
 
-    std::unique_ptr<Expression> Parser::parse_comparison_expression() {
-        auto expr = parse_addition_expression();
+            left = std::make_unique<BinaryExpression>(std::move(left), op.type, std::move(right));
+            left->span = combined;
 
-        if (cursor_.match({
-            TokenType::Equals, TokenType::NotEquals, TokenType::Greater, TokenType::GreaterEqual, TokenType::Less,
-            TokenType::LessEqual
-        })) {
-            Token op = cursor_.previous();
-            auto right = parse_addition_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-
-            if (cursor_.match({
-                TokenType::Equals, TokenType::NotEquals, TokenType::Greater, TokenType::GreaterEqual, TokenType::Less,
-                TokenType::LessEqual
-            })) {
-                cursor_.report_error(cursor_.previous(), ErrorCode::ChainingNotAllowedForComparisonOperations,
+            if (op_precedence == Precedence::Comparison &&
+                get_operator_precedence(cursor_.peek().type) == Precedence::Comparison) {
+                cursor_.report_error(cursor_.peek(), ErrorCode::ChainingNotAllowedForComparisonOperations,
                                      "Syntax Error: Chaining comparison operators is not allowed.");
             }
         }
-        return expr;
-    }
 
-    std::unique_ptr<Expression> Parser::parse_addition_expression() {
-        auto expr = parse_multiplication_expression();
-        while (cursor_.match({TokenType::Plus, TokenType::Minus})) {
-            Token op = cursor_.previous();
-            auto right = parse_multiplication_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-        }
-        return expr;
-    }
-
-    std::unique_ptr<Expression> Parser::parse_multiplication_expression() {
-        auto expr = parse_power_expression();
-        while (cursor_.match({TokenType::Star, TokenType::Slash, TokenType::Mod})) {
-            Token op = cursor_.previous();
-            auto right = parse_power_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-        }
-        return expr;
-    }
-
-    std::unique_ptr<Expression> Parser::parse_power_expression() {
-        auto expr = parse_unary_expression();
-        while (cursor_.match({TokenType::Caret})) {
-            Token op = cursor_.previous();
-            auto right = parse_unary_expression();
-            SourceSpan combined = cursor_.combine_spans(expr->span, right->span);
-            expr = std::make_unique<BinaryExpression>(std::move(expr), op.type, std::move(right));
-            expr->span = combined;
-        }
-        return expr;
+        return left;
     }
 
     std::unique_ptr<Expression> Parser::parse_unary_expression() {
@@ -124,15 +50,106 @@ namespace valuascript::compiler {
             } else if (cursor_.match({TokenType::LeftBracket})) {
                 expr = parse_tensor_access(std::move(expr));
             } else if (cursor_.match({TokenType::Dot})) {
-                Token property_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName,
-                                                       "Expected property name after '.'.");
-                expr = std::make_unique<DotAccess>(std::move(expr), property_token.lexeme);
-                expr->span = cursor_.combine_spans(start_span, cursor_.make_span(property_token, property_token));
+                expr = parse_dot_access(std::move(expr));
             } else {
                 break;
             }
         }
         return expr;
+    }
+
+    std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target) {
+        SourceSpan target_span = target->span;
+        if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
+            const TokenType p0 = cursor_.peek().type;
+            const TokenType p1 = cursor_.peek(1).type;
+
+            if (p0 == TokenType::Identifier) {
+                if (p1 != TokenType::Colon && is_binary_operator(p1)) {
+                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
+                                         "Syntax Error: Missing operator (like '*') before '(', or missing argument name.");
+                }
+            } else {
+                if (is_expression_start(p0)) {
+                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
+                                         "Syntax Error: Missing operator (like '*') before '(', or expected argument name.");
+                } else {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingArgumentName,
+                                         "Syntax Error: Expected an argument name (e.g., 'name: value') or a closing ')'.");
+                }
+            }
+        }
+
+        auto arguments = parse_key_value_list(
+            TokenType::RightParen,
+            ErrorCode::MissingArgumentName, "Expected argument name in function call.",
+            ErrorCode::MissingColonAfterArgument, "Expected ':' after argument name.",
+            ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
+            ErrorCode::TrailingCommaInFunctionCall);
+
+        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
+                                                 "Expected ')' after arguments.");
+
+        auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
+        func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
+        return func_call;
+    }
+
+    std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
+        SourceSpan target_span = target->span;
+
+        auto parse_bound = [&]() -> std::unique_ptr<Expression> {
+            if (cursor_.check(TokenType::Colon) || cursor_.check(TokenType::RightBracket)) {
+                return nullptr;
+            }
+
+            auto expr = parse_expression();
+
+            if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
+                if (is_expression_start(cursor_.peek().type)) {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                         "Syntax Error: Missing operator or expected ':' or ']' in tensor access.");
+                } else if (cursor_.check(TokenType::Comma)) {
+                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
+                                         "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.");
+                }
+            }
+            return expr;
+        };
+
+        std::unique_ptr<Expression> index_expr = parse_bound();
+
+        if (cursor_.match({TokenType::Colon})) {
+            std::unique_ptr<Expression> end_expr = parse_bound();
+
+            SourceSpan colon_span = index_expr ? index_expr->span : target_span;
+            SourceSpan slice_end_span = end_expr
+                                            ? end_expr->span
+                                            : cursor_.make_span(cursor_.previous(), cursor_.previous());
+
+            index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
+                                                            std::move(end_expr));
+            index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
+        } else if (!index_expr) {
+            cursor_.report_error(cursor_.previous(), ErrorCode::EmptyBracketAccess,
+                                 "Expected an index or slice inside '[]'.");
+        }
+
+        const Token &end_token = cursor_.consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
+                                                 "Expected ']' after tensor index.");
+
+        auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
+        bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
+        return bracket_access;
+    }
+
+    std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
+        const SourceSpan target_span = target->span;
+        Token property_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName,
+                                               "Expected property name after '.'.");
+        auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
+        dot_access->span = cursor_.combine_spans(target_span, cursor_.make_span(property_token, property_token));
+        return dot_access;
     }
 
     std::unique_ptr<Expression> Parser::parse_primary_expression() {
@@ -171,6 +188,10 @@ namespace valuascript::compiler {
             case TokenType::Switch:
                 cursor_.advance();
                 return parse_switch_expression();
+            case TokenType::If: {
+                cursor_.advance();
+                return parse_conditional_expression();
+            }
             case TokenType::LeftParen:
                 cursor_.advance();
                 return parse_tuple_or_grouping();
@@ -183,7 +204,6 @@ namespace valuascript::compiler {
             default:
                 cursor_.report_error(cursor_.peek(), ErrorCode::InvalidExpression,
                                      "Syntax Error: Expected an expression.");
-                return nullptr;
         }
     }
 
@@ -198,6 +218,11 @@ namespace valuascript::compiler {
         auto first_expr = parse_expression();
 
         if (cursor_.match({TokenType::Comma})) {
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.report_error(cursor_.previous(), ErrorCode::SingleElementTuplesNotAllowed,
+                                     "Syntax Error: Trailing commas and 1-element tuples are not allowed.");
+            }
+
             std::vector<std::unique_ptr<Expression> > elements;
             elements.push_back(std::move(first_expr));
 
@@ -253,86 +278,18 @@ namespace valuascript::compiler {
         return node;
     }
 
-    std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target) {
-        SourceSpan target_span = target->span;
-        if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
-            const TokenType p0 = cursor_.peek().type;
-            const TokenType p1 = cursor_.peek(1).type;
+    std::unique_ptr<Expression> Parser::parse_conditional_expression() {
+        const Token &start_token = cursor_.previous();
+        auto condition = parse_expression();
+        cursor_.consume(TokenType::Then, ErrorCode::MissingThenToken, "Expected 'then'.");
+        auto then_branch = parse_expression();
+        cursor_.consume(TokenType::Else, ErrorCode::MissingElseToken, "Expected 'else'.");
+        auto else_branch = parse_expression();
 
-            if (p0 == TokenType::Identifier) {
-                if (p1 != TokenType::Colon && is_binary_operator(p1)) {
-                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
-                                         "Syntax Error: Missing operator (like '*') before '(', or missing argument name.");
-                }
-            } else {
-                if (is_expression_start(p0)) {
-                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName,
-                                         "Syntax Error: Missing operator (like '*') before '(', or expected argument name.");
-                } else {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingArgumentName,
-                                         "Syntax Error: Expected an argument name (e.g., 'name: value') or a closing ')'.");
-                }
-            }
-        }
-
-        auto arguments = parse_key_value_list(
-            TokenType::RightParen,
-            ErrorCode::MissingArgumentName, "Expected argument name in function call.",
-            ErrorCode::MissingColonAfterArgument, "Expected ':' after argument name.",
-            ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
-            ErrorCode::TrailingCommaInFunctionCall);
-
-        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParen,
-                                                 "Expected ')' after arguments.");
-
-        auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
-        func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-        return func_call;
-    }
-
-    std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
-        SourceSpan target_span = target->span;
-
-        auto parse_bound = [&]() -> std::unique_ptr<Expression> {
-            if (cursor_.check(TokenType::Colon) || cursor_.check(TokenType::RightBracket)) {
-                return nullptr;
-            }
-
-            auto expr = parse_expression();
-
-            if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator,
-                                         "Syntax Error: Missing operator or expected ':' or ']' in tensor access.");
-                }
-            }
-            return expr;
-        };
-
-        std::unique_ptr<Expression> index_expr = parse_bound();
-
-        if (cursor_.match({TokenType::Colon})) {
-            std::unique_ptr<Expression> end_expr = parse_bound();
-
-            SourceSpan colon_span = index_expr ? index_expr->span : target_span;
-            SourceSpan slice_end_span = end_expr
-                                            ? end_expr->span
-                                            : cursor_.make_span(cursor_.previous(), cursor_.previous());
-
-            index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
-                                                            std::move(end_expr));
-            index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
-        } else if (!index_expr) {
-            cursor_.report_error(cursor_.previous(), ErrorCode::EmptyBracketAccess,
-                                 "Expected an index or slice inside '[]'.");
-        }
-
-        const Token &end_token = cursor_.consume(TokenType::RightBracket, ErrorCode::UnmatchedBracket,
-                                                 "Expected ']' after tensor index.");
-
-        auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
-        bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-        return bracket_access;
+        auto cond_expr = std::make_unique<ConditionalExpression>(
+            std::move(condition), std::move(then_branch), std::move(else_branch));
+        cond_expr->span = cursor_.make_span(start_token, cursor_.previous());
+        return cond_expr;
     }
 
     std::unique_ptr<Expression> Parser::parse_switch_expression() {

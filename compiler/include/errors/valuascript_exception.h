@@ -43,6 +43,7 @@ namespace valuascript::compiler {
         MissingCommaSeparatorForArgumentsInModifier,
         MissingArgumentName,
         TrailingCommaInFunctionCall,
+        SingleElementTuplesNotAllowed,
         TrailingCommaInTuple,
         MissingTypeAnnotation,
         EmptyGenericTypeAnnotation,

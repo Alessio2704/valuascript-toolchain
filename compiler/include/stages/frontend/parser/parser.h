@@ -22,6 +22,21 @@ namespace valuascript::compiler {
         std::unique_ptr<Program> parse_program();
 
     private:
+
+        enum class Precedence {
+            None = 0,
+            Or = 1,         // or
+            And = 2,        // and
+            Comparison = 3, // ==, !=, <, >, <=, >=
+            Term = 4,       // +, -
+            Factor = 5,     // *, /, %
+            Power = 6       // ^
+        };
+
+        static Precedence get_operator_precedence(TokenType type) ;
+
+        [[nodiscard]] static bool is_right_associative(TokenType type);
+
         // Core & Declarations
         void parse_top_level_declaration(Program *program);
 
@@ -49,19 +64,8 @@ namespace valuascript::compiler {
         std::unique_ptr<ReturnStatement> parse_return_statement();
 
         // Expressions
-        std::unique_ptr<Expression> parse_expression();
 
-        std::unique_ptr<Expression> parse_or_expression();
-
-        std::unique_ptr<Expression> parse_and_expression();
-
-        std::unique_ptr<Expression> parse_comparison_expression();
-
-        std::unique_ptr<Expression> parse_addition_expression();
-
-        std::unique_ptr<Expression> parse_multiplication_expression();
-
-        std::unique_ptr<Expression> parse_power_expression();
+        std::unique_ptr<Expression> parse_expression(Precedence precedence = Precedence::Or);
 
         std::unique_ptr<Expression> parse_unary_expression();
 
@@ -78,6 +82,10 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> parse_function_call(std::unique_ptr<Expression> target);
 
         std::unique_ptr<Expression> parse_tensor_access(std::unique_ptr<Expression> target);
+
+        std::unique_ptr<Expression> parse_dot_access(std::unique_ptr<Expression> target);
+
+        std::unique_ptr<Expression> parse_conditional_expression();
 
         std::unique_ptr<Expression> parse_switch_expression();
 
