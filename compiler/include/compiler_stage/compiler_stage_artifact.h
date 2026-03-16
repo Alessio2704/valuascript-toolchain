@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <any>
-#include <stdexcept>
 #include <algorithm>
+#include "errors/internal_compiler_exception.h"
 
 namespace valuascript::compiler {
     enum class CompilerStageArtifactCode {
@@ -30,13 +30,23 @@ namespace valuascript::compiler {
         });
 
         if (it == artifacts.end()) {
-            throw std::runtime_error("Extraction Failed: Artifact code not found in pipeline history.");
+            throw InternalCompilerException(
+                InternalErrorCode::MissingArtifactDuringExtraction,
+                static_cast<int>(target_code)
+            );
         }
 
         try {
             return std::any_cast<ExpectedType>(it->data);
         } catch (const std::bad_any_cast &) {
-            throw std::runtime_error("Extraction Failed: Artifact type mismatch during cast.");
+            throw InternalCompilerException(
+                InternalErrorCode::InvalidArtifactCast,
+                static_cast<int>(target_code),
+                typeid(ExpectedType).name()
+            );
         }
     }
+
+    CompilerStageArtifact extract_artifact(const std::vector<CompilerStageArtifact> &artifacts,
+                                           CompilerStageArtifactCode target_code);
 }

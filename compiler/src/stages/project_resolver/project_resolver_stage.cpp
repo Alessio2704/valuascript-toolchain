@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include "errors/valuascript_exception.h"
+#include "errors/error_formatter.h"
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {

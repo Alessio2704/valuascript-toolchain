@@ -9,7 +9,6 @@
 
 #include "compiler_stage_artifact.h"
 #include "compiler_context/compiler_context.h"
-#include "errors/internal_compiler_exception.h"
 
 namespace valuascript::compiler {
     class CompilerStage {
@@ -35,23 +34,7 @@ namespace valuascript::compiler {
         [[nodiscard]] const std::set<CompilerStageArtifactCode> &get_dependencies() const { return dependencies_; }
     };
 
-    inline std::set<CompilerStageArtifactCode> validate_stages_pipeline(
+    std::set<CompilerStageArtifactCode> validate_stages_pipeline(
         const std::vector<std::unique_ptr<CompilerStage> > &stages,
-        const std::set<CompilerStageArtifactCode> &initial_inputs) {
-        std::set<CompilerStageArtifactCode> available_artifacts(initial_inputs.begin(), initial_inputs.end());
-        for (const auto &stage: stages) {
-            for (const auto &dependency: stage->get_dependencies()) {
-                if (!available_artifacts.contains(dependency)) {
-                    throw InternalCompilerException(
-                        InternalErrorCode::MissingDependencyInCompilerOrchestrator,
-                        stage->get_name(),
-                        static_cast<int>(dependency)
-                    );
-                }
-            }
-            available_artifacts.insert(stage->get_output_artifact());
-        }
-
-        return available_artifacts;
-    }
+        const std::set<CompilerStageArtifactCode> &initial_inputs);
 }

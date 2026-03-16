@@ -94,6 +94,10 @@ namespace valuascript::compiler {
             std::optional<ErrorCode> trailing_comma_err = std::nullopt);
 
         template<typename T, typename ElementParser>
+            requires requires(ElementParser parser)
+            {
+                { parser() } -> std::convertible_to<T>;
+            }
         std::vector<T> parse_comma_separated_list(
             TokenType closing_token,
             ErrorCode missing_comma_err,

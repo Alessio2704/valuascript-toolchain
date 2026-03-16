@@ -50,6 +50,20 @@ public:
     }
 };
 
+class ParserMockV2 : public CompilerStage {
+public:
+    ParserMockV2() : CompilerStage(
+        "ParserMockV2",
+        CompilerStageArtifactCode::Ast,
+        {CompilerStageArtifactCode::FilePath, CompilerStageArtifactCode::TokenStream}) {
+    }
+
+    CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
+                              const std::vector<CompilerStageArtifact> &) override {
+        return {CompilerStageArtifactCode::Ast, {}};
+    }
+};
+
 class ImportResolverMock : public CompilerStage {
 public:
     ImportResolverMock() : CompilerStage(

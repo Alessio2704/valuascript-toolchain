@@ -7,7 +7,10 @@ namespace valuascript::compiler {
     enum class InternalErrorCode {
         MissingDependencyInCompilerOrchestrator,
         MissingOutputArtifactInCompilerOrchestrator,
-        DuplicateStageInOrchestrator
+        DuplicateStageInCompilerOrchestrator,
+        DuplicateOutputArtifactInCompilerOrchestrator,
+        MissingArtifactDuringExtraction,
+        InvalidArtifactCast
     };
 
     class InternalCompilerException : public std::logic_error {

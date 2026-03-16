@@ -2,22 +2,6 @@
 #include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
-    Lexer::Lexer(std::string source, std::string file_path, CompilerContext &context)
-        : source_(std::move(source)), file_path_(std::move(file_path)), context_(context) {
-    }
-
-    std::vector<Token> Lexer::tokenize() {
-        while (!is_at_end()) {
-            start_ = current_;
-            column_start_ = column_current_;
-            line_start_ = line_;
-            scan_token();
-        }
-        tokens_.emplace_back(TokenType::EndOfFile, "", line_, column_current_);
-        return tokens_;
-    }
-
-
     void Lexer::scan_string() {
         bool is_docstring = false;
         if (peek() == '"' && peek_next() == '"') {

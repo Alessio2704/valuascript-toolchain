@@ -2,7 +2,7 @@
 #include "stages/project_resolver/project_resolver_stage.h"
 
 namespace valuascript::compiler {
-    MainOrchestrator::MainOrchestrator() : CompilerOrchestrator(
+    MainOrchestrator::MainOrchestrator() : CompilerStageOrchestrator(
         "MainOrchestrator",
         CompilerStageArtifactCode::ResolvedProject,
         {CompilerStageArtifactCode::FilePath}

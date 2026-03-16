@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
-#include "compiler_stage/compiler_orchestrator.h"
+#include "compiler_stage/compiler_stage_orchestrator.h"
 #include "mock_stages.h"
+#include "errors/internal_compiler_exception.h"
 
 using namespace valuascript::compiler;
 
-class MockOrchestratorSuccessful : public CompilerOrchestrator {
+class MockOrchestratorSuccessful : public CompilerStageOrchestrator {
 public:
-    MockOrchestratorSuccessful() : CompilerOrchestrator(
+    MockOrchestratorSuccessful() : CompilerStageOrchestrator(
         "MockOrchestratorSuccessful",
         CompilerStageArtifactCode::ResolvedProject,
         {CompilerStageArtifactCode::FilePath}
@@ -19,9 +20,9 @@ public:
     }
 };
 
-class MockOrchestratorMissingDep : public CompilerOrchestrator {
+class MockOrchestratorMissingDep : public CompilerStageOrchestrator {
 public:
-    MockOrchestratorMissingDep() : CompilerOrchestrator(
+    MockOrchestratorMissingDep() : CompilerStageOrchestrator(
         "MockOrchestratorMissingDep",
         CompilerStageArtifactCode::Ast,
         {CompilerStageArtifactCode::FilePath}
@@ -32,9 +33,9 @@ public:
     }
 };
 
-class MockOrchestratorDuplicateStage : public CompilerOrchestrator {
+class MockOrchestratorDuplicateStage : public CompilerStageOrchestrator {
 public:
-    MockOrchestratorDuplicateStage() : CompilerOrchestrator(
+    MockOrchestratorDuplicateStage() : CompilerStageOrchestrator(
         "MockOrchestratorDuplicateStage",
         CompilerStageArtifactCode::Ast,
         {CompilerStageArtifactCode::FilePath}
@@ -46,9 +47,9 @@ public:
     }
 };
 
-class MockOrchestratorMissingOut : public CompilerOrchestrator {
+class MockOrchestratorMissingOut : public CompilerStageOrchestrator {
 public:
-    MockOrchestratorMissingOut() : CompilerOrchestrator(
+    MockOrchestratorMissingOut() : CompilerStageOrchestrator(
         "MockOrchestratorMissingOut",
         CompilerStageArtifactCode::ResolvedProject,
         {CompilerStageArtifactCode::FilePath}
@@ -56,6 +57,22 @@ public:
         add_stage(std::make_unique<FileReaderMock>());
         add_stage(std::make_unique<LexerMock>());
         add_stage(std::make_unique<ParserMock>());
+        validate();
+    }
+};
+
+class MockOrchestratorSameOutTwice : public CompilerStageOrchestrator {
+public:
+    MockOrchestratorSameOutTwice() : CompilerStageOrchestrator(
+        "MockOrchestratorSameOutTwice",
+        CompilerStageArtifactCode::ResolvedProject,
+        {CompilerStageArtifactCode::FilePath}
+    ) {
+        add_stage(std::make_unique<FileReaderMock>());
+        add_stage(std::make_unique<LexerMock>());
+        add_stage(std::make_unique<ParserMock>());
+        add_stage(std::make_unique<ParserMockV2>());
+        add_stage(std::make_unique<ImportResolverMock>());
         validate();
     }
 };
@@ -94,8 +111,20 @@ TEST(ValidateOrchestratorTest, ThrowsWhenAddingDuplicateStage) {
         MockOrchestratorDuplicateStage orchestrator;
         FAIL() << "Expected InternalCompilerException to be thrown";
     } catch (const InternalCompilerException &err) {
-        EXPECT_EQ(err.get_code(), InternalErrorCode::DuplicateStageInOrchestrator)
-            << "Expected ICE code DuplicateStageInOrchestrator, but got a different ICE code.";
+        EXPECT_EQ(err.get_code(), InternalErrorCode::DuplicateStageInCompilerOrchestrator)
+            << "Expected ICE code DuplicateStageInCompilerOrchestrator, but got a different ICE code.";
+    } catch (...) {
+        FAIL() << "Expected InternalCompilerException, but a different exception was thrown";
+    }
+}
+
+TEST(ValidateOrchestratorTest, ThrowsWhenMultipleStagesOutputSameArtifact) {
+    try {
+        MockOrchestratorSameOutTwice orchestrator;
+        FAIL() << "Expected InternalCompilerException to be thrown";
+    } catch (const InternalCompilerException &err) {
+        EXPECT_EQ(err.get_code(), InternalErrorCode::DuplicateOutputArtifactInCompilerOrchestrator)
+            << "Expected ICE code DuplicateOutputArtifactInCompilerOrchestrator, but got a different ICE code.";
     } catch (...) {
         FAIL() << "Expected InternalCompilerException, but a different exception was thrown";
     }

@@ -27,34 +27,17 @@ namespace valuascript::compiler {
         std::vector<Token> tokenize();
 
     private:
-        [[nodiscard]] bool is_at_end() const { return current_ >= source_.length(); }
+        [[nodiscard]] bool is_at_end() const;
 
-        char advance() {
-            column_current_++;
-            return source_[current_++];
-        }
+        char advance();
 
-        [[nodiscard]] char peek() const {
-            if (is_at_end()) return '\0';
-            return source_[current_];
-        }
+        [[nodiscard]] char peek() const;
 
-        [[nodiscard]] char peek_next() const {
-            if (current_ + 1 >= source_.length()) return '\0';
-            return source_[current_ + 1];
-        }
+        [[nodiscard]] char peek_next() const;
 
-        bool match(const char expected) {
-            if (is_at_end() || source_[current_] != expected) return false;
-            current_++;
-            column_current_++;
-            return true;
-        }
+        bool match(char expected);
 
-        void add_token(TokenType type) {
-            std::string text = source_.substr(start_, current_ - start_);
-            tokens_.emplace_back(type, std::move(text), line_, column_start_);
-        }
+        void add_token(TokenType type);
 
         void scan_string();
 
