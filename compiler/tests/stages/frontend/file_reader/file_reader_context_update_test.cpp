@@ -30,7 +30,7 @@ TEST_F(FileReaderStageTest, PopulatesSourceRegistryInContext) {
         {CompilerStageArtifactCode::FilePath, temp_file_path}
     };
 
-    auto result_artifact = reader.run(context, initial_artifacts);
+    auto result_artifact = reader.run(*context, initial_artifacts);
 
     EXPECT_EQ(result_artifact.code, CompilerStageArtifactCode::SourceCode);
     EXPECT_EQ(std::any_cast<std::string>(result_artifact.data), expected_source);

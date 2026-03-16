@@ -22,10 +22,10 @@ namespace valuascript::compiler {
         const std::vector<Token> &tokens_;
         std::string file_path_;
         size_t current_ = 0;
-        std::shared_ptr<CompilerContext> context_;
+       CompilerContext &context_;
 
     public:
-        TokenCursor(const std::vector<Token> &tokens, std::string file_path, std::shared_ptr<CompilerContext> context);
+        TokenCursor(const std::vector<Token> &tokens, std::string file_path,CompilerContext &context);
 
         [[nodiscard]] const Token &peek(int num = 0) const;
         [[nodiscard]] const Token &previous(int num = 1) const;

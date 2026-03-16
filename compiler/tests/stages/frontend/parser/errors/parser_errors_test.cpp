@@ -35,10 +35,10 @@ protected:
         ParserStage parser;
 
         auto lexer_artifacts = initial_artifacts;
-        lexer_artifacts.push_back(lexer.run(context, initial_artifacts));
+        lexer_artifacts.push_back(lexer.run(*context, initial_artifacts));
 
         ASSERT_NO_THROW({
-            parser.run(context, lexer_artifacts);
+            parser.run(*context, lexer_artifacts);
             }) << "Parser threw an exception even though fail_fast was set to false.";
 
         const auto &actual_errors = context->diagnostics.get_errors();

@@ -43,7 +43,7 @@ TEST_F(ImportResolverMultiErrorTest, CollectsCircularAndMissingFileErrors) {
     ImportResolverStage resolver;
 
     ASSERT_NO_THROW({
-        resolver.run(context, artifacts);
+        resolver.run(*context, artifacts);
         }) << "ImportResolverStage threw an exception even though fail_fast was set to false.";
 
     const auto &errors = context->diagnostics.get_errors();

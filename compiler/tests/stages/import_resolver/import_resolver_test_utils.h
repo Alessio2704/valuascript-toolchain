@@ -17,7 +17,7 @@ namespace valuascript::compiler::test {
 
         auto context = std::make_shared<CompilerContext>();
 
-        auto output = resolver.run(context, input_artifacts);
+        auto output = resolver.run(*context, input_artifacts);
         return extract_artifact_data<ResolvedProjectArtifact>(
             {output}, CompilerStageArtifactCode::ResolvedProject
         );

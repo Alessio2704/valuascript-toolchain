@@ -14,7 +14,7 @@ protected:
             {CompilerStageArtifactCode::FilePath, test_file_path}
         };
 
-        auto result_artifact = reader.run(context, history);
+        auto result_artifact = reader.run(*context, history);
         auto actual_content = std::any_cast<std::string>(result_artifact.data);
         return std::make_pair(result_artifact.code, actual_content);
     }

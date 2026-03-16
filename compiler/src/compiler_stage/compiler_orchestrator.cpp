@@ -2,7 +2,7 @@
 #include <algorithm>
 
 namespace valuascript::compiler {
-    CompilerStageArtifact CompilerOrchestrator::run(const std::shared_ptr<CompilerContext> &context,
+    CompilerStageArtifact CompilerOrchestrator::run(CompilerContext &context,
                                                     const std::vector<CompilerStageArtifact> &input_artifacts) {
         std::vector<CompilerStageArtifact> local_artifacts = input_artifacts;
 
@@ -27,7 +27,7 @@ namespace valuascript::compiler {
         return *it;
     }
 
-    CompilerStageArtifact CompilerOrchestrator::run_from_file(const std::shared_ptr<CompilerContext> &context,
+    CompilerStageArtifact CompilerOrchestrator::run_from_file(CompilerContext &context,
                                                               const std::string &file_path) {
         std::vector<CompilerStageArtifact> initial_artifacts = {
             {CompilerStageArtifactCode::FilePath, file_path}

@@ -12,7 +12,7 @@ namespace valuascript::compiler {
         ) {
     }
 
-    CompilerStageArtifact FileReaderStage::run(const std::shared_ptr<CompilerContext> &context,
+    CompilerStageArtifact FileReaderStage::run(CompilerContext &context,
                                                const std::vector<CompilerStageArtifact> &artifacts) {
         auto file_path = extract_artifact_data<std::string>(
             artifacts,
@@ -27,13 +27,13 @@ namespace valuascript::compiler {
                 {0, 0, 0, 0, file_path},
                 format_error(ErrorCode::ImportFileNotFound, file_path)
             );
-            context->handle_error(ex);
+            context.handle_error(ex);
         }
 
         std::ostringstream buffer;
         buffer << file_stream.rdbuf();
 
-        context->update_source_registry(file_path, buffer.str());
+        context.update_source_registry(file_path, buffer.str());
 
         return {CompilerStageArtifactCode::SourceCode, buffer.str()};
     }

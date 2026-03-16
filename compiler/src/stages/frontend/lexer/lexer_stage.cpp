@@ -11,7 +11,7 @@ namespace valuascript::compiler {
         ) {
     }
 
-    CompilerStageArtifact LexerStage::run(const std::shared_ptr<CompilerContext> &context,
+    CompilerStageArtifact LexerStage::run(CompilerContext &context,
                                           const std::vector<CompilerStageArtifact> &artifacts) {
         const auto source = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::SourceCode);
         const auto file_path = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::FilePath);

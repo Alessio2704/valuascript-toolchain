@@ -11,12 +11,15 @@ namespace valuascript::compiler {
         std::unordered_set<std::string> resolved_;
         FrontendOrchestrator frontend_;
 
-        static std::string normalize_path(const std::string& base_file, const std::string& import_path);
+        static std::string normalize_path(const std::string &base_file, const std::string &import_path);
 
-        void resolve_recursive(const std::shared_ptr<CompilerContext>& context, const std::string& current_file, ResolvedProjectArtifact& project);
+        void resolve_recursive(CompilerContext &context, const std::string &current_file,
+                               ResolvedProjectArtifact &project);
+
     public:
         ImportResolverStage();
 
-        CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact>& artifacts) override;
+        CompilerStageArtifact
+        run(CompilerContext &context, const std::vector<CompilerStageArtifact> &artifacts) override;
     };
 }

@@ -13,7 +13,7 @@ namespace valuascript::compiler {
         std::string source_;
         std::string file_path_;
         std::vector<Token> tokens_;
-        std::shared_ptr<CompilerContext> context_;
+        CompilerContext &context_;
         size_t start_ = 0;
         size_t current_ = 0;
         size_t line_ = 1;
@@ -22,7 +22,7 @@ namespace valuascript::compiler {
         size_t column_current_ = 1;
 
     public:
-        Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context);
+        Lexer(std::string source, std::string file_path, CompilerContext &context);
 
         std::vector<Token> tokenize();
 
@@ -75,7 +75,7 @@ namespace valuascript::compiler {
                 std::move(message)
             );
 
-            context_->handle_error(ex);
+            context_.handle_error(ex);
         }
     };
 }

@@ -19,7 +19,7 @@ namespace valuascript::compiler {
         return std::filesystem::weakly_canonical(base_dir / import_path).string();
     }
 
-    void ImportResolverStage::resolve_recursive(const std::shared_ptr<CompilerContext> &context,
+    void ImportResolverStage::resolve_recursive(CompilerContext &context,
                                                 const std::string &current_file, ResolvedProjectArtifact &project) {
         if (resolving_.contains(current_file)) {
             ValuaScriptException ex(
@@ -29,7 +29,7 @@ namespace valuascript::compiler {
                 format_error(ErrorCode::CircularImportDetected, current_file)
             );
 
-            context->handle_error(ex);
+            context.handle_error(ex);
             return;
         }
 
@@ -62,7 +62,7 @@ namespace valuascript::compiler {
                     format_error(ErrorCode::ImportFileNotFound, clean_path)
                 );
 
-                context->handle_error(ex);
+                context.handle_error(ex);
                 continue;
             }
 
@@ -76,7 +76,7 @@ namespace valuascript::compiler {
         resolved_.insert(current_file);
     }
 
-    CompilerStageArtifact ImportResolverStage::run(const std::shared_ptr<CompilerContext> &context,
+    CompilerStageArtifact ImportResolverStage::run(CompilerContext &context,
                                                    const std::vector<CompilerStageArtifact> &artifacts) {
         auto raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath

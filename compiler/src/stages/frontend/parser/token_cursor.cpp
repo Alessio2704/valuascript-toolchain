@@ -4,8 +4,8 @@
 
 namespace valuascript::compiler {
     TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path,
-                             std::shared_ptr<CompilerContext> context)
-        : tokens_(tokens), file_path_(std::move(file_path)), context_(std::move(context)) {
+                            CompilerContext &context)
+        : tokens_(tokens), file_path_(std::move(file_path)), context_(context) {
     }
 
     const Token &TokenCursor::peek(int num) const {
@@ -79,7 +79,7 @@ namespace valuascript::compiler {
             {err_line, err_column_start, err_line, err_column_end, file_path_},
             std::move(message)
         );
-        context_->handle_error(ex);
+        context_.handle_error(ex);
         throw ParseSyncException();
     }
 }

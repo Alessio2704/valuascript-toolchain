@@ -15,13 +15,13 @@ namespace valuascript::compiler::test {
         std::shared_ptr<Program> parse_code(const std::string &code) {
             auto context = std::make_shared<CompilerContext>();
             LexerStage lexer;
-            auto lexer_result = lexer.run(context, {
+            auto lexer_result = lexer.run(*context, {
                                               {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                               {CompilerStageArtifactCode::SourceCode, code}
                                           });
 
             ParserStage parser;
-            auto parser_result = parser.run(context, {
+            auto parser_result = parser.run(*context, {
                                                 {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                                 lexer_result
                                             });
@@ -34,13 +34,13 @@ namespace valuascript::compiler::test {
 
             auto context = std::make_shared<CompilerContext>();
             LexerStage lexer;
-            auto lexer_result = lexer.run(context, {
+            auto lexer_result = lexer.run(*context, {
                                               {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                               {CompilerStageArtifactCode::SourceCode, code}
                                           });
 
             ParserStage parser;
-            auto parser_result = parser.run(context, {
+            auto parser_result = parser.run(*context, {
                                                 {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                                 lexer_result
                                             });
@@ -53,13 +53,13 @@ namespace valuascript::compiler::test {
 
             auto context = std::make_shared<CompilerContext>();
             LexerStage lexer;
-            auto lexer_result = lexer.run(context, {
+            auto lexer_result = lexer.run(*context, {
                                               {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                               {CompilerStageArtifactCode::SourceCode, code}
                                           });
 
             ParserStage parser;
-            auto parser_result = parser.run(context, {
+            auto parser_result = parser.run(*context, {
                                                 {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
                                                 lexer_result
                                             });

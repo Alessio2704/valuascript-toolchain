@@ -2,8 +2,8 @@
 #include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
-    Lexer::Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context)
-        : source_(std::move(source)), file_path_(std::move(file_path)), context_(std::move(context)) {
+    Lexer::Lexer(std::string source, std::string file_path, CompilerContext &context)
+        : source_(std::move(source)), file_path_(std::move(file_path)), context_(context) {
     }
 
     std::vector<Token> Lexer::tokenize() {

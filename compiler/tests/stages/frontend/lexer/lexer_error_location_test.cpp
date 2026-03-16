@@ -34,7 +34,7 @@ protected:
         LexerStage lexer;
 
         ASSERT_NO_THROW({
-            lexer.run(context, artifacts);
+            lexer.run(*context, artifacts);
             }) << "Lexer threw an exception even though fail_fast was set to false.";
 
         const auto &actual_errors = context->diagnostics.get_errors();

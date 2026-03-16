@@ -18,7 +18,7 @@ namespace valuascript::compiler::test {
             {CompilerStageArtifactCode::SourceCode, source_code}
         };
 
-        auto [code, data] = lexer_stage.run(context, history);
+        auto [code, data] = lexer_stage.run(*context, history);
         return std::any_cast<std::vector<Token> >(data);
     }
 }

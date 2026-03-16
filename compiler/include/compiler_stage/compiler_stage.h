@@ -27,7 +27,7 @@ namespace valuascript::compiler {
 
         virtual ~CompilerStage() = default;
 
-        virtual CompilerStageArtifact run(const std::shared_ptr<CompilerContext> &context,
+        virtual CompilerStageArtifact run(CompilerContext &context,
                                           const std::vector<CompilerStageArtifact> &artifacts) = 0;
 
         [[nodiscard]] const std::string &get_name() const { return name_; }

@@ -10,7 +10,7 @@ namespace valuascript::compiler {
         ) {
     }
 
-    CompilerStageArtifact ParserStage::run(const std::shared_ptr<CompilerContext> &context, const std::vector<CompilerStageArtifact> &artifacts) {
+    CompilerStageArtifact ParserStage::run(CompilerContext &context, const std::vector<CompilerStageArtifact> &artifacts) {
         const auto tokens = extract_artifact_data<std::vector<Token> >(
             artifacts, CompilerStageArtifactCode::TokenStream);
         const auto file_path = extract_artifact_data<std::string>(artifacts, CompilerStageArtifactCode::FilePath);
