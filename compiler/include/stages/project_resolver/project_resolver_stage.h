@@ -5,7 +5,7 @@
 #include "stages/frontend/frontend_orchestrator.h"
 
 namespace valuascript::compiler {
-    class ImportResolverStage : public CompilerStage {
+    class ProjectResolverStage : public CompilerStage {
     private:
         std::unordered_set<std::string> resolving_;
         std::unordered_set<std::string> resolved_;
@@ -17,7 +17,7 @@ namespace valuascript::compiler {
                                ResolvedProjectArtifact &project);
 
     public:
-        ImportResolverStage();
+        ProjectResolverStage();
 
         CompilerStageArtifact
         run(CompilerContext &context, const std::vector<CompilerStageArtifact> &artifacts) override;

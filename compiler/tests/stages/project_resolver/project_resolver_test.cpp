@@ -3,17 +3,17 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "import_resolver_test_utils.h"
+#include "project_resolver_test_utils.h"
 #include "errors/valuascript_exception.h"
-#include "stages/import_resolver/import_resolver_stage.h"
+#include "stages/project_resolver/project_resolver_stage.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
 
-class ImportResolverTest : public ::testing::Test {
+class ProjectResolverTest : public ::testing::Test {
 protected:
     std::string temp_dir = "test_project_workspace";
-    ImportResolverStage resolver;
+    ProjectResolverStage resolver;
 
     void SetUp() override {
         if (std::filesystem::exists(temp_dir)) {
@@ -40,7 +40,7 @@ protected:
     }
 };
 
-TEST_F(ImportResolverTest, ResolvesLinearDependencyChain) {
+TEST_F(ProjectResolverTest, ResolvesLinearDependencyChain) {
     std::string c_path = create_file("c.vs", "let c_val = 30");
     std::string b_path = create_file("b.vs", "import \"c.vs\"\nlet b_val = 20");
     std::string a_path = create_file("a.vs", "import \"b.vs\"\nlet a_val = 10");
@@ -55,7 +55,7 @@ TEST_F(ImportResolverTest, ResolvesLinearDependencyChain) {
     EXPECT_EQ(project.topological_order[2], a_path);
 }
 
-TEST_F(ImportResolverTest, ResolvesDiamondDependencyGraph) {
+TEST_F(ProjectResolverTest, ResolvesDiamondDependencyGraph) {
     /*
     //     A
     //    / \
@@ -82,7 +82,7 @@ TEST_F(ImportResolverTest, ResolvesDiamondDependencyGraph) {
     EXPECT_EQ(project.topological_order[3], a_path);
 }
 
-TEST_F(ImportResolverTest, ResolvesRelativePathsAcrossDirectories) {
+TEST_F(ProjectResolverTest, ResolvesRelativePathsAcrossDirectories) {
     // Tests std::filesystem path normalization
     // main.vs imports "utils/math.vs"
     // utils/math.vs imports "../constants.vs"
@@ -99,7 +99,7 @@ TEST_F(ImportResolverTest, ResolvesRelativePathsAcrossDirectories) {
     EXPECT_EQ(project.topological_order[2], main_path);
 }
 
-TEST_F(ImportResolverTest, ThrowsOnDirectCircularDependency) {
+TEST_F(ProjectResolverTest, ThrowsOnDirectCircularDependency) {
     // A -> B -> A
     std::string b_path = create_file("b.vs", "import \"a.vs\"");
     std::string a_path = create_file("a.vs", "import \"b.vs\"");
@@ -114,7 +114,7 @@ TEST_F(ImportResolverTest, ThrowsOnDirectCircularDependency) {
     }
 }
 
-TEST_F(ImportResolverTest, ThrowsOnSelfImport) {
+TEST_F(ProjectResolverTest, ThrowsOnSelfImport) {
     // A -> A
     std::string a_path = create_file("a.vs", "import \"a.vs\"");
 
@@ -126,7 +126,7 @@ TEST_F(ImportResolverTest, ThrowsOnSelfImport) {
     }
 }
 
-TEST_F(ImportResolverTest, ThrowsOnDeepCircularDependency) {
+TEST_F(ProjectResolverTest, ThrowsOnDeepCircularDependency) {
     // A -> B -> C -> D -> B
     std::string d_path = create_file("d.vs", "import \"b.vs\"");
     std::string c_path = create_file("c.vs", "import \"d.vs\"");
@@ -141,7 +141,7 @@ TEST_F(ImportResolverTest, ThrowsOnDeepCircularDependency) {
     }
 }
 
-TEST_F(ImportResolverTest, ThrowsOnMissingFile) {
+TEST_F(ProjectResolverTest, ThrowsOnMissingFile) {
     // A -> NonExistent
     std::string a_path = create_file("a.vs", "import \"ghost.vs\"");
 
@@ -153,7 +153,7 @@ TEST_F(ImportResolverTest, ThrowsOnMissingFile) {
     }
 }
 
-TEST_F(ImportResolverTest, ResolvesComplexRelativePathBacktracking) {
+TEST_F(ProjectResolverTest, ResolvesComplexRelativePathBacktracking) {
     // Structure:
     // root/
     //   main.vs
@@ -176,7 +176,7 @@ TEST_F(ImportResolverTest, ResolvesComplexRelativePathBacktracking) {
     EXPECT_EQ(project.topological_order[2], main_path);
 }
 
-TEST_F(ImportResolverTest, NormalizesRedundantPathsToSameModule) {
+TEST_F(ProjectResolverTest, NormalizesRedundantPathsToSameModule) {
     // main.vs imports both "utils.vs" and "./utils.vs"
     // The resolver must realize these are the exact same physical file.
 
@@ -193,7 +193,7 @@ TEST_F(ImportResolverTest, NormalizesRedundantPathsToSameModule) {
     EXPECT_EQ(project.topological_order[1], main_path);
 }
 
-TEST_F(ImportResolverTest, ResolvesMassiveStarTopology) {
+TEST_F(ProjectResolverTest, ResolvesMassiveStarTopology) {
     // main -> [mod1, mod2, mod3, mod4, mod5] -> core
 
     std::string core_path = create_file("core.vs", "let core_val = 100");

@@ -1,4 +1,4 @@
-#include "stages/import_resolver/import_resolver_stage.h"
+#include "stages/project_resolver/project_resolver_stage.h"
 
 #include <filesystem>
 #include <memory>
@@ -6,20 +6,20 @@
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {
-    ImportResolverStage::ImportResolverStage()
+    ProjectResolverStage::ProjectResolverStage()
         : CompilerStage(
-            "ImportResolverStage",
+            "ProjectProjectResolverStage",
             CompilerStageArtifactCode::ResolvedProject,
             {CompilerStageArtifactCode::FilePath}
         ) {
     }
 
-    std::string ImportResolverStage::normalize_path(const std::string &base_file, const std::string &import_path) {
+    std::string ProjectResolverStage::normalize_path(const std::string &base_file, const std::string &import_path) {
         std::filesystem::path base_dir = std::filesystem::path(base_file).parent_path();
         return std::filesystem::weakly_canonical(base_dir / import_path).string();
     }
 
-    void ImportResolverStage::resolve_recursive(CompilerContext &context,
+    void ProjectResolverStage::resolve_recursive(CompilerContext &context,
                                                 const std::string &current_file, ResolvedProjectArtifact &project) {
         if (resolving_.contains(current_file)) {
             ValuaScriptException ex(
@@ -76,7 +76,7 @@ namespace valuascript::compiler {
         resolved_.insert(current_file);
     }
 
-    CompilerStageArtifact ImportResolverStage::run(CompilerContext &context,
+    CompilerStageArtifact ProjectResolverStage::run(CompilerContext &context,
                                                    const std::vector<CompilerStageArtifact> &artifacts) {
         auto raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath

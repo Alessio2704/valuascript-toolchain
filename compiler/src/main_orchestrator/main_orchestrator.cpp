@@ -1,5 +1,5 @@
 #include "main_orchestrator/main_orchestrator.h"
-#include "stages/import_resolver/import_resolver_stage.h"
+#include "stages/project_resolver/project_resolver_stage.h"
 
 namespace valuascript::compiler {
     MainOrchestrator::MainOrchestrator() : CompilerOrchestrator(
@@ -7,7 +7,7 @@ namespace valuascript::compiler {
         CompilerStageArtifactCode::ResolvedProject,
         {CompilerStageArtifactCode::FilePath}
     ) {
-        add_stage(std::make_unique<ImportResolverStage>());
+        add_stage(std::make_unique<ProjectResolverStage>());
         validate();
     }
 }

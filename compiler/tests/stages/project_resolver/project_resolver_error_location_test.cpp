@@ -2,14 +2,13 @@
 #include <fstream>
 #include <filesystem>
 
-#include "../../../include/errors/valuascript_exception.h"
-#include "stages/import_resolver/import_resolver_stage.h"
-#include "../../../include/compiler_context/compiler_context.h"
 #include "errors/valuascript_exception.h"
+#include "stages/project_resolver/project_resolver_stage.h"
+#include "compiler_context/compiler_context.h"
 
 using namespace valuascript::compiler;
 
-class ImportResolverMultiErrorTest : public testing::Test {
+class ProjectResolverMultiErrorTest : public testing::Test {
 protected:
     const std::string main_file = "test_main.vs";
     const std::string module_a_file = "test_module_a.vs";
@@ -32,7 +31,7 @@ protected:
     }
 };
 
-TEST_F(ImportResolverMultiErrorTest, CollectsCircularAndMissingFileErrors) {
+TEST_F(ProjectResolverMultiErrorTest, CollectsCircularAndMissingFileErrors) {
     auto context = std::make_shared<CompilerContext>();
     context->settings.fail_fast = false;
 
@@ -40,11 +39,11 @@ TEST_F(ImportResolverMultiErrorTest, CollectsCircularAndMissingFileErrors) {
         {CompilerStageArtifactCode::FilePath, main_file}
     };
 
-    ImportResolverStage resolver;
+    ProjectResolverStage resolver;
 
     ASSERT_NO_THROW({
         resolver.run(*context, artifacts);
-        }) << "ImportResolverStage threw an exception even though fail_fast was set to false.";
+        }) << "ProjectProjectResolverStage threw an exception even though fail_fast was set to false.";
 
     const auto &errors = context->diagnostics.get_errors();
 

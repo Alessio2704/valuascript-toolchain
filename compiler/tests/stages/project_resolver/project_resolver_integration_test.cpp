@@ -3,17 +3,17 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "import_resolver_test_utils.h"
+#include "project_resolver_test_utils.h"
 #include "errors/valuascript_exception.h"
-#include "stages/import_resolver/import_resolver_stage.h"
+#include "stages/project_resolver/project_resolver_stage.h"
 
 using namespace valuascript;
 using namespace valuascript::compiler;
 
-class ImportResolverTest : public ::testing::Test {
+class ProjectResolverTest : public ::testing::Test {
 protected:
     std::string temp_dir = "test_project_workspace";
-    ImportResolverStage resolver;
+    ProjectResolverStage resolver;
 
     void SetUp() override {
         if (std::filesystem::exists(temp_dir)) {
@@ -322,7 +322,7 @@ const std::string assumptions_file = R"(
 )";
 
 
-TEST_F(ImportResolverTest, ResolvesAlphabetValuationIntegrationProject) {
+TEST_F(ProjectResolverTest, ResolvesAlphabetValuationIntegrationProject) {
     // 1. Create assumptions.vs (The Leaf Node)
     std::string assumptions_path = create_file("assumptions/assumptions.vs", assumptions_file);
 
