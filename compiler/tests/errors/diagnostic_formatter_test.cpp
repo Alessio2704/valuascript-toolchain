@@ -193,7 +193,7 @@ TEST_F(DiagnosticFormatterTest, MathematicallyProvesMultiLineFallback) {
     auto err = create_dummy_error(ErrorCode::InvalidStandaloneStatement, 1, 11, 1);
 
     // Manually override the line_end since the dummy helper assumes single-line
-    auto span = err.get_location();
+    auto span = err.get_span();
     span.line_end = 3;
     ValuaScriptException multi_line_err(err.get_category(), err.get_code(), span, "Test");
 

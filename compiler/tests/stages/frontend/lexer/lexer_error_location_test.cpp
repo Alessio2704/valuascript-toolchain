@@ -54,10 +54,10 @@ protected:
                 << "\nActual Code: " << static_cast<int>(actual.get_code())
                 << "\nActual Message: " << actual.what();
 
-            EXPECT_EQ(actual.get_location().line_start, expected.line)
+            EXPECT_EQ(actual.get_span().line_start, expected.line)
                 << "Error [" << i << "] Line mismatch for error: " << actual.what();
 
-            EXPECT_EQ(actual.get_location().column_start, expected.column)
+            EXPECT_EQ(actual.get_span().column_start, expected.column)
                 << "Error [" << i << "] Column mismatch for error: " << actual.what();
         }
     }

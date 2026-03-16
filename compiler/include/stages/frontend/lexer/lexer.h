@@ -3,8 +3,9 @@
 
 #include "token.h"
 #include "compiler_context/compiler_context.h"
+
 #include "errors/valuascript_exception.h"
-#include "errors/error_messages.h"
+#include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
     class Lexer {
@@ -65,7 +66,7 @@ namespace valuascript::compiler {
 
         template<typename... Args>
         void report_error(const ErrorCode &code, Args &&... args) const {
-            std::string message = format_error_message(code, std::forward<Args>(args)...);
+            std::string message = format_error(code, std::forward<Args>(args)...);
 
             ValuaScriptException ex(
                 ErrorCategory::Lexical,

@@ -1,7 +1,7 @@
 #include "stages/frontend/file_reader/file_reader_stage.h"
 #include <fstream>
 #include <sstream>
-#include "errors/error_messages.h"
+#include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
     FileReaderStage::FileReaderStage()
@@ -25,7 +25,7 @@ namespace valuascript::compiler {
                 ErrorCategory::Import,
                 ErrorCode::ImportFileNotFound,
                 {0, 0, 0, 0, file_path},
-                format_error_message(ErrorCode::ImportFileNotFound, file_path)
+                format_error(ErrorCode::ImportFileNotFound, file_path)
             );
             context->handle_error(ex);
         }

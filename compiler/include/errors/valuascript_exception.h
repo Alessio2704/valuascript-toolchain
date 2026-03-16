@@ -119,12 +119,6 @@ namespace valuascript::compiler {
         ImportFileNotFound
     };
 
-    struct ErrorLocation {
-        size_t line;
-        size_t column;
-        std::string file_path;
-    };
-
     class ValuaScriptException : public std::exception {
     private:
         ErrorCategory category_;
@@ -143,6 +137,6 @@ namespace valuascript::compiler {
 
         [[nodiscard]] ErrorCategory get_category() const { return category_; }
         [[nodiscard]] ErrorCode get_code() const { return code_; }
-        [[nodiscard]] const SourceSpan &get_location() const { return span_; }
+        [[nodiscard]] const SourceSpan &get_span() const { return span_; }
     };
 }

@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <memory>
 #include "errors/valuascript_exception.h"
-#include "errors/error_messages.h"
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {
@@ -27,7 +26,7 @@ namespace valuascript::compiler {
                 ErrorCategory::Import,
                 ErrorCode::CircularImportDetected,
                 {0, 0, 0, 0, current_file},
-                format_error_message(ErrorCode::CircularImportDetected, current_file)
+                format_error(ErrorCode::CircularImportDetected, current_file)
             );
 
             context->handle_error(ex);
@@ -60,7 +59,7 @@ namespace valuascript::compiler {
                     ErrorCategory::Import,
                     ErrorCode::ImportFileNotFound,
                     {0, 0, 0, 0, current_file},
-                    format_error_message(ErrorCode::ImportFileNotFound, clean_path)
+                    format_error(ErrorCode::ImportFileNotFound, clean_path)
                 );
 
                 context->handle_error(ex);

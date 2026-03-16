@@ -7,8 +7,6 @@
 
 #include "compiler_context/compiler_context.h"
 #include "stages/frontend/lexer/token.h"
-#include "errors/valuascript_exception.h"
-#include "errors/error_messages.h"
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {

@@ -1,5 +1,6 @@
 #include "stages/frontend/parser/token_cursor.h"
 #include "stages/frontend/parser/parser.h"
+#include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
     TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path,
@@ -70,7 +71,7 @@ namespace valuascript::compiler {
             }
         }
 
-        std::string message = format_error_message(code);
+        std::string message = format_error(code);
 
         ValuaScriptException ex(
             ErrorCategory::Syntax,

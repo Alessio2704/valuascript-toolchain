@@ -1,4 +1,5 @@
-#include "errors/error_messages.h"
+#include "errors/error_formatter.h"
+#include "errors/valuascript_exception.h"
 
 namespace valuascript::compiler {
     std::string_view get_error_template(const ErrorCode code) {

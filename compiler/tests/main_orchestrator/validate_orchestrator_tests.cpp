@@ -3,7 +3,7 @@
 
 using namespace valuascript::compiler;
 
-TEST(ValidateOrchestratorTest, OrchestratorIsConfiguredCorrectly) {
+TEST(ValidateMainOrchestratorTest, MainOrchestratorIsConfiguredCorrectly) {
     MainOrchestrator orchestrator;
     SUCCEED();
 }

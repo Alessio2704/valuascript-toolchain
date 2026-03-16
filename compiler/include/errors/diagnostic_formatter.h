@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "valuascript_exception.h"
-#include "../compiler_context/compiler_context.h"
+#include "compiler_context/compiler_context.h"
 
 namespace valuascript::compiler {
     class DiagnosticFormatter {

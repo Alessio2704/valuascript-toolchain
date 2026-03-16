@@ -1,0 +1,20 @@
+#include "errors/error_formatter.h"
+#include "errors/internal_compiler_exception.h"
+
+namespace valuascript::compiler {
+    std::string_view get_error_template(InternalErrorCode code) {
+        switch (code) {
+            case InternalErrorCode::MissingDependencyInCompilerOrchestrator:
+                return
+                        "Invalid Pipeline Configuration. Stage '{}' requires Artifact Code '{}', but it is not available from previous stages.";
+            case InternalErrorCode::MissingOutputArtifactInCompilerOrchestrator:
+                return
+                        "Orchestrator Validation Failed. The pipeline inside '{}' does not produce the promised output artifact '{}'.";
+            case InternalErrorCode::DuplicateStageInOrchestrator:
+                return
+                        "Adding Stage to Orchestrator Failed. The orchestrator '{}' attempted to add a stage '{}' which was already present in the pipeline.";
+        }
+
+        return "An unknown internal compiler error occurred.";
+    }
+}

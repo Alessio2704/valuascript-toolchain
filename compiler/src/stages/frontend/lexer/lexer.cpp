@@ -1,4 +1,5 @@
 #include "stages/frontend/lexer/lexer.h"
+#include "errors/error_formatter.h"
 
 namespace valuascript::compiler {
     Lexer::Lexer(std::string source, std::string file_path, std::shared_ptr<CompilerContext> context)

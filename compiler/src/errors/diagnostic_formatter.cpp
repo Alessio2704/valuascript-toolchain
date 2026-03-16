@@ -8,7 +8,7 @@ namespace valuascript::compiler {
     void DiagnosticFormatter::print_errors(const std::vector<ValuaScriptException> &errors,
                                            const SourceRegistry &registry) {
         for (const auto &err: errors) {
-            const auto& loc = err.get_location();
+            const auto& loc = err.get_span();
             std::string source_code;
 
             if (registry.contains(loc.file_path)) {
@@ -21,7 +21,7 @@ namespace valuascript::compiler {
 
     std::string DiagnosticFormatter::format_error(const ValuaScriptException& err, const std::string& source_code) {
         std::ostringstream output;
-        const auto& span = err.get_location();
+        const auto& span = err.get_span();
 
         output << RED << BOLD << "error[E" << static_cast<int>(err.get_code()) << "]: "
                << RESET << BOLD << err.what() << RESET << "\n";
