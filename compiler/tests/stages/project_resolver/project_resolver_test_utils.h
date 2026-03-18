@@ -3,7 +3,7 @@
 #include "stages/project_resolver/project_resolver_stage.h"
 #include "stages/project_resolver/resolved_project_artifact.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {

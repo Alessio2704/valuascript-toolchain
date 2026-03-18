@@ -5,7 +5,9 @@
 #include <vector>
 #include <memory>
 #include <optional>
-#include "stages/frontend/lexer/token.h"
+#include "token/token.h"
+
+using namespace valuascript::shared;
 
 namespace valuascript::compiler {
     struct SourceSpan {

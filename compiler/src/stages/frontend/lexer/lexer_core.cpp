@@ -44,4 +44,8 @@ namespace valuascript::compiler {
         std::string text = source_.substr(start_, current_ - start_);
         tokens_.emplace_back(type, std::move(text), line_, column_start_);
     }
+
+    void Lexer::add_token(TokenType type, std::string text) {
+        tokens_.emplace_back(type, std::move(text), line_, column_start_);
+    }
 }

@@ -4,7 +4,7 @@
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "stages/frontend/parser/ast.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 enum class TargetNodeType { Assignment, Function, Struct, Enum };

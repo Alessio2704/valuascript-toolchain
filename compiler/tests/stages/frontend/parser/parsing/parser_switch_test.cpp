@@ -2,7 +2,7 @@
 #include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 struct SwitchHappyParam {

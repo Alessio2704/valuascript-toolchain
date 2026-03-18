@@ -19,6 +19,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Unterminated decimal number. Expected digits after '.'.";
             case ValuascriptErrorCode::DecimalMissingLeadingZero:
                 return "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5').";
+            case ValuascriptErrorCode::TrailingSeparatorInNumberLiteral:
+                return "Syntax Error: Trailing separator '_' in number literal (remove it or complete with digits after separator).";
 
             // --- Parser Errors ---
             case ValuascriptErrorCode::UnexpectedTopLevelToken:

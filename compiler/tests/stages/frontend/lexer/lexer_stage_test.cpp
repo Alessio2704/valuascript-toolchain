@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/lexer/token.h"
+#include "token/token.h"
 #include "errors/valuascript_exception.h"
 #include "lexer_tests_utils.h"
 #include <string>
 #include <vector>
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 using namespace valuascript::compiler::test;
 

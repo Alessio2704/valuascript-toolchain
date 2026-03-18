@@ -1,5 +1,8 @@
 #include "stages/frontend/lexer/lexer.h"
 #include "errors/error_formatter.h"
+#include "token/reserved_keyword_lookup.h"
+
+using namespace valuascript::shared;
 
 namespace valuascript::compiler {
     void Lexer::scan_string() {
@@ -54,7 +57,7 @@ namespace valuascript::compiler {
                 if (peek() == '_') {
                     if (!std::isdigit(peek_next())) {
                         advance();
-                        report_error(ValuascriptErrorCode::InvalidCharacter, "_");
+                        report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, "_");
                     }
                 }
                 advance();
@@ -85,12 +88,12 @@ namespace valuascript::compiler {
     void Lexer::scan_identifier() {
         while (std::isalnum(peek()) || peek() == '_') advance();
 
-        const std::string text = source_.substr(start_, current_ - start_);
+        std::string text = source_.substr(start_, current_ - start_);
 
-        if (auto keyword_opt = get_keyword_type(text); keyword_opt.has_value()) {
-            add_token(keyword_opt.value());
+        if (const auto keyword_opt = get_keyword_type(text); keyword_opt.has_value()) {
+            add_token(keyword_opt.value(), std::move(text));
         } else {
-            add_token(TokenType::Identifier);
+            add_token(TokenType::Identifier, std::move(text));
         }
     }
 
@@ -128,7 +131,8 @@ namespace valuascript::compiler {
                         TokenType last_type = tokens_.back().type;
                         if (last_type == TokenType::Identifier ||
                             last_type == TokenType::RightParen ||
-                            last_type == TokenType::RightBracket) {
+                            last_type == TokenType::RightBracket ||
+                            last_type == TokenType::RightBrace) {
                             is_member_access = true;
                         }
                     }

@@ -112,9 +112,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let num2 = 45._\n"
         "let num3 = 100_",
         {
-        {ValuascriptErrorCode::InvalidCharacter, 1, 12},
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 12},
         {ValuascriptErrorCode::UnterminatedDecimal, 2, 12},
-        {ValuascriptErrorCode::InvalidCharacter, 3, 12}
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 3, 12}
         }
         },
 
@@ -150,7 +150,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let result = 10 + .5 * 100_ - \"unclosed",
         {
         {ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 19},
-        {ValuascriptErrorCode::InvalidCharacter, 1, 24},
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 24},
         {ValuascriptErrorCode::UnclosedString, 1, 31}
         }
         },
@@ -180,7 +180,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::UnterminatedDecimal, 2, 1},
         {ValuascriptErrorCode::UnclosedString, 3, 1},
         {ValuascriptErrorCode::DecimalMissingLeadingZero, 4, 1},
-        {ValuascriptErrorCode::InvalidCharacter, 5, 1}
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 5, 1}
         }
         },
         LexerMultiErrorTestCase{

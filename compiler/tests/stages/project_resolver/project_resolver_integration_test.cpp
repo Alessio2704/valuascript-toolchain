@@ -7,7 +7,7 @@
 #include "errors/valuascript_exception.h"
 #include "stages/project_resolver/project_resolver_stage.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 class ProjectResolverTest : public ::testing::Test {

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "../ast_base_test.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 class AstSpanTest : public test::AstBaseTest {

@@ -1,10 +1,10 @@
 #pragma once
 #include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/lexer/token.h"
+#include "token/token.h"
 #include <string>
 #include <vector>
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {

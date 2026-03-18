@@ -4,7 +4,7 @@
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "errors/valuascript_exception.h"
 
-using namespace valuascript;
+using namespace valuascript::shared;
 using namespace valuascript::compiler;
 
 struct SadLexerParam {
@@ -17,12 +17,12 @@ class LexerSadPathTest : public testing::TestWithParam<SadLexerParam> {
 };
 
 TEST_P(LexerSadPathTest, ThrowsCorrectLexicalError) {
-    const SadLexerParam& param = GetParam();
+    const SadLexerParam &param = GetParam();
 
     try {
         test::tokenize_code(param.source_code);
         FAIL() << "Lexer should have thrown an exception for test: " << param.test_id;
-    } catch (const ValuaScriptException& e) {
+    } catch (const ValuaScriptException &e) {
         EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical)
             << "Error category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
@@ -42,18 +42,25 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Malformed Numbers
         SadLexerParam{"percentage_before_number", "x = %1", ValuascriptErrorCode::InvalidCharacter},
-        SadLexerParam{"missing_leading_zero", "let a = .5", ValuascriptErrorCode::DecimalMissingLeadingZero},
+        SadLexerParam{"missing_leading_zero_1", "let a = .5", ValuascriptErrorCode::DecimalMissingLeadingZero},
+        SadLexerParam{"missing_leading_zero_2", ".5", ValuascriptErrorCode::DecimalMissingLeadingZero},
         SadLexerParam{"unterminated_decimal_1", "let a = 1.", ValuascriptErrorCode::UnterminatedDecimal},
         SadLexerParam{"unterminated_decimal_2", "let a = 1_230.", ValuascriptErrorCode::UnterminatedDecimal},
-        SadLexerParam{"at_wrong_identifier_3", "let a = 1_", ValuascriptErrorCode::InvalidCharacter},
-        SadLexerParam{"at_double_underscore_invalid", "let a = 1__000", ValuascriptErrorCode::InvalidCharacter},
+        SadLexerParam{"unterminated_number_after_separator", "let a = 1_", ValuascriptErrorCode::
+        TrailingSeparatorInNumberLiteral},
+        SadLexerParam{"at_double_underscore_invalid", "let a = 1__000", ValuascriptErrorCode::
+        TrailingSeparatorInNumberLiteral},
 
         // Unclosed Strings
         SadLexerParam{"unclosed_string_1", "let a = \"hello", ValuascriptErrorCode::UnclosedString},
+        SadLexerParam{"unclosed_string_2", "let a = \"hello \n \n", ValuascriptErrorCode::UnclosedString},
+        SadLexerParam{"unclosed_string_3", "\"hello", ValuascriptErrorCode::UnclosedString},
         SadLexerParam{"unclosed_string_import", "import \"file/path", ValuascriptErrorCode::UnclosedString},
-        SadLexerParam{"unclosed_docstring", "func test() -> scalar { \"\"\"\"\" return 1 }", ValuascriptErrorCode::UnclosedString}
+        SadLexerParam{"unclosed_docstring_1", "func test() -> scalar { \"\"\"\"\" return 1 }", ValuascriptErrorCode::
+        UnclosedString},
+        SadLexerParam{"unclosed_docstring_2", "\"\"\"\"\" return 1 }", ValuascriptErrorCode::UnclosedString}
     ),
     [](const testing::TestParamInfo<SadLexerParam>& info) {
-        return info.param.test_id;
+    return info.param.test_id;
     }
 );

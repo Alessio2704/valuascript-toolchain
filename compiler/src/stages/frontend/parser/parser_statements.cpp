@@ -1,4 +1,5 @@
 #include "stages/frontend/parser/parser.h"
+#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
     std::unique_ptr<Statement> Parser::parse_statement() {
@@ -46,7 +47,7 @@ namespace valuascript::compiler {
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
-            if (is_reserved_keyword(cursor_.peek().type)) {
+            if (is_reserved_keyword(cursor_.peek())) {
                 cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier);
             }
             const Token &target = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::InvalidIdentifier);

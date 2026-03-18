@@ -1,11 +1,11 @@
 #pragma once
 #include <string>
 
-#include "token.h"
 #include "compiler_context/compiler_context.h"
 
 #include "errors/valuascript_exception.h"
 #include "errors/error_formatter.h"
+#include "token/token.h"
 
 namespace valuascript::compiler {
     class Lexer {
@@ -38,6 +38,7 @@ namespace valuascript::compiler {
         bool match(char expected);
 
         void add_token(TokenType type);
+        void add_token(TokenType type, std::string text);
 
         void scan_string();
 

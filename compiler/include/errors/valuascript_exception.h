@@ -17,6 +17,7 @@ namespace valuascript::compiler {
         InvalidIdentifier,
         DecimalMissingLeadingZero,
         UnterminatedDecimal,
+        TrailingSeparatorInNumberLiteral,
 
         // --- Parser Errors ---
         UnexpectedTopLevelToken,
