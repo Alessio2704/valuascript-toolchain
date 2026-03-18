@@ -51,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct TensorLiteralSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class TensorLiteralSadPathTest : public test::AstBaseTest,
@@ -65,7 +65,7 @@ TEST_P(TensorLiteralSadPathTest, ThrowsCorrectSyntaxError) {
         parse_expression_as_assignment(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -76,10 +76,10 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     TensorLiteralSadPathTest,
     testing::Values(
-    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ErrorCode::UnmatchedBracketAfterVectorElements},
-    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ErrorCode::UnmatchedBracketAfterVectorElements},
-    TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ErrorCode::UnexpectedCommaInBracketAccess},
-    TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ErrorCode::UnexpectedCommaInBracketAccess}
+    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
+    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
+    TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ValuascriptErrorCode::UnexpectedCommaInBracketAccess},
+    TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ValuascriptErrorCode::UnexpectedCommaInBracketAccess}
     ),
     [](const testing::TestParamInfo<TensorLiteralSadParam>& info) {
     return info.param.test_id;

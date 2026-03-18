@@ -47,7 +47,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct ReassignmentSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class ReassignmentSadPathTest : public test::AstBaseTest,
@@ -61,7 +61,7 @@ TEST_P(ReassignmentSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -72,24 +72,24 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     ReassignmentSadPathTest,
     testing::Values(
-        ReassignmentSadParam{"assign_to_number", "10 = 5", ErrorCode::UnexpectedTopLevelToken},
-        ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ErrorCode::UnexpectedTopLevelToken},
-        ReassignmentSadParam{"assign_to_function", "get_rate() = 5", ErrorCode::InvalidLeftSideExpressionInReassignment}
+        ReassignmentSadParam{"assign_to_number", "10 = 5", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        ReassignmentSadParam{"assign_to_function", "get_rate() = 5", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment}
         ,
-        ReassignmentSadParam{"assign_to_binary_expr", "a + b = 10", ErrorCode::InvalidLeftSideExpressionInReassignment},
-        ReassignmentSadParam{"missing_rhs", "a = ", ErrorCode::InvalidExpression},
-        ReassignmentSadParam{"standalone_literal", "42", ErrorCode::UnexpectedTopLevelToken},
-        ReassignmentSadParam{"standalone_variable", "my_var", ErrorCode::InvalidStandaloneStatement},
-        ReassignmentSadParam{"standalone_binary", "1 + 1", ErrorCode::UnexpectedTopLevelToken},
-        ReassignmentSadParam{"standalone_bracket_access", "tensor[0]", ErrorCode::InvalidStandaloneStatement},
-        ReassignmentSadParam{"multiple_reassignment", "a, b = 1, 2", ErrorCode::MultiReassignmentNotSupported},
-        ReassignmentSadParam{"missing_operator_1", "a = 1 2", ErrorCode::MissingOperator},
-        ReassignmentSadParam{"missing_operator_2", "a = 1 + 2 3", ErrorCode::MissingOperator},
-        ReassignmentSadParam{"missing_operator_3", "a = 1 + (2 3)", ErrorCode::MissingOperatorInsideGrouping},
-        ReassignmentSadParam{"missing_operator_4", "a = 1  (2 + 3)", ErrorCode::MissingOperatorOrArgumentName},
-        ReassignmentSadParam{"missing_operator_5", "a = 1 + a() b()", ErrorCode::MissingOperator},
-        ReassignmentSadParam{"missing_operator_6", "a = 1 + a[0] b[1:2]", ErrorCode::MissingOperator},
-        ReassignmentSadParam{"missing_operator_7", "a = 1 + a[0] + b[1:2] a.b", ErrorCode::MissingOperator}
+        ReassignmentSadParam{"assign_to_binary_expr", "a + b = 10", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment},
+        ReassignmentSadParam{"missing_rhs", "a = ", ValuascriptErrorCode::InvalidExpression},
+        ReassignmentSadParam{"standalone_literal", "42", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        ReassignmentSadParam{"standalone_variable", "my_var", ValuascriptErrorCode::InvalidStandaloneStatement},
+        ReassignmentSadParam{"standalone_binary", "1 + 1", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        ReassignmentSadParam{"standalone_bracket_access", "tensor[0]", ValuascriptErrorCode::InvalidStandaloneStatement},
+        ReassignmentSadParam{"multiple_reassignment", "a, b = 1, 2", ValuascriptErrorCode::MultiReassignmentNotSupported},
+        ReassignmentSadParam{"missing_operator_1", "a = 1 2", ValuascriptErrorCode::MissingOperator},
+        ReassignmentSadParam{"missing_operator_2", "a = 1 + 2 3", ValuascriptErrorCode::MissingOperator},
+        ReassignmentSadParam{"missing_operator_3", "a = 1 + (2 3)", ValuascriptErrorCode::MissingOperatorInsideGrouping},
+        ReassignmentSadParam{"missing_operator_4", "a = 1  (2 + 3)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        ReassignmentSadParam{"missing_operator_5", "a = 1 + a() b()", ValuascriptErrorCode::MissingOperator},
+        ReassignmentSadParam{"missing_operator_6", "a = 1 + a[0] b[1:2]", ValuascriptErrorCode::MissingOperator},
+        ReassignmentSadParam{"missing_operator_7", "a = 1 + a[0] + b[1:2] a.b", ValuascriptErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<ReassignmentSadParam>& info) {
     return info.param.test_id;

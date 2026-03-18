@@ -17,7 +17,7 @@ namespace valuascript::compiler {
             left->span = combined;
             if (op_precedence == Precedence::Comparison &&
                 get_operator_precedence(cursor_.peek().type) == Precedence::Comparison) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::ChainingNotAllowedForComparisonOperations);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
             }
         }
 
@@ -60,25 +60,25 @@ namespace valuascript::compiler {
 
             if (p0 == TokenType::Identifier) {
                 if (p1 != TokenType::Colon && is_binary_operator(p1)) {
-                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName);
+                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
                 }
             } else {
                 if (is_expression_start(p0)) {
-                    cursor_.report_error(cursor_.previous(), ErrorCode::MissingOperatorOrArgumentName);
+                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
                 } else {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedArgumentNameOrClosingParen);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
                 }
             }
         }
 
         auto arguments = parse_key_value_list(
             TokenType::RightParen,
-            ErrorCode::MissingArgumentNameInFunctionCall,
-            ErrorCode::MissingColonAfterArgument,
-            ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
-            ErrorCode::TrailingCommaInFunctionCall);
+            ValuascriptErrorCode::MissingArgumentNameInFunctionCall,
+            ValuascriptErrorCode::MissingColonAfterArgument,
+            ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
+            ValuascriptErrorCode::TrailingCommaInFunctionCall);
 
-        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParenAfterArguments);
+        const Token &end_token = cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterArguments);
         auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
         func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
         return func_call;
@@ -94,9 +94,9 @@ namespace valuascript::compiler {
             auto expr = parse_expression();
             if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
                 if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
                 } else if (cursor_.check(TokenType::Comma)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedCommaInBracketAccess);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedCommaInBracketAccess);
                 }
             }
             return expr;
@@ -114,10 +114,10 @@ namespace valuascript::compiler {
                                                             std::move(end_expr));
             index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
         } else if (!index_expr) {
-            cursor_.report_error(cursor_.previous(), ErrorCode::EmptyBracketAccess);
+            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::EmptyBracketAccess);
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightBracket, ErrorCode::UnmatchedBracketAfterTensorIndex);
+        const Token &end_token = cursor_.consume(TokenType::RightBracket, ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex);
         auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
         bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
         return bracket_access;
@@ -125,7 +125,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
-        Token property_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedPropertyName);
+        Token property_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedPropertyName);
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
         dot_access->span = cursor_.combine_spans(target_span, cursor_.make_span(property_token, property_token));
         return dot_access;
@@ -181,7 +181,7 @@ namespace valuascript::compiler {
                 cursor_.advance();
                 return parse_dict_literal();
             default:
-                cursor_.report_error(cursor_.peek(), ErrorCode::InvalidExpression);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
         }
     }
 
@@ -196,27 +196,27 @@ namespace valuascript::compiler {
         auto first_expr = parse_expression();
         if (cursor_.match({TokenType::Comma})) {
             if (cursor_.check(TokenType::RightParen)) {
-                cursor_.report_error(cursor_.previous(), ErrorCode::SingleElementTuplesNotAllowed);
+                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::SingleElementTuplesNotAllowed);
             }
 
             std::vector<std::unique_ptr<Expression> > elements;
             elements.push_back(std::move(first_expr));
-            auto remaining_elements = parse_expression_list(TokenType::RightParen, ErrorCode::TrailingCommaInTuple);
+            auto remaining_elements = parse_expression_list(TokenType::RightParen, ValuascriptErrorCode::TrailingCommaInTuple);
 
             elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
                             std::make_move_iterator(remaining_elements.end()));
             const Token &end_token = cursor_.consume(TokenType::RightParen,
-                                                     ErrorCode::ExpectedRightParenAfterTupleElements);
+                                                     ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
             auto node = std::make_unique<TupleLiteral>(std::move(elements));
             node->span = cursor_.make_span(start_token, end_token);
             return node;
         }
 
         if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-            cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperatorInsideGrouping);
+            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParenAfterExpression);
+        const Token &end_token = cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterExpression);
         first_expr->span = cursor_.make_span(start_token, end_token);
         return first_expr;
     }
@@ -226,7 +226,7 @@ namespace valuascript::compiler {
         auto elements = parse_expression_list(TokenType::RightBracket);
 
         const Token &end_token = cursor_.consume(TokenType::RightBracket,
-                                                 ErrorCode::UnmatchedBracketAfterVectorElements);
+                                                 ValuascriptErrorCode::UnmatchedBracketAfterVectorElements);
         auto node = std::make_unique<TensorLiteral>(std::move(elements));
         node->span = cursor_.make_span(start_token, end_token);
         return node;
@@ -236,10 +236,10 @@ namespace valuascript::compiler {
         const Token &start_token = cursor_.previous();
         auto pairs = parse_key_value_list(
             TokenType::RightBrace,
-            ErrorCode::ExpectedDictionaryKey,
-            ErrorCode::ExpectedColonAfterDictionaryKey,
-            ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral);
-        const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::UnmatchedBraceInDictionaryLiteral);
+            ValuascriptErrorCode::ExpectedDictionaryKey,
+            ValuascriptErrorCode::ExpectedColonAfterDictionaryKey,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral);
+        const Token &end_token = cursor_.consume(TokenType::RightBrace, ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
         auto node = std::make_unique<DictLiteral>(std::move(pairs));
         node->span = cursor_.make_span(start_token, end_token);
         return node;
@@ -248,9 +248,9 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_conditional_expression() {
         const Token &start_token = cursor_.previous();
         auto condition = parse_expression();
-        cursor_.consume(TokenType::Then, ErrorCode::MissingThenToken);
+        cursor_.consume(TokenType::Then, ValuascriptErrorCode::MissingThenToken);
         auto then_branch = parse_expression();
-        cursor_.consume(TokenType::Else, ErrorCode::MissingElseToken);
+        cursor_.consume(TokenType::Else, ValuascriptErrorCode::MissingElseToken);
         auto else_branch = parse_expression();
         auto cond_expr = std::make_unique<ConditionalExpression>(
             std::move(condition), std::move(then_branch), std::move(else_branch));
@@ -260,23 +260,23 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_switch_expression() {
         const Token &start_token = cursor_.previous();
-        cursor_.consume(TokenType::LeftParen, ErrorCode::ExpectedLeftParenAfterSwitch);
+        cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterSwitch);
         auto target = parse_expression();
-        cursor_.consume(TokenType::RightParen, ErrorCode::ExpectedRightParenAfterSwitchTarget);
-        cursor_.consume(TokenType::LeftBrace, ErrorCode::ExpectedLeftBraceBeforeSwitchBody);
+        cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget);
+        cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody);
 
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case = nullptr;
         auto parse_branch_result = [&]() -> std::unique_ptr<Expression> {
-            cursor_.consume(TokenType::Arrow, ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier);
+            cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier);
             auto expr = parse_expression();
 
             if (!cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) && !cursor_.
                 check(TokenType::RightBrace) && !cursor_.is_at_end()) {
                 if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperatorInSwitchCaseResult);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInSwitchCaseResult);
                 } else {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
                 }
             }
             return expr;
@@ -286,12 +286,12 @@ namespace valuascript::compiler {
             if (cursor_.match({TokenType::Case})) {
                 std::vector<std::string> case_identifiers;
                 do {
-                    Token id_token = cursor_.consume(TokenType::Identifier, ErrorCode::ExpectedEnumCaseNameAfterCase);
+                    Token id_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
                     case_identifiers.push_back(id_token.lexeme);
 
                     if (cursor_.match({TokenType::Comma})) {
                     } else if (cursor_.check(TokenType::Identifier)) {
-                        cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaBetweenCaseIdentifiers);
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
                     } else {
                         break;
                     }
@@ -300,16 +300,16 @@ namespace valuascript::compiler {
                 cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
             } else if (cursor_.match({TokenType::Default})) {
                 if (default_case != nullptr) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MultipleDefaultCasesInSwitch);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MultipleDefaultCasesInSwitch);
                 }
 
                 default_case = parse_branch_result();
             } else {
-                cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
             }
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace, ErrorCode::ExpectedRightBraceAfterSwitchBody);
+        const Token &end_token = cursor_.consume(TokenType::RightBrace, ValuascriptErrorCode::ExpectedRightBraceAfterSwitchBody);
         auto switch_expr = std::make_unique<SwitchExpression>(std::move(target), std::move(cases),
                                                               std::move(default_case));
         switch_expr->span = cursor_.make_span(start_token, end_token);

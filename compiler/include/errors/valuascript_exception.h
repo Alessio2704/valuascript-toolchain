@@ -5,9 +5,9 @@
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler {
-    enum class ErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
+    enum class ValuascriptErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
 
-    enum class ErrorCode {
+    enum class ValuascriptErrorCode {
         // --- File Reader Errors ---
         FileNotFound,
 
@@ -121,13 +121,13 @@ namespace valuascript::compiler {
 
     class ValuaScriptException : public std::exception {
     private:
-        ErrorCategory category_;
-        ErrorCode code_;
+        ValuascriptErrorCategory category_;
+        ValuascriptErrorCode code_;
         SourceSpan span_;
         std::string message_;
 
     public:
-        ValuaScriptException(ErrorCategory cat, ErrorCode code, SourceSpan span, std::string msg)
+        ValuaScriptException(ValuascriptErrorCategory cat, ValuascriptErrorCode code, SourceSpan span, std::string msg)
             : category_(cat), code_(code), span_(std::move(span)), message_(std::move(msg)) {
         }
 
@@ -135,8 +135,8 @@ namespace valuascript::compiler {
             return message_.c_str();
         }
 
-        [[nodiscard]] ErrorCategory get_category() const { return category_; }
-        [[nodiscard]] ErrorCode get_code() const { return code_; }
+        [[nodiscard]] ValuascriptErrorCategory get_category() const { return category_; }
+        [[nodiscard]] ValuascriptErrorCode get_code() const { return code_; }
         [[nodiscard]] const SourceSpan &get_span() const { return span_; }
     };
 }

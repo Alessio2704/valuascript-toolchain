@@ -9,7 +9,7 @@
 using namespace valuascript::compiler;
 
 struct ExpectedParserError {
-    ErrorCode code;
+    ValuascriptErrorCode code;
     size_t line;
     size_t column;
 };
@@ -52,7 +52,7 @@ protected:
             const auto &expected = param.expected_errors[i];
             std::cout << actual.what();
 
-            EXPECT_EQ(actual.get_category(), ErrorCategory::Syntax);
+            EXPECT_EQ(actual.get_category(), ValuascriptErrorCategory::Syntax);
             EXPECT_EQ(actual.get_code(), expected.code)
                 << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
                 << "\nActual Code: " << static_cast<int>(actual.get_code())
@@ -82,11 +82,11 @@ INSTANTIATE_TEST_SUITE_P(
         "let struct = 30\n"
         "let d",
         {
-        {ErrorCode::ExpectedModifierName, 1, 6},
-        {ErrorCode::InvalidIdentifier, 2, 6},
-        {ErrorCode::ReservedKeywordAsIdentifier, 3, 11},
-        {ErrorCode::ExpectedStructName, 3, 13},
-        {ErrorCode::IncompleteAssignment, 4, 7}
+        {ValuascriptErrorCode::ExpectedModifierName, 1, 6},
+        {ValuascriptErrorCode::InvalidIdentifier, 2, 6},
+        {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 11},
+        {ValuascriptErrorCode::ExpectedStructName, 3, 13},
+        {ValuascriptErrorCode::IncompleteAssignment, 4, 7}
         }
         },
         ParserMultiErrorTestCase{
@@ -95,9 +95,9 @@ INSTANTIATE_TEST_SUITE_P(
         "func test1(a int) -> int {}\n"
         "func test2(b: int) int {}\n",
         {
-        {ErrorCode::MissingFunctionName, 1, 7},
-        {ErrorCode::MissingColonAfterParameter, 2, 17},
-        {ErrorCode::MissingArrowInFunction, 3, 23}
+        {ValuascriptErrorCode::MissingFunctionName, 1, 7},
+        {ValuascriptErrorCode::MissingColonAfterParameter, 2, 17},
+        {ValuascriptErrorCode::MissingArrowInFunction, 3, 23}
         }
         },
         ParserMultiErrorTestCase{
@@ -108,11 +108,11 @@ INSTANTIATE_TEST_SUITE_P(
         "enum { A }\n"
         "enum Color { A, }\n",
         {
-        {ErrorCode::ExpectedStructName, 1, 9},
-        {ErrorCode::ExpectedBraceInStructDefinition, 2, 15},
-        {ErrorCode::ExpectedColonAfterStructFieldName, 3, 21},
-        {ErrorCode::ExpectedEnumName, 4, 7},
-        {ErrorCode::ExpectedColonAfterEnumName, 5, 13}
+        {ValuascriptErrorCode::ExpectedStructName, 1, 9},
+        {ValuascriptErrorCode::ExpectedBraceInStructDefinition, 2, 15},
+        {ValuascriptErrorCode::ExpectedColonAfterStructFieldName, 3, 21},
+        {ValuascriptErrorCode::ExpectedEnumName, 4, 7},
+        {ValuascriptErrorCode::ExpectedColonAfterEnumName, 5, 13}
         }
         },
         ParserMultiErrorTestCase{
@@ -122,10 +122,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = obj[]\n"
         "let d = obj.",
         {
-        {ErrorCode::ExpectedDictionaryKey, 1, 16},
-        {ErrorCode::ExpectedColonAfterDictionaryKey, 2, 17},
-        {ErrorCode::EmptyBracketAccess, 3, 13},
-        {ErrorCode::ExpectedPropertyName, 4, 14}
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16},
+        {ValuascriptErrorCode::ExpectedColonAfterDictionaryKey, 2, 17},
+        {ValuascriptErrorCode::EmptyBracketAccess, 3, 13},
+        {ValuascriptErrorCode::ExpectedPropertyName, 4, 14}
         }
         },
         ParserMultiErrorTestCase{
@@ -135,10 +135,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = switch (val) { case 1 10 }\n"
         "let a = switch (val) { default -> 1 default -> 2 }\n",
         {
-        {ErrorCode::MissingThenToken, 1, 21},
-        {ErrorCode::ChainingNotAllowedForComparisonOperations, 2, 18},
-        {ErrorCode::ExpectedEnumCaseNameAfterCase, 3, 30},
-        {ErrorCode::MultipleDefaultCasesInSwitch, 4, 47}
+        {ValuascriptErrorCode::MissingThenToken, 1, 21},
+        {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 18},
+        {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 30},
+        {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 47}
         }
         },
         ParserMultiErrorTestCase{
@@ -150,9 +150,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let valid2 = 200\n"
         "let a = { a: 1 b: 2}",
         {
-        {ErrorCode::MissingOperatorInsideGrouping, 2, 21},
-        {ErrorCode::ExpectedStructName, 4, 9},
-        {ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 17}
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 21},
+        {ValuascriptErrorCode::ExpectedStructName, 4, 9},
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 17}
         }
         },
         ParserMultiErrorTestCase{
@@ -165,9 +165,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = { key: \"value\" \n"
         "let valid_4 = 400\n",
         {
-        {ErrorCode::ExpectedRightParenAfterExpression, 1, 18},
-        {ErrorCode::UnmatchedBracketAfterVectorElements, 4, 18},
-        {ErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 24}
+        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 1, 18},
+        {ValuascriptErrorCode::UnmatchedBracketAfterVectorElements, 4, 18},
+        {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 24}
         }
         },
         ParserMultiErrorTestCase{
@@ -176,8 +176,8 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = func_call(\n\n"
         "let b = some_other()",
         {
-        {ErrorCode::ExpectedDictionaryKey, 1, 16},
-        {ErrorCode::ExpectedArgumentNameOrClosingParen, 2, 20}
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16},
+        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 2, 20}
         }
         },
         ParserMultiErrorTestCase{
@@ -202,21 +202,21 @@ INSTANTIATE_TEST_SUITE_P(
         "let res = a (-5)\n"
         "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
         {
-        {ErrorCode::MissingOperatorOrArgumentName, 1, 15},
-        {ErrorCode::MissingOperatorInsideGrouping, 2, 20},
-        {ErrorCode::MissingOperatorOrArgumentName, 3, 18},
-        {ErrorCode::MissingOperatorInsideGrouping, 4, 23},
-        {ErrorCode::MissingOperatorInsideGrouping, 5, 23},
-        {ErrorCode::MissingOperatorOrArgumentName, 6, 17},
-        {ErrorCode::MissingOperatorInsideGrouping, 7, 25},
-        {ErrorCode::MissingOperatorInsideGrouping, 8, 25},
-        {ErrorCode::MissingOperatorOrArgumentName, 10, 19},
-        {ErrorCode::MissingOperatorOrArgumentName, 13, 19},
-        {ErrorCode::MissingOperatorOrArgumentName, 15, 14},
-        {ErrorCode::MissingOperatorOrArgumentName, 16, 14},
-        {ErrorCode::MissingOperatorOrArgumentName, 17, 14},
-        {ErrorCode::MissingOperatorOrArgumentName, 18, 14},
-        {ErrorCode::MissingOperatorOrArgumentName, 19, 38},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 1, 15},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 20},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 3, 18},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 4, 23},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 5, 23},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 6, 17},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 7, 25},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 8, 25},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 10, 19},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 13, 19},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 15, 14},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 16, 14},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 17, 14},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 18, 14},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 19, 38},
         }
         },
         ParserMultiErrorTestCase{
@@ -226,10 +226,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let x = trailing_comma(a: 1, )\n"
         "func true() -> { return }",
         {
-        {ErrorCode::ExpectedCommaSeparatorInParameterList, 1, 22},
-        {ErrorCode::MissingOperator, 2, 30},
-        {ErrorCode::TrailingCommaInFunctionCall, 3, 29},
-        {ErrorCode::MissingFunctionName, 4, 10}
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList, 1, 22},
+        {ValuascriptErrorCode::MissingOperator, 2, 30},
+        {ValuascriptErrorCode::TrailingCommaInFunctionCall, 3, 29},
+        {ValuascriptErrorCode::MissingFunctionName, 4, 10}
         }
         },
 
@@ -238,8 +238,8 @@ INSTANTIATE_TEST_SUITE_P(
         "let a: = 10\n"
         "func bad_return() -> { }\n",
         {
-        {ErrorCode::MissingTypeAnnotation, 1, 9},
-        {ErrorCode::MissingTypeAnnotationAfterArrow, 2, 23}
+        {ValuascriptErrorCode::MissingTypeAnnotation, 1, 9},
+        {ValuascriptErrorCode::MissingTypeAnnotationAfterArrow, 2, 23}
         }
         },
 
@@ -250,10 +250,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = 10 * / 5\n"
         "let d = (10 + 5] \n",
         {
-        {ErrorCode::InvalidExpression, 1, 13},
-        {ErrorCode::InvalidExpression, 2, 11},
-        {ErrorCode::InvalidExpression, 3, 15},
-        {ErrorCode::ExpectedRightParenAfterExpression, 4, 17}
+        {ValuascriptErrorCode::InvalidExpression, 1, 13},
+        {ValuascriptErrorCode::InvalidExpression, 2, 11},
+        {ValuascriptErrorCode::InvalidExpression, 3, 15},
+        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 4, 17}
         }
         },
 
@@ -264,10 +264,10 @@ INSTANTIATE_TEST_SUITE_P(
         "struct Empty { : int }\n"
         "enum State { One, Two }\n",
         {
-        {ErrorCode::ExpectedCommaSeparatorInStruct, 1, 34},
-        {ErrorCode::ExpectedCommaSeparatorInEnum, 2, 29},
-        {ErrorCode::ExpectedStructFieldName, 3, 17},
-        {ErrorCode::ExpectedColonAfterEnumName, 4, 13}
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInStruct, 1, 34},
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 2, 29},
+        {ValuascriptErrorCode::ExpectedStructFieldName, 3, 17},
+        {ValuascriptErrorCode::ExpectedColonAfterEnumName, 4, 13}
         }
         },
 
@@ -279,9 +279,9 @@ INSTANTIATE_TEST_SUITE_P(
         "func valid2() -> int { return 0 }\n"
         "* let bad_start = 0\n",
         {
-        {ErrorCode::UnexpectedTopLevelToken, 1, 2},
-        {ErrorCode::UnexpectedTopLevelToken, 2, 16}, // Tripped by the '\n' at the end of line 2
-        {ErrorCode::UnexpectedTopLevelToken, 4, 35} // Tripped by the '\n' at the end of line 4
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 1, 2},
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 2, 16}, // Tripped by the '\n' at the end of line 2
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 4, 35} // Tripped by the '\n' at the end of line 4
         }
         },
         ParserMultiErrorTestCase{
@@ -293,7 +293,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let wacc = get_wacc()\n"
         "enum Scenario: scalar { LOW, BASE, HIGH }\n",
         {
-        {ErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
+        {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
         }
         }
     ),

@@ -51,14 +51,14 @@ TEST_F(ProjectResolverMultiErrorTest, CollectsCircularAndMissingFileErrors) {
         << "Expected exactly 2 import errors (Circular + Missing File), but got " << errors.size();
 
 
-    EXPECT_EQ(errors[0].get_category(), ErrorCategory::Import);
-    EXPECT_EQ(errors[0].get_code(), ErrorCode::CircularImportDetected)
+    EXPECT_EQ(errors[0].get_category(), ValuascriptErrorCategory::Import);
+    EXPECT_EQ(errors[0].get_code(), ValuascriptErrorCode::CircularImportDetected)
         << "Expected first error to be CircularImportDetected, got: " << static_cast<int>(errors[0].get_code());
     EXPECT_TRUE(
         errors[0].what() != nullptr && std::string(errors[0].what()).find("Circular import") != std::string::npos);
 
-    EXPECT_EQ(errors[1].get_category(), ErrorCategory::Import);
-    EXPECT_EQ(errors[1].get_code(), ErrorCode::ImportFileNotFound)
+    EXPECT_EQ(errors[1].get_category(), ValuascriptErrorCategory::Import);
+    EXPECT_EQ(errors[1].get_code(), ValuascriptErrorCode::ImportFileNotFound)
         << "Expected second error to be ImportFileNotFound, got: " << static_cast<int>(errors[1].get_code());
     EXPECT_TRUE(
         errors[1].what() != nullptr && std::string(errors[1].what()).find("test_missing_module.vs") != std::string::

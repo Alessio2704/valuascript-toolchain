@@ -51,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct TypeAnnotationSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class TypeAnnotationSadPathTest : public test::AstBaseTest,
@@ -65,7 +65,7 @@ TEST_P(TypeAnnotationSadPathTest, ThrowsCorrectSyntaxError) {
         parse_expression_as_type_annotation(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -76,11 +76,11 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     TypeAnnotationSadPathTest,
     testing::Values(
-    TypeAnnotationSadParam{"empty_generic", "vector<>", ErrorCode::EmptyGenericTypeAnnotation},
-    TypeAnnotationSadParam{"missing_comma_generic", "result<scalar decimal>", ErrorCode::ExpectedCommaSeparatorInGenericArgs},
-    TypeAnnotationSadParam{"missing_comma_tuple_type", "(scalar decimal)", ErrorCode::ExpectedCommaSeparatorInTupleType},
-    TypeAnnotationSadParam{"missing_right_paren_tuple_type", "(scalar, decimal", ErrorCode::UnmatchedParenthesisInTuple},
-    TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", ErrorCode::UnmatchedBracketAfterGenericArgs}
+    TypeAnnotationSadParam{"empty_generic", "vector<>", ValuascriptErrorCode::EmptyGenericTypeAnnotation},
+    TypeAnnotationSadParam{"missing_comma_generic", "result<scalar decimal>", ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs},
+    TypeAnnotationSadParam{"missing_comma_tuple_type", "(scalar decimal)", ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType},
+    TypeAnnotationSadParam{"missing_right_paren_tuple_type", "(scalar, decimal", ValuascriptErrorCode::UnmatchedParenthesisInTuple},
+    TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs}
     ),
     [](const testing::TestParamInfo<TypeAnnotationSadParam>& info) {
     return info.param.test_id;

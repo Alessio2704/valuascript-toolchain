@@ -4,13 +4,13 @@
 #include <concepts>
 
 namespace valuascript::compiler {
-    enum class ErrorCode;
+    enum class ValuascriptErrorCode;
     enum class InternalErrorCode;
 
     template<typename T>
-    concept CompilerErrorEnum = std::same_as<T, ErrorCode> || std::same_as<T, InternalErrorCode>;
+    concept CompilerErrorEnum = std::same_as<T, ValuascriptErrorCode> || std::same_as<T, InternalErrorCode>;
 
-    std::string_view get_error_template(ErrorCode code);
+    std::string_view get_error_template(ValuascriptErrorCode code);
 
     std::string_view get_error_template(InternalErrorCode code);
 

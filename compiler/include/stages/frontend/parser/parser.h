@@ -84,14 +84,14 @@ namespace valuascript::compiler {
 
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
             TokenType closing_token,
-            std::optional<ErrorCode> trailing_comma_err = std::nullopt);
+            std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt);
 
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > parse_key_value_list(
             TokenType closing_token,
-            ErrorCode key_err,
-            ErrorCode colon_err,
-            ErrorCode missing_comma_err,
-            std::optional<ErrorCode> trailing_comma_err = std::nullopt);
+            ValuascriptErrorCode key_err,
+            ValuascriptErrorCode colon_err,
+            ValuascriptErrorCode missing_comma_err,
+            std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt);
 
         template<typename T, typename ElementParser>
             requires requires(ElementParser parser)
@@ -100,7 +100,7 @@ namespace valuascript::compiler {
             }
         std::vector<T> parse_comma_separated_list(
             TokenType closing_token,
-            ErrorCode missing_comma_err,
+            ValuascriptErrorCode missing_comma_err,
             ElementParser parse_element) {
             std::vector<T> elements;
             while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {

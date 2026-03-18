@@ -42,5 +42,12 @@ TEST_F(FileReaderBaseTest, SuccessfullyReadsFile) {
 }
 
 TEST_F(FileReaderBaseTest, ThrowsOnMissingFile) {
-    EXPECT_THROW(read_file("non_existent_file.vs"), ValuaScriptException);
+    try {
+        read_file("non_existent_file.vs");
+    } catch (const ValuaScriptException &err) {
+        EXPECT_EQ(err.get_code(), ValuascriptErrorCode::FileNotFound);
+        EXPECT_EQ(err.get_category(), ValuascriptErrorCategory::File);
+    } catch (...) {
+        FAIL() << "Expected ValuaScriptException, but a different exception was thrown";
+    }
 }

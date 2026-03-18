@@ -2,218 +2,218 @@
 #include "errors/valuascript_exception.h"
 
 namespace valuascript::compiler {
-    std::string_view get_error_template(const ErrorCode code) {
+    std::string_view get_error_template(const ValuascriptErrorCode code) {
         switch (code) {
             // --- File Reader Errors ---
-            case ErrorCode::FileNotFound:
+            case ValuascriptErrorCode::FileNotFound:
                 return "FileReaderStage Error: Cannot open file at path '{}'.";
 
             // --- Lexer Errors ---
-            case ErrorCode::InvalidCharacter:
+            case ValuascriptErrorCode::InvalidCharacter:
                 return "Syntax Error: Invalid character '{}' found.";
-            case ErrorCode::UnclosedString:
+            case ValuascriptErrorCode::UnclosedString:
                 return "Syntax Error: Unclosed string literal.";
-            case ErrorCode::InvalidIdentifier:
+            case ValuascriptErrorCode::InvalidIdentifier:
                 return "Syntax Error: Invalid identifier name.";
-            case ErrorCode::UnterminatedDecimal:
+            case ValuascriptErrorCode::UnterminatedDecimal:
                 return "Syntax Error: Unterminated decimal number. Expected digits after '.'.";
-            case ErrorCode::DecimalMissingLeadingZero:
+            case ValuascriptErrorCode::DecimalMissingLeadingZero:
                 return "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5').";
 
             // --- Parser Errors ---
-            case ErrorCode::UnexpectedTopLevelToken:
+            case ValuascriptErrorCode::UnexpectedTopLevelToken:
                 return "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.";
-            case ErrorCode::ExpectedImportToken:
+            case ValuascriptErrorCode::ExpectedImportToken:
                 return "Expected 'import'.";
-            case ErrorCode::MissingImportPathString:
+            case ValuascriptErrorCode::MissingImportPathString:
                 return "Syntax Error: Expected path after 'import'.";
-            case ErrorCode::ExpectedHashToken:
+            case ValuascriptErrorCode::ExpectedHashToken:
                 return "Expected '#'.";
-            case ErrorCode::MissingDirectiveName:
+            case ValuascriptErrorCode::MissingDirectiveName:
                 return "Syntax Error: Expected directive name after '#'.";
-            case ErrorCode::ModifiersAttachedToInvalidDeclaration:
+            case ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration:
                 return "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).";
-            case ErrorCode::ExpectedModifierName:
+            case ValuascriptErrorCode::ExpectedModifierName:
                 return "Syntax Error: Expected modifier name after '@'.";
-            case ErrorCode::MissingArgumentNameInModifier:
+            case ValuascriptErrorCode::MissingArgumentNameInModifier:
                 return "Expected argument name in modifier.";
-            case ErrorCode::MissingColonAfterArgument:
+            case ValuascriptErrorCode::MissingColonAfterArgument:
                 return "Expected ':' after argument name.";
-            case ErrorCode::MissingCommaSeparatorForArgumentsInModifier:
+            case ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier:
                 return "Syntax Error: Missing comma ',' between modifier arguments.";
-            case ErrorCode::UnmatchedParenthesisAfterModifierArgs:
+            case ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs:
                 return "Expected ')' after modifier arguments.";
-            case ErrorCode::ExpectedStructToken:
+            case ValuascriptErrorCode::ExpectedStructToken:
                 return "Expected 'struct'.";
-            case ErrorCode::ExpectedStructName:
+            case ValuascriptErrorCode::ExpectedStructName:
                 return "Expected struct name.";
-            case ErrorCode::ExpectedBraceInStructDefinition:
+            case ValuascriptErrorCode::ExpectedBraceInStructDefinition:
                 return "Expected '{{' before struct body.";
-            case ErrorCode::ExpectedStructFieldName:
+            case ValuascriptErrorCode::ExpectedStructFieldName:
                 return "Expected field name.";
-            case ErrorCode::ExpectedColonAfterStructFieldName:
+            case ValuascriptErrorCode::ExpectedColonAfterStructFieldName:
                 return "Expected ':'.";
-            case ErrorCode::ExpectedCommaSeparatorInStruct:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInStruct:
                 return "Syntax Error: Missing comma ',' between struct fields.";
-            case ErrorCode::ExpectedRightBraceAfterStructBody:
+            case ValuascriptErrorCode::ExpectedRightBraceAfterStructBody:
                 return "Expected '}}' after struct body.";
-            case ErrorCode::ExpectedEnumToken:
+            case ValuascriptErrorCode::ExpectedEnumToken:
                 return "Expected 'enum' keyword.";
-            case ErrorCode::ExpectedEnumName:
+            case ValuascriptErrorCode::ExpectedEnumName:
                 return "Expected enum name.";
-            case ErrorCode::ExpectedColonAfterEnumName:
+            case ValuascriptErrorCode::ExpectedColonAfterEnumName:
                 return "Expected ':' and underlying type after enum name.";
-            case ErrorCode::ExpectedLeftBraceBeforeEnumBody:
+            case ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody:
                 return "Expected '{{' before enum body.";
-            case ErrorCode::ExpectedEnumCaseName:
+            case ValuascriptErrorCode::ExpectedEnumCaseName:
                 return "Expected enum case identifier.";
-            case ErrorCode::ExpectedCommaSeparatorInEnum:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInEnum:
                 return "Syntax Error: Missing comma ',' between enum cases.";
-            case ErrorCode::ExpectedRightBraceAfterEnumBody:
+            case ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody:
                 return "Expected '}}' after enum body.";
-            case ErrorCode::ExpectedFuncToken:
+            case ValuascriptErrorCode::ExpectedFuncToken:
                 return "Expected 'func'.";
-            case ErrorCode::MissingFunctionName:
+            case ValuascriptErrorCode::MissingFunctionName:
                 return "Syntax Error: Expected function name.";
-            case ErrorCode::ExpectedLeftParenAfterFunctionName:
+            case ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName:
                 return "Expected '(' after function name.";
-            case ErrorCode::MissingParameterName:
+            case ValuascriptErrorCode::MissingParameterName:
                 return "Syntax Error: Expected parameter name.";
-            case ErrorCode::MissingColonAfterParameter:
+            case ValuascriptErrorCode::MissingColonAfterParameter:
                 return "Expected ':' after parameter name.";
-            case ErrorCode::ExpectedCommaSeparatorInParameterList:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList:
                 return "Syntax Error: Missing comma ',' between parameters.";
-            case ErrorCode::ExpectedRightParenAfterParameters:
+            case ValuascriptErrorCode::ExpectedRightParenAfterParameters:
                 return "Expected ')' after parameters.";
-            case ErrorCode::MissingArrowInFunction:
+            case ValuascriptErrorCode::MissingArrowInFunction:
                 return "Expected '->' before return type.";
-            case ErrorCode::MissingTypeAnnotationAfterArrow:
+            case ValuascriptErrorCode::MissingTypeAnnotationAfterArrow:
                 return "Syntax Error: Expected at least one return type after '->'.";
-            case ErrorCode::ExpectedCommaSeparatorInReturnTypeList:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList:
                 return "Syntax Error: Missing comma ',' between return types.";
-            case ErrorCode::ExpectedLeftBraceBeforeFunctionBody:
+            case ValuascriptErrorCode::ExpectedLeftBraceBeforeFunctionBody:
                 return "Expected '{{' before function body.";
-            case ErrorCode::ExpectedRightBraceAfterFunctionBody:
+            case ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody:
                 return "Expected '}}' after function body.";
-            case ErrorCode::ExpectedCommaSeparatorInTupleType:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType:
                 return "Syntax Error: Missing comma ',' between tuple type elements.";
-            case ErrorCode::UnmatchedParenthesisInTuple:
+            case ValuascriptErrorCode::UnmatchedParenthesisInTuple:
                 return "Expected ')' after tuple type elements.";
-            case ErrorCode::MissingTypeAnnotation:
+            case ValuascriptErrorCode::MissingTypeAnnotation:
                 return "Expected a type name.";
-            case ErrorCode::ExpectedCommaSeparatorInGenericArgs:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs:
                 return "Syntax Error: Missing comma ',' between generic type arguments.";
-            case ErrorCode::EmptyGenericTypeAnnotation:
+            case ValuascriptErrorCode::EmptyGenericTypeAnnotation:
                 return "Syntax Error: Expected at least one generic type argument inside '<>'.";
-            case ErrorCode::UnmatchedBracketAfterGenericArgs:
+            case ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs:
                 return "Expected '>' after generic type arguments.";
-            case ErrorCode::ModifiersOnNonVariableDeclaration:
+            case ValuascriptErrorCode::ModifiersOnNonVariableDeclaration:
                 return "Syntax Error: Modifiers can only be attached to variable declarations.";
-            case ErrorCode::ExpectedLetOrVarToken:
+            case ValuascriptErrorCode::ExpectedLetOrVarToken:
                 return "Expected 'let' or 'var'.";
-            case ErrorCode::ReservedKeywordAsIdentifier:
+            case ValuascriptErrorCode::ReservedKeywordAsIdentifier:
                 return "Syntax Error: Cannot use a reserved keyword as a variable name.";
-            case ErrorCode::ExpectedCommaInMultiAssignment:
+            case ValuascriptErrorCode::ExpectedCommaInMultiAssignment:
                 return "Syntax Error: Missing comma ',' between variable names.";
-            case ErrorCode::IncompleteAssignment:
+            case ValuascriptErrorCode::IncompleteAssignment:
                 return "Syntax Error: Incomplete assignment. Expected '='.";
-            case ErrorCode::MissingValueAfterEquals:
+            case ValuascriptErrorCode::MissingValueAfterEquals:
                 return "Syntax Error: Missing value after '='.";
-            case ErrorCode::MultiReassignmentNotSupported:
+            case ValuascriptErrorCode::MultiReassignmentNotSupported:
                 return "Syntax Error: Multiple reassignment is not supported. Reassign variables individually.";
-            case ErrorCode::InvalidLeftSideExpressionInReassignment:
+            case ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment:
                 return "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.";
-            case ErrorCode::InvalidStandaloneStatement:
+            case ValuascriptErrorCode::InvalidStandaloneStatement:
                 return "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.";
-            case ErrorCode::ChainingNotAllowedForComparisonOperations:
+            case ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations:
                 return "Syntax Error: Chaining comparison operators is not allowed.";
-            case ErrorCode::MissingOperatorOrArgumentName:
+            case ValuascriptErrorCode::MissingOperatorOrArgumentName:
                 return "Syntax Error: Missing operator (like '*') before '(', or expected argument name.";
-            case ErrorCode::ExpectedArgumentNameOrClosingParen:
+            case ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen:
                 return "Syntax Error: Expected an argument name (e.g., 'name: value') or a closing ')'.";
-            case ErrorCode::MissingArgumentNameInFunctionCall:
+            case ValuascriptErrorCode::MissingArgumentNameInFunctionCall:
                 return "Expected argument name in function call.";
-            case ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall:
+            case ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall:
                 return "Syntax Error: Missing comma ',' between function arguments.";
-            case ErrorCode::TrailingCommaInFunctionCall:
+            case ValuascriptErrorCode::TrailingCommaInFunctionCall:
                 return "Syntax Error: Trailing comma in function call arguments.";
-            case ErrorCode::ExpectedRightParenAfterArguments:
+            case ValuascriptErrorCode::ExpectedRightParenAfterArguments:
                 return "Expected ')' after arguments.";
-            case ErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor:
+            case ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor:
                 return "Syntax Error: Missing operator or expected ':' or ']' in tensor access.";
-            case ErrorCode::UnexpectedCommaInBracketAccess:
+            case ValuascriptErrorCode::UnexpectedCommaInBracketAccess:
                 return "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.";
-            case ErrorCode::EmptyBracketAccess:
+            case ValuascriptErrorCode::EmptyBracketAccess:
                 return "Expected an index or slice inside '[]'.";
-            case ErrorCode::UnmatchedBracketAfterTensorIndex:
+            case ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex:
                 return "Expected ']' after tensor index.";
-            case ErrorCode::ExpectedPropertyName:
+            case ValuascriptErrorCode::ExpectedPropertyName:
                 return "Expected property name after '.'.";
-            case ErrorCode::InvalidExpression:
+            case ValuascriptErrorCode::InvalidExpression:
                 return "Syntax Error: Expected an expression.";
-            case ErrorCode::SingleElementTuplesNotAllowed:
+            case ValuascriptErrorCode::SingleElementTuplesNotAllowed:
                 return "Syntax Error: Trailing commas and 1-element tuples are not allowed.";
-            case ErrorCode::TrailingCommaInTuple:
+            case ValuascriptErrorCode::TrailingCommaInTuple:
                 return "Syntax Error: Trailing comma in tuple.";
-            case ErrorCode::ExpectedRightParenAfterTupleElements:
+            case ValuascriptErrorCode::ExpectedRightParenAfterTupleElements:
                 return "Expected ')' after tuple elements.";
-            case ErrorCode::MissingOperatorInsideGrouping:
+            case ValuascriptErrorCode::MissingOperatorInsideGrouping:
                 return "Syntax Error: Missing operator between expressions inside grouping.";
-            case ErrorCode::ExpectedRightParenAfterExpression:
+            case ValuascriptErrorCode::ExpectedRightParenAfterExpression:
                 return "Expected ')' after expression.";
-            case ErrorCode::UnmatchedBracketAfterVectorElements:
+            case ValuascriptErrorCode::UnmatchedBracketAfterVectorElements:
                 return "Expected ']' after vector elements.";
-            case ErrorCode::ExpectedDictionaryKey:
+            case ValuascriptErrorCode::ExpectedDictionaryKey:
                 return "Expected key in dictionary.";
-            case ErrorCode::ExpectedColonAfterDictionaryKey:
+            case ValuascriptErrorCode::ExpectedColonAfterDictionaryKey:
                 return "Expected ':' after dictionary key.";
-            case ErrorCode::ExpectedCommaSeparatorInDictionaryLiteral:
+            case ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral:
                 return "Syntax Error: Missing comma ',' between dictionary fields.";
-            case ErrorCode::UnmatchedBraceInDictionaryLiteral:
+            case ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral:
                 return "Expected '}}' after dictionary literal.";
-            case ErrorCode::MissingThenToken:
+            case ValuascriptErrorCode::MissingThenToken:
                 return "Expected 'then'.";
-            case ErrorCode::MissingElseToken:
+            case ValuascriptErrorCode::MissingElseToken:
                 return "Expected 'else'.";
-            case ErrorCode::ExpectedLeftParenAfterSwitch:
+            case ValuascriptErrorCode::ExpectedLeftParenAfterSwitch:
                 return "Expected '(' after 'switch'.";
-            case ErrorCode::ExpectedRightParenAfterSwitchTarget:
+            case ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget:
                 return "Expected ')' after switch target.";
-            case ErrorCode::ExpectedLeftBraceBeforeSwitchBody:
+            case ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody:
                 return "Expected '{{' before switch body.";
-            case ErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier:
+            case ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier:
                 return "Expected '->' before case result.";
-            case ErrorCode::MissingOperatorInSwitchCaseResult:
+            case ValuascriptErrorCode::MissingOperatorInSwitchCaseResult:
                 return "Syntax Error: Missing operator between expressions in switch case result.";
-            case ErrorCode::CaseOrDefaultMissingInSwitchAfterResult:
+            case ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult:
                 return "Syntax Error: Expected 'case', 'default', or '}' after case result.";
-            case ErrorCode::ExpectedEnumCaseNameAfterCase:
+            case ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase:
                 return "Expected enum case identifier after 'case'.";
-            case ErrorCode::ExpectedCommaBetweenCaseIdentifiers:
+            case ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers:
                 return "Syntax Error: Missing comma ',' between case identifiers.";
-            case ErrorCode::MultipleDefaultCasesInSwitch:
+            case ValuascriptErrorCode::MultipleDefaultCasesInSwitch:
                 return "Syntax Error: A switch expression can only have one 'default' case.";
-            case ErrorCode::ExpectedCaseOrDefaultInsideSwitchBody:
+            case ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody:
                 return "Syntax Error: Expected 'case' or 'default' inside switch body.";
-            case ErrorCode::ExpectedRightBraceAfterSwitchBody:
+            case ValuascriptErrorCode::ExpectedRightBraceAfterSwitchBody:
                 return "Expected '}}' after switch body.";
-            case ErrorCode::MissingOperator:
+            case ValuascriptErrorCode::MissingOperator:
                 return "Syntax Error: Missing operator between expressions.";
-            case ErrorCode::TrailingCommaInList:
+            case ValuascriptErrorCode::TrailingCommaInList:
                 return "Syntax Error: Trailing comma in list.";
-            case ErrorCode::MissingCommaOrOperatorBetweenExpressions:
+            case ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions:
                 return "Syntax Error: Missing comma ',' or operator between expressions.";
-            case ErrorCode::TrailingComma:
+            case ValuascriptErrorCode::TrailingComma:
                 return "Syntax Error: Trailing comma.";
-            case ErrorCode::MissingCommaBetweenFields:
+            case ValuascriptErrorCode::MissingCommaBetweenFields:
                 return "Syntax Error: Missing comma ',' between fields.";
-            case ErrorCode::TopLevelDeclarationInsideFunction:
+            case ValuascriptErrorCode::TopLevelDeclarationInsideFunction:
                 return "Syntax Error: Top level declaration inside function.";
 
             // --- Import Resolver Errors ---
-            case ErrorCode::CircularImportDetected:
+            case ValuascriptErrorCode::CircularImportDetected:
                 return "Import Error: Circular import detected involving '{}'.";
-            case ErrorCode::ImportFileNotFound:
+            case ValuascriptErrorCode::ImportFileNotFound:
                 return "Import Error: Cannot find module '{}'.";
         }
 

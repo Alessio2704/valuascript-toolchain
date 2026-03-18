@@ -68,7 +68,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct DirectiveSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class DirectiveSadPathTest : public test::AstBaseTest,
@@ -81,7 +81,7 @@ TEST_P(DirectiveSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -92,18 +92,18 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     DirectiveSadPathTest,
     testing::Values(
-        DirectiveSadParam{"other_from_at", "*iterations = 1000", ErrorCode::UnexpectedTopLevelToken},
-        DirectiveSadParam{"missing_after_name_at", "@ = 1000", ErrorCode::ExpectedModifierName},
-        DirectiveSadParam{"missing_value_after_eq", "#iterations = ", ErrorCode::MissingValueAfterEquals},
-        DirectiveSadParam{"missing_at_valueless_directive", "module", ErrorCode::InvalidStandaloneStatement},
-        DirectiveSadParam{"other_from_at_valueless_directive", "*module", ErrorCode::UnexpectedTopLevelToken},
-        DirectiveSadParam{"missing_import_directive", "#", ErrorCode::MissingDirectiveName},
-        DirectiveSadParam{"missing_after_name_at_valueless_directive", "# \"file.vs\"", ErrorCode::MissingDirectiveName},
-        DirectiveSadParam{"missing_operator_1", "#iterations = 1000 1", ErrorCode::MissingOperator},
-        DirectiveSadParam{"missing_operator_2", "#iterations = 1000 + 1 2", ErrorCode::MissingOperator},
-        DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", ErrorCode::MissingOperatorInsideGrouping},
-        DirectiveSadParam{"missing_operator_4", "#iterations = 1000  (1 + 2)", ErrorCode::MissingOperatorOrArgumentName},
-        DirectiveSadParam{"missing_operator_5", "#iterations = 1000 a() + b()", ErrorCode::MissingOperator}
+        DirectiveSadParam{"other_from_at", "*iterations = 1000", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        DirectiveSadParam{"missing_after_name_at", "@ = 1000", ValuascriptErrorCode::ExpectedModifierName},
+        DirectiveSadParam{"missing_value_after_eq", "#iterations = ", ValuascriptErrorCode::MissingValueAfterEquals},
+        DirectiveSadParam{"missing_at_valueless_directive", "module", ValuascriptErrorCode::InvalidStandaloneStatement},
+        DirectiveSadParam{"other_from_at_valueless_directive", "*module", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        DirectiveSadParam{"missing_import_directive", "#", ValuascriptErrorCode::MissingDirectiveName},
+        DirectiveSadParam{"missing_after_name_at_valueless_directive", "# \"file.vs\"", ValuascriptErrorCode::MissingDirectiveName},
+        DirectiveSadParam{"missing_operator_1", "#iterations = 1000 1", ValuascriptErrorCode::MissingOperator},
+        DirectiveSadParam{"missing_operator_2", "#iterations = 1000 + 1 2", ValuascriptErrorCode::MissingOperator},
+        DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", ValuascriptErrorCode::MissingOperatorInsideGrouping},
+        DirectiveSadParam{"missing_operator_4", "#iterations = 1000  (1 + 2)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        DirectiveSadParam{"missing_operator_5", "#iterations = 1000 a() + b()", ValuascriptErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<DirectiveSadParam>& info) {
         return info.param.test_id;

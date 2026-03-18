@@ -52,7 +52,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct ExpressionSadParam {
     std::string test_id;
     std::string expression_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class ExpressionSadPathTest : public test::AstBaseTest,
@@ -66,7 +66,7 @@ TEST_P(ExpressionSadPathTest, ThrowsCorrectSyntaxError) {
         parse_expression_as_assignment(param.expression_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -77,17 +77,17 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     ExpressionSadPathTest,
     testing::Values(
-        ExpressionSadParam{"missing_rhs_addition", "1 + ", ErrorCode::InvalidExpression},
-        ExpressionSadParam{"missing_rhs_comparison", "a > ", ErrorCode::InvalidExpression},
-        ExpressionSadParam{"missing_unary_operand", "not ", ErrorCode::InvalidExpression},
+        ExpressionSadParam{"missing_rhs_addition", "1 + ", ValuascriptErrorCode::InvalidExpression},
+        ExpressionSadParam{"missing_rhs_comparison", "a > ", ValuascriptErrorCode::InvalidExpression},
+        ExpressionSadParam{"missing_unary_operand", "not ", ValuascriptErrorCode::InvalidExpression},
 
-        ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ErrorCode::ExpectedRightParenAfterExpression},
-        ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ErrorCode::UnexpectedTopLevelToken},
-        ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ErrorCode::UnmatchedBracketAfterVectorElements},
+        ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ValuascriptErrorCode::ExpectedRightParenAfterExpression},
+        ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ValuascriptErrorCode::UnexpectedTopLevelToken},
+        ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
 
-        ExpressionSadParam{"cond_missing_then", "if a > b 1 else 2", ErrorCode::MissingThenToken},
-        ExpressionSadParam{"cond_missing_else", "if a > b then 1", ErrorCode::MissingElseToken},
-        ExpressionSadParam{"cond_missing_else_value", "if a > b then 1 else", ErrorCode::InvalidExpression}
+        ExpressionSadParam{"cond_missing_then", "if a > b 1 else 2", ValuascriptErrorCode::MissingThenToken},
+        ExpressionSadParam{"cond_missing_else", "if a > b then 1", ValuascriptErrorCode::MissingElseToken},
+        ExpressionSadParam{"cond_missing_else_value", "if a > b then 1 else", ValuascriptErrorCode::InvalidExpression}
     ),
     [](const testing::TestParamInfo<ExpressionSadParam>& info) {
     return info.param.test_id;

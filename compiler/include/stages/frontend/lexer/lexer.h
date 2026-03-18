@@ -48,11 +48,11 @@ namespace valuascript::compiler {
         void scan_token();
 
         template<typename... Args>
-        void report_error(const ErrorCode &code, Args &&... args) const {
+        void report_error(const ValuascriptErrorCode &code, Args &&... args) const {
             std::string message = format_error(code, std::forward<Args>(args)...);
 
             ValuaScriptException ex(
-                ErrorCategory::Lexical,
+                ValuascriptErrorCategory::Lexical,
                 code,
                 {line_start_, column_start_, line_, column_current_, file_path_},
                 std::move(message)

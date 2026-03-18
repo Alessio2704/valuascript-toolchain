@@ -58,7 +58,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct DotAccessSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class DotAccessSadPathTest : public test::AstBaseTest,
@@ -72,7 +72,7 @@ TEST_P(DotAccessSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -83,10 +83,10 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     DotAccessSadPathTest,
     testing::Values(
-        DotAccessSadParam{"missing_property", "let a = model.", ErrorCode::ExpectedPropertyName},
-        DotAccessSadParam{"number_as_property", "let a = model.123", ErrorCode::ExpectedPropertyName},
-        DotAccessSadParam{"keyword_as_property", "let a = model.let", ErrorCode::ExpectedPropertyName},
-        DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ErrorCode::ExpectedPropertyName}
+        DotAccessSadParam{"missing_property", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"number_as_property", "let a = model.123", ValuascriptErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"keyword_as_property", "let a = model.let", ValuascriptErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ValuascriptErrorCode::ExpectedPropertyName}
     ),
     [](const testing::TestParamInfo<DotAccessSadParam>& info) {
     return info.param.test_id;

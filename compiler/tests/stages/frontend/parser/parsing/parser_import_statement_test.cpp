@@ -47,7 +47,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct ImportStatementSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class ImportStatementSadPathTest : public test::AstBaseTest,
@@ -61,7 +61,7 @@ TEST_P(ImportStatementSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax);
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax);
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
     }
@@ -71,12 +71,12 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     ImportStatementSadPathTest,
     testing::Values(
-    ImportStatementSadParam{"missing_import", " \"file/path\"", ErrorCode::UnexpectedTopLevelToken},
-    ImportStatementSadParam{"docstring", "import \"\"\"file/path\"\"\"", ErrorCode::MissingImportPathString},
-    ImportStatementSadParam{"identifier", "import identifier", ErrorCode::MissingImportPathString},
-    ImportStatementSadParam{"number", "import 1", ErrorCode::MissingImportPathString},
-    ImportStatementSadParam{"expression", "import if a then b else c", ErrorCode::MissingImportPathString},
-    ImportStatementSadParam{"func_call", "import a()", ErrorCode::MissingImportPathString}
+    ImportStatementSadParam{"missing_import", " \"file/path\"", ValuascriptErrorCode::UnexpectedTopLevelToken},
+    ImportStatementSadParam{"docstring", "import \"\"\"file/path\"\"\"", ValuascriptErrorCode::MissingImportPathString},
+    ImportStatementSadParam{"identifier", "import identifier", ValuascriptErrorCode::MissingImportPathString},
+    ImportStatementSadParam{"number", "import 1", ValuascriptErrorCode::MissingImportPathString},
+    ImportStatementSadParam{"expression", "import if a then b else c", ValuascriptErrorCode::MissingImportPathString},
+    ImportStatementSadParam{"func_call", "import a()", ValuascriptErrorCode::MissingImportPathString}
     ),
     [](const testing::TestParamInfo<ImportStatementSadParam>& info) {
     return info.param.test_id;

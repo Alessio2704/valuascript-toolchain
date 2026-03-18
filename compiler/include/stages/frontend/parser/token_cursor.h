@@ -36,11 +36,11 @@ namespace valuascript::compiler {
 
         bool match(std::initializer_list<TokenType> types);
 
-        const Token &consume(TokenType type, ErrorCode code);
+        const Token &consume(TokenType type, ValuascriptErrorCode code);
 
         [[nodiscard]] SourceSpan make_span(const Token &start_token, const Token &end_token) const;
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan &start, const SourceSpan &end) const;
 
-        [[noreturn]] void report_error(const Token &token, ErrorCode code, bool force_token_location = false) const;
+        [[noreturn]] void report_error(const Token &token, ValuascriptErrorCode code, bool force_token_location = false) const;
     };
 }

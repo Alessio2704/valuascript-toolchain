@@ -108,7 +108,7 @@ TEST_F(ProjectResolverTest, ThrowsOnDirectCircularDependency) {
         test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for circular import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
     } catch (...) {
         FAIL() << "Expected ValuaScriptException, but a different exception was thrown.";
     }
@@ -122,7 +122,7 @@ TEST_F(ProjectResolverTest, ThrowsOnSelfImport) {
         test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for self import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
     }
 }
 
@@ -137,7 +137,7 @@ TEST_F(ProjectResolverTest, ThrowsOnDeepCircularDependency) {
         test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for deep circular import, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_code(), ErrorCode::CircularImportDetected);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
     }
 }
 
@@ -149,7 +149,7 @@ TEST_F(ProjectResolverTest, ThrowsOnMissingFile) {
         test::run_resolver(a_path);
         FAIL() << "Expected ValuaScriptException for missing file, but no exception was thrown.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_code(), ErrorCode::ImportFileNotFound);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::ImportFileNotFound);
     }
 }
 

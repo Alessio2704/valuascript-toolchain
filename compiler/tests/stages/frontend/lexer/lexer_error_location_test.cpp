@@ -9,7 +9,7 @@
 using namespace valuascript::compiler;
 
 struct ExpectedError {
-    ErrorCode code;
+    ValuascriptErrorCode code;
     size_t line;
     size_t column;
 };
@@ -47,7 +47,7 @@ protected:
             const auto &actual = actual_errors[i];
             const auto &expected = param.expected_errors[i];
 
-            EXPECT_EQ(actual.get_category(), ErrorCategory::Lexical);
+            EXPECT_EQ(actual.get_category(), ValuascriptErrorCategory::Lexical);
 
             EXPECT_EQ(actual.get_code(), expected.code)
                 << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
@@ -77,9 +77,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let b = ~\n"
         "let c = \\",
         {
-        {ErrorCode::InvalidCharacter, 1, 9},
-        {ErrorCode::InvalidCharacter, 2, 9},
-        {ErrorCode::InvalidCharacter, 3, 9}
+        {ValuascriptErrorCode::InvalidCharacter, 1, 9},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 9},
+        {ValuascriptErrorCode::InvalidCharacter, 3, 9}
         }
         },
         LexerMultiErrorTestCase{
@@ -88,9 +88,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let x = .5\n"
         "let y = \"unclosed string spanning to EOF",
         {
-        {ErrorCode::UnterminatedDecimal, 1, 9},
-        {ErrorCode::DecimalMissingLeadingZero, 2, 9},
-        {ErrorCode::UnclosedString, 3, 9}
+        {ValuascriptErrorCode::UnterminatedDecimal, 1, 9},
+        {ValuascriptErrorCode::DecimalMissingLeadingZero, 2, 9},
+        {ValuascriptErrorCode::UnclosedString, 3, 9}
         }
         },
         LexerMultiErrorTestCase{
@@ -98,12 +98,12 @@ INSTANTIATE_TEST_SUITE_P(
         "$$$\n"
         "~~~",
         {
-        {ErrorCode::InvalidCharacter, 1, 1},
-        {ErrorCode::InvalidCharacter, 1, 2},
-        {ErrorCode::InvalidCharacter, 1, 3},
-        {ErrorCode::InvalidCharacter, 2, 1},
-        {ErrorCode::InvalidCharacter, 2, 2},
-        {ErrorCode::InvalidCharacter, 2, 3}
+        {ValuascriptErrorCode::InvalidCharacter, 1, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 1, 2},
+        {ValuascriptErrorCode::InvalidCharacter, 1, 3},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 2},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 3}
         }
         },
         LexerMultiErrorTestCase{
@@ -112,9 +112,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let num2 = 45._\n"
         "let num3 = 100_",
         {
-        {ErrorCode::InvalidCharacter, 1, 12},
-        {ErrorCode::UnterminatedDecimal, 2, 12},
-        {ErrorCode::InvalidCharacter, 3, 12}
+        {ValuascriptErrorCode::InvalidCharacter, 1, 12},
+        {ValuascriptErrorCode::UnterminatedDecimal, 2, 12},
+        {ValuascriptErrorCode::InvalidCharacter, 3, 12}
         }
         },
 
@@ -130,10 +130,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let unclosed = \"started"
         "\n",
         {
-        {ErrorCode::InvalidCharacter, 4, 16},
-        {ErrorCode::UnterminatedDecimal, 5, 15},
-        {ErrorCode::InvalidCharacter, 6, 16},
-        {ErrorCode::UnclosedString, 8, 16}
+        {ValuascriptErrorCode::InvalidCharacter, 4, 16},
+        {ValuascriptErrorCode::UnterminatedDecimal, 5, 15},
+        {ValuascriptErrorCode::InvalidCharacter, 6, 16},
+        {ValuascriptErrorCode::UnclosedString, 8, 16}
         }
         },
         LexerMultiErrorTestCase{
@@ -142,16 +142,16 @@ INSTANTIATE_TEST_SUITE_P(
         "that spans multiple lines\n"
         "but never closes properly...",
         {
-        {ErrorCode::UnclosedString, 1, 11}
+        {ValuascriptErrorCode::UnclosedString, 1, 11}
         }
         },
         LexerMultiErrorTestCase{
         "HiddenLexicalErrorsInMath",
         "let result = 10 + .5 * 100_ - \"unclosed",
         {
-        {ErrorCode::DecimalMissingLeadingZero, 1, 19},
-        {ErrorCode::InvalidCharacter, 1, 24},
-        {ErrorCode::UnclosedString, 1, 31}
+        {ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 19},
+        {ValuascriptErrorCode::InvalidCharacter, 1, 24},
+        {ValuascriptErrorCode::UnclosedString, 1, 31}
         }
         },
         LexerMultiErrorTestCase{
@@ -163,9 +163,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let bad3 = .99\n"
         "let valid3 = 0.99",
         {
-        {ErrorCode::InvalidCharacter, 2, 12},
-        {ErrorCode::InvalidCharacter, 4, 12},
-        {ErrorCode::DecimalMissingLeadingZero, 5, 12}
+        {ValuascriptErrorCode::InvalidCharacter, 2, 12},
+        {ValuascriptErrorCode::InvalidCharacter, 4, 12},
+        {ValuascriptErrorCode::DecimalMissingLeadingZero, 5, 12}
         }
         },
         LexerMultiErrorTestCase{
@@ -176,11 +176,11 @@ INSTANTIATE_TEST_SUITE_P(
         ".9\n"
         "1_a",
         {
-        {ErrorCode::UnclosedString, 1, 1},
-        {ErrorCode::UnterminatedDecimal, 2, 1},
-        {ErrorCode::UnclosedString, 3, 1},
-        {ErrorCode::DecimalMissingLeadingZero, 4, 1},
-        {ErrorCode::InvalidCharacter, 5, 1}
+        {ValuascriptErrorCode::UnclosedString, 1, 1},
+        {ValuascriptErrorCode::UnterminatedDecimal, 2, 1},
+        {ValuascriptErrorCode::UnclosedString, 3, 1},
+        {ValuascriptErrorCode::DecimalMissingLeadingZero, 4, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 5, 1}
         }
         },
         LexerMultiErrorTestCase{
@@ -190,9 +190,9 @@ INSTANTIATE_TEST_SUITE_P(
         "    let padded = .123\n"
         "    let carriage = 12.\n",
         {
-        {ErrorCode::InvalidCharacter, 3, 18},
-        {ErrorCode::DecimalMissingLeadingZero, 4, 18},
-        {ErrorCode::UnterminatedDecimal, 5, 20}
+        {ValuascriptErrorCode::InvalidCharacter, 3, 18},
+        {ValuascriptErrorCode::DecimalMissingLeadingZero, 4, 18},
+        {ValuascriptErrorCode::UnterminatedDecimal, 5, 20}
         }
         },
         LexerMultiErrorTestCase{
@@ -201,14 +201,14 @@ INSTANTIATE_TEST_SUITE_P(
         "~|\n"
         "$$$",
         {
-        {ErrorCode::InvalidCharacter, 1, 1},
-        {ErrorCode::InvalidCharacter, 1, 2},
-        {ErrorCode::InvalidCharacter, 1, 3},
-        {ErrorCode::InvalidCharacter, 2, 1},
-        {ErrorCode::InvalidCharacter, 2, 2},
-        {ErrorCode::InvalidCharacter, 3, 1},
-        {ErrorCode::InvalidCharacter, 3, 2},
-        {ErrorCode::InvalidCharacter, 3, 3}
+        {ValuascriptErrorCode::InvalidCharacter, 1, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 1, 2},
+        {ValuascriptErrorCode::InvalidCharacter, 1, 3},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 2, 2},
+        {ValuascriptErrorCode::InvalidCharacter, 3, 1},
+        {ValuascriptErrorCode::InvalidCharacter, 3, 2},
+        {ValuascriptErrorCode::InvalidCharacter, 3, 3}
         }
         }
     ),

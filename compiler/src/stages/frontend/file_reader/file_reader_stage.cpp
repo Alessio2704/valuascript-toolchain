@@ -22,10 +22,10 @@ namespace valuascript::compiler {
         std::ifstream file_stream(file_path);
         if (!file_stream.is_open()) {
             ValuaScriptException ex(
-                ErrorCategory::Import,
-                ErrorCode::ImportFileNotFound,
+                ValuascriptErrorCategory::File,
+                ValuascriptErrorCode::FileNotFound,
                 {0, 0, 0, 0, file_path},
-                format_error(ErrorCode::ImportFileNotFound, file_path)
+                format_error(ValuascriptErrorCode::FileNotFound, file_path)
             );
             context.handle_error(ex);
         }

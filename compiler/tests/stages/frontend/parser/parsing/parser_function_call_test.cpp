@@ -64,7 +64,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct FunctionCallSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class FunctionCallSadPathTest : public test::AstBaseTest,
@@ -78,7 +78,7 @@ TEST_P(FunctionCallSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code("let result = " + param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -89,13 +89,13 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     FunctionCallSadPathTest,
     testing::Values(
-        FunctionCallSadParam{"func_missing_argument", "test(1)", ErrorCode::MissingOperatorOrArgumentName},
-        FunctionCallSadParam{"func_missing_colon", "test(a 1)", ErrorCode::MissingColonAfterArgument},
-        FunctionCallSadParam{"func_missing_argument_value", "test(a: )", ErrorCode::InvalidExpression},
-        FunctionCallSadParam{"func_trailing_comma", "test(a: 1, )", ErrorCode::
+        FunctionCallSadParam{"func_missing_argument", "test(1)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        FunctionCallSadParam{"func_missing_colon", "test(a 1)", ValuascriptErrorCode::MissingColonAfterArgument},
+        FunctionCallSadParam{"func_missing_argument_value", "test(a: )", ValuascriptErrorCode::InvalidExpression},
+        FunctionCallSadParam{"func_trailing_comma", "test(a: 1, )", ValuascriptErrorCode::
         TrailingCommaInFunctionCall},
-        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ErrorCode::ExpectedRightParenAfterArguments},
-        FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", ErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall}
+        FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", ValuascriptErrorCode::ExpectedRightParenAfterArguments},
+        FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall}
     ),
     [](const testing::TestParamInfo<FunctionCallSadParam>& info) {
     return info.param.test_id;

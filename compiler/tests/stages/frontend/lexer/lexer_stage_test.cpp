@@ -249,8 +249,8 @@ TEST(LexerStageTest, CatchesInvalidCharacterWithDetail) {
         tokenize_code("let a = $;");
         FAIL() << "Lexer should have caught the invalid '$' character.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Lexical);
-        EXPECT_EQ(e.get_code(), ErrorCode::InvalidCharacter);
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::InvalidCharacter);
 
         const std::string expected_msg = "Syntax Error: Invalid character '$' found.";
 
@@ -265,8 +265,8 @@ TEST(LexerStageTest, CatchesUnclosedStringWithDetail) {
         tokenize_code("let greeting = \"Hello World");
         FAIL() << "Lexer should have caught the unclosed string.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Lexical);
-        EXPECT_EQ(e.get_code(), ErrorCode::UnclosedString);
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::UnclosedString);
 
         const std::string expected_msg = "Syntax Error: Unclosed string literal.";
         const std::string actual_full_msg = e.what();
@@ -281,8 +281,8 @@ TEST(LexerStageTest, CatchesUnclosedDocStringWithDetail) {
         tokenize_code(R"(func main() { """This docstring never ends })");
         FAIL() << "Lexer should have caught the unclosed docstring.";
     } catch (const ValuaScriptException& e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Lexical);
-        EXPECT_EQ(e.get_code(), ErrorCode::UnclosedString);
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
+        EXPECT_EQ(e.get_code(), ValuascriptErrorCode::UnclosedString);
 
         const std::string expected_msg = "Syntax Error: Unclosed string literal.";
         const std::string actual_full_msg = e.what();

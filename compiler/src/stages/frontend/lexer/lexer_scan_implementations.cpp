@@ -20,7 +20,7 @@ namespace valuascript::compiler {
             }
 
             if (!is_docstring && peek() == '\n') {
-                report_error(ErrorCode::UnclosedString);
+                report_error(ValuascriptErrorCode::UnclosedString);
                 return;
             }
 
@@ -33,7 +33,7 @@ namespace valuascript::compiler {
         }
 
         if (is_at_end()) {
-            report_error(ErrorCode::UnclosedString);
+            report_error(ValuascriptErrorCode::UnclosedString);
             return;
         }
 
@@ -54,7 +54,7 @@ namespace valuascript::compiler {
                 if (peek() == '_') {
                     if (!std::isdigit(peek_next())) {
                         advance();
-                        report_error(ErrorCode::InvalidCharacter, "_");
+                        report_error(ValuascriptErrorCode::InvalidCharacter, "_");
                     }
                 }
                 advance();
@@ -69,7 +69,7 @@ namespace valuascript::compiler {
                 consume_integer_part();
             } else {
                 advance();
-                report_error(ErrorCode::UnterminatedDecimal);
+                report_error(ValuascriptErrorCode::UnterminatedDecimal);
             }
         }
 
@@ -136,7 +136,7 @@ namespace valuascript::compiler {
                     if (is_member_access) {
                         add_token(TokenType::Dot);
                     } else {
-                        report_error(ErrorCode::DecimalMissingLeadingZero);
+                        report_error(ValuascriptErrorCode::DecimalMissingLeadingZero);
                     }
                 } else {
                     add_token(TokenType::Dot);
@@ -184,7 +184,7 @@ namespace valuascript::compiler {
                 } else if (std::isalpha(c) || c == '_') {
                     scan_identifier();
                 } else {
-                    report_error(ErrorCode::InvalidCharacter, c);
+                    report_error(ValuascriptErrorCode::InvalidCharacter, c);
                 }
                 break;
         }

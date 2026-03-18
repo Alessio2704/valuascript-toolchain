@@ -29,7 +29,7 @@ namespace valuascript::compiler {
                         program->execution_steps.push_back(parse_expression_statement());
                         break;
                     default:
-                        cursor_.report_error(cursor_.peek(), ErrorCode::UnexpectedTopLevelToken);
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken);
                 }
             } catch (const ParseSyncException &) {
                 synchronize();
@@ -95,13 +95,13 @@ namespace valuascript::compiler {
     void Parser::verify_statement_end() const {
         if (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line) {
             if (is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
             }
         }
     }
 
     std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
-        TokenType closing_token, std::optional<ErrorCode> trailing_comma_err) {
+        TokenType closing_token, std::optional<ValuascriptErrorCode> trailing_comma_err) {
         std::vector<std::unique_ptr<Expression> > elements;
         while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
             if (!is_expression_start(cursor_.peek().type)) break;
@@ -113,7 +113,7 @@ namespace valuascript::compiler {
                 }
             } else if (!cursor_.check(closing_token)) {
                 if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::MissingCommaOrOperatorBetweenExpressions);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions);
                 } else {
                     break;
                 }
@@ -123,8 +123,8 @@ namespace valuascript::compiler {
     }
 
     std::vector<std::pair<std::string, std::unique_ptr<Expression> > > Parser::parse_key_value_list(
-        TokenType closing_token, ErrorCode key_err, ErrorCode colon_err,
-        ErrorCode missing_comma_err, std::optional<ErrorCode> trailing_comma_err) {
+        TokenType closing_token, ValuascriptErrorCode key_err, ValuascriptErrorCode colon_err,
+        ValuascriptErrorCode missing_comma_err, std::optional<ValuascriptErrorCode> trailing_comma_err) {
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
         while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
             Token key_token = cursor_.consume(TokenType::Identifier, key_err);
@@ -139,7 +139,7 @@ namespace valuascript::compiler {
             } else if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
                 cursor_.report_error(cursor_.peek(), missing_comma_err);
             } else if (!cursor_.check(closing_token) && is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::MissingOperator);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
             } else {
                 break;
             }

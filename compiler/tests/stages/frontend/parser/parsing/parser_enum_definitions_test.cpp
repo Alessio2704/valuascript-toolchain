@@ -49,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct EnumSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class EnumSadTest : public test::AstBaseTest,
@@ -63,7 +63,7 @@ TEST_P(EnumSadTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -74,17 +74,17 @@ INSTANTIATE_TEST_SUITE_P(
     InvalidEnumDefinitions,
     EnumSadTest,
     testing::Values(
-        EnumSadParam{"missing_name", "enum : string { a }", ErrorCode::ExpectedEnumName},
-        EnumSadParam{"missing_colon", "enum Option string { a }", ErrorCode::ExpectedColonAfterEnumName},
-        EnumSadParam{"missing_type", "enum Option: { a }", ErrorCode::MissingTypeAnnotation},
-        EnumSadParam{"missing_left_brace", "enum Option: string a }", ErrorCode::ExpectedLeftBraceBeforeEnumBody},
-        EnumSadParam{"invalid_case_name_number", "enum Option: string { 1 = \"a\" }", ErrorCode::ExpectedEnumCaseName},
-        EnumSadParam{"invalid_case_name_string", "enum Option: string { \"call\" }", ErrorCode::ExpectedEnumCaseName},
-        EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ErrorCode::ExpectedRightBraceAfterEnumBody},
-        EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ErrorCode::InvalidExpression},
-        EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ErrorCode::
+        EnumSadParam{"missing_name", "enum : string { a }", ValuascriptErrorCode::ExpectedEnumName},
+        EnumSadParam{"missing_colon", "enum Option string { a }", ValuascriptErrorCode::ExpectedColonAfterEnumName},
+        EnumSadParam{"missing_type", "enum Option: { a }", ValuascriptErrorCode::MissingTypeAnnotation},
+        EnumSadParam{"missing_left_brace", "enum Option: string a }", ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody},
+        EnumSadParam{"invalid_case_name_number", "enum Option: string { 1 = \"a\" }", ValuascriptErrorCode::ExpectedEnumCaseName},
+        EnumSadParam{"invalid_case_name_string", "enum Option: string { \"call\" }", ValuascriptErrorCode::ExpectedEnumCaseName},
+        EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody},
+        EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::InvalidExpression},
+        EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ValuascriptErrorCode::
         ExpectedCommaSeparatorInEnum},
-        EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ErrorCode::ExpectedEnumCaseName}
+        EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::ExpectedEnumCaseName}
     ),
     [](const testing::TestParamInfo<EnumSadParam>& info) {
     return info.param.test_id;

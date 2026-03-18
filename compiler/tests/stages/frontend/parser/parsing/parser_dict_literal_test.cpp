@@ -53,7 +53,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct DictLiteralSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class DictLiteralSadPathTest : public test::AstBaseTest,
@@ -67,7 +67,7 @@ TEST_P(DictLiteralSadPathTest, ThrowsCorrectSyntaxError) {
         parse_expression_as_assignment(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -78,18 +78,18 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     DictLiteralSadPathTest,
     testing::Values(
-        DictLiteralSadParam{"dict_missing_brace", "{a: 1", ErrorCode::
+        DictLiteralSadParam{"dict_missing_brace", "{a: 1", ValuascriptErrorCode::
         UnmatchedBraceInDictionaryLiteral},
-        DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", ErrorCode::
+        DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", ValuascriptErrorCode::
         ExpectedCommaSeparatorInDictionaryLiteral},
-        DictLiteralSadParam{"dict_missing_key", "{1}", ErrorCode::
+        DictLiteralSadParam{"dict_missing_key", "{1}", ValuascriptErrorCode::
         ExpectedDictionaryKey},
-        DictLiteralSadParam{"dict_missing_colon", "{a 1}", ErrorCode::
+        DictLiteralSadParam{"dict_missing_colon", "{a 1}", ValuascriptErrorCode::
         ExpectedColonAfterDictionaryKey},
-        DictLiteralSadParam{"dict_empty", "{a}", ErrorCode::
+        DictLiteralSadParam{"dict_empty", "{a}", ValuascriptErrorCode::
         ExpectedColonAfterDictionaryKey},
-        DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ErrorCode::ExpectedDictionaryKey},
-        DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", ErrorCode::MissingOperator}
+        DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ValuascriptErrorCode::ExpectedDictionaryKey},
+        DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", ValuascriptErrorCode::MissingOperator}
     ),
     [](const testing::TestParamInfo<DictLiteralSadParam>& info) {
     return info.param.test_id;

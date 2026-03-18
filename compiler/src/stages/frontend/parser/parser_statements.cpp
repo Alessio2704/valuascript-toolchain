@@ -16,7 +16,7 @@ namespace valuascript::compiler {
 
             case TokenType::Return:
                 if (!modifiers.empty()) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::ModifiersOnNonVariableDeclaration);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersOnNonVariableDeclaration);
                 }
                 stmt = parse_return_statement();
                 break;
@@ -25,11 +25,11 @@ namespace valuascript::compiler {
             case TokenType::Struct:
             case TokenType::Func:
             case TokenType::Hash:
-                cursor_.report_error(cursor_.peek(), ErrorCode::TopLevelDeclarationInsideFunction, true);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationInsideFunction, true);
                 break;
             default:
                 if (!modifiers.empty()) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::ModifiersOnNonVariableDeclaration);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersOnNonVariableDeclaration);
                 }
                 stmt = parse_expression_statement();
                 break;
@@ -42,14 +42,14 @@ namespace valuascript::compiler {
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.peek();
         bool is_mutable = cursor_.match({TokenType::Var});
-        if (!is_mutable) cursor_.consume(TokenType::Let, ErrorCode::ExpectedLetOrVarToken);
+        if (!is_mutable) cursor_.consume(TokenType::Let, ValuascriptErrorCode::ExpectedLetOrVarToken);
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
             if (is_reserved_keyword(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ErrorCode::ReservedKeywordAsIdentifier);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier);
             }
-            const Token &target = cursor_.consume(TokenType::Identifier, ErrorCode::InvalidIdentifier);
+            const Token &target = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::InvalidIdentifier);
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
             if (cursor_.match({TokenType::Colon})) {
                 type_annotation = parse_type_annotation();
@@ -58,15 +58,15 @@ namespace valuascript::compiler {
             targets.emplace_back(target.lexeme, std::move(type_annotation));
             if (!cursor_.match({TokenType::Comma})) {
                 if (cursor_.peek().type == TokenType::Identifier) {
-                    cursor_.report_error(cursor_.peek(), ErrorCode::ExpectedCommaInMultiAssignment);
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
                 }
                 break;
             }
         } while (true);
-        cursor_.consume(TokenType::Assign, ErrorCode::IncompleteAssignment);
+        cursor_.consume(TokenType::Assign, ValuascriptErrorCode::IncompleteAssignment);
         if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) ||
             cursor_.check(TokenType::Func) || cursor_.check(TokenType::At)) {
-            cursor_.report_error(cursor_.previous(), ErrorCode::MissingValueAfterEquals);
+            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
         }
 
         auto value = parse_expression();
@@ -83,12 +83,12 @@ namespace valuascript::compiler {
         SourceSpan start_span = expr->span;
 
         if (cursor_.match({TokenType::Comma})) {
-            cursor_.report_error(cursor_.previous(), ErrorCode::MultiReassignmentNotSupported);
+            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MultiReassignmentNotSupported);
         }
 
         if (cursor_.match({TokenType::Assign})) {
             if (!is_valid_lvalue(expr.get())) {
-                cursor_.report_error(cursor_.previous(), ErrorCode::InvalidLeftSideExpressionInReassignment);
+                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment);
             }
 
             auto value = parse_expression();
@@ -101,7 +101,7 @@ namespace valuascript::compiler {
         }
 
         if (dynamic_cast<FunctionCall *>(expr.get()) == nullptr) {
-            cursor_.report_error(cursor_.previous(), ErrorCode::InvalidStandaloneStatement);
+            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidStandaloneStatement);
         }
 
         verify_statement_end();

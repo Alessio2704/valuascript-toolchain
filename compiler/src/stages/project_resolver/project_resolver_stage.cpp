@@ -24,10 +24,10 @@ namespace valuascript::compiler {
                                                 const std::string &current_file, ResolvedProjectArtifact &project) {
         if (resolving_.contains(current_file)) {
             ValuaScriptException ex(
-                ErrorCategory::Import,
-                ErrorCode::CircularImportDetected,
+                ValuascriptErrorCategory::Import,
+                ValuascriptErrorCode::CircularImportDetected,
                 {0, 0, 0, 0, current_file},
-                format_error(ErrorCode::CircularImportDetected, current_file)
+                format_error(ValuascriptErrorCode::CircularImportDetected, current_file)
             );
 
             context.handle_error(ex);
@@ -57,10 +57,10 @@ namespace valuascript::compiler {
 
             if (!std::filesystem::exists(next_file)) {
                 ValuaScriptException ex(
-                    ErrorCategory::Import,
-                    ErrorCode::ImportFileNotFound,
+                    ValuascriptErrorCategory::Import,
+                    ValuascriptErrorCode::ImportFileNotFound,
                     {0, 0, 0, 0, current_file},
-                    format_error(ErrorCode::ImportFileNotFound, clean_path)
+                    format_error(ValuascriptErrorCode::ImportFileNotFound, clean_path)
                 );
 
                 context.handle_error(ex);

@@ -49,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct StructErrorParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class StructErrorPathTest : public test::AstBaseTest,
@@ -62,7 +62,7 @@ TEST_P(StructErrorPathTest, FailsWithCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -73,11 +73,11 @@ INSTANTIATE_TEST_SUITE_P(
     InvalidStructSyntax,
     StructErrorPathTest,
     testing::Values(
-        StructErrorParam{"missing_name", "struct { x: integer }", ErrorCode::ExpectedStructName},
-        StructErrorParam{"missing_left_brace", "struct Point x: integer }", ErrorCode::ExpectedBraceInStructDefinition},
-        StructErrorParam{"missing_colon", "struct Point { x integer }", ErrorCode::ExpectedColonAfterStructFieldName},
-        StructErrorParam{"missing_type", "struct Point { x: , y: integer }", ErrorCode::MissingTypeAnnotation},
-        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ErrorCode::ExpectedRightBraceAfterStructBody}
+        StructErrorParam{"missing_name", "struct { x: integer }", ValuascriptErrorCode::ExpectedStructName},
+        StructErrorParam{"missing_left_brace", "struct Point x: integer }", ValuascriptErrorCode::ExpectedBraceInStructDefinition},
+        StructErrorParam{"missing_colon", "struct Point { x integer }", ValuascriptErrorCode::ExpectedColonAfterStructFieldName},
+        StructErrorParam{"missing_type", "struct Point { x: , y: integer }", ValuascriptErrorCode::MissingTypeAnnotation},
+        StructErrorParam{"missing_right_brace", "struct Point { x: integer", ValuascriptErrorCode::ExpectedRightBraceAfterStructBody}
     ),
     [](const testing::TestParamInfo<StructErrorParam>& info) {
         return info.param.test_id;

@@ -78,7 +78,7 @@ INSTANTIATE_TEST_SUITE_P(
 struct AssignmentSadParam {
     std::string test_id;
     std::string source_code;
-    ErrorCode expected_error;
+    ValuascriptErrorCode expected_error;
 };
 
 class AssignmentSadPathTest : public test::AstBaseTest,
@@ -92,7 +92,7 @@ TEST_P(AssignmentSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -103,47 +103,47 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     AssignmentSadPathTest,
     testing::Values(
-        AssignmentSadParam{"missing_var_name", "let = 1", ErrorCode::InvalidIdentifier},
-        AssignmentSadParam{"missing_type_after_colon", "let a: = 1", ErrorCode::MissingTypeAnnotation},
-        AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ErrorCode::
+        AssignmentSadParam{"missing_var_name", "let = 1", ValuascriptErrorCode::InvalidIdentifier},
+        AssignmentSadParam{"missing_type_after_colon", "let a: = 1", ValuascriptErrorCode::MissingTypeAnnotation},
+        AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ValuascriptErrorCode::
         MissingTypeAnnotation},
-        AssignmentSadParam{"invalid_cname_for_var_name_1", "let 12 = 1", ErrorCode::InvalidIdentifier},
-        AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ErrorCode::InvalidIdentifier},
-        AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ErrorCode::ExpectedCommaInMultiAssignment},
-        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ErrorCode::MissingValueAfterEquals}
+        AssignmentSadParam{"invalid_cname_for_var_name_1", "let 12 = 1", ValuascriptErrorCode::InvalidIdentifier},
+        AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ValuascriptErrorCode::InvalidIdentifier},
+        AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ValuascriptErrorCode::ExpectedCommaInMultiAssignment},
+        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ValuascriptErrorCode::MissingValueAfterEquals}
         ,
-        AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ErrorCode::ExpectedPropertyName},
-        AssignmentSadParam{"missing_operator_1", "let a = a + b c", ErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_2", "let a = a + b (1 + 2)", ErrorCode::MissingOperatorOrArgumentName},
-        AssignmentSadParam{"missing_operator_3", "let a = a + b model.a", ErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_4", "let a = a + b vec[0]", ErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_5", "let a = a + b {}", ErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_6", "let a = a  b[]", ErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_6_a", "let a = a - b[]", ErrorCode::EmptyBracketAccess},
-        AssignmentSadParam{"missing_operator_7", "let a = a + b (1, 2)", ErrorCode::MissingOperatorOrArgumentName},
-        AssignmentSadParam{"missing_modifier_name", "@ let a = model", ErrorCode::ExpectedModifierName},
-        AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ErrorCode::
+        AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
+        AssignmentSadParam{"missing_operator_1", "let a = a + b c", ValuascriptErrorCode::MissingOperator},
+        AssignmentSadParam{"missing_operator_2", "let a = a + b (1 + 2)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        AssignmentSadParam{"missing_operator_3", "let a = a + b model.a", ValuascriptErrorCode::MissingOperator},
+        AssignmentSadParam{"missing_operator_4", "let a = a + b vec[0]", ValuascriptErrorCode::MissingOperator},
+        AssignmentSadParam{"missing_operator_5", "let a = a + b {}", ValuascriptErrorCode::MissingOperator},
+        AssignmentSadParam{"missing_operator_6", "let a = a  b[]", ValuascriptErrorCode::MissingOperator},
+        AssignmentSadParam{"missing_operator_6_a", "let a = a - b[]", ValuascriptErrorCode::EmptyBracketAccess},
+        AssignmentSadParam{"missing_operator_7", "let a = a + b (1, 2)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        AssignmentSadParam{"missing_modifier_name", "@ let a = model", ValuascriptErrorCode::ExpectedModifierName},
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ValuascriptErrorCode::
         ChainingNotAllowedForComparisonOperations},
-        AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ErrorCode::
+        AssignmentSadParam{"chaining_not_allowed_for_comparison_2", "let a = 10 <= 5 != false", ValuascriptErrorCode::
         ChainingNotAllowedForComparisonOperations},
-        AssignmentSadParam{"reserved_keyword_1", "let import = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_2", "let let = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_3", "let func = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_4", "let if = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_5", "let then = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_6", "let else = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_7", "let return = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_8", "let struct = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_9", "let true = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_10", "let false = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_11", "let and = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_12", "let or = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_13", "let not = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_14", "let enum = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_15", "let switch = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_16", "let case = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_17", "let default = a", ErrorCode::ReservedKeywordAsIdentifier},
-        AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ErrorCode::
+        AssignmentSadParam{"reserved_keyword_1", "let import = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_2", "let let = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_3", "let func = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_4", "let if = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_5", "let then = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_6", "let else = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_7", "let return = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_8", "let struct = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_9", "let true = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_10", "let false = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_11", "let and = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_12", "let or = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_13", "let not = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_14", "let enum = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_15", "let switch = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_16", "let case = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_17", "let default = a", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
+        AssignmentSadParam{"reserved_keyword_multiple", "let x, func = some_func()", ValuascriptErrorCode::
         ReservedKeywordAsIdentifier}
 
     ),
