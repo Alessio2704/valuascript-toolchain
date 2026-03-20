@@ -22,7 +22,7 @@ namespace valuascript::compiler {
 
         static Precedence get_operator_precedence(TokenType type);
 
-        [[nodiscard]] static bool is_right_associative(TokenType type);
+        [[nodiscard]] static bool is_operator_right_associative(TokenType type);
 
         void parse_top_level_declaration(Program *program);
 
@@ -40,7 +40,7 @@ namespace valuascript::compiler {
 
         std::unique_ptr<TypeAnnotation> parse_type_annotation();
 
-        std::unique_ptr<Statement> parse_statement();
+        std::unique_ptr<Statement> parse_function_body_statements();
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -78,7 +78,11 @@ namespace valuascript::compiler {
 
         static bool is_binary_operator(TokenType type);
 
+        static bool is_unary_operator(TokenType type);
+
         void verify_statement_end() const;
+
+        [[nodiscard]] static bool is_top_level_token(TokenType type);
 
         void synchronize();
 
@@ -99,8 +103,8 @@ namespace valuascript::compiler {
                 { parser() } -> std::convertible_to<T>;
             }
         std::vector<T> parse_comma_separated_list(
-            TokenType closing_token,
-            ValuascriptErrorCode missing_comma_err,
+            const TokenType closing_token,
+            const ValuascriptErrorCode missing_comma_err,
             ElementParser parse_element) {
             std::vector<T> elements;
             while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {

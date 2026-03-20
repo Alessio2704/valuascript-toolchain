@@ -4,11 +4,11 @@
 
 namespace valuascript::compiler {
     TokenCursor::TokenCursor(const std::vector<Token> &tokens, std::string file_path,
-                            CompilerContext &context)
+                             CompilerContext &context)
         : tokens_(tokens), file_path_(std::move(file_path)), context_(context) {
     }
 
-    const Token &TokenCursor::peek(int num) const {
+    const Token &TokenCursor::peek(const int num) const {
         return tokens_[current_ + num];
     }
 
@@ -20,7 +20,7 @@ namespace valuascript::compiler {
         return peek().type == TokenType::EndOfFile;
     }
 
-    bool TokenCursor::check(TokenType type) const {
+    bool TokenCursor::check(const TokenType type) const {
         if (is_at_end()) return false;
         return peek().type == type;
     }
@@ -30,17 +30,15 @@ namespace valuascript::compiler {
         return previous();
     }
 
-    bool TokenCursor::match(std::initializer_list<TokenType> types) {
-        for (const TokenType type: types) {
-            if (check(type)) {
-                advance();
-                return true;
-            }
+    bool TokenCursor::match(const std::initializer_list<TokenType> types) {
+        if (std::ranges::any_of(types, [this](const TokenType type) { return check(type); })) {
+            advance();
+            return true;
         }
         return false;
     }
 
-    const Token &TokenCursor::consume(TokenType type, ValuascriptErrorCode code) {
+    const Token &TokenCursor::consume(const TokenType type, const ValuascriptErrorCode code) {
         if (check(type)) return advance();
         report_error(peek(), code);
     }
@@ -57,7 +55,8 @@ namespace valuascript::compiler {
         return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
     }
 
-    [[noreturn]] void TokenCursor::report_error(const Token &token, ValuascriptErrorCode code, bool force_token_location) const {
+    [[noreturn]] void TokenCursor::report_error(const Token &token, const ValuascriptErrorCode code,
+                                                const bool force_token_location) const {
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());

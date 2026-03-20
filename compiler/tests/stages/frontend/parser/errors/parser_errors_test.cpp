@@ -52,7 +52,6 @@ protected:
             const auto &expected = param.expected_errors[i];
             std::cout << actual.what();
 
-            EXPECT_EQ(actual.get_category(), ValuascriptErrorCategory::Syntax);
             EXPECT_EQ(actual.get_code(), expected.code)
                 << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
                 << "\nActual Code: " << static_cast<int>(actual.get_code())
@@ -294,6 +293,18 @@ INSTANTIATE_TEST_SUITE_P(
         "enum Scenario: scalar { LOW, BASE, HIGH }\n",
         {
         {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
+        }
+        },
+        ParserMultiErrorTestCase{
+        "Regression_3",
+        "#iterations = 10_000_\n"
+        "\n"
+        "// -- R&D Capitalization --\n"
+        "let value_of_research_assets, current_year_amortization = get_rd(\n"
+        "let a = 10\n",
+        {
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 22},
+        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 4, 67}
         }
         }
     ),

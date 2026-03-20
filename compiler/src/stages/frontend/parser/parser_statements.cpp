@@ -2,7 +2,7 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    std::unique_ptr<Statement> Parser::parse_statement() {
+    std::unique_ptr<Statement> Parser::parse_function_body_statements() {
         std::vector<Modifier> modifiers;
         if (cursor_.check(TokenType::At)) {
             modifiers = parse_modifiers();
@@ -42,6 +42,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.peek();
+
         bool is_mutable = cursor_.match({TokenType::Var});
         if (!is_mutable) cursor_.consume(TokenType::Let, ValuascriptErrorCode::ExpectedLetOrVarToken);
 
@@ -50,13 +51,17 @@ namespace valuascript::compiler {
             if (is_reserved_keyword(cursor_.peek())) {
                 cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier);
             }
+
             const Token &target = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::InvalidIdentifier);
+
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
+
             if (cursor_.match({TokenType::Colon})) {
                 type_annotation = parse_type_annotation();
             }
 
             targets.emplace_back(target.lexeme, std::move(type_annotation));
+
             if (!cursor_.match({TokenType::Comma})) {
                 if (cursor_.peek().type == TokenType::Identifier) {
                     cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
@@ -64,15 +69,17 @@ namespace valuascript::compiler {
                 break;
             }
         } while (true);
+
         cursor_.consume(TokenType::Assign, ValuascriptErrorCode::IncompleteAssignment);
-        if (cursor_.is_at_end() || cursor_.check(TokenType::Let) || cursor_.check(TokenType::Var) ||
-            cursor_.check(TokenType::Func) || cursor_.check(TokenType::At)) {
+
+        if (cursor_.is_at_end() || is_top_level_token(cursor_.peek().type)) {
             cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
         }
 
         auto value = parse_expression();
 
         verify_statement_end();
+
         auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
                                                    is_mutable);
         assign->span = cursor_.make_span(start_token, cursor_.previous());
@@ -81,7 +88,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Statement> Parser::parse_expression_statement() {
         auto expr = parse_expression();
-        SourceSpan start_span = expr->span;
+        const SourceSpan start_span = expr->span;
 
         if (cursor_.match({TokenType::Comma})) {
             cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MultiReassignmentNotSupported);
@@ -93,7 +100,7 @@ namespace valuascript::compiler {
             }
 
             auto value = parse_expression();
-            SourceSpan end_span = value->span;
+            const SourceSpan end_span = value->span;
             verify_statement_end();
 
             auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
@@ -114,11 +121,13 @@ namespace valuascript::compiler {
 
     std::unique_ptr<ReturnStatement> Parser::parse_return_statement() {
         const Token &start_token = cursor_.advance();
+
         std::vector<std::unique_ptr<Expression> > return_values;
 
         do {
             return_values.push_back(parse_expression());
         } while (cursor_.match({TokenType::Comma}));
+
         verify_statement_end();
 
         auto ret_stmt = std::make_unique<ReturnStatement>(std::move(return_values));

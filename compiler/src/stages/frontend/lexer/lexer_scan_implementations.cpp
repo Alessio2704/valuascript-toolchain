@@ -24,6 +24,7 @@ namespace valuascript::compiler {
 
             if (!is_docstring && peek() == '\n') {
                 report_error(ValuascriptErrorCode::UnclosedString);
+                add_token(TokenType::String);
                 return;
             }
 
@@ -57,7 +58,8 @@ namespace valuascript::compiler {
                 if (peek() == '_') {
                     if (!std::isdigit(peek_next())) {
                         advance();
-                        report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, "_");
+                        report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral);
+                        break;
                     }
                 }
                 advance();
