@@ -188,7 +188,7 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::MissingOperatorInSwitchCaseResult:
                 return "Syntax Error: Missing operator between expressions in switch case result.";
             case ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult:
-                return "Syntax Error: Expected 'case', 'default', or '}' after case result.";
+                return "Syntax Error: Expected 'case', 'default', or '}}' after case result.";
             case ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase:
                 return "Expected enum case identifier after 'case'.";
             case ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers:

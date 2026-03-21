@@ -1,80 +1,17 @@
 #include <gtest/gtest.h>
-#include <memory>
-#include <vector>
-#include "stages/frontend/lexer/lexer_stage.h"
-#include "stages/frontend/parser/parser_stage.h"
-#include "../../../../../include/compiler_context/compiler_context.h"
-#include "errors/valuascript_exception.h"
+#include "parser_errors_synchronization_base.h"
 
-using namespace valuascript::compiler;
+class GeneralParserSynchronizationTest : public ParserErrorsSynchronizationBase {};
 
-struct ExpectedParserError {
-    ValuascriptErrorCode code;
-    size_t line;
-    size_t column;
-};
-
-struct ParserMultiErrorTestCase {
-    std::string test_name;
-    std::string source_code;
-    std::vector<ExpectedParserError> expected_errors;
-};
-
-class ParserMultiErrorTest : public testing::TestWithParam<ParserMultiErrorTestCase> {
-protected:
-    static void run_parser_and_check_errors(const ParserMultiErrorTestCase &param) {
-        auto context = std::make_shared<CompilerContext>();
-        context->settings.fail_fast = false;
-
-        std::vector<CompilerStageArtifact> initial_artifacts = {
-            {CompilerStageArtifactCode::SourceCode, param.source_code},
-            {CompilerStageArtifactCode::FilePath, std::string("test_script.vs")}
-        };
-
-        LexerStage lexer;
-        ParserStage parser;
-
-        auto lexer_artifacts = initial_artifacts;
-        lexer_artifacts.push_back(lexer.run(*context, initial_artifacts));
-
-        ASSERT_NO_THROW({
-            parser.run(*context, lexer_artifacts);
-            }) << "Parser threw an exception even though fail_fast was set to false.";
-
-        const auto &actual_errors = context->diagnostics.get_errors();
-
-        ASSERT_EQ(actual_errors.size(), param.expected_errors.size())
-            << "Mismatch in the number of collected errors.\n"
-            << "Expected " << param.expected_errors.size() << ", but got " << actual_errors.size();
-
-        for (size_t i = 0; i < actual_errors.size(); ++i) {
-            const auto &actual = actual_errors[i];
-            const auto &expected = param.expected_errors[i];
-            std::cout << actual.what();
-
-            EXPECT_EQ(actual.get_code(), expected.code)
-                << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
-                << "\nActual Code: " << static_cast<int>(actual.get_code())
-                << "\nActual Message: " << actual.what();
-
-            EXPECT_EQ(actual.get_span().line_start, expected.line)
-                << "Error [" << i << "] Line mismatch for error: " << actual.what();
-
-            EXPECT_EQ(actual.get_span().column_end, expected.column)
-                << "Error [" << i << "] Column mismatch for error: " << actual.what();
-        }
-    }
-};
-
-TEST_P(ParserMultiErrorTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+TEST_P(GeneralParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
     run_parser_and_check_errors(GetParam());
 }
 
 INSTANTIATE_TEST_SUITE_P(
     ParserExhaustiveStressTests,
-    ParserMultiErrorTest,
+    GeneralParserSynchronizationTest,
     ::testing::Values(
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "VariableDeclarationErrors",
         "@ let a = 10\n"
         "let = 20\n"
@@ -88,7 +25,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::IncompleteAssignment, 4, 7}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "FunctionDefinitionErrors",
         "func (a: int) -> int {}\n"
         "func test1(a int) -> int {}\n"
@@ -99,7 +36,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::MissingArrowInFunction, 3, 23}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "StructAndEnumErrors",
         "struct { id: int }\n"
         "struct User id: int }\n"
@@ -114,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::ExpectedColonAfterEnumName, 5, 13}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "DataStructureErrors",
         "let b = { \"key\" 10 }\n"
         "let b = { key 10 }\n"
@@ -127,7 +64,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::ExpectedPropertyName, 4, 14}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "ControlFlowAndExpressionErrors",
         "let a = if (true) 10 else 20\n"
         "let x = 10 < 20 < 30\n"
@@ -140,7 +77,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 47}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "DeepSynchronizationStressTest",
         "let valid1 = 100\n"
         "let broken1 = (10  2)\n"
@@ -154,7 +91,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 17}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "UnterminatedParenthesisBracketsOrBraces",
         "let a = (10 + 20 \n"
         "let valid_1 = 100\n"
@@ -169,7 +106,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 24}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "Regression_1",
         "let b = { \"key\" 10 }\n"
         "let a = func_call(\n\n"
@@ -179,7 +116,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 2, 20}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "MissingOperand",
         "let res = a  (b - c)\n"
         "let res = a + (b  c)\n"
@@ -218,7 +155,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::MissingOperatorOrArgumentName, 19, 38},
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "FunctionCallAndSignatureErrors",
         "func process(a: int b: string) -> int {}\n"
         "let result = process(a: 10 20)\n"
@@ -232,7 +169,7 @@ INSTANTIATE_TEST_SUITE_P(
         }
         },
 
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "TypeAnnotationErrors",
         "let a: = 10\n"
         "func bad_return() -> { }\n",
@@ -242,7 +179,7 @@ INSTANTIATE_TEST_SUITE_P(
         }
         },
 
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "MalformedExpressions",
         "let a = 5 +\n"
         "let b = - \n"
@@ -256,7 +193,7 @@ INSTANTIATE_TEST_SUITE_P(
         }
         },
 
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "AdvancedStructAndEnumErrors",
         "struct Config { host: string port: int }\n"
         "enum State: string { One Two }\n"
@@ -270,7 +207,7 @@ INSTANTIATE_TEST_SUITE_P(
         }
         },
 
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "TopLevelGarbageAndStrayTokens",
         "} \n"
         "let valid = 10\n"
@@ -283,7 +220,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::UnexpectedTopLevelToken, 4, 35} // Tripped by the '\n' at the end of line 4
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "Regression_2",
         "func test() -> scalar { return 1\n"
         "// -- R&D Capitalization --\n"
@@ -295,7 +232,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
         }
         },
-        ParserMultiErrorTestCase{
+        ParserErrorsSynchronizationTestCase{
         "Regression_3",
         "#iterations = 10_000_\n"
         "\n"
@@ -308,7 +245,7 @@ INSTANTIATE_TEST_SUITE_P(
         }
         }
     ),
-    [](const ::testing::TestParamInfo<ParserMultiErrorTestCase>& info) {
+    [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
     return info.param.test_name;
     }
 );
