@@ -97,6 +97,37 @@ namespace valuascript::compiler {
             ValuascriptErrorCode missing_comma_err,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt);
 
+        template<typename T, typename PreCheck, typename ElementParser, typename MissingCommaHandler>
+            requires requires(PreCheck pre_check, ElementParser parser, MissingCommaHandler handler)
+            {
+                { pre_check() } -> std::convertible_to<bool>;
+                { parser() } -> std::convertible_to<T>;
+                { handler() };
+            }
+        std::vector<T> parse_comma_separated_list(
+            const TokenType closing_token,
+            const std::optional<ValuascriptErrorCode> trailing_comma_err,
+            PreCheck pre_check,
+            ElementParser parse_element,
+            MissingCommaHandler missing_comma_handler) {
+            std::vector<T> elements;
+            while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
+                if (!pre_check()) break;
+
+                elements.push_back(parse_element());
+
+                if (cursor_.match({TokenType::Comma})) {
+                    if (cursor_.check(closing_token) && trailing_comma_err) {
+                        cursor_.report_error(cursor_.previous(), *trailing_comma_err);
+                    }
+                } else if (!cursor_.check(closing_token)) {
+                    missing_comma_handler();
+                    break;
+                }
+            }
+            return elements;
+        }
+
         template<typename T, typename ElementParser>
             requires requires(ElementParser parser)
             {
@@ -106,19 +137,17 @@ namespace valuascript::compiler {
             const TokenType closing_token,
             const ValuascriptErrorCode missing_comma_err,
             ElementParser parse_element) {
-            std::vector<T> elements;
-            while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
-                elements.push_back(parse_element());
-                if (cursor_.match({TokenType::Comma})) {
-                } else if (!cursor_.check(closing_token)) {
+            return parse_comma_separated_list<T>(
+                closing_token,
+                std::nullopt,
+                []() { return true; },
+                parse_element,
+                [this, missing_comma_err]() {
                     if (cursor_.check(TokenType::Identifier)) {
                         cursor_.report_error(cursor_.peek(), missing_comma_err);
-                    } else {
-                        break;
                     }
                 }
-            }
-            return elements;
+            );
         }
     };
 }
