@@ -243,6 +243,15 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 22},
         {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 4, 67}
         }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "Regression_4",
+        "let a = {1, 2, 3}\n",
+        {
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 14},
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 17}
+        }
         }
     ),
     [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {

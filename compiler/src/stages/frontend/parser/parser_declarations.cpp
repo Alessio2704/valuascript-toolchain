@@ -93,7 +93,9 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
 
         auto fields = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<TypeAnnotation> > >(
-            TokenType::RightBrace, ValuascriptErrorCode::ExpectedCommaSeparatorInStruct,
+            TokenType::RightBrace,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInStruct,
+            {},
             [&]() {
                 Token field_name = cursor_.consume(TokenType::Identifier,
                                                    ValuascriptErrorCode::ExpectedStructFieldName);
@@ -124,7 +126,9 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody);
 
         auto cases = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<Expression> > >(
-            TokenType::RightBrace, ValuascriptErrorCode::ExpectedCommaSeparatorInEnum,
+            TokenType::RightBrace,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInEnum,
+            {},
             [&]() {
                 Token case_name = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedEnumCaseName);
                 std::unique_ptr<Expression> raw_value = nullptr;
@@ -154,7 +158,9 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
         auto params = parse_comma_separated_list<FunctionParameter>(
-            TokenType::RightParen, ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
+            TokenType::RightParen,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
+            {},
             [&]() {
                 const Token &param_name = cursor_.consume(TokenType::Identifier,
                                                           ValuascriptErrorCode::MissingParameterName);
@@ -167,7 +173,9 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::MissingArrowInFunction);
 
         auto return_types = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
-            TokenType::LeftBrace, ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList,
+            TokenType::LeftBrace,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList,
+            {},
             [&]() {
                 return parse_type_annotation();
             }
@@ -205,7 +213,9 @@ namespace valuascript::compiler {
 
         if (cursor_.match({TokenType::LeftParen})) {
             auto elements = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
-                TokenType::RightParen, ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType,
+                TokenType::RightParen,
+                ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType,
+                {},
                 [&]() {
                     return parse_type_annotation();
                 }
@@ -224,7 +234,9 @@ namespace valuascript::compiler {
 
         if (cursor_.match({TokenType::Less})) {
             generic_args = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
-                TokenType::Greater, ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs,
+                TokenType::Greater,
+                ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs,
+                {},
                 [&]() {
                     return parse_type_annotation();
                 }
