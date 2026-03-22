@@ -24,6 +24,8 @@ namespace valuascript::compiler {
 
         [[nodiscard]] static bool is_operator_right_associative(TokenType type);
 
+        const Token &consume_identifier(ValuascriptErrorCode fallback_err);
+
         void parse_top_level_declaration(Program *program);
 
         std::vector<Modifier> parse_modifiers();
@@ -74,6 +76,8 @@ namespace valuascript::compiler {
 
         static bool is_valid_lvalue(const Expression *expr);
 
+        static bool acts_like_identifier(const Token &token, TokenType next_type);
+
         static bool is_expression_start(TokenType type);
 
         static bool is_binary_operator(TokenType type);
@@ -99,29 +103,33 @@ namespace valuascript::compiler {
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
             std::initializer_list<TokenType> panic_stops = {});
 
-        template<typename T, typename PreCheck, typename RecoveryCheck, typename ElementParser, typename
-            MissingCommaHandler>
-            requires requires(PreCheck pre_check, RecoveryCheck rec_check, ElementParser parser,
-                              MissingCommaHandler handler)
+        template<typename T, typename IsElementStart, typename ElementParser>
+            requires requires(IsElementStart is_start, ElementParser parser)
             {
-                { pre_check() } -> std::convertible_to<bool>;
-                { rec_check() } -> std::convertible_to<bool>;
+                { is_start() } -> std::convertible_to<bool>;
                 { parser() } -> std::convertible_to<T>;
-                { handler() };
             }
         std::vector<T> parse_comma_separated_list(
             const TokenType closing_token,
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
+            const std::optional<ValuascriptErrorCode> missing_comma_err,
             const std::initializer_list<TokenType> &panic_stops,
-            PreCheck pre_check,
-            RecoveryCheck recovery_check,
-            ElementParser parse_element,
-            MissingCommaHandler missing_comma_handler) {
+            IsElementStart is_element_start,
+            ElementParser parse_element) {
             std::vector<T> elements;
 
-            while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
-                if (!pre_check()) break;
+            auto is_hard_stop = [&](const Token &token, TokenType next_type) {
+                if (acts_like_identifier(token, next_type)) return false;
 
+                TokenType type = token.type;
+                if (is_top_level_token(type)) return true;
+                for (TokenType stop: panic_stops) {
+                    if (type == stop) return true;
+                }
+                return false;
+            };
+
+            while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
                 try {
                     elements.push_back(parse_element());
 
@@ -130,36 +138,24 @@ namespace valuascript::compiler {
                             cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                         }
                     } else if (!cursor_.check(closing_token)) {
-                        bool missing_comma_reported = false;
-                        try {
-                            missing_comma_handler();
-                        } catch (const ParseSyncException &) {
-                            missing_comma_reported = true;
-                        }
-
-                        if (!missing_comma_reported) {
+                        if (is_element_start()) {
+                            if (missing_comma_err) {
+                                try {
+                                    cursor_.report_error(cursor_.peek(), *missing_comma_err);
+                                } catch (const ParseSyncException &) {
+                                }
+                            }
+                        } else {
                             break;
-                        }
-
-                        if (!recovery_check()) {
-                            throw ParseSyncException();
                         }
                     }
                 } catch (const ParseSyncException &) {
                     while (!cursor_.is_at_end()) {
-                        TokenType next = cursor_.peek().type;
-                        if (next == closing_token || next == TokenType::Comma) break;
-                        if (is_top_level_token(next)) break;
-
-                        bool hit_panic_stop = false;
-                        for (TokenType stop: panic_stops) {
-                            if (next == stop) {
-                                hit_panic_stop = true;
-                                break;
-                            }
+                        const Token &next_tok = cursor_.peek();
+                        if (next_tok.type == closing_token || next_tok.type == TokenType::Comma || is_hard_stop(
+                                next_tok, cursor_.peek(1).type)) {
+                            break;
                         }
-                        if (hit_panic_stop) break;
-
                         cursor_.advance();
                     }
                     if (cursor_.check(TokenType::Comma)) {
@@ -167,17 +163,10 @@ namespace valuascript::compiler {
                     }
                 }
 
-                TokenType current = cursor_.peek().type;
-                if (is_top_level_token(current) && current != closing_token) break;
-
-                bool hit_panic_stop = false;
-                for (TokenType stop: panic_stops) {
-                    if (current == stop) {
-                        hit_panic_stop = true;
-                        break;
-                    }
+                const Token &current = cursor_.peek();
+                if (current.type != closing_token && is_hard_stop(current, cursor_.peek(1).type)) {
+                    break;
                 }
-                if (hit_panic_stop && current != closing_token) break;
             }
             return elements;
         }
@@ -196,14 +185,14 @@ namespace valuascript::compiler {
             return parse_comma_separated_list<T>(
                 closing_token,
                 trailing_comma_err,
+                missing_comma_err,
                 panic_stops,
-                []() { return true; },
-                [this]() { return cursor_.check(TokenType::Identifier) || cursor_.check(TokenType::LeftParen); },
-                parse_element, [this, missing_comma_err]() {
-                    if (cursor_.check(TokenType::Identifier)) {
-                        cursor_.report_error(cursor_.peek(), missing_comma_err);
-                    }
-                }
+                [this]() {
+                    const Token &tok = cursor_.peek();
+                    return tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type) || tok.
+                           type == TokenType::LeftParen;
+                },
+                parse_element
             );
         }
     };

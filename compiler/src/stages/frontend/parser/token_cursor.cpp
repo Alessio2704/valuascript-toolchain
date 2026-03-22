@@ -55,8 +55,9 @@ namespace valuascript::compiler {
         return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
     }
 
-    [[noreturn]] void TokenCursor::report_error(const Token &token, const ValuascriptErrorCode code,
-                                                const bool force_token_location) const {
+    void TokenCursor::report_error_no_panic(const Token &token,
+                                            const ValuascriptErrorCode code,
+                                            const bool force_token_location) const {
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
@@ -79,6 +80,12 @@ namespace valuascript::compiler {
             std::move(message)
         );
         context_.handle_error(ex);
+    }
+
+    [[noreturn]] void TokenCursor::report_error(const Token &token,
+                                                const ValuascriptErrorCode code,
+                                                const bool force_token_location) const {
+        report_error_no_panic(token, code, force_token_location);
         throw ParseSyncException();
     }
 }

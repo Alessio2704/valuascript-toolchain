@@ -46,6 +46,9 @@ namespace valuascript::compiler {
 
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan &start, const SourceSpan &end) const;
 
+        void report_error_no_panic(const Token &token, ValuascriptErrorCode code,
+                                     bool force_token_location = false) const;
+
         [[noreturn]] void report_error(const Token &token, ValuascriptErrorCode code,
                                        bool force_token_location = false) const;
     };

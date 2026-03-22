@@ -116,7 +116,7 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::ExpectedLetOrVarToken:
                 return "Expected 'let' or 'var'.";
             case ValuascriptErrorCode::ReservedKeywordAsIdentifier:
-                return "Syntax Error: Cannot use a reserved keyword as a variable name.";
+                return "Syntax Error: Cannot use a reserved keyword as an identifier.";
             case ValuascriptErrorCode::ExpectedCommaInMultiAssignment:
                 return "Syntax Error: Missing comma ',' between variable names.";
             case ValuascriptErrorCode::IncompleteAssignment:

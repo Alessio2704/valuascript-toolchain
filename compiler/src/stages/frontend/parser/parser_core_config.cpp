@@ -1,32 +1,7 @@
 #include "stages/frontend/parser/parser.h"
+#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    Parser::Precedence Parser::get_operator_precedence(const TokenType type) {
-        switch (type) {
-            case TokenType::Or:
-                return Precedence::Or;
-            case TokenType::And:
-                return Precedence::And;
-            case TokenType::Equals:
-            case TokenType::NotEquals:
-            case TokenType::Less:
-            case TokenType::LessEqual:
-            case TokenType::Greater:
-            case TokenType::GreaterEqual:
-                return Precedence::Comparison;
-            case TokenType::Plus:
-            case TokenType::Minus:
-                return Precedence::Term;
-            case TokenType::Star:
-            case TokenType::Slash:
-            case TokenType::Mod:
-                return Precedence::Factor;
-            case TokenType::Caret:
-                return Precedence::Power;
-            default:
-                return Precedence::None;
-        }
-    }
 
     bool Parser::is_valid_lvalue(const Expression *expr) {
         if (dynamic_cast<const IdentifierAccess *>(expr) != nullptr) return true;
@@ -58,46 +33,19 @@ namespace valuascript::compiler {
         }
     }
 
-    bool Parser::is_operator_right_associative(TokenType type) {
-        switch (type) {
-            case TokenType::Caret:
-                return true;
-            default:
-                return false;
-        }
-    }
+    bool Parser::acts_like_identifier(const Token& token, TokenType next_type) {
+        if (!is_reserved_keyword(token)) return false;
 
-    bool Parser::is_binary_operator(const TokenType type) {
-        switch (type) {
-            case TokenType::Plus:
-            case TokenType::Minus:
-            case TokenType::Star:
-            case TokenType::Slash:
-            case TokenType::Mod:
-            case TokenType::Caret:
-            case TokenType::Equals:
-            case TokenType::NotEquals:
-            case TokenType::Less:
-            case TokenType::LessEqual:
-            case TokenType::Greater:
-            case TokenType::GreaterEqual:
-            case TokenType::And:
-            case TokenType::Or:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    bool Parser::is_unary_operator(const TokenType type) {
-        switch (type) {
-            case TokenType::Plus:
-            case TokenType::Minus:
-            case TokenType::Not:
-                return true;
-            default:
-                return false;
-        }
+        return (next_type == TokenType::Comma ||
+                next_type == TokenType::Colon ||
+                next_type == TokenType::Assign ||
+                next_type == TokenType::LeftParen ||
+                next_type == TokenType::RightParen ||
+                next_type == TokenType::LeftBrace ||
+                next_type == TokenType::RightBrace ||
+                next_type == TokenType::Less ||
+                next_type == TokenType::Greater ||
+                next_type == TokenType::EndOfFile);
     }
 
     bool Parser::is_top_level_token(const TokenType type) {

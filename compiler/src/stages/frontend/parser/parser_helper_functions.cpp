@@ -8,16 +8,10 @@ namespace valuascript::compiler {
         return parse_comma_separated_list<std::unique_ptr<Expression> >(
             closing_token,
             trailing_comma_err,
+            ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions,
             panic_stops,
             [this]() { return is_expression_start(cursor_.peek().type); },
-            [this]() { return is_expression_start(cursor_.peek().type); },
-            [this]() { return parse_expression(); },
-            [this]() {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(),
-                                         ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions);
-                }
-            }
+            [this]() { return parse_expression(); }
         );
     }
 
@@ -31,9 +25,13 @@ namespace valuascript::compiler {
         return parse_comma_separated_list<std::pair<std::string, std::unique_ptr<Expression> > >(
             closing_token,
             trailing_comma_err,
+            missing_comma_err,
             panic_stops,
-            []() { return true; },
-            [this]() { return cursor_.check(TokenType::Identifier); },
+            [this]() {
+                const Token &tok = cursor_.peek();
+                bool is_id_like = tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type);
+                return is_id_like && cursor_.peek(1).type == TokenType::Colon;
+            },
             [this, key_err, colon_err]() {
                 Token key_token = cursor_.consume(TokenType::Identifier, key_err);
                 cursor_.consume(TokenType::Colon, colon_err);
@@ -44,11 +42,6 @@ namespace valuascript::compiler {
                 }
 
                 return std::make_pair(key_token.lexeme, std::move(val));
-            },
-            [this, missing_comma_err]() {
-                if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
-                    cursor_.report_error(cursor_.peek(), missing_comma_err);
-                }
             }
         );
     }

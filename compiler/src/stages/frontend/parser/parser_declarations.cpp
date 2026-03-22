@@ -37,7 +37,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Directive> Parser::parse_directive() {
         const Token &start_token = cursor_.consume(TokenType::Hash, ValuascriptErrorCode::ExpectedHashToken);
-        const Token &name_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::MissingDirectiveName);
+        const Token &name_token = consume_identifier(ValuascriptErrorCode::MissingDirectiveName);
         std::string directive_name = name_token.lexeme;
 
         std::unique_ptr<Expression> value = nullptr;
@@ -63,7 +63,7 @@ namespace valuascript::compiler {
 
         while (cursor_.match({TokenType::At})) {
             const Token &start_token = cursor_.previous();
-            Token name_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedModifierName);
+            Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName);
             std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
             if (cursor_.match({TokenType::LeftParen})) {
@@ -88,7 +88,7 @@ namespace valuascript::compiler {
     std::unique_ptr<StructDefinition> Parser::parse_struct_definition(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.consume(TokenType::Struct, ValuascriptErrorCode::ExpectedStructToken);
 
-        Token name_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedStructName);
+        Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedStructName);
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
 
@@ -98,8 +98,7 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::ExpectedCommaSeparatorInStruct,
             {},
             [&]() {
-                Token field_name = cursor_.consume(TokenType::Identifier,
-                                                   ValuascriptErrorCode::ExpectedStructFieldName);
+                Token field_name = consume_identifier(ValuascriptErrorCode::ExpectedStructFieldName);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterStructFieldName);
                 return std::make_pair(field_name.lexeme, parse_type_annotation());
             }
@@ -118,7 +117,7 @@ namespace valuascript::compiler {
     std::unique_ptr<EnumDefinition> Parser::parse_enum_definition(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.consume(TokenType::Enum, ValuascriptErrorCode::ExpectedEnumToken);
 
-        Token name_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedEnumName);
+        Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumName);
 
         cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterEnumName);
 
@@ -132,7 +131,7 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::ExpectedCommaSeparatorInEnum,
             {},
             [&]() {
-                Token case_name = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedEnumCaseName);
+                Token case_name = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseName);
                 std::unique_ptr<Expression> raw_value = nullptr;
                 if (cursor_.match({TokenType::Assign})) {
                     raw_value = parse_expression();
@@ -159,7 +158,7 @@ namespace valuascript::compiler {
     std::unique_ptr<FunctionDefinition> Parser::parse_function_definition(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.consume(TokenType::Func, ValuascriptErrorCode::ExpectedFuncToken);
 
-        const Token &name = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::MissingFunctionName);
+        const Token &name = consume_identifier(ValuascriptErrorCode::MissingFunctionName);
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
@@ -169,8 +168,7 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
             {},
             [&]() {
-                const Token &param_name = cursor_.consume(TokenType::Identifier,
-                                                          ValuascriptErrorCode::MissingParameterName);
+                const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
                 return FunctionParameter{param_name.lexeme, parse_type_annotation()};
             }
@@ -238,7 +236,7 @@ namespace valuascript::compiler {
             return tuple_type_annotation;
         }
 
-        Token name_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::MissingTypeAnnotation);
+        Token name_token = consume_identifier(ValuascriptErrorCode::MissingTypeAnnotation);
         std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
 
         if (cursor_.match({TokenType::Less})) {

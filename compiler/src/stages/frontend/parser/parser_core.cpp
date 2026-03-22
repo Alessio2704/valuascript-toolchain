@@ -1,7 +1,24 @@
 #include "stages/frontend/parser/parser.h"
+#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
     Parser::Parser(TokenCursor cursor) : cursor_(std::move(cursor)) {
+    }
+
+    const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err) {
+        if (cursor_.check(TokenType::Identifier)) {
+            return cursor_.advance();
+        }
+
+        if (is_reserved_keyword(cursor_.peek())) {
+            TokenType next = cursor_.peek(1).type;
+            if (acts_like_identifier(cursor_.peek(), next)) {
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
+                return cursor_.advance();
+            }
+        }
+
+        return cursor_.consume(TokenType::Identifier, fallback_err);
     }
 
     std::unique_ptr<Program> Parser::parse_program() {

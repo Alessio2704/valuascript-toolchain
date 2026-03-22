@@ -48,11 +48,7 @@ namespace valuascript::compiler {
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
-            if (is_reserved_keyword(cursor_.peek())) {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier);
-            }
-
-            const Token &target = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::InvalidIdentifier);
+            const Token &target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
 

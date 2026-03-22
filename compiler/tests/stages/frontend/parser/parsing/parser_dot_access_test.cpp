@@ -85,7 +85,7 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         DotAccessSadParam{"missing_property", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
         DotAccessSadParam{"number_as_property", "let a = model.123", ValuascriptErrorCode::ExpectedPropertyName},
-        DotAccessSadParam{"keyword_as_property", "let a = model.let", ValuascriptErrorCode::ExpectedPropertyName},
+        DotAccessSadParam{"keyword_as_property", "let a = model.let", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
         DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ValuascriptErrorCode::ExpectedPropertyName}
     ),
     [](const testing::TestParamInfo<DotAccessSadParam>& info) {

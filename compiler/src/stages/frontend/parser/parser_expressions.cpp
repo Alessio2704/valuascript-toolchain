@@ -147,7 +147,7 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
 
-        Token property_token = cursor_.consume(TokenType::Identifier, ValuascriptErrorCode::ExpectedPropertyName);
+        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName);
 
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
 
@@ -342,8 +342,7 @@ namespace valuascript::compiler {
                 std::vector<std::string> case_identifiers;
 
                 do {
-                    Token id_token = cursor_.consume(TokenType::Identifier,
-                                                     ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
+                    Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
 
                     case_identifiers.push_back(id_token.lexeme);
 

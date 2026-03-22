@@ -22,7 +22,6 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::ExpectedModifierName, 1, 3},
         {ValuascriptErrorCode::InvalidIdentifier, 2, 5},
         {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 5},
-        {ValuascriptErrorCode::ExpectedStructName, 3, 12},
         {ValuascriptErrorCode::IncompleteAssignment, 4, 6}
         }
         },
@@ -146,12 +145,12 @@ INSTANTIATE_TEST_SUITE_P(
         "func process(a: int b: string) -> int {}\n"
         "let result = process(a: 10 20)\n"
         "let x = trailing_comma(a: 1, )\n"
-        "func true() -> { return }",
+        "func true() -> void { return 1}",
         {
         {ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList, 1, 21},
         {ValuascriptErrorCode::MissingOperator, 2, 28},
         {ValuascriptErrorCode::TrailingCommaInFunctionCall, 3, 28},
-        {ValuascriptErrorCode::MissingFunctionName, 4, 6}
+        {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 4, 6}
         }
         },
 

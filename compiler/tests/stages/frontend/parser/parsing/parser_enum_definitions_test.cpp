@@ -84,7 +84,7 @@ INSTANTIATE_TEST_SUITE_P(
         EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::InvalidExpression},
         EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ValuascriptErrorCode::
         ExpectedCommaSeparatorInEnum},
-        EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::ExpectedEnumCaseName},
+        EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
         EnumSadParam{"missing_operator_1", "enum Test : int { A = a b, B = 2 }", ValuascriptErrorCode::MissingOperator},
         EnumSadParam{"missing_operator_2", "enum Test : int { A = (a b), B = 2 }", ValuascriptErrorCode::MissingOperatorInsideGrouping},
         EnumSadParam{"missing_operator_3", "enum Test : int { A = 1 (a + b), B = 2 }", ValuascriptErrorCode::MissingOperatorOrArgumentName}
