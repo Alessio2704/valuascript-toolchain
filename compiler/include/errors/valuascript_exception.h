@@ -112,6 +112,7 @@ namespace valuascript::compiler {
         TrailingCommaInList,
         MissingCommaOrOperatorBetweenExpressions,
         TrailingComma,
+        TrailingCommaInGenericArgument,
         MissingCommaBetweenFields,
         TopLevelDeclarationInsideFunction,
 

@@ -189,12 +189,13 @@ namespace valuascript::compiler {
             }
         std::vector<T> parse_comma_separated_list(
             const TokenType closing_token,
+            const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const ValuascriptErrorCode missing_comma_err,
             const std::initializer_list<TokenType> &panic_stops,
             ElementParser parse_element) {
             return parse_comma_separated_list<T>(
                 closing_token,
-                std::nullopt,
+                trailing_comma_err,
                 panic_stops,
                 []() { return true; },
                 [this]() { return cursor_.check(TokenType::Identifier) || cursor_.check(TokenType::LeftParen); },

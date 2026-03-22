@@ -48,53 +48,6 @@ namespace valuascript::compiler {
         }
     }
 
-    std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
-        const TokenType closing_token,
-        const std::optional<ValuascriptErrorCode> trailing_comma_err,
-        const std::initializer_list<TokenType> panic_stops) {
-        return parse_comma_separated_list<std::unique_ptr<Expression> >(
-            closing_token,
-            trailing_comma_err,
-            panic_stops,
-            [this]() { return is_expression_start(cursor_.peek().type); },
-            [this]() { return is_expression_start(cursor_.peek().type); },
-            [this]() { return parse_expression(); },
-            [this]() {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(),
-                                         ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions);
-                }
-            }
-        );
-    }
-
-    std::vector<std::pair<std::string, std::unique_ptr<Expression> > > Parser::parse_key_value_list(
-        const TokenType closing_token,
-        const ValuascriptErrorCode key_err,
-        const ValuascriptErrorCode colon_err,
-        const ValuascriptErrorCode missing_comma_err,
-        const std::optional<ValuascriptErrorCode> trailing_comma_err,
-        const std::initializer_list<TokenType> panic_stops) {
-        return parse_comma_separated_list<std::pair<std::string, std::unique_ptr<Expression> > >(
-            closing_token,
-            trailing_comma_err,
-            panic_stops, []() { return true; },
-            [this]() { return cursor_.check(TokenType::Identifier); },
-            [this, key_err, colon_err]() {
-                Token key_token = cursor_.consume(TokenType::Identifier, key_err);
-                cursor_.consume(TokenType::Colon, colon_err);
-                return std::make_pair(key_token.lexeme, parse_expression());
-            },
-            [this, missing_comma_err]() {
-                if (cursor_.check(TokenType::Identifier) && cursor_.peek(1).type == TokenType::Colon) {
-                    cursor_.report_error(cursor_.peek(), missing_comma_err);
-                } else if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
-                }
-            }
-        );
-    }
-
     void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
             if (is_top_level_token(cursor_.peek().type)) {

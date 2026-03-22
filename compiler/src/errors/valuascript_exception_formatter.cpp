@@ -109,6 +109,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Expected at least one generic type argument inside '<>'.";
             case ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs:
                 return "Expected '>' after generic type arguments.";
+            case ValuascriptErrorCode::TrailingCommaInGenericArgument:
+                return "Syntax Error: Trailing comma in generic arguments.";
             case ValuascriptErrorCode::ModifiersOnNonVariableDeclaration:
                 return "Syntax Error: Modifiers can only be attached to variable declarations.";
             case ValuascriptErrorCode::ExpectedLetOrVarToken:

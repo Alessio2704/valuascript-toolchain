@@ -94,6 +94,7 @@ namespace valuascript::compiler {
 
         auto fields = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<TypeAnnotation> > >(
             TokenType::RightBrace,
+            std::nullopt,
             ValuascriptErrorCode::ExpectedCommaSeparatorInStruct,
             {},
             [&]() {
@@ -127,6 +128,7 @@ namespace valuascript::compiler {
 
         auto cases = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<Expression> > >(
             TokenType::RightBrace,
+            std::nullopt,
             ValuascriptErrorCode::ExpectedCommaSeparatorInEnum,
             {},
             [&]() {
@@ -134,6 +136,10 @@ namespace valuascript::compiler {
                 std::unique_ptr<Expression> raw_value = nullptr;
                 if (cursor_.match({TokenType::Assign})) {
                     raw_value = parse_expression();
+
+                    if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Assign) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                    }
                 }
                 return std::make_pair(case_name.lexeme, std::move(raw_value));
             }
@@ -159,6 +165,7 @@ namespace valuascript::compiler {
 
         auto params = parse_comma_separated_list<FunctionParameter>(
             TokenType::RightParen,
+            ValuascriptErrorCode::TrailingCommaInFunctionCall,
             ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
             {},
             [&]() {
@@ -174,6 +181,7 @@ namespace valuascript::compiler {
 
         auto return_types = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
             TokenType::LeftBrace,
+            ValuascriptErrorCode::TrailingComma,
             ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList,
             {},
             [&]() {
@@ -214,6 +222,7 @@ namespace valuascript::compiler {
         if (cursor_.match({TokenType::LeftParen})) {
             auto elements = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
                 TokenType::RightParen,
+                ValuascriptErrorCode::TrailingComma,
                 ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType,
                 {},
                 [&]() {
@@ -235,6 +244,7 @@ namespace valuascript::compiler {
         if (cursor_.match({TokenType::Less})) {
             generic_args = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
                 TokenType::Greater,
+                ValuascriptErrorCode::TrailingCommaInGenericArgument,
                 ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs,
                 {},
                 [&]() {

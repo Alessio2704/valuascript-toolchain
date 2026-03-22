@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-class GeneralParserSynchronizationTest : public ParserErrorsSynchronizationBase {};
+class GeneralParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+};
 
 TEST_P(GeneralParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
     run_parser_and_check_errors(GetParam());
@@ -18,11 +19,11 @@ INSTANTIATE_TEST_SUITE_P(
         "let struct = 30\n"
         "let d",
         {
-        {ValuascriptErrorCode::ExpectedModifierName, 1, 6},
-        {ValuascriptErrorCode::InvalidIdentifier, 2, 6},
-        {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 11},
-        {ValuascriptErrorCode::ExpectedStructName, 3, 13},
-        {ValuascriptErrorCode::IncompleteAssignment, 4, 7}
+        {ValuascriptErrorCode::ExpectedModifierName, 1, 3},
+        {ValuascriptErrorCode::InvalidIdentifier, 2, 5},
+        {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 5},
+        {ValuascriptErrorCode::ExpectedStructName, 3, 12},
+        {ValuascriptErrorCode::IncompleteAssignment, 4, 6}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -31,24 +32,9 @@ INSTANTIATE_TEST_SUITE_P(
         "func test1(a int) -> int {}\n"
         "func test2(b: int) int {}\n",
         {
-        {ValuascriptErrorCode::MissingFunctionName, 1, 7},
-        {ValuascriptErrorCode::MissingColonAfterParameter, 2, 17},
-        {ValuascriptErrorCode::MissingArrowInFunction, 3, 23}
-        }
-        },
-        ParserErrorsSynchronizationTestCase{
-        "StructAndEnumErrors",
-        "struct { id: int }\n"
-        "struct User id: int }\n"
-        "struct Point { x int }\n"
-        "enum { A }\n"
-        "enum Color { A, }\n",
-        {
-        {ValuascriptErrorCode::ExpectedStructName, 1, 9},
-        {ValuascriptErrorCode::ExpectedBraceInStructDefinition, 2, 15},
-        {ValuascriptErrorCode::ExpectedColonAfterStructFieldName, 3, 21},
-        {ValuascriptErrorCode::ExpectedEnumName, 4, 7},
-        {ValuascriptErrorCode::ExpectedColonAfterEnumName, 5, 13}
+        {ValuascriptErrorCode::MissingFunctionName, 1, 6},
+        {ValuascriptErrorCode::MissingColonAfterParameter, 2, 14},
+        {ValuascriptErrorCode::MissingArrowInFunction, 3, 20}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -58,10 +44,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = obj[]\n"
         "let d = obj.",
         {
-        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16},
-        {ValuascriptErrorCode::ExpectedColonAfterDictionaryKey, 2, 17},
-        {ValuascriptErrorCode::EmptyBracketAccess, 3, 13},
-        {ValuascriptErrorCode::ExpectedPropertyName, 4, 14}
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
+        {ValuascriptErrorCode::ExpectedColonAfterDictionaryKey, 2, 15},
+        {ValuascriptErrorCode::EmptyBracketAccess, 3, 12},
+        {ValuascriptErrorCode::ExpectedPropertyName, 4, 13}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -71,10 +57,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = switch (val) { case 1 10 }\n"
         "let a = switch (val) { default -> 1 default -> 2 }\n",
         {
-        {ValuascriptErrorCode::MissingThenToken, 1, 21},
-        {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 18},
-        {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 30},
-        {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 47}
+        {ValuascriptErrorCode::MissingThenToken, 1, 19},
+        {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 17},
+        {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 29},
+        {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 45}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -86,9 +72,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let valid2 = 200\n"
         "let a = { a: 1 b: 2}",
         {
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 21},
-        {ValuascriptErrorCode::ExpectedStructName, 4, 9},
-        {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 17}
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 20},
+        {ValuascriptErrorCode::ExpectedStructName, 4, 8},
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 16}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -101,9 +87,9 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = { key: \"value\" \n"
         "let valid_4 = 400\n",
         {
-        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 1, 18},
-        {ValuascriptErrorCode::UnmatchedBracketAfterVectorElements, 4, 18},
-        {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 24}
+        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 1, 17},
+        {ValuascriptErrorCode::UnmatchedBracketAfterVectorElements, 4, 17},
+        {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 23}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -112,8 +98,8 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = func_call(\n\n"
         "let b = some_other()",
         {
-        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16},
-        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 2, 20}
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
+        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 2, 19}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -138,21 +124,21 @@ INSTANTIATE_TEST_SUITE_P(
         "let res = a (-5)\n"
         "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
         {
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 1, 15},
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 20},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 3, 18},
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 4, 23},
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 5, 23},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 6, 17},
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 7, 25},
-        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 8, 25},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 10, 19},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 13, 19},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 15, 14},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 16, 14},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 17, 14},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 18, 14},
-        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 19, 38},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 1, 14},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 19},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 3, 17},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 4, 22},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 5, 22},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 6, 16},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 7, 24},
+        {ValuascriptErrorCode::MissingOperatorInsideGrouping, 8, 24},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 10, 18},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 13, 18},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 15, 13},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 16, 13},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 17, 13},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 18, 13},
+        {ValuascriptErrorCode::MissingOperatorOrArgumentName, 19, 37},
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -162,10 +148,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let x = trailing_comma(a: 1, )\n"
         "func true() -> { return }",
         {
-        {ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList, 1, 22},
-        {ValuascriptErrorCode::MissingOperator, 2, 30},
-        {ValuascriptErrorCode::TrailingCommaInFunctionCall, 3, 29},
-        {ValuascriptErrorCode::MissingFunctionName, 4, 10}
+        {ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList, 1, 21},
+        {ValuascriptErrorCode::MissingOperator, 2, 28},
+        {ValuascriptErrorCode::TrailingCommaInFunctionCall, 3, 28},
+        {ValuascriptErrorCode::MissingFunctionName, 4, 6}
         }
         },
 
@@ -174,8 +160,8 @@ INSTANTIATE_TEST_SUITE_P(
         "let a: = 10\n"
         "func bad_return() -> { }\n",
         {
-        {ValuascriptErrorCode::MissingTypeAnnotation, 1, 9},
-        {ValuascriptErrorCode::MissingTypeAnnotationAfterArrow, 2, 23}
+        {ValuascriptErrorCode::MissingTypeAnnotation, 1, 8},
+        {ValuascriptErrorCode::MissingTypeAnnotationAfterArrow, 2, 22}
         }
         },
 
@@ -186,27 +172,12 @@ INSTANTIATE_TEST_SUITE_P(
         "let c = 10 * / 5\n"
         "let d = (10 + 5] \n",
         {
-        {ValuascriptErrorCode::InvalidExpression, 1, 13},
-        {ValuascriptErrorCode::InvalidExpression, 2, 11},
-        {ValuascriptErrorCode::InvalidExpression, 3, 15},
-        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 4, 17}
+        {ValuascriptErrorCode::InvalidExpression, 1, 12},
+        {ValuascriptErrorCode::InvalidExpression, 2, 10},
+        {ValuascriptErrorCode::InvalidExpression, 3, 14},
+        {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 4, 16}
         }
         },
-
-        ParserErrorsSynchronizationTestCase{
-        "AdvancedStructAndEnumErrors",
-        "struct Config { host: string port: int }\n"
-        "enum State: string { One Two }\n"
-        "struct Empty { : int }\n"
-        "enum State { One, Two }\n",
-        {
-        {ValuascriptErrorCode::ExpectedCommaSeparatorInStruct, 1, 34},
-        {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 2, 29},
-        {ValuascriptErrorCode::ExpectedStructFieldName, 3, 17},
-        {ValuascriptErrorCode::ExpectedColonAfterEnumName, 4, 13}
-        }
-        },
-
         ParserErrorsSynchronizationTestCase{
         "TopLevelGarbageAndStrayTokens",
         "} \n"
@@ -215,9 +186,9 @@ INSTANTIATE_TEST_SUITE_P(
         "func valid2() -> int { return 0 }\n"
         "* let bad_start = 0\n",
         {
-        {ValuascriptErrorCode::UnexpectedTopLevelToken, 1, 2},
-        {ValuascriptErrorCode::UnexpectedTopLevelToken, 2, 16}, // Tripped by the '\n' at the end of line 2
-        {ValuascriptErrorCode::UnexpectedTopLevelToken, 4, 35} // Tripped by the '\n' at the end of line 4
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 1, 1},
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 2, 15}, // Tripped by the '\n' at the end of line 2
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 4, 34} // Tripped by the '\n' at the end of line 4
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -229,7 +200,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let wacc = get_wacc()\n"
         "enum Scenario: scalar { LOW, BASE, HIGH }\n",
         {
-        {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 5}
+        {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 1}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -240,17 +211,17 @@ INSTANTIATE_TEST_SUITE_P(
         "let value_of_research_assets, current_year_amortization = get_rd(\n"
         "let a = 10\n",
         {
-        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 22},
-        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 4, 67}
+        {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 15},
+        {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 4, 66}
         }
         },
         ParserErrorsSynchronizationTestCase{
         "Regression_4",
         "let a = {1, 2, 3}\n",
         {
-        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
-        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 14},
-        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 17}
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 10},
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 13},
+        {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16}
         }
         }
     ),

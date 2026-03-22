@@ -67,7 +67,7 @@ protected:
             EXPECT_EQ(actual.get_span().line_start, expected.line)
                 << "Error [" << i << "] Line mismatch for error: " << actual.what();
 
-            EXPECT_EQ(actual.get_span().column_end, expected.column)
+            EXPECT_EQ(actual.get_span().column_start, expected.column)
                 << "Error [" << i << "] Column mismatch for error: " << actual.what();
         }
 

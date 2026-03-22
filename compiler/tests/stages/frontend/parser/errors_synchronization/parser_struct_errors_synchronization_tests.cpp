@@ -7,8 +7,6 @@ namespace {
     const StructDefinition *ExpectRecoveredStruct(const Program &ast, const std::string &expected_name) {
         EXPECT_EQ(ast.execution_steps.size(), 1) << "Expected 'let a = 1' to survive.";
 
-        if (ast.struct_definitions.empty()) return nullptr;
-
         EXPECT_EQ(ast.struct_definitions.size(), 1);
         const auto *struct_def = ast.struct_definitions.front().get();
         EXPECT_EQ(struct_def->name, expected_name);
@@ -62,35 +60,35 @@ INSTANTIATE_TEST_SUITE_P(
         "no_name_struct_empty_ast",
         "struct { id: int }\n"
         "let a = 1\n",
-        { {Err::ExpectedStructName, 1, 9} },
+        { {Err::ExpectedStructName, 1, 8} },
         ExpectNoStructs()
         },
         ParserErrorsSynchronizationTestCase{
         "no_left_brace_struct_empty_ast",
         "struct Test id: int }\n"
         "let a = 1\n",
-        { {Err::ExpectedBraceInStructDefinition, 1, 15} },
+        { {Err::ExpectedBraceInStructDefinition, 1, 13} },
         ExpectNoStructs()
         },
         ParserErrorsSynchronizationTestCase{
         "no_right_brace_struct_empty_ast",
         "struct Test { id: int \n"
         "let a = 1\n",
-        { {Err::ExpectedRightBraceAfterStructBody, 1, 23} },
+        { {Err::ExpectedRightBraceAfterStructBody, 1, 22} },
         ExpectNoStructs()
         },
         ParserErrorsSynchronizationTestCase{
         "no_colon_empty_struct_in_ast",
         "struct Test { id int } \n"
         "let a = 1\n",
-        { {Err::ExpectedColonAfterStructFieldName, 1, 21} },
+        { {Err::ExpectedColonAfterStructFieldName, 1, 18} },
         ExpectStruct("Test")
         },
         ParserErrorsSynchronizationTestCase{
         "no_field_name_empty_struct_in_ast",
         "struct Test {  : int } \n"
         "let a = 1\n",
-        { {Err::ExpectedStructFieldName, 1, 17} },
+        { {Err::ExpectedStructFieldName, 1, 16} },
         ExpectStruct("Test")
         },
         ParserErrorsSynchronizationTestCase{
@@ -98,9 +96,9 @@ INSTANTIATE_TEST_SUITE_P(
         "struct Test { host: string port: int speed: int mode: string }\n"
         "let a = 1\n",
         {
-        {Err::ExpectedCommaSeparatorInStruct, 1, 32},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 43},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 53},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 28},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 38},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 49},
         },
         ExpectStruct("Test", {
             {"host", "string"},
@@ -114,10 +112,10 @@ INSTANTIATE_TEST_SUITE_P(
         "struct Test { host: string port: int speed: int mode: }\n"
         "let a = 1\n",
         {
-        {Err::ExpectedCommaSeparatorInStruct, 1, 32},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 43},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 53},
-        {Err::MissingTypeAnnotation, 1, 56},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 28},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 38},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 49},
+        {Err::MissingTypeAnnotation, 1, 55},
         },
         ExpectStruct("Test", {
             {"host", "string"},
@@ -130,9 +128,9 @@ INSTANTIATE_TEST_SUITE_P(
         "struct Test { host: string port: int speed int mode: string }\n"
         "let a = 1\n",
         {
-        {Err::ExpectedCommaSeparatorInStruct, 1, 32},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 43},
-        {Err::ExpectedColonAfterStructFieldName, 1, 47}
+        {Err::ExpectedCommaSeparatorInStruct, 1, 28},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 38},
+        {Err::ExpectedColonAfterStructFieldName, 1, 44}
         },
         ExpectStruct("Test", {
             {"host", "string"},
@@ -144,9 +142,9 @@ INSTANTIATE_TEST_SUITE_P(
         "struct Test { host: string port: int speed int, mode: string }\n"
         "let a = 1\n",
         {
-        {Err::ExpectedCommaSeparatorInStruct, 1, 32},
-        {Err::ExpectedCommaSeparatorInStruct, 1, 43},
-        {Err::ExpectedColonAfterStructFieldName, 1, 47}
+        {Err::ExpectedCommaSeparatorInStruct, 1, 28},
+        {Err::ExpectedCommaSeparatorInStruct, 1, 38},
+        {Err::ExpectedColonAfterStructFieldName, 1, 44}
         },
         ExpectStruct("Test", {
             {"host", "string"},
