@@ -28,7 +28,7 @@ namespace {
             EXPECT_EQ(func->parameters[i].type->name, expected_params[i].second) << "Param type mismatch at index " <<
                     i;
         }
-        
+
         ASSERT_EQ(func->return_types.size(), expected_returns.size()) << "Return type count mismatch!";
         for (size_t i = 0; i < expected_returns.size(); ++i) {
             ASSERT_NE(func->return_types[i], nullptr);
@@ -70,6 +70,13 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = 1\n",
         {{Err::MissingFunctionName, 1, 6}},
         ExpectNoFunctions()
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_name_func_full_ast",
+        "func true(a: int) -> int {}\n"
+        "let a = 1\n",
+        {{Err::ReservedKeywordAsIdentifier, 1, 6}},
+        ExpectFunction("true", {{"a", "int"}}, {"int"})
         },
         ParserErrorsSynchronizationTestCase{
         "no_left_paren_func_empty_ast",
@@ -247,6 +254,73 @@ INSTANTIATE_TEST_SUITE_P(
         EXPECT_EQ(ast.function_definitions[1]->name, "second");
         EXPECT_EQ(ast.execution_steps.size(), 1);
         }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_params_1",
+        "func test(let: int) -> int {}\n"
+        "let a = 1\n",
+        {{Err::ReservedKeywordAsIdentifier, 1, 11}},
+        ExpectFunction("test", {{"let", "int"}}, {"int"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_params_2",
+        "func test(let: int, var: int, then: string) -> int {}\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 11},
+        {Err::ReservedKeywordAsIdentifier, 1, 21},
+        {Err::ReservedKeywordAsIdentifier, 1, 31},
+        },
+        ExpectFunction("test", {{"let", "int"}, {"var", "int"}, {"then", "string"}}, {"int"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_params_3",
+        "func test(let: int var: int then: string) -> int {}\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 11},
+        {Err::ExpectedCommaSeparatorInParameterList, 1, 20},
+        {Err::ReservedKeywordAsIdentifier, 1, 20},
+        {Err::ExpectedCommaSeparatorInParameterList, 1, 29},
+        {Err::ReservedKeywordAsIdentifier, 1, 29},
+        },
+        ExpectFunction("test", {{"let", "int"}, {"var", "int"}, {"then", "string"}}, {"int"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_params_type_1",
+        "func test(a: true) -> int {}\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 14},
+        },
+        ExpectFunction("test", {{"a", "true"}}, {"int"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "return_type_1",
+        "func test(a: int) -> true {}\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 22},
+        },
+        ExpectFunction("test", {{"a", "int"}}, {"true"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "return_type_2",
+        "func test(a: int) -> vector<true> {}\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 29},
+        },
+        ExpectFunction("test", {{"a", "int"}}, {"vector"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "return_type_3",
+        "func test(a: int) -> (int int) {}\n"
+        "let a = 1\n",
+        {
+        {Err::ExpectedCommaSeparatorInTupleType, 1, 27},
+        },
+        ExpectFunction("test", {{"a", "int"}}, {"tuple"})
         }
     ),
     [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase> &info) {

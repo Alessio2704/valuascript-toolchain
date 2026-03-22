@@ -85,6 +85,13 @@ INSTANTIATE_TEST_SUITE_P(
         ExpectNoEnums()
         },
         ParserErrorsSynchronizationTestCase{
+        "name_reserved_keyword_full_ast",
+        "enum true: int { A = 1, B = 2 }\n"
+        "let a = 1\n",
+        { {Err::ReservedKeywordAsIdentifier, 1, 6} },
+        ExpectEnum("true", "int", {{"A", "1"}, {"B", "2"}})
+        },
+        ParserErrorsSynchronizationTestCase{
         "no_colon_enum_empty_ast",
         "enum Test int { A }\n"
         "let a = 1\n",
@@ -303,6 +310,68 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::MissingOperator, 1, 25},
         },
         ExpectEnum("Test", "int", {{"B", "2"}})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_1",
+        "enum Test : int { let, true, if }\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 19},
+        {Err::ReservedKeywordAsIdentifier, 1, 24},
+        {Err::ReservedKeywordAsIdentifier, 1, 30},
+        },
+        ExpectEnum("Test", "int", {"let", "true", "if"})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_2",
+        "enum Test : int { let = 1, true = 2, if = 3 }\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 19},
+        {Err::ReservedKeywordAsIdentifier, 1, 28},
+        {Err::ReservedKeywordAsIdentifier, 1, 38},
+        },
+        ExpectEnum("Test", "int", {{"let", "1"}, {"true", "2"}, {"if", "3"}})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_3",
+        "enum Test : int { let true if }\n"
+        "let a = 1\n",
+        {
+        {Err::ExpectedEnumCaseName, 1, 19},
+        {Err::ExpectedRightBraceAfterEnumBody, 1, 19},
+        {Err::InvalidIdentifier, 1, 23},
+        },
+        [](const Program& ast) {
+            EXPECT_EQ(ast.enum_definitions.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+        }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_keyword_4",
+        "enum Test : int { let = 1, true = , if = 3 }\n"
+        "let a = 1\n",
+        {
+        {Err::ReservedKeywordAsIdentifier, 1, 19},
+        {Err::ReservedKeywordAsIdentifier, 1, 28},
+        {Err::InvalidExpression, 1, 35},
+        {Err::ReservedKeywordAsIdentifier, 1, 37},
+        },
+        ExpectEnum("Test", "int", {{"let", "1"}, {"if", "3"}})
+        },
+        ParserErrorsSynchronizationTestCase{
+        "reserved_char",
+        "enum Test : int { # }\n"
+        "let a = 1\n",
+        {
+        {Err::ExpectedEnumCaseName, 1, 19},
+        {Err::ExpectedRightBraceAfterEnumBody, 1, 19},
+        {Err::MissingDirectiveName, 1, 21},
+        },
+        [](const Program& ast) {
+            EXPECT_EQ(ast.enum_definitions.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+        }
         }
     ),
     [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
