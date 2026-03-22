@@ -222,7 +222,7 @@ namespace valuascript::compiler {
         if (cursor_.match({TokenType::LeftParen})) {
             auto elements = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
                 TokenType::RightParen,
-                ValuascriptErrorCode::TrailingComma,
+                ValuascriptErrorCode::SingleElementTuplesNotAllowed,
                 ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType,
                 {},
                 [&]() {
