@@ -6,7 +6,7 @@
 
 using namespace valuascript::compiler;
 
-int main(int argc, char* argv[]) {
+int main() {
     std::string file_path = "main.vs";
 
     const auto context = std::make_shared<CompilerContext>();

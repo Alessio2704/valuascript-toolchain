@@ -9,13 +9,26 @@ runs:
       with:
         key: ${{ runner.os }}-${{ matrix.asset_name_suffix || 'default' }}
 
-    - name: Install Ninja (Linux)
+    - name: Install Ninja and GCC 13 (Linux)
       if: runner.os == 'Linux'
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y ninja-build
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        sudo apt-get install -y ninja-build gcc-13 g++-13
 
-    - name: Configure CMake (Linux & macOS)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
+    - name: Configure CMake (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=gcc-13 \
+          -DCMAKE_CXX_COMPILER=g++-13 \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+    - name: Configure CMake (macOS)
+      if: runner.os == 'macOS'
       shell: bash
       run: |
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
