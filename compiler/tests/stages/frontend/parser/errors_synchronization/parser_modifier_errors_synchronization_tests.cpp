@@ -112,9 +112,12 @@ INSTANTIATE_TEST_SUITE_P(
 
         ParserErrorsSynchronizationTestCase{
         "modifier_garbage_in_args",
-        "@test(a: 1, !!!, b: 2) let c = 3\n"
+        "@test(a: 1, !, b: 2) let c = 3\n"
         "let recovery = 1\n",
-        { {Err::MissingArgumentNameInModifier, 1, 16} },
+        {
+        {Err::InvalidCharacter, 1, 13},
+        {Err::MissingArgumentNameInModifier, 1, 14},
+        },
         ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}}} })
         },
         ParserErrorsSynchronizationTestCase{

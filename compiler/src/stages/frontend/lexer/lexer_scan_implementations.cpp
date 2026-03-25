@@ -52,39 +52,49 @@ namespace valuascript::compiler {
         }
     }
 
-    void Lexer::scan_number() {
-        auto consume_integer_part = [this]() {
-            while (std::isdigit(peek()) || peek() == '_') {
-                if (peek() == '_') {
-                    if (!std::isdigit(peek_next())) {
-                        advance();
-                        report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral);
-                        break;
-                    }
+    void Lexer::consume_digits() {
+        while (std::isdigit(peek()) || peek() == '_') {
+            if (peek() == '_') {
+                if (!std::isdigit(peek_next())) {
+                    advance();
+                    report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral);
+                    break;
                 }
-                advance();
             }
-        };
+            advance();
+        }
+    }
 
-        consume_integer_part();
+    void Lexer::finalize_number() {
+        if (match('%')) {
+            add_token(TokenType::PercentageLiteral);
+        } else {
+            add_token(TokenType::Number);
+        }
+    }
+
+    bool Lexer::is_member_access() const {
+        if (tokens_.empty()) return false;
+        TokenType last = tokens_.back().type;
+        return (last == TokenType::Identifier ||
+                last == TokenType::RightParen ||
+                last == TokenType::RightBracket ||
+                last == TokenType::RightBrace);
+    }
+
+    void Lexer::scan_number() {
+        consume_digits();
 
         if (peek() == '.') {
             if (std::isdigit(peek_next())) {
                 advance();
-                consume_integer_part();
+                consume_digits();
             } else {
                 advance();
                 report_error(ValuascriptErrorCode::UnterminatedDecimal);
             }
         }
-
-        if (peek() == '%') {
-            advance();
-            add_token(TokenType::PercentageLiteral);
-            return;
-        }
-
-        add_token(TokenType::Number);
+        finalize_number();
     }
 
     void Lexer::scan_identifier() {
@@ -119,57 +129,48 @@ namespace valuascript::compiler {
                 break;
             case '+': add_token(TokenType::Plus);
                 break;
-            case '-': add_token(match('>') ? TokenType::Arrow : TokenType::Minus);
-                break;
             case '*': add_token(TokenType::Star);
                 break;
             case '^': add_token(TokenType::Caret);
                 break;
-            case '.': {
+            case '#': add_token(TokenType::Hash);
+                break;
+            case '@': add_token(TokenType::At);
+                break;
+            case '-': add_token(match('>') ? TokenType::Arrow : TokenType::Minus);
+                break;
+            case '=': add_token(match('=') ? TokenType::Equals : TokenType::Assign);
+                break;
+            case '<': add_token(match('=') ? TokenType::LessEqual : TokenType::Less);
+                break;
+            case '>': add_token(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
+                break;
+            case '!':
+                if (match('=')) {
+                    add_token(TokenType::NotEquals);
+                } else {
+                    report_error(ValuascriptErrorCode::InvalidCharacter, c);
+                }
+                break;
+            case '.':
                 if (std::isdigit(peek())) {
-                    bool is_member_access = false;
-
-                    if (!tokens_.empty()) {
-                        TokenType last_type = tokens_.back().type;
-                        if (last_type == TokenType::Identifier ||
-                            last_type == TokenType::RightParen ||
-                            last_type == TokenType::RightBracket ||
-                            last_type == TokenType::RightBrace) {
-                            is_member_access = true;
-                        }
-                    }
-
-                    if (is_member_access) {
+                    if (is_member_access()) {
                         add_token(TokenType::Dot);
                     } else {
                         report_error(ValuascriptErrorCode::DecimalMissingLeadingZero);
+                        consume_digits();
+                        finalize_number();
                     }
                 } else {
                     add_token(TokenType::Dot);
                 }
                 break;
-            }
-
             case '/':
                 if (match('/')) {
                     while (peek() != '\n' && !is_at_end()) advance();
                 } else {
                     add_token(TokenType::Slash);
                 }
-                break;
-
-            case '#': add_token(TokenType::Hash);
-                break;
-
-            case '@': add_token(TokenType::At);
-                break;
-            case '=': add_token(match('=') ? TokenType::Equals : TokenType::Assign);
-                break;
-            case '!': if (match('=')) add_token(TokenType::NotEquals);
-                break;
-            case '<': add_token(match('=') ? TokenType::LessEqual : TokenType::Less);
-                break;
-            case '>': add_token(match('=') ? TokenType::GreaterEqual : TokenType::Greater);
                 break;
 
             case ' ':
@@ -180,10 +181,9 @@ namespace valuascript::compiler {
                 line_++;
                 column_current_ = 1;
                 break;
-
-            case '"': scan_string();
+            case '"':
+                scan_string();
                 break;
-
             default:
                 if (std::isdigit(c)) {
                     scan_number();

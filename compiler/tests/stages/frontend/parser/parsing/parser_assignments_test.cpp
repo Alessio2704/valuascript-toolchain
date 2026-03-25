@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+
+#include <utility>
 #include "../ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
@@ -79,6 +81,18 @@ struct AssignmentSadParam {
     std::string test_id;
     std::string source_code;
     ValuascriptErrorCode expected_error;
+    ValuascriptErrorCategory expected_error_category;
+
+    AssignmentSadParam(std::string test_id,
+                       std::string source_code,
+                       ValuascriptErrorCode expected_error,
+                       ValuascriptErrorCategory expected_error_category =
+                               ValuascriptErrorCategory::Syntax) : test_id(std::move(test_id)),
+                                                                     source_code(std::move(source_code)),
+                                                                     expected_error(expected_error),
+                                                                     expected_error_category(
+                                                                         expected_error_category) {
+    };
 };
 
 class AssignmentSadPathTest : public test::AstBaseTest,
@@ -92,7 +106,7 @@ TEST_P(AssignmentSadPathTest, ThrowsCorrectSyntaxError) {
         parse_code(param.source_code);
         FAIL() << "Parser should have thrown an exception for test: " << param.test_id;
     } catch (const ValuaScriptException &e) {
-        EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
+        EXPECT_EQ(e.get_category(), param.expected_error_category)
             << "Category mismatch on test: " << param.test_id;
         EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_id;
@@ -103,24 +117,34 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     AssignmentSadPathTest,
     testing::Values(
+        AssignmentSadParam{"invalid_character_1", "let a! = 1", ValuascriptErrorCode::InvalidCharacter,
+        ValuascriptErrorCategory::Lexical},
+        AssignmentSadParam{"invalid_character_2", "let a ! = 1", ValuascriptErrorCode::InvalidCharacter,
+        ValuascriptErrorCategory::Lexical},
         AssignmentSadParam{"missing_var_name", "let = 1", ValuascriptErrorCode::InvalidIdentifier},
         AssignmentSadParam{"missing_type_after_colon", "let a: = 1", ValuascriptErrorCode::MissingTypeAnnotation},
         AssignmentSadParam{"missing_type_after_colon_2", "let a: integer, b:  = test()", ValuascriptErrorCode::
         MissingTypeAnnotation},
         AssignmentSadParam{"invalid_cname_for_var_name_1", "let 12 = 1", ValuascriptErrorCode::InvalidIdentifier},
-        AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ValuascriptErrorCode::InvalidIdentifier},
-        AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ValuascriptErrorCode::ExpectedCommaInMultiAssignment},
-        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ValuascriptErrorCode::MissingValueAfterEquals}
+        AssignmentSadParam{"missing_multi_assignment_second_var", "let x, = some_func()", ValuascriptErrorCode::
+        InvalidIdentifier},
+        AssignmentSadParam{"missing_multi_assignment_comma", "let x y = some_func()", ValuascriptErrorCode::
+        ExpectedCommaInMultiAssignment},
+        AssignmentSadParam{"missing_value_after_eq_multi_assignment", "let x, y = ", ValuascriptErrorCode::
+        MissingValueAfterEquals}
         ,
-        AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
+        AssignmentSadParam{"missing_property_on_identifier", "let a = model.", ValuascriptErrorCode::
+        ExpectedPropertyName},
         AssignmentSadParam{"missing_operator_1", "let a = a + b c", ValuascriptErrorCode::MissingOperator},
-        AssignmentSadParam{"missing_operator_2", "let a = a + b (1 + 2)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        AssignmentSadParam{"missing_operator_2", "let a = a + b (1 + 2)", ValuascriptErrorCode::
+        MissingOperatorOrArgumentName},
         AssignmentSadParam{"missing_operator_3", "let a = a + b model.a", ValuascriptErrorCode::MissingOperator},
         AssignmentSadParam{"missing_operator_4", "let a = a + b vec[0]", ValuascriptErrorCode::MissingOperator},
         AssignmentSadParam{"missing_operator_5", "let a = a + b {}", ValuascriptErrorCode::MissingOperator},
         AssignmentSadParam{"missing_operator_6", "let a = a  b[]", ValuascriptErrorCode::MissingOperator},
         AssignmentSadParam{"missing_operator_6_a", "let a = a - b[]", ValuascriptErrorCode::EmptyBracketAccess},
-        AssignmentSadParam{"missing_operator_7", "let a = a + b (1, 2)", ValuascriptErrorCode::MissingOperatorOrArgumentName},
+        AssignmentSadParam{"missing_operator_7", "let a = a + b (1, 2)", ValuascriptErrorCode::
+        MissingOperatorOrArgumentName},
         AssignmentSadParam{"missing_modifier_name", "@ let a = model", ValuascriptErrorCode::ExpectedModifierName},
         AssignmentSadParam{"chaining_not_allowed_for_comparison_1", "let x = a > b > c", ValuascriptErrorCode::
         ChainingNotAllowedForComparisonOperations},

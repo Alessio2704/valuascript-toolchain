@@ -12,8 +12,9 @@ enum class TargetNodeType { Assignment, Function, Struct, Enum };
 namespace valuascript::compiler::test {
     class AstBaseTest : public testing::Test {
     protected:
-        std::shared_ptr<Program> parse_code(const std::string &code) {
+        std::shared_ptr<Program> parse_code(const std::string &code, const bool fail_fast = true) {
             auto context = std::make_shared<CompilerContext>();
+            context->settings.fail_fast = fail_fast;
             LexerStage lexer;
             auto lexer_result = lexer.run(*context, {
                                               {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
