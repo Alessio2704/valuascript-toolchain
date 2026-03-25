@@ -33,7 +33,7 @@ namespace valuascript::compiler {
                 return is_id_like && cursor_.peek(1).type == TokenType::Colon;
             },
             [this, key_err, colon_err]() {
-                Token key_token = cursor_.consume(TokenType::Identifier, key_err);
+                Token key_token = consume_identifier(key_err);
                 cursor_.consume(TokenType::Colon, colon_err);
                 auto val = parse_expression();
 

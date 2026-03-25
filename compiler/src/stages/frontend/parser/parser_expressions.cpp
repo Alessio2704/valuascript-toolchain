@@ -62,17 +62,19 @@ namespace valuascript::compiler {
         const SourceSpan target_span = target->span;
 
         if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
-            const TokenType p0 = cursor_.peek().type;
+            const Token &p0 = cursor_.peek();
             const TokenType p1 = cursor_.peek(1).type;
 
-            if (p0 == TokenType::Identifier) {
+            bool is_id_like = p0.type == TokenType::Identifier || acts_like_identifier(p0, p1);
+
+            if (is_id_like) {
                 if (p1 != TokenType::Colon && is_binary_operator(p1)) {
                     cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
                 }
             } else {
-                if (is_expression_start(p0)) {
+                if (is_expression_start(p0.type)) {
                     cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
-                } else {
+                } else if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)) {
                     cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
                 }
             }
