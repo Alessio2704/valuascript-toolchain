@@ -78,6 +78,7 @@ namespace valuascript::compiler {
         MissingArgumentNameInFunctionCall,
         MissingCommaSeparatorForArgumentsInFunctionCall,
         TrailingCommaInFunctionCall,
+        TrailingCommaInModifier,
         ExpectedRightParenAfterArguments,
         MissingOperatorOrExpectedColonOrBracketInTensor,
         UnexpectedCommaInBracketAccess,

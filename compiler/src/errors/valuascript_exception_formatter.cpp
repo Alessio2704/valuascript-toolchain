@@ -141,6 +141,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Missing comma ',' between function arguments.";
             case ValuascriptErrorCode::TrailingCommaInFunctionCall:
                 return "Syntax Error: Trailing comma in function call arguments.";
+            case ValuascriptErrorCode::TrailingCommaInModifier:
+                return "Syntax Error: Trailing comma in modifier arguments.";
             case ValuascriptErrorCode::ExpectedRightParenAfterArguments:
                 return "Expected ')' after arguments.";
             case ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor:

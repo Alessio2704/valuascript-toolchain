@@ -71,7 +71,8 @@ namespace valuascript::compiler {
                     TokenType::RightParen,
                     ValuascriptErrorCode::MissingArgumentNameInModifier,
                     ValuascriptErrorCode::MissingColonAfterArgument,
-                    ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier);
+                    ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier,
+                    ValuascriptErrorCode::TrailingCommaInModifier);
                 cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs);
             }
 
@@ -168,6 +169,11 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
             {},
             [&]() {
+                auto mods = parse_modifiers();
+                if (!mods.empty()) {
+                    cursor_.report_error_no_panic(cursor_.previous(),
+                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                }
                 const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
                 return FunctionParameter{param_name.lexeme, parse_type_annotation()};
