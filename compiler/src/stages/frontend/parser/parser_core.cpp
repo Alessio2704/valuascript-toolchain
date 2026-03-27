@@ -65,6 +65,38 @@ namespace valuascript::compiler {
         }
     }
 
+    void Parser::synchronize_to_closer(TokenType closing_token) {
+        int internal_depth = 0;
+        while (!cursor_.is_at_end()) {
+            const Token &tok = cursor_.peek();
+
+            if (internal_depth == 0) {
+                if (tok.type == closing_token) {
+                    break;
+                }
+
+                if (is_top_level_token(tok.type)) {
+                    break;
+                }
+            }
+
+            if (tok.type == TokenType::LeftParen ||
+                tok.type == TokenType::LeftBracket ||
+                tok.type == TokenType::LeftBrace ||
+                tok.type == TokenType::Less) {
+                internal_depth++;
+                } else if (tok.type == TokenType::RightParen ||
+                           tok.type == TokenType::RightBracket ||
+                           tok.type == TokenType::RightBrace ||
+                           tok.type == TokenType::Greater) {
+                    internal_depth--;
+                           }
+
+            cursor_.advance();
+            if (internal_depth < 0) internal_depth = 0;
+        }
+    }
+
     void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
             if (is_top_level_token(cursor_.peek().type)) {

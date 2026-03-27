@@ -91,7 +91,7 @@ namespace valuascript::compiler {
         ExpectedRightParenAfterTupleElements,
         MissingOperatorInsideGrouping,
         ExpectedRightParenAfterExpression,
-        UnmatchedBracketAfterVectorElements,
+        UnmatchedBracketAfterTensorElements,
         ExpectedDictionaryKey,
         ExpectedColonAfterDictionaryKey,
         ExpectedCommaSeparatorInDictionaryLiteral,

@@ -90,6 +90,8 @@ namespace valuascript::compiler {
 
         void synchronize();
 
+        void synchronize_to_closer(TokenType closing_token);
+
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
             TokenType closing_token,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
@@ -154,39 +156,29 @@ namespace valuascript::compiler {
 
                     while (!cursor_.is_at_end()) {
                         const Token &tok = cursor_.peek();
-                        const Token &next = cursor_.peek(1);
 
                         if (internal_depth <= 0) {
                             if (tok.type == TokenType::Comma) break;
-
-                            if (tok.type == closing_token) {
-                                bool likely_nested = false;
-
-                                if (next.type == closing_token) likely_nested = true;
-                                if (is_binary_operator(next.type)) likely_nested = true;
-                                if (next.type == TokenType::Dot) likely_nested = true;
-                                if (next.type == TokenType::LeftBracket) likely_nested = true;
-
-                                if (!likely_nested) break;
-                            }
-
-                            if (is_hard_stop(tok, next.type)) break;
+                            if (tok.type == closing_token) break;
+                            if (is_hard_stop(tok, cursor_.peek(1).type)) break;
                         }
 
                         if (tok.type == TokenType::LeftParen ||
                             tok.type == TokenType::LeftBracket ||
-                            tok.type == TokenType::LeftBrace) {
+                            tok.type == TokenType::LeftBrace ||
+                            tok.type == TokenType::Less) {
                             internal_depth++;
                         } else if (tok.type == TokenType::RightParen ||
                                    tok.type == TokenType::RightBracket ||
-                                   tok.type == TokenType::RightBrace) {
+                                   tok.type == TokenType::RightBrace ||
+                                   tok.type == TokenType::Greater) {
                             internal_depth--;
                         }
 
                         cursor_.advance();
-
                         if (internal_depth < 0) internal_depth = 0;
                     }
+
                     if (cursor_.check(TokenType::Comma)) {
                         cursor_.advance();
                     }

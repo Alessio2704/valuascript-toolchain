@@ -167,7 +167,7 @@ namespace valuascript::compiler {
                 return "Syntax Error: Missing operator between expressions inside grouping.";
             case ValuascriptErrorCode::ExpectedRightParenAfterExpression:
                 return "Expected ')' after expression.";
-            case ValuascriptErrorCode::UnmatchedBracketAfterVectorElements:
+            case ValuascriptErrorCode::UnmatchedBracketAfterTensorElements:
                 return "Expected ']' after vector elements.";
             case ValuascriptErrorCode::ExpectedDictionaryKey:
                 return "Expected key in dictionary.";

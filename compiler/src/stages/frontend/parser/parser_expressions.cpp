@@ -100,50 +100,58 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
 
-        auto parse_bound = [&]() -> std::unique_ptr<Expression> {
-            if (cursor_.check(TokenType::Colon) || cursor_.check(TokenType::RightBracket)) {
-                return nullptr;
-            }
-
-            auto expr = parse_expression();
-
-            if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(),
-                                         ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
-                } else if (cursor_.check(TokenType::Comma)) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedCommaInBracketAccess);
+        try {
+            auto parse_bound = [&]() -> std::unique_ptr<Expression> {
+                if (cursor_.check(TokenType::Colon) || cursor_.check(TokenType::RightBracket)) {
+                    return nullptr;
                 }
+
+                auto expr = parse_expression();
+
+                if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
+                    if (is_expression_start(cursor_.peek().type)) {
+                        cursor_.report_error(cursor_.peek(),
+                                             ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
+                    } else if (cursor_.check(TokenType::Comma)) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedCommaInBracketAccess);
+                    }
+                }
+
+                return expr;
+            };
+
+            std::unique_ptr<Expression> index_expr = parse_bound();
+
+            if (cursor_.match({TokenType::Colon})) {
+                std::unique_ptr<Expression> end_expr = parse_bound();
+                const SourceSpan colon_span = index_expr ? index_expr->span : target_span;
+                const SourceSpan slice_end_span = end_expr
+                                                      ? end_expr->span
+                                                      : cursor_.make_span(cursor_.previous(), cursor_.previous());
+
+                index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
+                                                                std::move(end_expr));
+
+                index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
+            } else if (!index_expr) {
+                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::EmptyBracketAccess);
             }
 
-            return expr;
-        };
+            const Token &end_token = cursor_.consume(TokenType::RightBracket,
+                                                     ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex);
 
-        std::unique_ptr<Expression> index_expr = parse_bound();
+            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
 
-        if (cursor_.match({TokenType::Colon})) {
-            std::unique_ptr<Expression> end_expr = parse_bound();
-            const SourceSpan colon_span = index_expr ? index_expr->span : target_span;
-            const SourceSpan slice_end_span = end_expr
-                                                  ? end_expr->span
-                                                  : cursor_.make_span(cursor_.previous(), cursor_.previous());
+            bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
 
-            index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
-                                                            std::move(end_expr));
-
-            index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
-        } else if (!index_expr) {
-            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::EmptyBracketAccess);
+            return bracket_access;
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightBracket);
+            if (cursor_.check(TokenType::RightBracket)) {
+                cursor_.advance();
+            }
+            throw;
         }
-
-        const Token &end_token = cursor_.consume(TokenType::RightBracket,
-                                                 ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex);
-
-        auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
-
-        bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-
-        return bracket_access;
     }
 
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
@@ -221,38 +229,46 @@ namespace valuascript::compiler {
             return node;
         }
 
-        auto first_expr = parse_expression();
+        try {
+            auto first_expr = parse_expression();
 
-        if (cursor_.match({TokenType::Comma})) {
-            if (cursor_.check(TokenType::RightParen)) {
-                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::SingleElementTuplesNotAllowed);
+            if (cursor_.match({TokenType::Comma})) {
+                if (cursor_.check(TokenType::RightParen)) {
+                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::SingleElementTuplesNotAllowed);
+                }
+
+                std::vector<std::unique_ptr<Expression> > elements;
+                elements.push_back(std::move(first_expr));
+                auto remaining_elements = parse_expression_list(TokenType::RightParen,
+                                                                ValuascriptErrorCode::TrailingCommaInTuple);
+
+                elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
+                                std::make_move_iterator(remaining_elements.end()));
+
+                const Token &end_token = cursor_.consume(TokenType::RightParen,
+                                                         ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
+
+                auto node = std::make_unique<TupleLiteral>(std::move(elements));
+                node->span = cursor_.make_span(start_token, end_token);
+                return node;
             }
 
-            std::vector<std::unique_ptr<Expression> > elements;
-            elements.push_back(std::move(first_expr));
-            auto remaining_elements = parse_expression_list(TokenType::RightParen,
-                                                            ValuascriptErrorCode::TrailingCommaInTuple);
-
-            elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
-                            std::make_move_iterator(remaining_elements.end()));
+            if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+            }
 
             const Token &end_token = cursor_.consume(TokenType::RightParen,
-                                                     ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
+                                                     ValuascriptErrorCode::ExpectedRightParenAfterExpression);
 
-            auto node = std::make_unique<TupleLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            first_expr->span = cursor_.make_span(start_token, end_token);
+            return first_expr;
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightParen);
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.advance();
+            }
+            throw;
         }
-
-        if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
-        }
-
-        const Token &end_token = cursor_.consume(TokenType::RightParen,
-                                                 ValuascriptErrorCode::ExpectedRightParenAfterExpression);
-
-        first_expr->span = cursor_.make_span(start_token, end_token);
-        return first_expr;
     }
 
     std::unique_ptr<Expression> Parser::parse_tensor_literal() {
@@ -261,7 +277,7 @@ namespace valuascript::compiler {
         auto elements = parse_expression_list(TokenType::RightBracket);
 
         const Token &end_token = cursor_.consume(TokenType::RightBracket,
-                                                 ValuascriptErrorCode::UnmatchedBracketAfterVectorElements);
+                                                 ValuascriptErrorCode::UnmatchedBracketAfterTensorElements);
 
         auto node = std::make_unique<TensorLiteral>(std::move(elements));
 
@@ -314,70 +330,88 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterSwitch);
 
-        auto target = parse_expression();
+        std::unique_ptr<Expression> target = nullptr;
 
-        cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget);
+        try {
+            target = parse_expression();
+            cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget);
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightParen);
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.advance();
+            }
+            throw;
+        }
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody);
 
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case = nullptr;
 
-        auto parse_branch_result = [&]() -> std::unique_ptr<Expression> {
-            cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier);
+        try {
+            auto parse_branch_result = [&]() -> std::unique_ptr<Expression> {
+                cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier);
 
-            auto expr = parse_expression();
+                auto expr = parse_expression();
 
-            if (!cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) && !cursor_.
-                check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-                if (is_expression_start(cursor_.peek().type)) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInSwitchCaseResult);
-                } else {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
-                }
-            }
-            return expr;
-        };
-
-        while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-            if (cursor_.match({TokenType::Case})) {
-                std::vector<std::string> case_identifiers;
-
-                do {
-                    Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
-
-                    case_identifiers.push_back(id_token.lexeme);
-
-                    if (cursor_.match({TokenType::Comma})) {
-                    } else if (cursor_.check(TokenType::Identifier)) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
+                if (!cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) && !cursor_.
+                    check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+                    if (is_expression_start(cursor_.peek().type)) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInSwitchCaseResult);
                     } else {
-                        break;
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
                     }
-                } while (true);
-
-                auto result_expr = parse_branch_result();
-
-                cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
-            } else if (cursor_.match({TokenType::Default})) {
-                if (default_case != nullptr) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MultipleDefaultCasesInSwitch);
                 }
+                return expr;
+            };
 
-                default_case = parse_branch_result();
-            } else {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
+            while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+                if (cursor_.match({TokenType::Case})) {
+                    std::vector<std::string> case_identifiers;
+
+                    do {
+                        Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
+
+                        case_identifiers.push_back(id_token.lexeme);
+
+                        if (cursor_.match({TokenType::Comma})) {
+                        } else if (cursor_.check(TokenType::Identifier)) {
+                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
+                        } else {
+                            break;
+                        }
+                    } while (true);
+
+                    auto result_expr = parse_branch_result();
+
+                    cases.emplace_back(std::move(case_identifiers), std::move(result_expr));
+                } else if (cursor_.match({TokenType::Default})) {
+                    if (default_case != nullptr) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MultipleDefaultCasesInSwitch);
+                    }
+
+                    default_case = parse_branch_result();
+                } else {
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
+                }
             }
+
+            const Token &end_token = cursor_.consume(TokenType::RightBrace,
+                                                     ValuascriptErrorCode::ExpectedRightBraceAfterSwitchBody);
+
+            auto switch_expr = std::make_unique<SwitchExpression>(std::move(target), std::move(cases),
+                                                                  std::move(default_case));
+
+            switch_expr->span = cursor_.make_span(start_token, end_token);
+
+            return switch_expr;
+
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightBrace);
+            if (cursor_.check(TokenType::RightBrace)) {
+                cursor_.advance();
+            }
+            throw;
         }
-
-        const Token &end_token = cursor_.consume(TokenType::RightBrace,
-                                                 ValuascriptErrorCode::ExpectedRightBraceAfterSwitchBody);
-
-        auto switch_expr = std::make_unique<SwitchExpression>(std::move(target), std::move(cases),
-                                                              std::move(default_case));
-
-        switch_expr->span = cursor_.make_span(start_token, end_token);
-
-        return switch_expr;
     }
 }

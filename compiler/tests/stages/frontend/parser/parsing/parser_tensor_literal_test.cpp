@@ -76,8 +76,8 @@ INSTANTIATE_TEST_SUITE_P(
     ParserStageTest,
     TensorLiteralSadPathTest,
     testing::Values(
-    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
-    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
+    TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", ValuascriptErrorCode::UnmatchedBracketAfterTensorElements},
+    TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", ValuascriptErrorCode::UnmatchedBracketAfterTensorElements},
     TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", ValuascriptErrorCode::UnexpectedCommaInBracketAccess},
     TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", ValuascriptErrorCode::UnexpectedCommaInBracketAccess}
     ),

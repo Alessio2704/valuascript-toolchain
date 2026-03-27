@@ -87,7 +87,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let valid_4 = 400\n",
         {
         {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 1, 17},
-        {ValuascriptErrorCode::UnmatchedBracketAfterVectorElements, 4, 17},
+        {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 4, 17},
         {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 23}
         }
         },

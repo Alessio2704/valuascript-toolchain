@@ -83,7 +83,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ValuascriptErrorCode::ExpectedRightParenAfterExpression},
         ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ValuascriptErrorCode::UnexpectedTopLevelToken},
-        ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ValuascriptErrorCode::UnmatchedBracketAfterVectorElements},
+        ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ValuascriptErrorCode::UnmatchedBracketAfterTensorElements},
 
         ExpressionSadParam{"cond_missing_then", "if a > b 1 else 2", ValuascriptErrorCode::MissingThenToken},
         ExpressionSadParam{"cond_missing_else", "if a > b then 1", ValuascriptErrorCode::MissingElseToken},
