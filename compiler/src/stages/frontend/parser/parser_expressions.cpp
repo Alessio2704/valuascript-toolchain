@@ -88,14 +88,22 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
             ValuascriptErrorCode::TrailingCommaInFunctionCall);
 
-        const Token &end_token = cursor_.consume(TokenType::RightParen,
-                                                 ValuascriptErrorCode::ExpectedRightParenAfterArguments);
+        try {
+            const Token &end_token = cursor_.consume(TokenType::RightParen,
+                                                     ValuascriptErrorCode::ExpectedRightParenAfterArguments);
 
-        auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
+            auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
 
-        func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
+            func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
 
-        return func_call;
+            return func_call;
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightParen);
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.advance();
+            }
+            throw;
+        }
     }
 
     std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
@@ -259,34 +267,81 @@ namespace valuascript::compiler {
             return node;
         }
 
-        try {
-            auto first_expr = parse_expression();
+        std::unique_ptr<Expression> first_expr = nullptr;
+        bool first_expr_failed = false;
 
-            if (cursor_.match({TokenType::Comma})) {
-                if (cursor_.check(TokenType::RightParen)) {
-                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::SingleElementTuplesNotAllowed);
+        try {
+            first_expr = parse_expression();
+        } catch (const ParseSyncException &) {
+            first_expr_failed = true;
+
+            int internal_depth = 0;
+            while (!cursor_.is_at_end()) {
+                const Token &tok = cursor_.peek();
+                TokenType next = cursor_.peek(1).type;
+
+                if (internal_depth == 0) {
+                    if (tok.type == TokenType::Comma || tok.type == TokenType::RightParen) break;
+                    if (is_grouping_closer(tok.type)) {
+                        cursor_.advance();
+                        break;
+                    }
+                    if (is_statement_start(tok, next)) break;
                 }
 
-                std::vector<std::unique_ptr<Expression> > elements;
+                if (is_grouping_opener(tok.type)) internal_depth++;
+                else if (is_grouping_closer(tok.type)) internal_depth--;
+
+                cursor_.advance();
+                if (internal_depth < 0) internal_depth = 0;
+            }
+        }
+
+        if (cursor_.match({TokenType::Comma})) {
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.report_error_no_panic(cursor_.previous(), ValuascriptErrorCode::SingleElementTuplesNotAllowed);
+            }
+
+            std::vector<std::unique_ptr<Expression> > elements;
+            if (first_expr) {
                 elements.push_back(std::move(first_expr));
-                auto remaining_elements = parse_expression_list(TokenType::RightParen,
-                                                                ValuascriptErrorCode::TrailingCommaInTuple);
+            }
 
-                elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
-                                std::make_move_iterator(remaining_elements.end()));
+            auto remaining_elements = parse_expression_list(TokenType::RightParen,
+                                                            ValuascriptErrorCode::TrailingCommaInTuple);
 
+            elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
+                            std::make_move_iterator(remaining_elements.end()));
+
+            try {
                 const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                          ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
 
                 auto node = std::make_unique<TupleLiteral>(std::move(elements));
                 node->span = cursor_.make_span(start_token, end_token);
                 return node;
+            } catch (const ParseSyncException &) {
+                synchronize_to_closer(TokenType::RightParen);
+                if (cursor_.check(TokenType::RightParen)) {
+                    cursor_.advance();
+                }
+                throw;
             }
+        }
 
-            if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+        if (first_expr_failed) {
+            synchronize_to_closer(TokenType::RightParen);
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.advance();
             }
+            throw ParseSyncException();
+        }
 
+        if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
+            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+        }
+
+        try {
             const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterExpression);
 
@@ -306,14 +361,21 @@ namespace valuascript::compiler {
 
         auto elements = parse_expression_list(TokenType::RightBracket);
 
-        const Token &end_token = cursor_.consume(TokenType::RightBracket,
-                                                 ValuascriptErrorCode::UnmatchedBracketAfterTensorElements);
+        try {
+            const Token &end_token = cursor_.consume(TokenType::RightBracket,
+                                                     ValuascriptErrorCode::UnmatchedBracketAfterTensorElements);
 
-        auto node = std::make_unique<TensorLiteral>(std::move(elements));
+            auto node = std::make_unique<TensorLiteral>(std::move(elements));
+            node->span = cursor_.make_span(start_token, end_token);
 
-        node->span = cursor_.make_span(start_token, end_token);
-
-        return node;
+            return node;
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightBracket);
+            if (cursor_.check(TokenType::RightBracket)) {
+                cursor_.advance();
+            }
+            throw;
+        }
     }
 
     std::unique_ptr<Expression> Parser::parse_dict_literal() {
@@ -325,13 +387,21 @@ namespace valuascript::compiler {
             ValuascriptErrorCode::ExpectedColonAfterDictionaryKey,
             ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral);
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace,
-                                                 ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
+        try {
+            const Token &end_token = cursor_.consume(TokenType::RightBrace,
+                                                     ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
 
-        auto node = std::make_unique<DictLiteral>(std::move(pairs));
-        node->span = cursor_.make_span(start_token, end_token);
+            auto node = std::make_unique<DictLiteral>(std::move(pairs));
+            node->span = cursor_.make_span(start_token, end_token);
 
-        return node;
+            return node;
+        } catch (const ParseSyncException &) {
+            synchronize_to_closer(TokenType::RightBrace);
+            if (cursor_.check(TokenType::RightBrace)) {
+                cursor_.advance();
+            }
+            throw;
+        }
     }
 
     std::unique_ptr<Expression> Parser::parse_conditional_expression() {

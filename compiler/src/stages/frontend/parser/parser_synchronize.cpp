@@ -12,7 +12,10 @@ namespace valuascript::compiler {
                 if (tok.type == closing_token) return;
 
                 if (is_grouping_closer(tok.type)) {
-                    cursor_.advance();
+                    if (next == TokenType::Comma) {
+                        cursor_.advance();
+                        return;
+                    }
                     return;
                 }
 
