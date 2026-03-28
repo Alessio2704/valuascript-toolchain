@@ -59,7 +59,7 @@ INSTANTIATE_TEST_SUITE_P(
         {ValuascriptErrorCode::MissingThenToken, 1, 19},
         {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 17},
         {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 29},
-        {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 45}
+        {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 37}
         }
         },
         ParserErrorsSynchronizationTestCase{

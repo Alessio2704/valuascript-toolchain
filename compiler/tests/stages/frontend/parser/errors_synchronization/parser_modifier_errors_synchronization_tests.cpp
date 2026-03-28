@@ -201,7 +201,18 @@ INSTANTIATE_TEST_SUITE_P(
         "@test(val: switch(x) { case A -> }) let a = 1\n"
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 34} },
-        ExpectModifierSet({ {"test", {}} })
+        [](const Program& ast) {
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_EQ(assign->modifiers.size(), 1);
+        ASSERT_EQ(assign->modifiers[0].name, "test");
+        ASSERT_EQ(assign->modifiers[0].arguments.size(), 1);
+        ASSERT_EQ(assign->modifiers[0].arguments[0].first, "val");
+        auto const switch_expr = dynamic_cast<SwitchExpression*>(assign->modifiers[0].arguments[0].second.get());
+        EXPECT_NE(switch_expr, nullptr);
+        EXPECT_EQ(switch_expr->cases.size(), 1);
+        EXPECT_EQ(switch_expr->cases[0].second.get(), nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "modifier_on_broken_struct",
@@ -443,7 +454,21 @@ INSTANTIATE_TEST_SUITE_P(
         "@test(a: switch(x) { case A -> switch(y) { case B -> } }) let a = 1\n"
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 54} },
-        ExpectModifierSet({ {"test", {}} })
+        [](const Program& ast) {
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_EQ(assign->modifiers.size(), 1);
+        ASSERT_EQ(assign->modifiers[0].name, "test");
+        ASSERT_EQ(assign->modifiers[0].arguments.size(), 1);
+        ASSERT_EQ(assign->modifiers[0].arguments[0].first, "a");
+        auto const switch_expr = dynamic_cast<SwitchExpression*>(assign->modifiers[0].arguments[0].second.get());
+        EXPECT_NE(switch_expr, nullptr);
+        EXPECT_EQ(switch_expr->cases.size(), 1);
+        auto const switch_expr_2 = dynamic_cast<SwitchExpression*>(switch_expr->cases[0].second.get());
+        EXPECT_NE(switch_expr_2, nullptr);
+        EXPECT_EQ(switch_expr_2->cases.size(), 1);
+        EXPECT_EQ(switch_expr_2->cases[0].second.get(), nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "modifiers_with_missing_commas_between_args",

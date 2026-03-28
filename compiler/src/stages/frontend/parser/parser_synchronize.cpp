@@ -35,6 +35,16 @@ namespace valuascript::compiler {
         }
     }
 
+    void Parser::synchronize_to_switch_boundary() {
+        while (!cursor_.is_at_end()) {
+            TokenType type = cursor_.peek().type;
+            if (type == TokenType::Case || type == TokenType::Default || type == TokenType::RightBrace) {
+                return;
+            }
+            cursor_.advance();
+        }
+    }
+
     void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
             if (is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {

@@ -191,7 +191,16 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = (1, switch (x) { case y -> * }, 2)\n"
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 36} },
-        ExpectTuple(2)
+        [](const Program& ast) {
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
+        EXPECT_EQ(tuple->elements.size(), 3);
+        auto const switch_expr = dynamic_cast<SwitchExpression*>(tuple->elements[1].get());
+        EXPECT_NE(switch_expr, nullptr);
+        EXPECT_EQ(switch_expr->cases.size(), 1);
+        EXPECT_EQ(switch_expr->cases[0].second.get(), nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "tuple_function_call_argument_recovery",

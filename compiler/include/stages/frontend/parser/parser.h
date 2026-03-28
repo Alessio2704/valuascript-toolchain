@@ -60,6 +60,15 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_tuple_or_grouping();
 
+        std::unique_ptr<Expression> complete_tuple(
+            std::unique_ptr<Expression> first_expr,
+            const Token &start_token);
+
+        std::unique_ptr<Expression> complete_grouping(
+            std::unique_ptr<Expression> first_expr,
+            bool first_expr_failed,
+            const Token &start_token);
+
         std::unique_ptr<Expression> parse_tensor_literal();
 
         std::unique_ptr<Expression> parse_dict_literal();
@@ -73,6 +82,20 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> parse_conditional_expression();
 
         std::unique_ptr<Expression> parse_switch_expression();
+
+        std::unique_ptr<Expression> parse_switch_target();
+
+        void parse_switch_body(
+            std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > &cases,
+            std::unique_ptr<Expression> &default_case);
+
+        std::pair<std::vector<std::string>, std::unique_ptr<Expression> > parse_switch_case();
+
+        std::unique_ptr<Expression> parse_switch_default();
+
+        std::unique_ptr<Expression> parse_switch_result();
+
+        void synchronize_to_switch_boundary();
 
         static bool is_valid_lvalue(const Expression *expr);
 

@@ -21,7 +21,7 @@ namespace valuascript::compiler {
     }
 
     void ProjectResolverStage::resolve_recursive(CompilerContext &context,
-                                                const std::string &current_file, ResolvedProjectArtifact &project) {
+                                                 const std::string &current_file, ResolvedProjectArtifact &project) {
         if (resolving_.contains(current_file)) {
             ValuaScriptException ex(
                 ValuascriptErrorCategory::Import,
@@ -78,7 +78,7 @@ namespace valuascript::compiler {
     }
 
     CompilerStageArtifact ProjectResolverStage::run(CompilerContext &context,
-                                                   const std::vector<CompilerStageArtifact> &artifacts) {
+                                                    const std::vector<CompilerStageArtifact> &artifacts) {
         auto raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );
