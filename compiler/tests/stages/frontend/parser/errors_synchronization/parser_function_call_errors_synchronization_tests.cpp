@@ -249,8 +249,12 @@ INSTANTIATE_TEST_SUITE_P(
         "reserved_keyword_as_value",
         "f(a: 1, b: struct, c: 3)\n"
         "let recovery = 1\n",
-        { {Err::InvalidExpression, 1, 12} },
-        ExpectFunctionCall("f", {{"a", "1"}, {"c", "3"}})
+        { {Err::ReservedKeywordAsIdentifier, 1, 12} },
+        ExpectFunctionCall("f", {{"a", "1"}, {"b", [](const Expression* e) {
+            auto const identifier = dynamic_cast<const IdentifierAccess*>(e);
+            ASSERT_NE(identifier, nullptr);
+            ASSERT_EQ(identifier->name, "struct");
+        }}, {"c", "3"}})
         },
         ParserErrorsSynchronizationTestCase{
         "nested_invalid_expression",

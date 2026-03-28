@@ -186,8 +186,8 @@ INSTANTIATE_TEST_SUITE_P(
         "* let bad_start = 0\n",
         {
         {ValuascriptErrorCode::UnexpectedTopLevelToken, 1, 1},
-        {ValuascriptErrorCode::UnexpectedTopLevelToken, 2, 15}, // Tripped by the '\n' at the end of line 2
-        {ValuascriptErrorCode::UnexpectedTopLevelToken, 4, 34} // Tripped by the '\n' at the end of line 4
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 3, 1},
+        {ValuascriptErrorCode::UnexpectedTopLevelToken, 5, 1}
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -199,7 +199,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let wacc = get_wacc()\n"
         "enum Scenario: scalar { LOW, BASE, HIGH }\n",
         {
-        {ValuascriptErrorCode::TopLevelDeclarationInsideFunction, 6, 1}
+        {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1}
         }
         },
         ParserErrorsSynchronizationTestCase{

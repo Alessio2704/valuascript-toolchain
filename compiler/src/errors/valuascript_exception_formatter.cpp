@@ -213,8 +213,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Trailing comma.";
             case ValuascriptErrorCode::MissingCommaBetweenFields:
                 return "Syntax Error: Missing comma ',' between fields.";
-            case ValuascriptErrorCode::TopLevelDeclarationInsideFunction:
-                return "Syntax Error: Top level declaration inside function.";
+            case ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere:
+                return "Syntax Error: Top level declaration not allowed here.";
 
             // --- Import Resolver Errors ---
             case ValuascriptErrorCode::CircularImportDetected:

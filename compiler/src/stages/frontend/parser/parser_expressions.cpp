@@ -1,4 +1,5 @@
 #include "stages/frontend/parser/parser.h"
+#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_expression(const Precedence precedence) {
@@ -215,8 +216,57 @@ namespace valuascript::compiler {
             case TokenType::LeftBrace:
                 cursor_.advance();
                 return parse_dict_literal();
-            default:
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+            default: {
+                const Token &tok = cursor_.peek();
+                const Token &next = cursor_.peek(1);
+
+                bool is_stmt_start = is_top_level_token(tok.type) && !acts_like_identifier(tok, next.type);
+                bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
+
+                if (is_stmt_start) {
+                    const Token& prev = cursor_.previous();
+
+                    bool is_dangling = is_binary_operator(prev.type) ||
+                                       is_unary_operator(prev.type) ||
+                                       prev.type == TokenType::Assign ||
+                                       prev.type == TokenType::Return ||
+                                       prev.type == TokenType::Comma ||
+                                       prev.type == TokenType::Colon ||
+                                       prev.type == TokenType::Arrow ||
+                                       prev.type == TokenType::Then ||
+                                       prev.type == TokenType::Else;
+
+                    if (tok.line > prev.line && is_dangling) {
+                        cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
+                    }
+
+                    cursor_.report_error_no_panic(tok, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
+
+                    Program dummy;
+                    try {
+                        if (tok.type == TokenType::Import) {
+                            parse_import_statement();
+                        } else if (tok.type == TokenType::Hash) {
+                            parse_directive();
+                        } else {
+                            parse_top_level_declaration(&dummy);
+                        }
+                    } catch (const ParseSyncException&) {
+                    }
+
+                    throw ParseSyncException();
+                }
+
+                if (is_reserved_keyword(tok)) {
+                    cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
+                    cursor_.advance();
+                    auto node = std::make_unique<IdentifierAccess>(tok.lexeme);
+                    node->span = cursor_.make_span(tok, tok);
+                    return node;
+                }
+
+                cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
+            }
         }
     }
 
@@ -359,7 +409,8 @@ namespace valuascript::compiler {
                     if (is_expression_start(cursor_.peek().type)) {
                         cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInSwitchCaseResult);
                     } else {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
+                        cursor_.report_error(cursor_.peek(),
+                                             ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
                     }
                 }
                 return expr;
@@ -376,7 +427,8 @@ namespace valuascript::compiler {
 
                         if (cursor_.match({TokenType::Comma})) {
                         } else if (cursor_.check(TokenType::Identifier)) {
-                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
+                            cursor_.report_error(cursor_.peek(),
+                                                 ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
                         } else {
                             break;
                         }
@@ -405,7 +457,6 @@ namespace valuascript::compiler {
             switch_expr->span = cursor_.make_span(start_token, end_token);
 
             return switch_expr;
-
         } catch (const ParseSyncException &) {
             synchronize_to_closer(TokenType::RightBrace);
             if (cursor_.check(TokenType::RightBrace)) {

@@ -23,7 +23,7 @@ namespace valuascript::compiler {
                     cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                 }
 
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
         }
     }
 

@@ -27,7 +27,7 @@ TEST_P(EnumHappyTest, ParsesSuccessfully) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ValidEnumDefinitions,
+    ParserValidEnumDefinitions,
     EnumHappyTest,
     testing::Values(
         EnumHappyParam{"implicit_values", "enum OptionType: string { call, put }"},
@@ -71,7 +71,7 @@ TEST_P(EnumSadTest, ThrowsCorrectSyntaxError) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    InvalidEnumDefinitions,
+    ParserInvalidEnumDefinitions,
     EnumSadTest,
     testing::Values(
         EnumSadParam{"missing_name", "enum : string { a }", ValuascriptErrorCode::ExpectedEnumName},
@@ -81,7 +81,7 @@ INSTANTIATE_TEST_SUITE_P(
         EnumSadParam{"invalid_case_name_number", "enum Option: string { 1 = \"a\" }", ValuascriptErrorCode::ExpectedEnumCaseName},
         EnumSadParam{"invalid_case_name_string", "enum Option: string { \"call\" }", ValuascriptErrorCode::ExpectedEnumCaseName},
         EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody},
-        EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::InvalidExpression},
+        EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::ReservedKeywordAsIdentifier},
         EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ValuascriptErrorCode::
         ExpectedCommaSeparatorInEnum},
         EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::ReservedKeywordAsIdentifier},

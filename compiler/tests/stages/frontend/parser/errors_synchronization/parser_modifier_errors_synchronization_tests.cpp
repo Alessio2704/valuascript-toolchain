@@ -266,7 +266,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = 1 + @test 2\n"
         "let recovery = 1\n",
         {
-        {Err::InvalidExpression, 1, 13},
+        {Err::TopLevelDeclarationNotAllowedHere, 1, 13},
         {Err::ModifiersAttachedToInvalidDeclaration, 1, 19},
         },
         [](const Program& ast) {
@@ -450,7 +450,7 @@ INSTANTIATE_TEST_SUITE_P(
         {
         {Err::ReservedKeywordAsIdentifier, 1, 2},
         {Err::ReservedKeywordAsIdentifier, 1, 7},
-        {Err::InvalidExpression, 1, 12}
+        {Err::ReservedKeywordAsIdentifier, 1, 12}
         },
         [](const Program& ast) {
         ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -458,7 +458,10 @@ INSTANTIATE_TEST_SUITE_P(
         ASSERT_EQ(step->targets[0].first, "a");
         ASSERT_EQ(step->modifiers.size(), 1);
         ASSERT_EQ(step->modifiers[0].name, "func");
-        ASSERT_EQ(step->modifiers[0].arguments.size(), 0);
+        ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
+        ASSERT_EQ(step->modifiers[0].arguments[0].first, "let");
+        auto arg_value = dynamic_cast<IdentifierAccess*>(step->modifiers[0].arguments[0].second.get());
+        ASSERT_EQ(arg_value->name, "var");
         }
         },
         ParserErrorsSynchronizationTestCase{

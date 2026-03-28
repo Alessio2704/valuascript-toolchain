@@ -115,7 +115,7 @@ namespace valuascript::compiler {
         TrailingComma,
         TrailingCommaInGenericArgument,
         MissingCommaBetweenFields,
-        TopLevelDeclarationInsideFunction,
+        TopLevelDeclarationNotAllowedHere,
 
         // --- Import Resolver Errors ---
         CircularImportDetected,

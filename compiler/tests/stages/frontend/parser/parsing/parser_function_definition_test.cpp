@@ -113,10 +113,10 @@ INSTANTIATE_TEST_SUITE_P(
         FunctionSadParam{"invalid_statement_in_body", "func test() -> scalar { 1 + 1 }", ValuascriptErrorCode::InvalidStandaloneStatement},
         FunctionSadParam{"missing_comma_in_params", "func test(a: scalar b: decimal) -> scalar { return 1 + 1 }", ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList},
         FunctionSadParam{"missing_comma_return", "func test(a: scalar, b: decimal) -> scalar decimal { return 1 + 1 }", ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList},
-        FunctionSadParam{"top_level_declaration_in_func_1", "func test(a: s) -> s { return 1 \n let a = b()\n enum Test: s {}\n", ValuascriptErrorCode::TopLevelDeclarationInsideFunction},
-        FunctionSadParam{"top_level_declaration_in_func_2", "func test(a: s) -> s { return 1 \n let a = b()\n struct Test: s {}\n", ValuascriptErrorCode::TopLevelDeclarationInsideFunction},
-        FunctionSadParam{"top_level_declaration_in_func_3", "func test(a: s) -> s { return 1 \n let a = b()\n #dir\n", ValuascriptErrorCode::TopLevelDeclarationInsideFunction},
-        FunctionSadParam{"top_level_declaration_in_func_4", "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n", ValuascriptErrorCode::TopLevelDeclarationInsideFunction}
+        FunctionSadParam{"top_level_declaration_in_func_1", "func test(a: s) -> s { return 1 \n let a = b()\n enum Test: s {}\n", ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere},
+        FunctionSadParam{"top_level_declaration_in_func_2", "func test(a: s) -> s { return 1 \n let a = b()\n struct Test: s {}\n", ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere},
+        FunctionSadParam{"top_level_declaration_in_func_3", "func test(a: s) -> s { return 1 \n let a = b()\n #dir\n", ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere},
+        FunctionSadParam{"top_level_declaration_in_func_4", "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n", ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere}
     ),
     [](const testing::TestParamInfo<FunctionSadParam>& info) {
     return info.param.test_id;

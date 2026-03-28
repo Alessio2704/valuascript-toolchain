@@ -26,7 +26,7 @@ namespace valuascript::compiler {
             case TokenType::Struct:
             case TokenType::Func:
             case TokenType::Hash:
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationInsideFunction, true);
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
                 break;
             default:
                 if (!modifiers.empty()) {

@@ -46,7 +46,7 @@ namespace valuascript::compiler {
                         program->execution_steps.push_back(parse_expression_statement());
                         break;
                     default:
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken);
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
                 }
             } catch (const ParseSyncException &) {
                 synchronize();
@@ -65,32 +65,42 @@ namespace valuascript::compiler {
         }
     }
 
+    bool Parser::is_structural_closer(TokenType type) {
+        return type == TokenType::RightParen ||
+               type == TokenType::RightBracket ||
+               type == TokenType::RightBrace ||
+               type == TokenType::Greater ||
+               type == TokenType::Comma;
+    }
+
     void Parser::synchronize_to_closer(TokenType closing_token) {
         int internal_depth = 0;
         while (!cursor_.is_at_end()) {
             const Token &tok = cursor_.peek();
+            const TokenType next = cursor_.peek(1).type;
 
             if (internal_depth == 0) {
-                if (tok.type == closing_token) {
-                    break;
+                if (tok.type == closing_token) return;
+
+                if (tok.type == TokenType::RightParen ||
+                    tok.type == TokenType::RightBracket ||
+                    tok.type == TokenType::RightBrace) {
+                    cursor_.advance();
+                    return;
                 }
 
-                if (is_top_level_token(tok.type)) {
-                    break;
+                if (is_top_level_token(tok.type) && !acts_like_identifier(tok, next)) {
+                    return;
                 }
             }
 
-            if (tok.type == TokenType::LeftParen ||
-                tok.type == TokenType::LeftBracket ||
-                tok.type == TokenType::LeftBrace ||
-                tok.type == TokenType::Less) {
+            if (tok.type == TokenType::LeftParen || tok.type == TokenType::LeftBracket || tok.type ==
+                TokenType::LeftBrace) {
                 internal_depth++;
-                } else if (tok.type == TokenType::RightParen ||
-                           tok.type == TokenType::RightBracket ||
-                           tok.type == TokenType::RightBrace ||
-                           tok.type == TokenType::Greater) {
-                    internal_depth--;
-                           }
+            } else if (tok.type == TokenType::RightParen || tok.type == TokenType::RightBracket || tok.type ==
+                       TokenType::RightBrace) {
+                internal_depth--;
+            }
 
             cursor_.advance();
             if (internal_depth < 0) internal_depth = 0;

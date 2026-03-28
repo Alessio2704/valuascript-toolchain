@@ -90,6 +90,8 @@ namespace valuascript::compiler {
 
         void synchronize();
 
+        static bool is_structural_closer(TokenType type);
+
         void synchronize_to_closer(TokenType closing_token);
 
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
@@ -152,31 +154,17 @@ namespace valuascript::compiler {
                         }
                     }
                 } catch (const ParseSyncException &) {
-                    int internal_depth = 0;
-
                     while (!cursor_.is_at_end()) {
                         const Token &tok = cursor_.peek();
+                        const TokenType next = cursor_.peek(1).type;
 
-                        if (internal_depth <= 0) {
-                            if (tok.type == TokenType::Comma) break;
-                            if (tok.type == closing_token) break;
-                            if (is_hard_stop(tok, cursor_.peek(1).type)) break;
-                        }
+                        if (tok.type == TokenType::Comma || tok.type == closing_token) break;
 
-                        if (tok.type == TokenType::LeftParen ||
-                            tok.type == TokenType::LeftBracket ||
-                            tok.type == TokenType::LeftBrace ||
-                            tok.type == TokenType::Less) {
-                            internal_depth++;
-                        } else if (tok.type == TokenType::RightParen ||
-                                   tok.type == TokenType::RightBracket ||
-                                   tok.type == TokenType::RightBrace ||
-                                   tok.type == TokenType::Greater) {
-                            internal_depth--;
+                        if (is_top_level_token(tok.type) && !acts_like_identifier(tok, next)) {
+                            break;
                         }
 
                         cursor_.advance();
-                        if (internal_depth < 0) internal_depth = 0;
                     }
 
                     if (cursor_.check(TokenType::Comma)) {
