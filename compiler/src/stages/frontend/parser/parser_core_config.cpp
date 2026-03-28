@@ -33,6 +33,10 @@ namespace valuascript::compiler {
         }
     }
 
+    bool Parser::is_statement_start(const Token &token, TokenType next_type) {
+        return is_top_level_token(token.type) && !acts_like_identifier(token, next_type);
+    }
+
     bool Parser::acts_like_identifier(const Token& token, TokenType next_type) {
         if (!is_reserved_keyword(token)) return false;
 
@@ -62,5 +66,17 @@ namespace valuascript::compiler {
             default:
                 return false;
         }
+    }
+
+    bool Parser::is_grouping_opener(const TokenType type) {
+        return type == TokenType::LeftParen ||
+               type == TokenType::LeftBracket ||
+               type == TokenType::LeftBrace;
+    }
+
+    bool Parser::is_grouping_closer(const TokenType type) {
+        return type == TokenType::RightParen ||
+               type == TokenType::RightBracket ||
+               type == TokenType::RightBrace;
     }
 }

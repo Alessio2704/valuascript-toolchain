@@ -43,11 +43,11 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> value = nullptr;
 
         if (cursor_.match({TokenType::Assign})) {
-            if (cursor_.is_at_end() || is_top_level_token(cursor_.peek().type)) {
+            if (cursor_.is_at_end() || is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
                 cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
             }
             value = parse_expression();
-        } else if (!cursor_.is_at_end() && !is_top_level_token(cursor_.peek().type)) {
+        } else if (!cursor_.is_at_end() && !is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
             value = parse_expression();
         }
 

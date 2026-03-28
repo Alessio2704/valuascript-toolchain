@@ -84,13 +84,21 @@ namespace valuascript::compiler {
 
         static bool is_unary_operator(TokenType type);
 
+        static bool is_dangling_operator(TokenType type);
+
         void verify_statement_end() const;
 
         [[nodiscard]] static bool is_top_level_token(TokenType type);
 
+        static bool is_statement_start(const Token &token, TokenType next_type);
+
+        void consume_unexpected_statement_gracefully();
+
         void synchronize();
 
-        static bool is_structural_closer(TokenType type);
+        static bool is_grouping_opener(TokenType type);
+
+        static bool is_grouping_closer(TokenType type);
 
         void synchronize_to_closer(TokenType closing_token);
 
@@ -123,10 +131,9 @@ namespace valuascript::compiler {
             std::vector<T> elements;
 
             auto is_hard_stop = [&](const Token &token, TokenType next_type) {
-                if (acts_like_identifier(token, next_type)) return false;
+                if (is_statement_start(token, next_type)) return true;
 
                 TokenType type = token.type;
-                if (is_top_level_token(type)) return true;
                 for (TokenType stop: panic_stops) {
                     if (type == stop) return true;
                 }
@@ -160,7 +167,7 @@ namespace valuascript::compiler {
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
 
-                        if (is_top_level_token(tok.type) && !acts_like_identifier(tok, next)) {
+                        if (is_statement_start(tok, next)) {
                             break;
                         }
 

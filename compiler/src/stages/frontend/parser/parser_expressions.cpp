@@ -220,39 +220,19 @@ namespace valuascript::compiler {
                 const Token &tok = cursor_.peek();
                 const Token &next = cursor_.peek(1);
 
-                bool is_stmt_start = is_top_level_token(tok.type) && !acts_like_identifier(tok, next.type);
+                bool is_stmt_start = is_statement_start(tok, next.type);
                 bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
                 if (is_stmt_start) {
-                    const Token& prev = cursor_.previous();
+                    const Token &prev = cursor_.previous();
 
-                    bool is_dangling = is_binary_operator(prev.type) ||
-                                       is_unary_operator(prev.type) ||
-                                       prev.type == TokenType::Assign ||
-                                       prev.type == TokenType::Return ||
-                                       prev.type == TokenType::Comma ||
-                                       prev.type == TokenType::Colon ||
-                                       prev.type == TokenType::Arrow ||
-                                       prev.type == TokenType::Then ||
-                                       prev.type == TokenType::Else;
-
-                    if (tok.line > prev.line && is_dangling) {
+                    if (tok.line > prev.line && is_dangling_operator(prev.type)) {
                         cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
                     }
 
                     cursor_.report_error_no_panic(tok, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
 
-                    Program dummy;
-                    try {
-                        if (tok.type == TokenType::Import) {
-                            parse_import_statement();
-                        } else if (tok.type == TokenType::Hash) {
-                            parse_directive();
-                        } else {
-                            parse_top_level_declaration(&dummy);
-                        }
-                    } catch (const ParseSyncException&) {
-                    }
+                    consume_unexpected_statement_gracefully();
 
                     throw ParseSyncException();
                 }

@@ -68,7 +68,7 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::Assign, ValuascriptErrorCode::IncompleteAssignment);
 
-        if (cursor_.is_at_end() || is_top_level_token(cursor_.peek().type)) {
+        if (cursor_.is_at_end() || is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
             cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
         }
 

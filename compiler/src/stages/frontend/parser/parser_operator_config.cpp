@@ -69,4 +69,16 @@ namespace valuascript::compiler {
                 return false;
         }
     }
+
+    bool Parser::is_dangling_operator(const TokenType type) {
+        return is_binary_operator(type) ||
+               is_unary_operator(type) ||
+               type == TokenType::Assign ||
+               type == TokenType::Return ||
+               type == TokenType::Comma ||
+               type == TokenType::Colon ||
+               type == TokenType::Arrow ||
+               type == TokenType::Then ||
+               type == TokenType::Else;
+    }
 }
