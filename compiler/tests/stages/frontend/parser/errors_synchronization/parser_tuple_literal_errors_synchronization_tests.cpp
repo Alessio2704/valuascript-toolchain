@@ -273,7 +273,7 @@ INSTANTIATE_TEST_SUITE_P(
         ASSERT_EQ(ast.execution_steps.size(), 2);
         auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
         ASSERT_NE(assign, nullptr);
-        auto num = dynamic_cast<NumberLiteral*>(assign->value.get());
+        auto num = dynamic_cast<NumberLiteral*>(unwrap(assign->value.get()));
         ASSERT_NE(num, nullptr);
         EXPECT_EQ(num->value, "1");
         }

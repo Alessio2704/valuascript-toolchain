@@ -345,8 +345,9 @@ namespace valuascript::compiler {
             const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterExpression);
 
-            first_expr->span = cursor_.make_span(start_token, end_token);
-            return first_expr;
+            auto grouping = std::make_unique<GroupingExpression>(std::move(first_expr));
+            grouping->span = cursor_.make_span(start_token, end_token);
+            return grouping;
         } catch (const ParseSyncException &) {
             synchronize_to_closer(TokenType::RightParen);
             if (cursor_.check(TokenType::RightParen)) {

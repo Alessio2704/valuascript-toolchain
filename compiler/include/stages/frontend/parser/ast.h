@@ -92,6 +92,15 @@ namespace valuascript::compiler {
         }
     };
 
+    class GroupingExpression : public Expression {
+    public:
+        std::unique_ptr<Expression> expression;
+
+        explicit GroupingExpression(std::unique_ptr<Expression> expr)
+            : expression(std::move(expr)) {
+        }
+    };
+
     class ConditionalExpression : public Expression {
     public:
         std::unique_ptr<Expression> condition;
@@ -330,4 +339,11 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
         std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
     };
+
+    inline Expression* unwrap(Expression* expr) {
+        while (auto* grouping = dynamic_cast<GroupingExpression*>(expr)) {
+            expr = grouping->expression.get();
+        }
+        return expr;
+    }
 }

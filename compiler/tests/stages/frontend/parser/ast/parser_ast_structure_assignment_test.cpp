@@ -227,7 +227,7 @@ TEST_F(AstBaseTest, ValidatesParenthesizedExpressionsAsParameters) {
     ASSERT_NE(mult_node, nullptr);
     EXPECT_EQ(mult_node->op, TokenType::Star);
 
-    auto add_node = dynamic_cast<BinaryExpression *>(mult_node->left.get());
+    auto add_node = dynamic_cast<BinaryExpression *>(unwrap(mult_node->left.get()));
     ASSERT_NE(add_node, nullptr);
     EXPECT_EQ(add_node->op, TokenType::Plus);
 }
@@ -400,7 +400,7 @@ TEST_F(AstBaseTest, ValidatesPercentageInFunctionArgumentsAndGrouping) {
     EXPECT_EQ(root_slash->op, TokenType::Slash);
 
     // The left of the division is the grouped addition
-    auto grouped_plus = dynamic_cast<BinaryExpression *>(root_slash->left.get());
+    auto grouped_plus = dynamic_cast<BinaryExpression *>(unwrap(root_slash->left.get()));
     ASSERT_NE(grouped_plus, nullptr);
     EXPECT_EQ(grouped_plus->op, TokenType::Plus);
 

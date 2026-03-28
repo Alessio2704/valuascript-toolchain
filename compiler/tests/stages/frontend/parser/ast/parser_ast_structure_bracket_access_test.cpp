@@ -44,7 +44,7 @@ TEST_F(AstBaseTest, ValidatesParenthesizedBinaryOperationAsTarget) {
     auto access = dynamic_cast<BracketAccess*>(get_assigned_value(ast));
     ASSERT_NE(access, nullptr);
 
-    auto bin_op = dynamic_cast<BinaryExpression*>(access->target.get());
+    auto bin_op = dynamic_cast<BinaryExpression*>(unwrap(access->target.get()));
     ASSERT_NE(bin_op, nullptr) << "Target of access should be a BinaryExpression (due to parentheses)";
     EXPECT_EQ(bin_op->op, TokenType::Plus);
 

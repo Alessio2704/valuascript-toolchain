@@ -388,3 +388,16 @@ TEST_F(AstSpanTest, ValidatesDeepTypeAnnotationSpans) {
     ASSERT_NE(outer_tensor, nullptr);
     assert_span(outer_tensor->span, 1, 27, 1, 32);
 }
+
+TEST_F(AstSpanTest, ValidatesGroupingSpan) {
+    auto ast = parse_code("let a = (1 + 2) * 3");
+    auto assign_node = dynamic_cast<Assignment*>(ast->execution_steps[0].get());
+
+    auto outer_mul = dynamic_cast<BinaryExpression*>(assign_node->value.get());
+    ASSERT_NE(outer_mul, nullptr);
+    assert_span(outer_mul->span, 1, 9, 1, 20);
+
+    auto group = dynamic_cast<GroupingExpression*>(outer_mul->left.get());
+    ASSERT_NE(group, nullptr);
+    assert_span(group->span, 1, 9, 1, 16);
+}

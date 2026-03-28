@@ -64,7 +64,7 @@ TEST_F(AstBaseTest, ValidatesBooleanGrouping) {
     ASSERT_NE(and_node, nullptr);
     EXPECT_EQ(and_node->op, TokenType::And);
 
-    auto or_node = dynamic_cast<BinaryExpression*>(and_node->left.get());
+    auto or_node = dynamic_cast<BinaryExpression*>(unwrap(and_node->left.get()));
     ASSERT_NE(or_node, nullptr);
     EXPECT_EQ(or_node->op, TokenType::Or);
 }
