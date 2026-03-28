@@ -278,22 +278,12 @@ namespace valuascript::compiler {
             int internal_depth = 0;
             while (!cursor_.is_at_end()) {
                 const Token &tok = cursor_.peek();
-                TokenType next = cursor_.peek(1).type;
-
-                if (internal_depth == 0) {
-                    if (tok.type == TokenType::Comma || tok.type == TokenType::RightParen) break;
-                    if (is_grouping_closer(tok.type)) {
-                        cursor_.advance();
-                        break;
-                    }
-                    if (is_statement_start(tok, next)) break;
-                }
-
+                if (internal_depth == 0 && (tok.type == TokenType::Comma || tok.type == TokenType::RightParen)) break;
                 if (is_grouping_opener(tok.type)) internal_depth++;
                 else if (is_grouping_closer(tok.type)) internal_depth--;
 
                 cursor_.advance();
-                if (internal_depth < 0) internal_depth = 0;
+                if (internal_depth < 0) break;
             }
         }
 
@@ -303,57 +293,57 @@ namespace valuascript::compiler {
             }
 
             std::vector<std::unique_ptr<Expression> > elements;
-            if (first_expr) {
-                elements.push_back(std::move(first_expr));
-            }
+            if (first_expr) elements.push_back(std::move(first_expr));
 
             auto remaining_elements = parse_expression_list(TokenType::RightParen,
                                                             ValuascriptErrorCode::TrailingCommaInTuple);
-
             elements.insert(elements.end(), std::make_move_iterator(remaining_elements.begin()),
                             std::make_move_iterator(remaining_elements.end()));
 
             try {
                 const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                          ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
-
                 auto node = std::make_unique<TupleLiteral>(std::move(elements));
                 node->span = cursor_.make_span(start_token, end_token);
                 return node;
             } catch (const ParseSyncException &) {
                 synchronize_to_closer(TokenType::RightParen);
-                if (cursor_.check(TokenType::RightParen)) {
+
+                if (!cursor_.check(TokenType::RightParen) && is_grouping_closer(cursor_.peek().type)) {
+                    if (cursor_.peek().line == start_token.line) cursor_.advance();
+                } else if (cursor_.check(TokenType::RightParen)) {
                     cursor_.advance();
                 }
-                throw;
-            }
-        }
 
-        if (first_expr_failed) {
-            synchronize_to_closer(TokenType::RightParen);
-            if (cursor_.check(TokenType::RightParen)) {
-                cursor_.advance();
+                auto node = std::make_unique<TupleLiteral>(std::move(elements));
+                node->span = cursor_.make_span(start_token, cursor_.previous());
+                return node;
             }
-            throw ParseSyncException();
-        }
-
-        if (!cursor_.check(TokenType::RightParen) && is_expression_start(cursor_.peek().type)) {
-            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
         }
 
         try {
+            if (!first_expr_failed && !cursor_.check(TokenType::RightParen) &&
+                is_expression_start(cursor_.peek().type)) {
+                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+            }
+
             const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterExpression);
-
-            auto grouping = std::make_unique<GroupingExpression>(std::move(first_expr));
-            grouping->span = cursor_.make_span(start_token, end_token);
-            return grouping;
+            auto node = std::make_unique<GroupingExpression>(std::move(first_expr));
+            node->span = cursor_.make_span(start_token, end_token);
+            return node;
         } catch (const ParseSyncException &) {
             synchronize_to_closer(TokenType::RightParen);
-            if (cursor_.check(TokenType::RightParen)) {
+
+            if (!cursor_.check(TokenType::RightParen) && is_grouping_closer(cursor_.peek().type)) {
+                if (cursor_.peek().line == start_token.line) cursor_.advance();
+            } else if (cursor_.check(TokenType::RightParen)) {
                 cursor_.advance();
             }
-            throw;
+
+            auto node = std::make_unique<GroupingExpression>(std::move(first_expr));
+            node->span = cursor_.make_span(start_token, cursor_.previous());
+            return node;
         }
     }
 

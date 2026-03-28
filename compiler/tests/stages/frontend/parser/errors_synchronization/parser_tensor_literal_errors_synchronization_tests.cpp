@@ -160,7 +160,16 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = [ (1 + *), 2 ]\n"
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 16} },
-        ExpectTensor({ "2" })
+        [](const Program& ast) {
+        const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
+        ASSERT_EQ(tensor->elements.size(), 2);
+        auto first_elem = dynamic_cast<GroupingExpression*>(tensor->elements[0].get());
+        ASSERT_NE(first_elem, nullptr);
+        ASSERT_EQ(first_elem->expression, nullptr);
+        auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
+        ASSERT_NE(second_elem, nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "tensor_missing_bracket_before_next_stmt",
@@ -195,7 +204,16 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = [ ( 1 + 2 ], 3 ]\n"
         "let recovery = 1\n",
         { {Err::ExpectedRightParenAfterExpression, 1, 19} },
-        ExpectTensor({ "3" })
+        [](const Program& ast) {
+        const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
+        ASSERT_EQ(tensor->elements.size(), 2);
+        auto first_elem = dynamic_cast<BinaryExpression*>(unwrap(tensor->elements[0].get()));
+        ASSERT_NE(first_elem, nullptr);
+        ASSERT_EQ(first_elem->op, TokenType::Plus);
+        auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
+        ASSERT_NE(second_elem, nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "tensor_multi_line_recovery",
@@ -365,8 +383,11 @@ INSTANTIATE_TEST_SUITE_P(
         auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
         auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
         ASSERT_NE(tensor_a, nullptr);
-        EXPECT_EQ(tensor_a->elements.size(), 1);
-        auto tensor_a_dict = dynamic_cast<DictLiteral*>(tensor_a->elements[0].get());
+        EXPECT_EQ(tensor_a->elements.size(), 2);
+        auto tensor_a_grouping = dynamic_cast<GroupingExpression*>(tensor_a->elements[0].get());
+        ASSERT_NE(tensor_a_grouping, nullptr);
+        ASSERT_EQ(tensor_a_grouping->expression, nullptr);
+        auto tensor_a_dict = dynamic_cast<DictLiteral*>(tensor_a->elements[1].get());
         EXPECT_EQ(tensor_a_dict->pairs.size(), 0);
 
         auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());

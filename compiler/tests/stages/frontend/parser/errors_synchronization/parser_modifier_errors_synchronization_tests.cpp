@@ -77,7 +77,7 @@ TEST_P(ModifierParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectL
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ParserExhaustiveStressTests,
+    ModifierStressTests,
     ModifierParserSynchronizationTest,
     ::testing::Values(
         ParserErrorsSynchronizationTestCase{
@@ -380,7 +380,19 @@ INSTANTIATE_TEST_SUITE_P(
         "@test(a: 1 + (2 *)) let a = 1\n"
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 18} },
-        ExpectModifierSet({ {"test", {}} })
+        [](const Program& ast) {
+        auto const step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
+        ASSERT_EQ(step->modifiers[0].arguments[0].first, "a");
+        auto const binary_exp = dynamic_cast<BinaryExpression*>(step->modifiers[0].arguments[0].second.get());
+        ASSERT_NE(binary_exp, nullptr);
+        ASSERT_EQ(binary_exp->op, TokenType::Plus);
+
+        auto const binary_exp_left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
+        auto const binary_exp_right = dynamic_cast<GroupingExpression*>(binary_exp->right.get());
+        ASSERT_NE(binary_exp_left, nullptr);
+        ASSERT_NE(binary_exp_right, nullptr);
+        }
         },
         ParserErrorsSynchronizationTestCase{
         "modifier_arg_with_broken_tensor",

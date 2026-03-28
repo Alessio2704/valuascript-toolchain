@@ -47,9 +47,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = (1, 2 \n"
         "let recovery = 1\n",
         { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
-        [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
-        }
+        ExpectTuple(2)
         },
         ParserErrorsSynchronizationTestCase{
         "tuple_missing_multiple_closing_paren",
@@ -63,7 +61,7 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::ExpectedRightParenAfterTupleElements, 3, 14}
         },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 4);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -120,7 +118,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let recovery = 1\n",
         { {Err::InvalidExpression, 1, 10} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto grouping = dynamic_cast<GroupingExpression*>(assignment->value.get());
+        EXPECT_NE(grouping, nullptr);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -157,7 +158,11 @@ INSTANTIATE_TEST_SUITE_P(
         "let recovery = 1\n",
         { {Err::UnmatchedBracketAfterTensorElements, 1, 15} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto grouping = dynamic_cast<GroupingExpression*>(assignment->value.get());
+        EXPECT_NE(grouping, nullptr);
+        EXPECT_EQ(grouping->expression, nullptr);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -204,11 +209,11 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::ExpectedRightParenAfterTupleElements, 1, 22}
         },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 2);
         const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-        const auto assign_1_vale = dynamic_cast<NumberLiteral*>(assign_1->value.get());
-        ASSERT_NE(assign_1_vale, nullptr);
-        ASSERT_EQ(assign_1_vale->value, "1");
+        const auto assign_1_val = dynamic_cast<TupleLiteral*>(assign_1->value.get());
+        ASSERT_NE(assign_1_val, nullptr);
+        ASSERT_EQ(assign_1_val->elements.size(), 1);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -235,7 +240,10 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = (1, \n",
         { {Err::ExpectedRightParenAfterTupleElements, 1, 12} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 0);
+        EXPECT_EQ(ast.execution_steps.size(), 1);
+        const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        const auto assign_1_val = dynamic_cast<TupleLiteral*>(assign_1->value.get());
+        ASSERT_NE(assign_1_val, nullptr);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -243,7 +251,11 @@ INSTANTIATE_TEST_SUITE_P(
         "let a = (1 \n",
         { {Err::ExpectedRightParenAfterExpression, 1, 11} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 0);
+        EXPECT_EQ(ast.execution_steps.size(), 1);
+        const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        const auto assign_1_val = dynamic_cast<GroupingExpression*>(assign_1->value.get());
+        ASSERT_NE(assign_1_val, nullptr);
+        ASSERT_NE(assign_1_val->expression, nullptr);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -252,7 +264,7 @@ INSTANTIATE_TEST_SUITE_P(
         "let recovery = 1\n",
         { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 2);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -284,7 +296,15 @@ INSTANTIATE_TEST_SUITE_P(
         "let recovery = 1\n",
         { {Err::MissingOperatorInsideGrouping, 1, 16} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.execution_steps.size(), 2);
+        const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        const auto binary_exp = dynamic_cast<BinaryExpression*>(unwrap(assign_1->value.get()));
+        ASSERT_NE(binary_exp, nullptr);
+        const auto left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
+        ASSERT_NE(left, nullptr);
+        ASSERT_EQ(left->value, "1");
+        const auto right = dynamic_cast<NumberLiteral*>(binary_exp->right.get());
+        ASSERT_EQ(right->value, "2");
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -302,8 +322,19 @@ INSTANTIATE_TEST_SUITE_P(
         "let recovery = 1\n",
         { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
         [](const Program& ast) {
-        EXPECT_EQ(ast.execution_steps.size(), 1);
-        }
+        ASSERT_EQ(ast.execution_steps.size(), 2);
+        auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_NE(assign, nullptr);
+
+        auto tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
+        ASSERT_NE(tuple, nullptr);
+        ASSERT_EQ(tuple->elements.size(), 2);
+
+        auto first = dynamic_cast<NumberLiteral*>(tuple->elements[0].get());
+        ASSERT_EQ(first->value, "1");
+        auto second = dynamic_cast<IdentifierAccess*>(tuple->elements[1].get());
+        ASSERT_EQ(second->name, "x");
+        },
         },
         ParserErrorsSynchronizationTestCase{
         "tuple_broken_with_postfix_access",
@@ -368,7 +399,13 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::ExpectedRightParenAfterTupleElements, 1, 24}
         },
         [](const Program& ast) {
-        ASSERT_EQ(ast.execution_steps.size(), 0);
+        ASSERT_EQ(ast.execution_steps.size(), 1);
+        auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_NE(assign, nullptr);
+
+        auto tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
+        ASSERT_NE(tuple, nullptr);
+        ASSERT_EQ(tuple->elements.size(), 2);
         },
         }
     ),

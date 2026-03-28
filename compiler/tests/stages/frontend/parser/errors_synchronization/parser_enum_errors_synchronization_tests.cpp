@@ -226,10 +226,19 @@ INSTANTIATE_TEST_SUITE_P(
         },
         ParserErrorsSynchronizationTestCase{
         "complex_expression_with_inner_error_discards_case",
-        "enum Test : int { A = (1 + *), B }\n"
+        "enum Test : int { A = (1 + *), B = 1 }\n"
         "let a = 1\n",
         { {Err::InvalidExpression, 1, 28} },
-        ExpectEnum("Test", "int", {"B"})
+        [](const Program& ast) {
+        auto recovered_enum = ExpectRecoveredEnum(ast, "Test");
+        EXPECT_EQ(recovered_enum->cases.size(), 2);
+        EXPECT_EQ(recovered_enum->cases[0].first, "A");
+        auto first_case_value = dynamic_cast<GroupingExpression*>(recovered_enum->cases[0].second.get());
+        ASSERT_NE(first_case_value, nullptr);
+        EXPECT_EQ(recovered_enum->cases[1].first, "B");
+        auto second_case_value = dynamic_cast<NumberLiteral*>(recovered_enum->cases[1].second.get());
+        ASSERT_NE(second_case_value, nullptr);
+        },
         },
         ParserErrorsSynchronizationTestCase{
         "valid_assignments_are_captured_in_ast",
@@ -343,8 +352,8 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::InvalidIdentifier, 1, 23},
         },
         [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 0);
-            EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.enum_definitions.size(), 0);
+        EXPECT_EQ(ast.execution_steps.size(), 1);
         }
         },
         ParserErrorsSynchronizationTestCase{
@@ -369,8 +378,8 @@ INSTANTIATE_TEST_SUITE_P(
         {Err::MissingDirectiveName, 1, 21},
         },
         [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 0);
-            EXPECT_EQ(ast.execution_steps.size(), 1);
+        EXPECT_EQ(ast.enum_definitions.size(), 0);
+        EXPECT_EQ(ast.execution_steps.size(), 1);
         }
         }
     ),
