@@ -299,6 +299,119 @@ INSTANTIATE_TEST_SUITE_P(
         [](const Program& ast) {
         EXPECT_EQ(ast.execution_steps.size(), 1);
         }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "tensor_multiple_broken_statements_sequential",
+        "let a =[\n"
+        "  1,\n"
+        "  +,\n"
+        "  2\n"
+        "]\n"
+        "let b =[\n"
+        "  3,\n"
+        "  *,\n"
+        "  4,\n"
+        "  /\n"
+        "]\n"
+        "let recovery = [ 5, 6 ]\n",
+        {
+        {Err::InvalidExpression, 3, 4},
+        {Err::InvalidExpression, 8, 3},
+        {Err::InvalidExpression, 10, 3}
+        },[](const Program& ast) {
+        ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
+
+        auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        ASSERT_NE(assign_a, nullptr);
+        EXPECT_EQ(assign_a->targets[0].first, "a");
+        auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
+        ASSERT_NE(tensor_a, nullptr);
+        EXPECT_EQ(tensor_a->elements.size(), 2);
+
+        auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+        ASSERT_NE(assign_b, nullptr);
+        EXPECT_EQ(assign_b->targets[0].first, "b");
+        auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
+        ASSERT_NE(tensor_b, nullptr);
+        EXPECT_EQ(tensor_b->elements.size(), 2);
+
+        auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
+        ASSERT_NE(assign_rec, nullptr);
+        EXPECT_EQ(assign_rec->targets[0].first, "recovery");
+        auto* tensor_rec = dynamic_cast<TensorLiteral*>(assign_rec->value.get());
+        ASSERT_NE(tensor_rec, nullptr);
+        EXPECT_EQ(tensor_rec->elements.size(), 2);
+        }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "tensor_multiline_deeply_nested_failures",
+        "let a =[\n"
+        "  (1 + *),\n"
+        "  { key: * }\n"
+        "]\n"
+        "let b = [\n"
+        "[ *, 2 ],\n"
+        "  f(a: *)\n"
+        "]\n"
+        "let recovery = 100\n",
+        {
+        {Err::InvalidExpression, 2, 8},
+        {Err::InvalidExpression, 3, 10},
+        {Err::InvalidExpression, 6, 3},
+        {Err::InvalidExpression, 7, 8}
+        },[](const Program& ast) {
+        ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
+
+        auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
+        ASSERT_NE(tensor_a, nullptr);
+        EXPECT_EQ(tensor_a->elements.size(), 1);
+        auto tensor_a_dict = dynamic_cast<DictLiteral*>(tensor_a->elements[0].get());
+        EXPECT_EQ(tensor_a_dict->pairs.size(), 0);
+
+        auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+        auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
+        ASSERT_NE(tensor_b, nullptr);
+        EXPECT_EQ(tensor_b->elements.size(), 2);
+
+        auto* inner_tensor = dynamic_cast<TensorLiteral*>(tensor_b->elements[0].get());
+        ASSERT_NE(inner_tensor, nullptr) << "First element of b should be a TensorLiteral";
+        EXPECT_EQ(inner_tensor->elements.size(), 1) << "Inner tensor should have recovered element '2'";
+
+        auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
+        ASSERT_NE(assign_rec, nullptr);
+        EXPECT_EQ(assign_rec->targets[0].first, "recovery");
+        ASSERT_NE(dynamic_cast<NumberLiteral*>(assign_rec->value.get()), nullptr);
+        }
+        },
+        ParserErrorsSynchronizationTestCase{
+        "tensor_multiline_dangling_operators_hitting_newline",
+        "let a =[\n"
+        "  10 +\n"
+        "]\n"
+        "let b =[\n"
+        "  20,\n"
+        "  30 ==\n"
+        "]\n"
+        "let recovery = [ 40 ]\n",
+        {
+        {Err::InvalidExpression, 3, 1},
+        {Err::InvalidExpression, 7, 1}
+        },[](const Program& ast) {
+        ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
+
+        auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+        auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
+        EXPECT_EQ(tensor_a->elements.size(), 0);
+
+        auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+        auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
+        EXPECT_EQ(tensor_b->elements.size(), 1);
+
+        auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
+        auto* tensor_rec = dynamic_cast<TensorLiteral*>(assign_rec->value.get());
+        EXPECT_EQ(tensor_rec->elements.size(), 1);
+        }
         }
     ), [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
     return info.param.test_name;
