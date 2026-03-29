@@ -23,13 +23,13 @@ namespace valuascript::compiler::test {
             auto *dict = dynamic_cast<DictLiteral *>(assign->value.get());
             ASSERT_NE(dict, nullptr) << "Assignment value is not a DictLiteral.";
 
-            ASSERT_EQ(dict->pairs.size(), expected.size()) << "Dictionary pair count mismatch!";
+            ASSERT_EQ(dict->elements.size(), expected.size()) << "Dictionary pair count mismatch!";
 
             for (size_t i = 0; i < expected.size(); ++i) {
-                EXPECT_EQ(dict->pairs[i].first, expected[i].key) << "Dict key mismatch at index " << i;
+                EXPECT_EQ(dict->elements[i].key, expected[i].key) << "Dict key mismatch at index " << i;
 
                 if (expected[i].expected_number_value.has_value()) {
-                    auto *num = dynamic_cast<NumberLiteral *>(dict->pairs[i].second.get());
+                    auto *num = dynamic_cast<NumberLiteral *>(dict->elements[i].value.get());
                     ASSERT_NE(num, nullptr) << "Expected number literal for key: " << expected[i].key;
                     EXPECT_EQ(num->value, *expected[i].expected_number_value)
                         << "Value mismatch for key: " << expected[i].key;
@@ -163,7 +163,7 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
             ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->pairs.size(), 0);
+            ASSERT_EQ(dict->elements.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -247,11 +247,11 @@ namespace valuascript::compiler::test {
             auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assignment->value.get());
             ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->pairs.size(), 2);
-            ASSERT_EQ(dict->pairs[0].first, "x");
-            auto binary_expr = dynamic_cast<BinaryExpression*>(dict->pairs[0].second.get());
+            ASSERT_EQ(dict->elements.size(), 2);
+            ASSERT_EQ(dict->elements[0].key, "x");
+            auto binary_expr = dynamic_cast<BinaryExpression*>(dict->elements[0].value.get());
             ASSERT_NE(binary_expr, nullptr);
-            ASSERT_EQ(dict->pairs[1].first, "y");
+            ASSERT_EQ(dict->elements[1].key, "y");
 
             }
             },
@@ -276,7 +276,7 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
             ASSERT_NE(dict, nullptr);
-            EXPECT_EQ(dict->pairs.size(), 0);
+            EXPECT_EQ(dict->elements.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{

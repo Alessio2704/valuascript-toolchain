@@ -4,7 +4,7 @@
 namespace valuascript::compiler {
     void Parser::parse_statement_or_declaration(ParseContext ctx, Program *program,
                                                 std::vector<std::unique_ptr<Statement> > &block) {
-        std::vector<Modifier> modifiers = parse_modifiers();
+        std::vector<Modifier> modifiers = parse_modifiers(true);
 
         TokenType type = cursor_.peek().type;
 

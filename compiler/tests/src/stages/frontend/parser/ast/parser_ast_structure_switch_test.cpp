@@ -176,16 +176,16 @@ namespace valuascript::compiler::test {
         // Verify Case Result is a DictLiteral
         auto up_result = dynamic_cast<DictLiteral *>(switch_expr->cases[0].second.get());
         ASSERT_NE(up_result, nullptr);
-        ASSERT_EQ(up_result->pairs.size(), 1);
-        EXPECT_EQ(up_result->pairs[0].first, "score");
-        EXPECT_EQ(dynamic_cast<NumberLiteral*>(up_result->pairs[0].second.get())->value, "100");
+        ASSERT_EQ(up_result->elements.size(), 1);
+        EXPECT_EQ(up_result->elements[0].key, "score");
+        EXPECT_EQ(dynamic_cast<NumberLiteral*>(up_result->elements[0].value.get())->value, "100");
 
         // Verify Default is a DictLiteral
         auto default_result = dynamic_cast<DictLiteral *>(switch_expr->default_case.get());
         ASSERT_NE(default_result, nullptr);
-        ASSERT_EQ(default_result->pairs.size(), 1);
-        EXPECT_EQ(default_result->pairs[0].first, "score");
-        EXPECT_EQ(dynamic_cast<NumberLiteral*>(default_result->pairs[0].second.get())->value, "0");
+        ASSERT_EQ(default_result->elements.size(), 1);
+        EXPECT_EQ(default_result->elements[0].key, "score");
+        EXPECT_EQ(dynamic_cast<NumberLiteral*>(default_result->elements[0].value.get())->value, "0");
     }
 
     TEST_F(AstBaseTest, ValidatesPostfixChainingOnSwitch) {

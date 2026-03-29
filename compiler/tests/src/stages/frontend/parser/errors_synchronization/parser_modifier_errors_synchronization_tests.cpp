@@ -192,9 +192,9 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
             ASSERT_EQ(step->modifiers[0].arguments[0].first, "config");
             auto const dict_arg = dynamic_cast<DictLiteral*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_EQ(dict_arg->pairs.size(), 1);
-            ASSERT_EQ(dict_arg->pairs[0].first, "a");
-            auto const num_literal = dynamic_cast<NumberLiteral*>(dict_arg->pairs[0].second.get());
+            ASSERT_EQ(dict_arg->elements.size(), 1);
+            ASSERT_EQ(dict_arg->elements[0].key, "a");
+            auto const num_literal = dynamic_cast<NumberLiteral*>(dict_arg->elements[0].value.get());
             ASSERT_EQ(num_literal->value, "1");
             }
             },
@@ -577,6 +577,186 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             {},
             ExpectModifierSet({ {"test", {{"a", "1"}}} })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_modifier_missing_name",
+            "let obj = { @ 1: 1, other: 2 }\nlet recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 15} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 1);
+            EXPECT_EQ(dict->elements[0].key, "other");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_modifier_broken_args_recovers_to_next_key",
+            "let obj = { @test(a: 1 + *) k: 1, other: 2 }\nlet recovery = 1\n",
+            { {Err::InvalidExpression, 1, 26} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 2);
+            EXPECT_EQ(dict->elements[0].key, "k");
+            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
+            EXPECT_EQ(dict->elements[0].modifiers[0].name, "test");
+            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 0);
+            EXPECT_EQ(dict->elements[1].key, "other");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_modifier_missing_comma_in_args",
+            "let obj = { @test(a: 1 b: 2) k: 1 }\nlet recovery = 1\n",
+            { {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 1);
+            EXPECT_EQ(dict->elements[0].key, "k");
+            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
+            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 2);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_modifier_unmatched_paren",
+            "let obj = { @test(a: 1 key: 1 }\nlet recovery = 1\n",
+            {
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24},
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 31}
+            },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            EXPECT_EQ(dict->elements.size(), 0);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "modifier_on_value_instead_of_dict_key",
+            "let obj = { k: @modifier 1 }\nlet recovery = 1\n",
+            {
+            {Err::TopLevelDeclarationNotAllowedHere, 1, 16},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 26},
+            },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            EXPECT_EQ(dict->elements.size(), 1);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_multiple_modifiers_one_missing_name",
+            "let obj = { @ok @ 1: 1, other: 2 }\nlet recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 19} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 1);
+            EXPECT_EQ(dict->elements[0].key, "other");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "enum_case_modifier_missing_colon_in_args",
+            "enum E: int { @modifier(a 1) A = 1, B = 2 }\nlet recovery = 1\n",
+            { {Err::MissingColonAfterArgument, 1, 27} },
+            [](const Program& ast) {
+            auto enum_def = ast.enum_definitions[0].get();
+            ASSERT_EQ(enum_def->cases.size(), 2);
+            EXPECT_EQ(enum_def->cases[0].name, "A");
+            ASSERT_EQ(enum_def->cases[0].modifiers.size(), 1);
+            EXPECT_EQ(enum_def->cases[0].modifiers[0].name, "modifier");
+            EXPECT_EQ(enum_def->cases[1].name, "B");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "enum_case_modifier_name_is_reserved_keyword",
+            "enum E: int { @let A = 1 }\nlet recovery = 1\n",
+            { {Err::ReservedKeywordAsIdentifier, 1, 16} },
+            [](const Program& ast) {
+            auto enum_def = ast.enum_definitions[0].get();
+            ASSERT_EQ(enum_def->cases.size(), 1);
+            EXPECT_EQ(enum_def->cases[0].modifiers.size(), 1);
+            EXPECT_EQ(enum_def->cases[0].modifiers[0].name, "let");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "enum_case_modifier_double_comma",
+            "enum E: int { @modifier(a: 1,,) A = 1 }\nlet recovery = 1\n",
+            { {Err::MissingArgumentNameInModifier, 1, 30} },
+            [](const Program& ast) {
+            auto enum_def = ast.enum_definitions[0].get();
+            ASSERT_EQ(enum_def->cases.size(), 1);
+            EXPECT_EQ(enum_def->cases[0].modifiers[0].arguments.size(), 1);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "enum_case_modifier_broken_args_recovers_to_next_case",
+            "enum E: int { @modifier(a: 1 + *) A = 1, B = 2 }\nlet recovery = 1\n",
+            { {Err::InvalidExpression, 1, 32} },
+            [](const Program& ast) {
+            auto enum_def = ast.enum_definitions[0].get();
+            ASSERT_EQ(enum_def->cases.size(), 2);
+            EXPECT_EQ(enum_def->cases[0].name, "A");
+            ASSERT_EQ(enum_def->cases[0].modifiers.size(), 1);
+            EXPECT_EQ(enum_def->cases[1].name, "B");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reserved_keyword_modifier_name",
+            "enum E: int { @let() A = 1 }\n"
+            "let test = { @let() a: 1, @if() b: 2, @enum() c: 3 }\n",
+            {
+            {Err::ReservedKeywordAsIdentifier, 1, 16},
+            {Err::ReservedKeywordAsIdentifier, 2, 15},
+            {Err::ReservedKeywordAsIdentifier, 2, 28},
+            {Err::ReservedKeywordAsIdentifier, 2, 40}
+            },[](const Program& ast) {
+            ASSERT_EQ(ast.enum_definitions.size(), 1);
+            auto enum_def = ast.enum_definitions[0].get();
+            EXPECT_EQ(enum_def->name, "E");
+            ASSERT_EQ(enum_def->cases.size(), 1);
+
+            const auto& enum_case = enum_def->cases[0];
+            EXPECT_EQ(enum_case.name, "A");
+            ASSERT_EQ(enum_case.modifiers.size(), 1);
+            EXPECT_EQ(enum_case.modifiers[0].name, "let");
+
+            auto case_val = dynamic_cast<NumberLiteral*>(enum_case.value.get());
+            ASSERT_NE(case_val, nullptr);
+            EXPECT_EQ(case_val->value, "1");
+
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].first, "test");
+
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 3);
+
+            EXPECT_EQ(dict->elements[0].key, "a");
+            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
+            EXPECT_EQ(dict->elements[0].modifiers[0].name, "let");
+            EXPECT_TRUE(dict->elements[0].modifiers[0].arguments.empty());
+            auto val_a = dynamic_cast<NumberLiteral*>(dict->elements[0].value.get());
+            ASSERT_NE(val_a, nullptr);
+            EXPECT_EQ(val_a->value, "1");
+
+            EXPECT_EQ(dict->elements[1].key, "b");
+            ASSERT_EQ(dict->elements[1].modifiers.size(), 1);
+            EXPECT_EQ(dict->elements[1].modifiers[0].name, "if");
+            EXPECT_TRUE(dict->elements[1].modifiers[0].arguments.empty());
+            auto val_b = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
+            ASSERT_NE(val_b, nullptr);
+            EXPECT_EQ(val_b->value, "2");
+
+            EXPECT_EQ(dict->elements[2].key, "c");
+            ASSERT_EQ(dict->elements[2].modifiers.size(), 1);
+            EXPECT_EQ(dict->elements[2].modifiers[0].name, "enum");
+            EXPECT_TRUE(dict->elements[2].modifiers[0].arguments.empty());
+            auto val_c = dynamic_cast<NumberLiteral*>(dict->elements[2].value.get());
+            ASSERT_NE(val_c, nullptr);
+            EXPECT_EQ(val_c->value, "3");
+            }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {

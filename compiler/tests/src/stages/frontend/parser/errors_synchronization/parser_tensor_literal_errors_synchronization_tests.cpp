@@ -396,7 +396,7 @@ namespace valuascript::compiler::test {
             ASSERT_NE(tensor_a_grouping, nullptr);
             ASSERT_EQ(tensor_a_grouping->expression, nullptr);
             auto tensor_a_dict = dynamic_cast<DictLiteral*>(tensor_a->elements[1].get());
-            EXPECT_EQ(tensor_a_dict->pairs.size(), 0);
+            EXPECT_EQ(tensor_a_dict->elements.size(), 0);
 
             auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());

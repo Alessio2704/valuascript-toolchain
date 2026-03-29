@@ -41,19 +41,14 @@ namespace valuascript::compiler::test {
     };
 
     const std::string main_file = R"(
-// main.vs
-// -- Alphabet (Google) Valuation August 2025 --
-
 import "modules/wacc.vs"
 import "modules/segment.vs"
 import "modules/fcff.vs"
 
 #iterations = 10_000_000
 
-// -- R&D Capitalization --
 let value_of_research_assets, current_year_amortization = get_rd()
 
-// -- WACC --
 let wacc = get_wacc()
 
 struct Segment {
@@ -74,6 +69,7 @@ struct Segment {
 
 @scenario(type: "base")
 let gcp_segment: Segment = {
+    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 11%,
     target_market_share: Uniform(min: 10%, max: 15%),
     market_size: 13_624 / 11% * 4,
@@ -87,6 +83,7 @@ let gcp_segment: Segment = {
 
 @scenario(type: "base")
 let yt_segment: Segment = {
+    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 9_796 * 4,
@@ -100,6 +97,7 @@ let yt_segment: Segment = {
 
 @scenario(type: "base")
 let google_network_segment: Segment = {
+    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 7_354 * 4,
@@ -113,6 +111,7 @@ let google_network_segment: Segment = {
 
 @scenario(type: "base")
 let google_subscriptions_segment: Segment = {
+    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 11_203 * 4,
@@ -126,6 +125,7 @@ let google_subscriptions_segment: Segment = {
 
 @scenario(type: "base")
 let google_search_segment: Segment = {
+    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 54_190 * 4,
@@ -190,7 +190,6 @@ let value_per_share = final_value_of_common_equity / get_shares_outstanding()
 )";
 
     const std::string wacc_file = R"(
-// wacc.vs
 import "../assumptions/assumptions.vs"
 
 @export func get_wacc() -> scalar {
@@ -207,7 +206,6 @@ import "../assumptions/assumptions.vs"
 )";
 
     const std::string segment_file = R"(
-// segment.vs
 import "../assumptions/assumptions.vs"
 
 @export func get_segment_data(segment: Segment) -> vector, vector {
@@ -269,7 +267,6 @@ import "../assumptions/assumptions.vs"
 )";
 
     const std::string fcff_file = R"(
-// fcff.vs
 import "../assumptions/assumptions.vs"
 import "wacc.vs"
 
@@ -304,21 +301,46 @@ import "wacc.vs"
 )";
 
     const std::string assumptions_file = R"(
-// assumptions.vs
+@export
+let periods = 10
 
-@export let periods = 10
-@export let rf = 4.5%
-@export let erp = 5%
-@export let beta = 1.05
-@export let bond_spread = 0.74%
-@export let marginal_tax_rate = 21%
-@export let effective_tax_rate = 17%
-@export let share_price = 220
-@export let shares_outstanding = 11_000_000
-@export let book_value_of_equity = 300_000
-@export let book_value_of_debt = 50_000
-@export let cash_and_marketable_securities = 120_000
-@export let equity_value = shares_outstanding * share_price
+@export
+@correlated(with: [ { name: erp, direction: CorrelationDirection.Negative } ])
+let rf = 4.5%
+
+@export
+@correlated(with: [ { name: rf, direction: CorrelationDirection.Negative } ])
+let erp = 5%
+
+@export
+let beta = 1.05
+
+@export
+let bond_spread = 0.74%
+
+@export
+let marginal_tax_rate = 21%
+
+@export
+let effective_tax_rate = 17%
+
+@export
+let share_price = 220
+
+@export
+let shares_outstanding = 11_000_000
+
+@export
+let book_value_of_equity = 300_000
+
+@export
+let book_value_of_debt = 50_000
+
+@export
+let cash_and_marketable_securities = 120_000
+
+@export
+let equity_value = shares_outstanding * share_price
 )";
 
 

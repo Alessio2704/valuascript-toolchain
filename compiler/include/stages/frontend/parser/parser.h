@@ -26,11 +26,11 @@ namespace valuascript::compiler {
 
         [[nodiscard]] static bool is_operator_right_associative(TokenType type);
 
-        const Token &consume_identifier(ValuascriptErrorCode fallback_err);
+        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool is_statement_context = true);
 
         static bool is_top_level_only_declaration(TokenType type);
 
-        std::vector<Modifier> parse_modifiers();
+        std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
 
         std::unique_ptr<ImportStatement> parse_import_statement();
 
@@ -118,6 +118,8 @@ namespace valuascript::compiler {
 
         static bool is_statement_start(const Token &token, TokenType next_type);
 
+        static bool is_identifier_start(const Token& token);
+
         void consume_unexpected_statement_gracefully();
 
         void synchronize();
@@ -159,6 +161,7 @@ namespace valuascript::compiler {
             std::vector<T> elements;
 
             auto is_hard_stop = [&](const Token &token, TokenType next_type) {
+                if (is_element_start()) return false;
                 if (is_statement_start(token, next_type)) return true;
 
                 TokenType type = token.type;

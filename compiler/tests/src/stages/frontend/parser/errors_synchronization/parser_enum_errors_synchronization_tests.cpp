@@ -31,20 +31,20 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(enum_def->cases.size(), expected_cases.size()) << "Recovered case count mismatch!";
 
             for (size_t i = 0; i < expected_cases.size(); ++i) {
-                EXPECT_EQ(enum_def->cases[i].first, expected_cases[i].name)
+                EXPECT_EQ(enum_def->cases[i].name, expected_cases[i].name)
                      << "Case name mismatch at index " << i;
 
                 if (expected_cases[i].expected_number_value.has_value()) {
-                    ASSERT_NE(enum_def->cases[i].second, nullptr)
+                    ASSERT_NE(enum_def->cases[i].value, nullptr)
                          << "Expected an assigned value for case '" << expected_cases[i].name << "' but got nullptr";
-                    auto *num_lit = dynamic_cast<NumberLiteral *>(enum_def->cases[i].second.get());
+                    auto *num_lit = dynamic_cast<NumberLiteral *>(enum_def->cases[i].value.get());
                     ASSERT_NE(num_lit, nullptr)
                          << "Expected a NumberLiteral for case '" << expected_cases[i].name << "'";
 
                     EXPECT_EQ(num_lit->value, expected_cases[i].expected_number_value.value())
                          << "Assigned value mismatch for case '" << expected_cases[i].name << "'";
                 } else {
-                    EXPECT_EQ(enum_def->cases[i].second, nullptr)
+                    EXPECT_EQ(enum_def->cases[i].value, nullptr)
                          << "Expected NO assigned value for case '" << expected_cases[i].name << "' but found one";
                 }
             }
@@ -231,11 +231,11 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             auto recovered_enum = ExpectRecoveredEnum(ast, "Test");
             EXPECT_EQ(recovered_enum->cases.size(), 2);
-            EXPECT_EQ(recovered_enum->cases[0].first, "A");
-            auto first_case_value = dynamic_cast<GroupingExpression*>(recovered_enum->cases[0].second.get());
+            EXPECT_EQ(recovered_enum->cases[0].name, "A");
+            auto first_case_value = dynamic_cast<GroupingExpression*>(recovered_enum->cases[0].value.get());
             ASSERT_NE(first_case_value, nullptr);
-            EXPECT_EQ(recovered_enum->cases[1].first, "B");
-            auto second_case_value = dynamic_cast<NumberLiteral*>(recovered_enum->cases[1].second.get());
+            EXPECT_EQ(recovered_enum->cases[1].name, "B");
+            auto second_case_value = dynamic_cast<NumberLiteral*>(recovered_enum->cases[1].value.get());
             ASSERT_NE(second_case_value, nullptr);
             },
             },
@@ -346,14 +346,14 @@ namespace valuascript::compiler::test {
             "enum Test : int { let true if }\n"
             "let a = 1\n",
             {
-            {Err::ExpectedEnumCaseName, 1, 19},
-            {Err::ExpectedRightBraceAfterEnumBody, 1, 19},
-            {Err::InvalidIdentifier, 1, 23},
+            {Err::ReservedKeywordAsIdentifier, 1, 19},
+            {Err::ExpectedCommaSeparatorInEnum, 1, 23},
+            {Err::ReservedKeywordAsIdentifier, 1, 23},
+            {Err::ExpectedCommaSeparatorInEnum, 1, 28},
+            {Err::ReservedKeywordAsIdentifier, 1, 28},
+
             },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 0);
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
+            ExpectEnum("Test", "int", {{"let"}, {"true"}, {"if"}})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_4",

@@ -1,4 +1,5 @@
 #include "stages/frontend/parser/parser.h"
+#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
     std::unique_ptr<ImportStatement> Parser::parse_import_statement() {
@@ -32,12 +33,13 @@ namespace valuascript::compiler {
         return dir;
     }
 
-    std::vector<Modifier> Parser::parse_modifiers() {
+    std::vector<Modifier> Parser::parse_modifiers(bool is_statement_context) {
         std::vector<Modifier> modifiers;
 
         while (cursor_.match({TokenType::At})) {
             const Token &start_token = cursor_.previous();
-            Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName);
+            Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName, is_statement_context);
+
             std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
             if (cursor_.match({TokenType::LeftParen})) {
@@ -72,8 +74,15 @@ namespace valuascript::compiler {
             std::nullopt,
             ValuascriptErrorCode::ExpectedCommaSeparatorInStruct,
             {},
+            [this]() {
+                const Token &tok = cursor_.peek();
+                const TokenType next = cursor_.peek(1).type;
+                if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
+
+                return is_reserved_keyword(tok) && (next == TokenType::Colon);
+            },
             [&]() {
-                Token field_name = consume_identifier(ValuascriptErrorCode::ExpectedStructFieldName);
+                Token field_name = consume_identifier(ValuascriptErrorCode::ExpectedStructFieldName, false);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterStructFieldName);
                 return std::make_pair(field_name.lexeme, parse_type_annotation());
             }
@@ -100,13 +109,31 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody);
 
-        auto cases = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<Expression> > >(
+        auto cases = parse_comma_separated_list<EnumCase>(
             TokenType::RightBrace,
             std::nullopt,
             ValuascriptErrorCode::ExpectedCommaSeparatorInEnum,
             {},
-            [&]() {
-                Token case_name = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseName);
+            [this]() {
+                const Token &tok = cursor_.peek();
+                const Token &next = cursor_.peek(1);
+
+                if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
+
+                if (is_reserved_keyword(tok)) {
+                    if (is_top_level_only_declaration(tok.type)) return false;
+                    if (tok.type == TokenType::Let || tok.type == TokenType::Var) {
+                        return next.type != TokenType::Identifier;
+                    }
+
+                    return true;
+                }
+                return false;
+            },
+            [this]() {
+                auto case_modifiers = parse_modifiers();
+                Token case_name = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseName, false);
+
                 std::unique_ptr<Expression> raw_value = nullptr;
                 if (cursor_.match({TokenType::Assign})) {
                     raw_value = parse_expression();
@@ -115,7 +142,7 @@ namespace valuascript::compiler {
                         cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
                     }
                 }
-                return std::make_pair(case_name.lexeme, std::move(raw_value));
+                return EnumCase{std::move(case_modifiers), case_name.lexeme, std::move(raw_value)};
             }
         );
 

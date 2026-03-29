@@ -8,27 +8,27 @@ namespace valuascript::compiler::test {
         auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
 
         ASSERT_NE(dict_val, nullptr) << "Assigned value must be a DictLiteral";
-        EXPECT_EQ(dict_val->pairs.size(), 0) << "Empty dictionary must have 0 pairs";
+        EXPECT_EQ(dict_val->elements.size(), 0) << "Empty dictionary must have 0 elements";
     }
 
     TEST_F(AstBaseTest, ValidatesFlatDictionary) {
-        // Proves the parser accurately captures key-value pairs with primitive expressions.
+        // Proves the parser accurately captures key-value elements with primitive expressions.
 
         auto ast = parse_code("let model = { cagr: 0.05, yrs: 10 }");
         auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
 
         ASSERT_NE(dict_val, nullptr);
-        ASSERT_EQ(dict_val->pairs.size(), 2);
+        ASSERT_EQ(dict_val->elements.size(), 2);
 
         // First Pair: cagr: 0.05
-        EXPECT_EQ(dict_val->pairs[0].first, "cagr");
-        auto val0 = dynamic_cast<NumberLiteral *>(dict_val->pairs[0].second.get());
+        EXPECT_EQ(dict_val->elements[0].key, "cagr");
+        auto val0 = dynamic_cast<NumberLiteral *>(dict_val->elements[0].value.get());
         ASSERT_NE(val0, nullptr);
         EXPECT_EQ(val0->value, "0.05");
 
         // Second Pair: yrs: 10
-        EXPECT_EQ(dict_val->pairs[1].first, "yrs");
-        auto val1 = dynamic_cast<NumberLiteral *>(dict_val->pairs[1].second.get());
+        EXPECT_EQ(dict_val->elements[1].key, "yrs");
+        auto val1 = dynamic_cast<NumberLiteral *>(dict_val->elements[1].value.get());
         ASSERT_NE(val1, nullptr);
         EXPECT_EQ(val1->value, "10");
     }
@@ -41,26 +41,26 @@ namespace valuascript::compiler::test {
         auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
 
         ASSERT_NE(dict_val, nullptr);
-        ASSERT_EQ(dict_val->pairs.size(), 2);
+        ASSERT_EQ(dict_val->elements.size(), 2);
 
         // ==========================================
         // PAIR 0: base: { rate: 0.05 }
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[0].first, "base");
+        EXPECT_EQ(dict_val->elements[0].key, "base");
 
-        auto inner_dict = dynamic_cast<DictLiteral *>(dict_val->pairs[0].second.get());
+        auto inner_dict = dynamic_cast<DictLiteral *>(dict_val->elements[0].value.get());
         ASSERT_NE(inner_dict, nullptr) << "Value for 'base' must be a nested DictLiteral";
-        ASSERT_EQ(inner_dict->pairs.size(), 1);
+        ASSERT_EQ(inner_dict->elements.size(), 1);
 
-        EXPECT_EQ(inner_dict->pairs[0].first, "rate");
-        EXPECT_EQ(dynamic_cast<NumberLiteral*>(inner_dict->pairs[0].second.get())->value, "0.05");
+        EXPECT_EQ(inner_dict->elements[0].key, "rate");
+        EXPECT_EQ(dynamic_cast<NumberLiteral*>(inner_dict->elements[0].value.get())->value, "0.05");
 
         // ==========================================
         // PAIR 1: stress: wacc * 1.2
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[1].first, "stress");
+        EXPECT_EQ(dict_val->elements[1].key, "stress");
 
-        auto math_op = dynamic_cast<BinaryExpression *>(dict_val->pairs[1].second.get());
+        auto math_op = dynamic_cast<BinaryExpression *>(dict_val->elements[1].value.get());
         ASSERT_NE(math_op, nullptr) << "Value for 'stress' must be a BinaryExpression";
         EXPECT_EQ(math_op->op, TokenType::Star);
 
@@ -87,13 +87,13 @@ namespace valuascript::compiler::test {
         auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
 
         ASSERT_NE(dict_val, nullptr) << "Assigned value must be a DictLiteral";
-        ASSERT_EQ(dict_val->pairs.size(), 8) << "Omnibus dictionary must hold exactly 8 pairs";
+        ASSERT_EQ(dict_val->elements.size(), 8) << "Omnibus dictionary must hold exactly 8 elements";
 
         // ==========================================
         // PAIR 0: Unary Expression (scalar: -100)
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[0].first, "scalar");
-        auto pair0_unary = dynamic_cast<UnaryExpression *>(dict_val->pairs[0].second.get());
+        EXPECT_EQ(dict_val->elements[0].key, "scalar");
+        auto pair0_unary = dynamic_cast<UnaryExpression *>(dict_val->elements[0].value.get());
         ASSERT_NE(pair0_unary, nullptr);
         EXPECT_EQ(pair0_unary->op, TokenType::Minus);
         EXPECT_EQ(dynamic_cast<NumberLiteral*>(pair0_unary->right.get())->value, "100");
@@ -101,8 +101,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 1: Overridden Binary Math (equation: (base + 0.05) * multiplier)
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[1].first, "equation");
-        auto pair1_mult = dynamic_cast<BinaryExpression *>(dict_val->pairs[1].second.get());
+        EXPECT_EQ(dict_val->elements[1].key, "equation");
+        auto pair1_mult = dynamic_cast<BinaryExpression *>(dict_val->elements[1].value.get());
         ASSERT_NE(pair1_mult, nullptr);
         EXPECT_EQ(pair1_mult->op, TokenType::Star);
 
@@ -114,8 +114,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 2: Logical Unary (logic: not is_valid)
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[2].first, "logic");
-        auto pair2_not = dynamic_cast<UnaryExpression *>(dict_val->pairs[2].second.get());
+        EXPECT_EQ(dict_val->elements[2].key, "logic");
+        auto pair2_not = dynamic_cast<UnaryExpression *>(dict_val->elements[2].value.get());
         ASSERT_NE(pair2_not, nullptr);
         // Adjust token type based on your enum for the 'not' keyword
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(pair2_not->right.get())->name, "is_valid");
@@ -123,8 +123,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 3: Tuple Literal (group: (1, a * b))
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[3].first, "group");
-        auto pair3_tuple = dynamic_cast<TupleLiteral *>(dict_val->pairs[3].second.get());
+        EXPECT_EQ(dict_val->elements[3].key, "group");
+        auto pair3_tuple = dynamic_cast<TupleLiteral *>(dict_val->elements[3].value.get());
         ASSERT_NE(pair3_tuple, nullptr);
         ASSERT_EQ(pair3_tuple->elements.size(), 2);
         EXPECT_EQ(dynamic_cast<BinaryExpression*>(pair3_tuple->elements[1].get())->op, TokenType::Star);
@@ -132,16 +132,16 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 4: Vector Literal (arr: [10, 20])
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[4].first, "arr");
-        auto pair4_vec = dynamic_cast<TensorLiteral *>(dict_val->pairs[4].second.get());
+        EXPECT_EQ(dict_val->elements[4].key, "arr");
+        auto pair4_vec = dynamic_cast<TensorLiteral *>(dict_val->elements[4].value.get());
         ASSERT_NE(pair4_vec, nullptr);
         ASSERT_EQ(pair4_vec->elements.size(), 2);
 
         // ==========================================
         // PAIR 5: Tensor Slicing (subset: history[0 : 10])
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[5].first, "subset");
-        auto pair5_slice = dynamic_cast<BracketAccess *>(dict_val->pairs[5].second.get());
+        EXPECT_EQ(dict_val->elements[5].key, "subset");
+        auto pair5_slice = dynamic_cast<BracketAccess *>(dict_val->elements[5].value.get());
         ASSERT_NE(pair5_slice, nullptr);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(pair5_slice->target.get())->name, "history");
         EXPECT_EQ(dynamic_cast<BinaryExpression*>(pair5_slice->index.get())->op, TokenType::Colon);
@@ -149,8 +149,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 6: Function Call (invoke: calc_risk(rate: 0.08))
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[6].first, "invoke");
-        auto pair6_call = dynamic_cast<FunctionCall *>(dict_val->pairs[6].second.get());
+        EXPECT_EQ(dict_val->elements[6].key, "invoke");
+        auto pair6_call = dynamic_cast<FunctionCall *>(dict_val->elements[6].value.get());
         ASSERT_NE(pair6_call, nullptr);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(pair6_call->target.get())->name, "calc_risk");
         ASSERT_EQ(pair6_call->arguments.size(), 1);
@@ -158,13 +158,13 @@ namespace valuascript::compiler::test {
         // ==========================================
         // PAIR 7: Nested Dict with Chained Unary (nested: { inner: !!flag })
         // ==========================================
-        EXPECT_EQ(dict_val->pairs[7].first, "nested");
-        auto pair7_dict = dynamic_cast<DictLiteral *>(dict_val->pairs[7].second.get());
+        EXPECT_EQ(dict_val->elements[7].key, "nested");
+        auto pair7_dict = dynamic_cast<DictLiteral *>(dict_val->elements[7].value.get());
         ASSERT_NE(pair7_dict, nullptr);
-        ASSERT_EQ(pair7_dict->pairs.size(), 1);
+        ASSERT_EQ(pair7_dict->elements.size(), 1);
 
-        EXPECT_EQ(pair7_dict->pairs[0].first, "inner");
-        auto inner_unary_outer = dynamic_cast<UnaryExpression *>(pair7_dict->pairs[0].second.get());
+        EXPECT_EQ(pair7_dict->elements[0].key, "inner");
+        auto inner_unary_outer = dynamic_cast<UnaryExpression *>(pair7_dict->elements[0].value.get());
         ASSERT_NE(inner_unary_outer, nullptr);
         EXPECT_EQ(inner_unary_outer->op, TokenType::Not);
 

@@ -242,7 +242,7 @@ namespace valuascript::compiler::test {
         assert_span(enum_def->underlying_type->span, 1, 13, 1, 16);
 
         // First case value '1' is at 25 -> ends at 26
-        assert_span(enum_def->cases[0].second->span, 1, 25, 1, 26);
+        assert_span(enum_def->cases[0].value->span, 1, 25, 1, 26);
     }
 
     TEST_F(AstSpanTest, ValidatesComplexDictLiteralAndNestedSpans) {
@@ -264,62 +264,62 @@ namespace valuascript::compiler::test {
 
         auto dict = dynamic_cast<DictLiteral *>(assign_node->value.get());
         ASSERT_NE(dict, nullptr);
-        ASSERT_EQ(dict->pairs.size(), 8);
+        ASSERT_EQ(dict->elements.size(), 8);
 
         // 1. Outer Dict bounds: '{' on line 1 col 15, '}' on line 10 col 1 -> ends at 2
         assert_span(dict->span, 1, 15, 10, 2);
 
         // 2. scalar: Unary Expression
-        EXPECT_EQ(dict->pairs[0].first, "scalar");
-        auto scalar_val = dynamic_cast<UnaryExpression *>(dict->pairs[0].second.get());
+        EXPECT_EQ(dict->elements[0].key, "scalar");
+        auto scalar_val = dynamic_cast<UnaryExpression *>(dict->elements[0].value.get());
         ASSERT_NE(scalar_val, nullptr);
         assert_span(scalar_val->span, 2, 13, 2, 17); // '-100'
 
         // 3. equation: Binary Expression (grouped)
-        EXPECT_EQ(dict->pairs[1].first, "equation");
-        auto eq_val = dynamic_cast<BinaryExpression *>(dict->pairs[1].second.get());
+        EXPECT_EQ(dict->elements[1].key, "equation");
+        auto eq_val = dynamic_cast<BinaryExpression *>(dict->elements[1].value.get());
         ASSERT_NE(eq_val, nullptr);
         EXPECT_EQ(eq_val->op, TokenType::Star);
         assert_span(eq_val->span, 3, 15, 3, 41); // '(base + 0.05) * multiplier'
 
         // 4. logic: Unary Expression
-        EXPECT_EQ(dict->pairs[2].first, "logic");
-        auto logic_val = dynamic_cast<UnaryExpression *>(dict->pairs[2].second.get());
+        EXPECT_EQ(dict->elements[2].key, "logic");
+        auto logic_val = dynamic_cast<UnaryExpression *>(dict->elements[2].value.get());
         ASSERT_NE(logic_val, nullptr);
         EXPECT_EQ(logic_val->op, TokenType::Not);
         assert_span(logic_val->span, 4, 12, 4, 24); // 'not is_valid'
 
         // 5. group: Tuple Literal
-        EXPECT_EQ(dict->pairs[3].first, "group");
-        auto group_val = dynamic_cast<TupleLiteral *>(dict->pairs[3].second.get());
+        EXPECT_EQ(dict->elements[3].key, "group");
+        auto group_val = dynamic_cast<TupleLiteral *>(dict->elements[3].value.get());
         ASSERT_NE(group_val, nullptr);
         assert_span(group_val->span, 5, 12, 5, 22); // '(1, a * b)'
 
         // 6. arr: Tensor Literal
-        EXPECT_EQ(dict->pairs[4].first, "arr");
-        auto arr_val = dynamic_cast<TensorLiteral *>(dict->pairs[4].second.get());
+        EXPECT_EQ(dict->elements[4].key, "arr");
+        auto arr_val = dynamic_cast<TensorLiteral *>(dict->elements[4].value.get());
         ASSERT_NE(arr_val, nullptr);
         assert_span(arr_val->span, 6, 10, 6, 18); // '[10, 20]'
 
         // 7. subset: Bracket Access with slice
-        EXPECT_EQ(dict->pairs[5].first, "subset");
-        auto subset_val = dynamic_cast<BracketAccess *>(dict->pairs[5].second.get());
+        EXPECT_EQ(dict->elements[5].key, "subset");
+        auto subset_val = dynamic_cast<BracketAccess *>(dict->elements[5].value.get());
         ASSERT_NE(subset_val, nullptr);
         assert_span(subset_val->span, 7, 13, 7, 28); // 'history[0 : 10]'
 
         // 8. invoke: Function Call
-        EXPECT_EQ(dict->pairs[6].first, "invoke");
-        auto invoke_val = dynamic_cast<FunctionCall *>(dict->pairs[6].second.get());
+        EXPECT_EQ(dict->elements[6].key, "invoke");
+        auto invoke_val = dynamic_cast<FunctionCall *>(dict->elements[6].value.get());
         ASSERT_NE(invoke_val, nullptr);
         assert_span(invoke_val->span, 8, 13, 8, 34); // 'calc_risk(rate: 0.08)'
 
         // 9. nested: Dict Literal containing double-nested Unary Expression
-        EXPECT_EQ(dict->pairs[7].first, "nested");
-        auto nested_val = dynamic_cast<DictLiteral *>(dict->pairs[7].second.get());
+        EXPECT_EQ(dict->elements[7].key, "nested");
+        auto nested_val = dynamic_cast<DictLiteral *>(dict->elements[7].value.get());
         ASSERT_NE(nested_val, nullptr);
         assert_span(nested_val->span, 9, 13, 9, 36); // '{ inner: not not flag }'
 
-        auto inner_val = dynamic_cast<UnaryExpression *>(nested_val->pairs[0].second.get());
+        auto inner_val = dynamic_cast<UnaryExpression *>(nested_val->elements[0].value.get());
         ASSERT_NE(inner_val, nullptr);
         assert_span(inner_val->span, 9, 22, 9, 34); // 'not not flag'
     }

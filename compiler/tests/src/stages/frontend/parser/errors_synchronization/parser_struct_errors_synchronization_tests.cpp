@@ -212,7 +212,8 @@ namespace valuascript::compiler::test {
             "struct Test { host: string, port: int, true int }\n"
             "let a = 1\n",
             {
-            {Err::ExpectedStructFieldName, 1, 40}
+            {Err::ReservedKeywordAsIdentifier, 1, 40},
+            {Err::ExpectedColonAfterStructFieldName, 1, 45},
             },
             ExpectStruct("Test", {
                 {"host", "string"},

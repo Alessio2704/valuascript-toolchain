@@ -2,7 +2,6 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-
     bool Parser::is_valid_lvalue(const Expression *expr) {
         if (dynamic_cast<const IdentifierAccess *>(expr) != nullptr) return true;
         if (dynamic_cast<const DotAccess *>(expr) != nullptr) return true;
@@ -37,7 +36,12 @@ namespace valuascript::compiler {
         return is_top_level_token(token.type) && !acts_like_identifier(token, next_type);
     }
 
-    bool Parser::acts_like_identifier(const Token& token, TokenType next_type) {
+    bool Parser::is_identifier_start(const Token &token) {
+        return token.type == TokenType::Identifier ||
+               (is_reserved_keyword(token) && !is_top_level_only_declaration(token.type));
+    }
+
+    bool Parser::acts_like_identifier(const Token &token, TokenType next_type) {
         if (!is_reserved_keyword(token)) return false;
 
         return (next_type == TokenType::Comma ||

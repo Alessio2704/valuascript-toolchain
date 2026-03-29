@@ -264,7 +264,7 @@ namespace valuascript::compiler::test {
             ExpectFunctionCall("f", {{"a", [](const Expression* e) {
                 auto const dict = dynamic_cast<const DictLiteral*>(e);
                 ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->pairs.size(), 0);
+                ASSERT_EQ(dict->elements.size(), 0);
                 }}, {"b", "2"}})
             }
         ),

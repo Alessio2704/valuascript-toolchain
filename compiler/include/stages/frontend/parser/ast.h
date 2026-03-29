@@ -125,12 +125,24 @@ namespace valuascript::compiler {
         }
     };
 
+    struct Modifier {
+        std::string name;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+        SourceSpan span;
+    };
+
+    struct DictItem {
+        std::vector<Modifier> modifiers;
+        std::string key;
+        std::unique_ptr<Expression> value;
+    };
+
     class DictLiteral : public Expression {
     public:
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs;
+        std::vector<DictItem> elements;
 
-        explicit DictLiteral(std::vector<std::pair<std::string, std::unique_ptr<Expression> > > pairs)
-            : pairs(std::move(pairs)) {
+        explicit DictLiteral(std::vector<DictItem> elements)
+            : elements(std::move(elements)) {
         }
     };
 
@@ -179,12 +191,6 @@ namespace valuascript::compiler {
         explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation> > elements)
             : TypeAnnotation("tuple"), element_types(std::move(elements)) {
         }
-    };
-
-    struct Modifier {
-        std::string name;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
-        SourceSpan span;
     };
 
     class Assignment : public Statement {
@@ -287,17 +293,23 @@ namespace valuascript::compiler {
         }
     };
 
+    struct EnumCase {
+        std::vector<Modifier> modifiers;
+        std::string name;
+        std::unique_ptr<Expression> value;
+    };
+
     class EnumDefinition : public Statement {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<TypeAnnotation> underlying_type;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases;
+        std::vector<EnumCase> cases;
 
         EnumDefinition(std::vector<Modifier> modifiers,
                        std::string name,
                        std::unique_ptr<TypeAnnotation> underlying_type,
-                       std::vector<std::pair<std::string, std::unique_ptr<Expression> > > cases)
+                       std::vector<EnumCase> cases)
             : modifiers(std::move(modifiers)),
               name(std::move(name)),
               underlying_type(std::move(underlying_type)),
@@ -340,8 +352,8 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
     };
 
-    inline Expression* unwrap(Expression* expr) {
-        while (auto* grouping = dynamic_cast<GroupingExpression*>(expr)) {
+    inline Expression *unwrap(Expression *expr) {
+        while (auto *grouping = dynamic_cast<GroupingExpression *>(expr)) {
             expr = grouping->expression.get();
         }
         return expr;

@@ -166,7 +166,7 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
 
-        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName);
+        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, false);
 
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
 
@@ -387,17 +387,38 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_dict_literal() {
         const Token &start_token = cursor_.previous();
 
-        auto pairs = parse_key_value_list(
+        auto elements = parse_comma_separated_list<DictItem>(
             TokenType::RightBrace,
-            ValuascriptErrorCode::ExpectedDictionaryKey,
-            ValuascriptErrorCode::ExpectedColonAfterDictionaryKey,
-            ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral);
+            std::nullopt,
+            ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral,
+            {},
+            [this]() {
+                const Token &tok = cursor_.peek();
+                const TokenType next = cursor_.peek(1).type;
+
+                if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
+
+                return is_reserved_keyword(tok) && (next == TokenType::Colon);
+            },
+            [this]() {
+                auto modifiers = parse_modifiers();
+                Token key_token = consume_identifier(ValuascriptErrorCode::ExpectedDictionaryKey, false);
+                cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterDictionaryKey);
+                auto val = parse_expression();
+
+                if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                }
+
+                return DictItem{std::move(modifiers), key_token.lexeme, std::move(val)};
+            }
+        );
 
         try {
             const Token &end_token = cursor_.consume(TokenType::RightBrace,
                                                      ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
 
-            auto node = std::make_unique<DictLiteral>(std::move(pairs));
+            auto node = std::make_unique<DictLiteral>(std::move(elements));
             node->span = cursor_.make_span(start_token, end_token);
 
             return node;
