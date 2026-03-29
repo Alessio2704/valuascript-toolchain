@@ -20,13 +20,15 @@ namespace valuascript::compiler {
             None = 0, Or = 1, And = 2, Comparison = 3, Term = 4, Factor = 5, Power = 6
         };
 
+        enum class ParseContext { TopLevel, FunctionBody };
+
         static Precedence get_operator_precedence(TokenType type);
 
         [[nodiscard]] static bool is_operator_right_associative(TokenType type);
 
         const Token &consume_identifier(ValuascriptErrorCode fallback_err);
 
-        void parse_top_level_declaration(Program *program);
+        static bool is_top_level_only_declaration(TokenType type);
 
         std::vector<Modifier> parse_modifiers();
 
@@ -42,7 +44,8 @@ namespace valuascript::compiler {
 
         std::unique_ptr<TypeAnnotation> parse_type_annotation();
 
-        std::unique_ptr<Statement> parse_function_body_statements();
+        void parse_statement_or_declaration(ParseContext ctx, Program *program,
+                                            std::vector<std::unique_ptr<Statement> > &block);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -118,6 +121,8 @@ namespace valuascript::compiler {
         void consume_unexpected_statement_gracefully();
 
         void synchronize();
+
+        void synchronize_block_statement();
 
         static bool is_grouping_opener(TokenType type);
 

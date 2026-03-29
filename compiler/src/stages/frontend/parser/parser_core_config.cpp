@@ -79,4 +79,17 @@ namespace valuascript::compiler {
                type == TokenType::RightBracket ||
                type == TokenType::RightBrace;
     }
+
+    bool Parser::is_top_level_only_declaration(TokenType type) {
+        switch (type) {
+            case TokenType::Import:
+            case TokenType::Hash:
+            case TokenType::Func:
+            case TokenType::Struct:
+            case TokenType::Enum:
+                return true;
+            default:
+                return false;
+        }
+    }
 }

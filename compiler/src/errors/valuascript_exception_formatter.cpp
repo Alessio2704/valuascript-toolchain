@@ -35,6 +35,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Expected directive name after '#'.";
             case ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration:
                 return "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).";
+            case ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements:
+                return "Syntax Error: Modifiers for multi assignment must be attached before the overall statement.";
             case ValuascriptErrorCode::ExpectedModifierName:
                 return "Syntax Error: Expected modifier name after '@'.";
             case ValuascriptErrorCode::MissingArgumentNameInModifier:
@@ -111,8 +113,6 @@ namespace valuascript::compiler {
                 return "Expected '>' after generic type arguments.";
             case ValuascriptErrorCode::TrailingCommaInGenericArgument:
                 return "Syntax Error: Trailing comma in generic arguments.";
-            case ValuascriptErrorCode::ModifiersOnNonVariableDeclaration:
-                return "Syntax Error: Modifiers can only be attached to variable declarations.";
             case ValuascriptErrorCode::ExpectedLetOrVarToken:
                 return "Expected 'let' or 'var'.";
             case ValuascriptErrorCode::ReservedKeywordAsIdentifier:

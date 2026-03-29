@@ -7,30 +7,11 @@ namespace valuascript::compiler {
     std::unique_ptr<Program> Parser::parse_program() {
         auto program = std::make_unique<Program>();
         const Token &start_token = cursor_.peek();
+        std::vector<std::unique_ptr<Statement> > dummy_block;
 
         while (!cursor_.is_at_end()) {
             try {
-                switch (cursor_.peek().type) {
-                    case TokenType::Import:
-                        program->import_statements.push_back(parse_import_statement());
-                        break;
-                    case TokenType::Hash:
-                        program->directives.push_back(parse_directive());
-                        break;
-                    case TokenType::At:
-                    case TokenType::Let:
-                    case TokenType::Var:
-                    case TokenType::Func:
-                    case TokenType::Struct:
-                    case TokenType::Enum:
-                        parse_top_level_declaration(program.get());
-                        break;
-                    case TokenType::Identifier:
-                        program->execution_steps.push_back(parse_expression_statement());
-                        break;
-                    default:
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
-                }
+                parse_statement_or_declaration(ParseContext::TopLevel, program.get(), dummy_block);
             } catch (const ParseSyncException &) {
                 synchronize();
             }

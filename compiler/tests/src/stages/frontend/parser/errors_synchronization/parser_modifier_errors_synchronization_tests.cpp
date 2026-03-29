@@ -127,19 +127,21 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             { {Err::ModifiersAttachedToInvalidDeclaration, 1, 6} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto* f_call = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
-            ASSERT_EQ(f_call, nullptr);
+            ASSERT_NE(f_call, nullptr);
             }
             },
-
             ParserErrorsSynchronizationTestCase{
             "modifier_on_return_in_func",
             "func f() -> int { @test return 1 }\n"
             "let recovery = 1\n",
-            { {Err::ModifiersOnNonVariableDeclaration, 1, 25} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 25} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 0);
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            ASSERT_EQ(ast.function_definitions[0]->body.size(), 1);
+            auto ret_stmt = dynamic_cast<ReturnStatement*>(ast.function_definitions[0]->body[0].get());
+            ASSERT_NE(ret_stmt, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -281,7 +283,15 @@ namespace valuascript::compiler::test {
             {Err::ModifiersAttachedToInvalidDeclaration, 1, 19},
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
+            EXPECT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto binary_exp = dynamic_cast<BinaryExpression*>(assign->value.get());
+            ASSERT_NE(binary_exp, nullptr);
+            ASSERT_EQ(binary_exp->op, TokenType::Plus);
+            auto left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
+            ASSERT_EQ(left->value, "1");
+            auto right = dynamic_cast<NumberLiteral*>(binary_exp->right.get());
+            ASSERT_EQ(right->value, "2");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -317,22 +327,81 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             { {Err::ModifiersAttachedToInvalidDeclaration, 2, 7} },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
+            EXPECT_EQ(ast.execution_steps.size(), 3);
+            auto statement = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(statement, nullptr);
+            auto target = dynamic_cast<IdentifierAccess*>(statement->target.get());
+            ASSERT_NE(target, nullptr);
+            EXPECT_EQ(target->name, "x");
+            auto value = dynamic_cast<NumberLiteral*>(statement->value.get());
+            EXPECT_EQ(value->value, "1");
+            ASSERT_NE(value, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_on_multi_assignment",
+            "modifier_on_multi_assignment_1",
             "@test let a: int, @broken b: int = 1\n"
             "let recovery = 1\n",
             {
-            {Err::InvalidIdentifier, 1, 19},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 27}
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->modifiers.size(), 0);
+            ASSERT_EQ(assign->targets.size(), 2);
+            EXPECT_EQ(assign->modifiers.size(), 1);
+            EXPECT_EQ(assign->modifiers[0].name, "test");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "modifier_on_multi_assignment_2",
+            "@test let a: int, @one @two @three b: int = 1\n"
+            "let recovery = 1\n",
+            {
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            ASSERT_EQ(assign->targets.size(), 2);
+            EXPECT_EQ(assign->modifiers.size(), 1);
+            EXPECT_EQ(assign->modifiers[0].name, "test");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "modifier_on_multi_assignment_3",
+            "@test let a: int, @one @two @three b: int, @four c = 1\n"
+            "let recovery = 1\n",
+            {
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19},
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 44},
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            ASSERT_EQ(assign->targets.size(), 3);
+            EXPECT_EQ(assign->modifiers.size(), 1);
+            EXPECT_EQ(assign->modifiers[0].name, "test");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "modifier_on_multi_assignment_4",
+            "@test let a: int, @one @two @three(a: 1) b: int, @four c = 1\n"
+            "let recovery = 1\n",
+            {
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19},
+            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 50},
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            ASSERT_EQ(assign->targets.size(), 3);
+            EXPECT_EQ(assign->modifiers.size(), 1);
+            EXPECT_EQ(assign->modifiers[0].name, "test");
             }
             },
             ParserErrorsSynchronizationTestCase{

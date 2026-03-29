@@ -1,32 +1,6 @@
 #include "stages/frontend/parser/parser.h"
 
 namespace valuascript::compiler {
-    void Parser::parse_top_level_declaration(Program *program) {
-        std::vector<Modifier> modifiers = parse_modifiers();
-        switch (cursor_.peek().type) {
-            case TokenType::Let:
-            case TokenType::Var:
-                program->execution_steps.push_back(parse_assignment(std::move(modifiers)));
-                verify_statement_end();
-                break;
-            case TokenType::Func:
-                program->function_definitions.push_back(parse_function_definition(std::move(modifiers)));
-                break;
-            case TokenType::Struct:
-                program->struct_definitions.push_back(parse_struct_definition(std::move(modifiers)));
-                break;
-            case TokenType::Enum:
-                program->enum_definitions.push_back(parse_enum_definition(std::move(modifiers)));
-                break;
-            default:
-                if (!modifiers.empty()) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                }
-
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
-        }
-    }
-
     std::unique_ptr<ImportStatement> Parser::parse_import_statement() {
         const Token &start_token = cursor_.consume(TokenType::Import, ValuascriptErrorCode::ExpectedImportToken);
         const Token &path = cursor_.consume(TokenType::String, ValuascriptErrorCode::MissingImportPathString);
@@ -206,7 +180,11 @@ namespace valuascript::compiler {
 
         std::vector<std::unique_ptr<Statement> > body;
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-            body.push_back(parse_function_body_statements());
+            try {
+                parse_statement_or_declaration(ParseContext::FunctionBody, nullptr, body);
+            } catch (const ParseSyncException &) {
+                synchronize_block_statement();
+            }
         }
 
         const Token &end_token = cursor_.consume(TokenType::RightBrace,

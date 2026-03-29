@@ -53,4 +53,21 @@ namespace valuascript::compiler {
             cursor_.advance();
         }
     }
+
+    void Parser::synchronize_block_statement() {
+        while (!cursor_.is_at_end()) {
+            TokenType type = cursor_.peek().type;
+
+            if (type == TokenType::RightBrace) {
+                return;
+            }
+
+            if (type == TokenType::Return ||
+                is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                return;
+            }
+
+            cursor_.advance();
+        }
+    }
 }

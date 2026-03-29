@@ -99,7 +99,7 @@ namespace valuascript::compiler::test {
         ModifierSadPathTest,
         testing::Values(
             ModifierSadParam{"ModifierOnReturn", "func foo() -> void { @export return 1 }", ValuascriptErrorCode::
-            ModifiersOnNonVariableDeclaration},
+            ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"ModifierOnStandaloneExpression", "@export 10 * 5", ValuascriptErrorCode::
             ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", ValuascriptErrorCode::

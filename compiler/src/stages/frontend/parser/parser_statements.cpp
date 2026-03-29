@@ -2,42 +2,110 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    std::unique_ptr<Statement> Parser::parse_function_body_statements() {
-        std::vector<Modifier> modifiers;
-        if (cursor_.check(TokenType::At)) {
-            modifiers = parse_modifiers();
+    void Parser::parse_statement_or_declaration(ParseContext ctx, Program *program,
+                                                std::vector<std::unique_ptr<Statement> > &block) {
+        std::vector<Modifier> modifiers = parse_modifiers();
+
+        TokenType type = cursor_.peek().type;
+
+        Program dummy_program;
+
+        if (ctx == ParseContext::FunctionBody && is_top_level_only_declaration(type)) {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
+                                          true);
+
+            ctx = ParseContext::TopLevel;
+            program = &dummy_program;
         }
 
-        std::unique_ptr<Statement> stmt;
-        switch (cursor_.peek().type) {
+        switch (type) {
+            case TokenType::Import: {
+                if (!modifiers.empty()) {
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                }
+                auto stmt = parse_import_statement();
+                if (program) program->import_statements.push_back(std::move(stmt));
+                break;
+            }
+            case TokenType::Hash: {
+                if (!modifiers.empty()) {
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                }
+                auto dir = parse_directive();
+                if (program) program->directives.push_back(std::move(dir));
+                break;
+            }
+            case TokenType::Func: {
+                auto func = parse_function_definition(std::move(modifiers));
+                if (program) program->function_definitions.push_back(std::move(func));
+                break;
+            }
+            case TokenType::Struct: {
+                auto str = parse_struct_definition(std::move(modifiers));
+                if (program) program->struct_definitions.push_back(std::move(str));
+                break;
+            }
+            case TokenType::Enum: {
+                auto enm = parse_enum_definition(std::move(modifiers));
+                if (program) program->enum_definitions.push_back(std::move(enm));
+                break;
+            }
             case TokenType::Let:
-            case TokenType::Var:
-                stmt = parse_assignment(std::move(modifiers));
+            case TokenType::Var: {
+                auto assign = parse_assignment(std::move(modifiers));
+                if (program) program->execution_steps.push_back(std::move(assign));
+                else block.push_back(std::move(assign));
                 break;
-
-            case TokenType::Return:
+            }
+            case TokenType::Return: {
                 if (!modifiers.empty()) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersOnNonVariableDeclaration);
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                 }
-                stmt = parse_return_statement();
-                break;
 
-            case TokenType::Enum:
-            case TokenType::Struct:
-            case TokenType::Func:
-            case TokenType::Hash:
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
-                break;
-            default:
-                if (!modifiers.empty()) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ModifiersOnNonVariableDeclaration);
+                if (ctx == ParseContext::TopLevel) {
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
+                    auto ret = parse_return_statement();
+                    if (program) program->execution_steps.push_back(std::move(ret));
+                } else {
+                    auto ret = parse_return_statement();
+                    block.push_back(std::move(ret));
                 }
-                stmt = parse_expression_statement();
                 break;
+            }
+            case TokenType::Identifier: {
+                if (!modifiers.empty()) {
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                             ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                }
+                auto expr_stmt = parse_expression_statement();
+                if (program) program->execution_steps.push_back(std::move(expr_stmt));
+                else block.push_back(std::move(expr_stmt));
+                break;
+            }
+            default: {
+                if (ctx == ParseContext::TopLevel) {
+                    if (!modifiers.empty()) {
+                        cursor_.report_error_no_panic(cursor_.peek(),
+                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    } else {
+                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken,
+                                                      true);
+                    }
+                    throw ParseSyncException();
+                } else {
+                    if (!modifiers.empty()) {
+                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
+                    auto expr_stmt = parse_expression_statement();
+                    if (program) program->execution_steps.push_back(std::move(expr_stmt));
+                    else block.push_back(std::move(expr_stmt));
+                }
+                break;
+            }
         }
-
-        verify_statement_end();
-        return stmt;
     }
 
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
@@ -48,6 +116,14 @@ namespace valuascript::compiler {
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
+            auto inner_mods = parse_modifiers();
+            if (!inner_mods.empty()) {
+                auto first = inner_mods.front().span;
+                auto back = inner_mods.back().span;
+                auto combined_span = cursor_.combine_spans(first, back);
+                cursor_.report_error_no_panic(combined_span, ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements);
+            }
+
             const Token &target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;

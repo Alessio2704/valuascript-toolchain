@@ -200,7 +200,8 @@ namespace valuascript::compiler::test {
             "let wacc = get_wacc()\n"
             "enum Scenario: scalar { LOW, BASE, HIGH }\n",
             {
-            {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1}
+            {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1},
+            {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 6, 42}
             }
             },
             ParserErrorsSynchronizationTestCase{

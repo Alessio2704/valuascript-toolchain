@@ -56,6 +56,19 @@ namespace valuascript::compiler {
         return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
     }
 
+    void TokenCursor::report_error_no_panic(const SourceSpan &span,
+                                            const ValuascriptErrorCode code) const {
+        std::string message = format_error(code);
+
+        ValuaScriptException ex(
+            ValuascriptErrorCategory::Syntax,
+            code,
+            {span.line_start, span.column_start, span.line_end, span.column_end, file_path_},
+            std::move(message)
+        );
+        context_.handle_error(ex);
+    }
+
     void TokenCursor::report_error_no_panic(const Token &token,
                                             const ValuascriptErrorCode code,
                                             const bool force_token_location) const {

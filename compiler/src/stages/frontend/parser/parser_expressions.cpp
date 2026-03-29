@@ -242,6 +242,10 @@ namespace valuascript::compiler {
 
                     consume_unexpected_statement_gracefully();
 
+                    if (is_expression_start(cursor_.peek().type)) {
+                        return parse_primary_expression();
+                    }
+
                     throw ParseSyncException();
                 }
 

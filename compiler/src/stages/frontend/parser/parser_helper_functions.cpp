@@ -2,7 +2,6 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-
     const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err) {
         if (cursor_.check(TokenType::Identifier)) {
             return cursor_.advance();
@@ -75,13 +74,8 @@ namespace valuascript::compiler {
     void Parser::consume_unexpected_statement_gracefully() {
         Program dummy;
         try {
-            if (cursor_.check(TokenType::Import)) {
-                parse_import_statement();
-            } else if (cursor_.check(TokenType::Hash)) {
-                parse_directive();
-            } else {
-                parse_top_level_declaration(&dummy);
-            }
+            std::vector<std::unique_ptr<Statement> > dummy_block;
+            parse_statement_or_declaration(ParseContext::TopLevel, &dummy, dummy_block);
         } catch (const ParseSyncException &) {
         }
     }
