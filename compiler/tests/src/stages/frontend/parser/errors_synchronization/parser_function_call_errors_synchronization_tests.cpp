@@ -155,7 +155,16 @@ namespace valuascript::compiler::test {
             "f(a: , b: 2)\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 6} },
-            ExpectFunctionCall("f", {{"b", "2"}})
+            [](const Program &ast) {
+            auto func_call_expr = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
+            ASSERT_NE(func_call_expr, nullptr);
+            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
+            ASSERT_NE(func_call, nullptr);
+            EXPECT_EQ(func_call->arguments.size(), 2);
+            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+            ASSERT_NE(func_call_id, nullptr);
+            EXPECT_EQ(func_call_id->name, "f");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_as_arg_name",
@@ -219,7 +228,16 @@ namespace valuascript::compiler::test {
             "f(a: 1, b: )\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 12} },
-            ExpectFunctionCall("f", {{"a", "1"}})
+            [](const Program &ast) {
+            auto func_call_expr = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
+            ASSERT_NE(func_call_expr, nullptr);
+            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
+            ASSERT_NE(func_call, nullptr);
+            EXPECT_EQ(func_call->arguments.size(), 2);
+            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+            ASSERT_NE(func_call_id, nullptr);
+            EXPECT_EQ(func_call_id->name, "f");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "multiple_consecutive_commas",

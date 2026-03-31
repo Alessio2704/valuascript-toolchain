@@ -25,8 +25,8 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(func->parameters[i].name, expected_params[i].first) << "Param name mismatch at index " << i;
                 ASSERT_NE(func->parameters[i].type, nullptr);
                 EXPECT_EQ(func->parameters[i].type->name, expected_params[i].second) << "Param type mismatch at index "
- <<
-                         i;
+     <<
+                             i;
             }
 
             ASSERT_EQ(func->return_types.size(), expected_returns.size()) << "Return type count mismatch!";
@@ -54,16 +54,16 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class FunctionParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class FunctionParametersAndReturnTypeParserSynchronizationTest : public ParserErrorsSynchronizationBase {
     };
 
-    TEST_P(FunctionParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(FunctionParametersAndReturnTypeParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
         run_parser_and_check_errors(GetParam());
     }
 
     INSTANTIATE_TEST_SUITE_P(
         ParserExhaustiveStressTests,
-        FunctionParserSynchronizationTest,
+        FunctionParametersAndReturnTypeParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
             "no_name_func_empty_ast",
@@ -119,7 +119,8 @@ namespace valuascript::compiler::test {
             "func test(a: int) -> int  { return 1 \n",
             {{Err::ExpectedRightBraceAfterFunctionBody, 1, 37}},
             [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 0);
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            ASSERT_EQ(ast.function_definitions[0]->body.size(), 1);
             ASSERT_EQ(ast.execution_steps.size(), 0);
             },
             },
@@ -129,7 +130,7 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             {{Err::ExpectedRightBraceAfterFunctionBody, 2, 10}},
             [](const Program& ast) {
-            EXPECT_EQ(ast.function_definitions.size(), 0);
+            EXPECT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.execution_steps.size(), 0);
             },
             },

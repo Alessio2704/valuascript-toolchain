@@ -106,7 +106,14 @@ namespace valuascript::compiler::test {
             "let a = { x: , y: 2 }\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 14} },
-            ExpectDict({ {"y", "2"} })
+            [](const Program& ast) {
+            auto assing_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict_literal = dynamic_cast<DictLiteral*>(assing_1->value.get());
+            EXPECT_NE(dict_literal, nullptr);
+            EXPECT_EQ(dict_literal->elements.size(), 2);
+            EXPECT_EQ(dict_literal->elements[0].value, nullptr);
+            EXPECT_NE(dict_literal->elements[1].value, nullptr);
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "dict_key_is_reserved_keyword",

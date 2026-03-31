@@ -137,16 +137,16 @@ namespace valuascript::compiler::test {
             "func test(a: scalar, b: decimal) -> scalar decimal { return 1 + 1 }", ValuascriptErrorCode::
             ExpectedCommaSeparatorInReturnTypeList},
             FunctionSadParam{"top_level_declaration_in_func_1",
-            "func test(a: s) -> s { return 1 \n let a = b()\n enum Test: s {}\n", ValuascriptErrorCode::
+            "func test(a: s) -> s { return 1 \n let a = b()\n enum Test: s {} }\n", ValuascriptErrorCode::
             TopLevelDeclarationNotAllowedHere},
             FunctionSadParam{"top_level_declaration_in_func_2",
-            "func test(a: s) -> s { return 1 \n let a = b()\n struct Test: s {}\n", ValuascriptErrorCode::
+            "func test(a: s) -> s { return 1 \n let a = b()\n struct Test {} }\n", ValuascriptErrorCode::
             TopLevelDeclarationNotAllowedHere},
             FunctionSadParam{"top_level_declaration_in_func_3",
-            "func test(a: s) -> s { return 1 \n let a = b()\n #dir\n", ValuascriptErrorCode::
+            "func test(a: s) -> s { return 1 \n let a = b()\n #dir\n }", ValuascriptErrorCode::
             TopLevelDeclarationNotAllowedHere},
             FunctionSadParam{"top_level_declaration_in_func_4",
-            "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n", ValuascriptErrorCode::
+            "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n }", ValuascriptErrorCode::
             TopLevelDeclarationNotAllowedHere}
         ),
         [](const testing::TestParamInfo<FunctionSadParam>& info) {

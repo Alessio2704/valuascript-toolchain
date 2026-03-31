@@ -207,6 +207,10 @@ namespace valuascript::compiler {
 
         std::vector<std::unique_ptr<Statement> > body;
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+            if (is_at_top_level_declaration() && is_missing_closing_brace()) {
+                break;
+            }
+
             try {
                 parse_statement_or_declaration(ParseContext::FunctionBody, nullptr, body);
             } catch (const ParseSyncException &) {
@@ -214,8 +218,13 @@ namespace valuascript::compiler {
             }
         }
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace,
-                                                 ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody);
+        Token end_token = cursor_.previous();
+        try {
+            end_token = cursor_.consume(TokenType::RightBrace,
+                                        ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody);
+        } catch (const ParseSyncException &) {
+            synchronize();
+        }
 
         auto func_def = std::make_unique<FunctionDefinition>(std::move(modifiers), name.lexeme, std::move(params),
                                                              std::move(return_types), std::move(body),

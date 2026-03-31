@@ -409,7 +409,13 @@ namespace valuascript::compiler::test {
             "@test(a: , b: 2) let c = 3\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 10} },
-            ExpectModifierSet({ {"test", {{"b", "2"}}} })
+            [](const Program &ast) {
+            auto assign_expr = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_expr, nullptr);
+            auto& modifier = assign_expr->modifiers[0];
+            EXPECT_EQ(modifier.arguments.size(), 2);
+            EXPECT_EQ(modifier.name, "test");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_double_comma",

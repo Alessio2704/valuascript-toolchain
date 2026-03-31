@@ -61,13 +61,19 @@ namespace valuascript::compiler {
                 bool is_id_like = tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type);
                 return is_id_like && cursor_.peek(1).type == TokenType::Colon;
             },
-            [this, key_err, colon_err]() {
+            [this, key_err, colon_err, closing_token]() {
                 Token key_token = consume_identifier(key_err, false);
                 cursor_.consume(TokenType::Colon, colon_err);
-                auto val = parse_expression();
 
-                if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                std::unique_ptr<Expression> val = nullptr;
+
+                if (cursor_.check(TokenType::Comma) || cursor_.check(closing_token)) {
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+                } else {
+                    val = parse_expression();
+                    if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                    }
                 }
 
                 return std::make_pair(key_token.lexeme, std::move(val));
@@ -81,6 +87,50 @@ namespace valuascript::compiler {
             std::vector<std::unique_ptr<Statement> > dummy_block;
             parse_statement_or_declaration(ParseContext::TopLevel, &dummy, dummy_block);
         } catch (const ParseSyncException &) {
+        }
+    }
+
+    bool Parser::is_at_top_level_declaration() const {
+        int offset = 0;
+
+        while (cursor_.peek(offset).type == TokenType::At) {
+            offset++;
+            offset++;
+
+            if (cursor_.peek(offset).type == TokenType::LeftParen) {
+                int depth = 1;
+                offset++;
+                while (depth > 0 && cursor_.peek(offset).type != TokenType::EndOfFile) {
+                    if (cursor_.peek(offset).type == TokenType::LeftParen) depth++;
+                    else if (cursor_.peek(offset).type == TokenType::RightParen) depth--;
+                    offset++;
+                }
+            }
+        }
+
+        return is_top_level_only_declaration(cursor_.peek(offset).type);
+    }
+
+    bool Parser::is_missing_closing_brace() const {
+        int depth = 1;
+        int offset = 0;
+
+        while (true) {
+            TokenType t = cursor_.peek(offset).type;
+
+            if (t == TokenType::EndOfFile) {
+                return true;
+            }
+
+            if (t == TokenType::LeftBrace) {
+                depth++;
+            } else if (t == TokenType::RightBrace) {
+                depth--;
+                if (depth == 0) {
+                    return false;
+                }
+            }
+            offset++;
         }
     }
 }

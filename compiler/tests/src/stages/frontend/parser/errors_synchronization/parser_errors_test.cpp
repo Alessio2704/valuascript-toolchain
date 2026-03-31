@@ -198,10 +198,22 @@ namespace valuascript::compiler::test {
             "let value_of_research_assets, current_year_amortization = get_rd()\n"
             "// -- WACC --\n"
             "let wacc = get_wacc()\n"
+            "enum Scenario: scalar { LOW, BASE, HIGH}\n"
+            "}\n",
+            {
+            {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1}
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "Regression_2_a",
+            "func test() -> scalar { return 1\n"
+            "// -- R&D Capitalization --\n"
+            "let value_of_research_assets, current_year_amortization = get_rd()\n"
+            "// -- WACC --\n"
+            "let wacc = get_wacc()\n"
             "enum Scenario: scalar { LOW, BASE, HIGH }\n",
             {
-            {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1},
-            {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 6, 42}
+            {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 5, 22}
             }
             },
             ParserErrorsSynchronizationTestCase{

@@ -404,10 +404,16 @@ namespace valuascript::compiler {
                 auto modifiers = parse_modifiers();
                 Token key_token = consume_identifier(ValuascriptErrorCode::ExpectedDictionaryKey, false);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterDictionaryKey);
-                auto val = parse_expression();
 
-                if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                std::unique_ptr<Expression> val = nullptr;
+                if (cursor_.check(TokenType::Comma) || cursor_.check(TokenType::RightBrace)) {
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+                } else {
+                    val = parse_expression();
+
+                    if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                    }
                 }
 
                 return DictItem{std::move(modifiers), key_token.lexeme, std::move(val)};

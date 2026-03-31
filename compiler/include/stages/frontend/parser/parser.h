@@ -116,6 +116,10 @@ namespace valuascript::compiler {
 
         [[nodiscard]] static bool is_top_level_token(TokenType type);
 
+        bool is_at_top_level_declaration() const;
+
+        bool is_missing_closing_brace() const;
+
         static bool is_statement_start(const Token &token, TokenType next_type);
 
         static bool is_identifier_start(const Token& token);
