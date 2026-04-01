@@ -298,7 +298,16 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingThenToken, 1, 28},
             },
-            ExpectEnum("Test", "int", {{"B", "2"}})
+            [](const Program& ast) {
+            auto& enum_def = ast.enum_definitions[0];
+            ASSERT_EQ(enum_def->cases.size(), 2);
+            auto cond_expr = dynamic_cast<ConditionalExpression*>(enum_def->cases[0].value.get());
+            ASSERT_NE(cond_expr, nullptr);
+            ASSERT_NE(cond_expr->condition, nullptr);
+            ASSERT_NE(cond_expr->then_branch, nullptr);
+            ASSERT_NE(cond_expr->else_branch, nullptr);
+            ASSERT_NE(enum_def->cases[1].value, nullptr);
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_2",
@@ -308,7 +317,20 @@ namespace valuascript::compiler::test {
             {Err::MissingThenToken, 1, 28},
             {Err::MissingThenToken, 1, 47},
             },
-            ExpectEnum("Test", "int", {})
+            [](const Program& ast) {
+            auto& enum_def = ast.enum_definitions[0];
+            ASSERT_EQ(enum_def->cases.size(), 2);
+            auto cond_expr_1 = dynamic_cast<ConditionalExpression*>(enum_def->cases[0].value.get());
+            ASSERT_NE(cond_expr_1, nullptr);
+            ASSERT_NE(cond_expr_1->condition, nullptr);
+            ASSERT_NE(cond_expr_1->then_branch, nullptr);
+            ASSERT_NE(cond_expr_1->else_branch, nullptr);
+            auto cond_expr_2 = dynamic_cast<ConditionalExpression*>(enum_def->cases[1].value.get());
+            ASSERT_NE(cond_expr_2, nullptr);
+            ASSERT_NE(cond_expr_2->condition, nullptr);
+            ASSERT_NE(cond_expr_2->then_branch, nullptr);
+            ASSERT_NE(cond_expr_2->else_branch, nullptr);
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_3",

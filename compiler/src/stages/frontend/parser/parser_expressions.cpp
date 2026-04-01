@@ -251,7 +251,8 @@ namespace valuascript::compiler {
 
                 if (tok.type == TokenType::Case || tok.type == TokenType::Default ||
                     tok.type == TokenType::RightBrace || tok.type == TokenType::RightParen ||
-                    tok.type == TokenType::RightBracket || tok.type == TokenType::Return) {
+                    tok.type == TokenType::RightBracket || tok.type == TokenType::Return ||
+                    tok.type == TokenType::Then || tok.type == TokenType::Else) {
                     const Token &prev = cursor_.previous();
 
                     if (tok.line > prev.line && is_dangling_operator(prev.type)) {
@@ -452,15 +453,32 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_conditional_expression() {
         const Token &start_token = cursor_.previous();
 
-        auto condition = parse_expression();
+        std::unique_ptr<Expression> condition = nullptr;
+        try {
+            condition = parse_expression();
+        } catch (const ParseSyncException &) {
+            synchronize_to_conditional_boundary();
+        }
 
-        cursor_.consume(TokenType::Then, ValuascriptErrorCode::MissingThenToken);
+        std::unique_ptr<Expression> then_branch = nullptr;
 
-        auto then_branch = parse_expression();
+        if (!cursor_.match({TokenType::Then})) {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingThenToken);
+        }
 
-        cursor_.consume(TokenType::Else, ValuascriptErrorCode::MissingElseToken);
+        try {
+            then_branch = parse_expression();
+        } catch (const ParseSyncException &) {
+            synchronize_to_conditional_boundary();
+        }
 
-        auto else_branch = parse_expression();
+        std::unique_ptr<Expression> else_branch = nullptr;
+
+        if (!cursor_.match({TokenType::Else})) {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingElseToken);
+        }
+
+        else_branch = parse_expression();
 
         auto cond_expr = std::make_unique<ConditionalExpression>(
             std::move(condition), std::move(then_branch), std::move(else_branch));

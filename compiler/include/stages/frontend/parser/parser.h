@@ -100,6 +100,8 @@ namespace valuascript::compiler {
 
         void synchronize_to_switch_boundary();
 
+        void synchronize_to_conditional_boundary();
+
         static bool is_valid_lvalue(const Expression *expr);
 
         static bool acts_like_identifier(const Token &token, TokenType next_type);
