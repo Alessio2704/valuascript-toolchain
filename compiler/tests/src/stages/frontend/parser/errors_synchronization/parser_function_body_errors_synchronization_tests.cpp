@@ -154,7 +154,7 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingValueAfterEquals, 2, 11},
             {Err::InvalidExpression, 3, 17},
-            {Err::InvalidExpression, 5, 1}
+            {Err::InvalidExpression, 4, 11}
             },
             ExpectFunctionBodySize("test", 0)
             },
@@ -456,7 +456,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let c = 1\n",
             {
-            {Err::InvalidExpression, 4, 1}
+            {Err::InvalidExpression, 3, 12}
             }
             }
         ),

@@ -249,6 +249,18 @@ namespace valuascript::compiler {
                     throw ParseSyncException();
                 }
 
+                if (tok.type == TokenType::Case || tok.type == TokenType::Default ||
+                    tok.type == TokenType::RightBrace || tok.type == TokenType::RightParen ||
+                    tok.type == TokenType::RightBracket || tok.type == TokenType::Return) {
+                    const Token &prev = cursor_.previous();
+
+                    if (tok.line > prev.line && is_dangling_operator(prev.type)) {
+                        cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, false);
+                    }
+
+                    cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
+                }
+
                 if (is_reserved_keyword(tok)) {
                     cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
                     cursor_.advance();
@@ -468,21 +480,7 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case = nullptr;
 
-        while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-            if (cursor_.match({TokenType::Case})) {
-                cases.push_back(parse_switch_case());
-            } else if (cursor_.match({TokenType::Default})) {
-                if (default_case != nullptr) {
-                    cursor_.report_error_no_panic(cursor_.previous(),
-                                                  ValuascriptErrorCode::MultipleDefaultCasesInSwitch);
-                }
-                default_case = parse_switch_default();
-            } else {
-                cursor_.report_error_no_panic(cursor_.peek(),
-                                              ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
-                synchronize_to_switch_boundary();
-            }
-        }
+        parse_switch_body(cases, default_case);
 
         try {
             const Token &end_token = cursor_.consume(TokenType::RightBrace,
@@ -509,22 +507,28 @@ namespace valuascript::compiler {
     std::pair<std::vector<std::string>, std::unique_ptr<Expression> > Parser::parse_switch_case() {
         std::vector<std::string> identifiers;
 
-        try {
-            do {
+        while (true) {
+            const Token &tok = cursor_.peek();
+            if (tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type)) {
                 Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
                 identifiers.push_back(id_token.lexeme);
+            } else {
+                cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, true);
 
-                if (cursor_.match({TokenType::Comma})) {
-                } else if (cursor_.check(TokenType::Identifier)) {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
-                } else {
-                    break;
+                if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)) {
+                    throw ParseSyncException();
                 }
-            } while (true);
-        } catch (const ParseSyncException &) {
-            synchronize_to_switch_boundary();
-            return {std::move(identifiers), nullptr};
+            }
+
+            if (cursor_.match({TokenType::Comma})) {
+                continue;
+            } else if (cursor_.check(TokenType::Identifier)) {
+                cursor_.report_error_no_panic(cursor_.peek(),
+                                              ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
+                continue;
+            } else {
+                break;
+            }
         }
 
         std::unique_ptr<Expression> result = nullptr;
@@ -552,13 +556,21 @@ namespace valuascript::compiler {
 
         auto expr = parse_expression();
 
-        if (!cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) &&
+        bool should_break_out = is_missing_closing_brace() &&
+                                (is_at_top_level_declaration() ||
+                                 cursor_.peek().type == TokenType::Return ||
+                                 is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+
+        if (!should_break_out && !cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) &&
             !cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
-            if (is_expression_start(cursor_.peek().type)) {
-                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInSwitchCaseResult);
-            } else {
-                cursor_.report_error_no_panic(cursor_.peek(),
-                                              ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult);
+            if (cursor_.peek().line == cursor_.previous().line) {
+                if (is_expression_start(cursor_.peek().type)) {
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                                  ValuascriptErrorCode::MissingOperatorInSwitchCaseResult, true);
+                } else {
+                    cursor_.report_error_no_panic(cursor_.peek(),
+                                                  ValuascriptErrorCode::CaseOrDefaultMissingInSwitchAfterResult, true);
+                }
             }
         }
         return expr;
@@ -566,14 +578,26 @@ namespace valuascript::compiler {
 
 
     std::unique_ptr<Expression> Parser::parse_switch_target() {
-        cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterSwitch);
         try {
+            cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterSwitch);
             auto target = parse_expression();
             cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget);
             return target;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightParen);
-            if (cursor_.check(TokenType::RightParen)) cursor_.advance();
+            int depth = 0;
+            while (!cursor_.is_at_end()) {
+                TokenType type = cursor_.peek().type;
+                if (depth == 0 && (type == TokenType::RightParen || type == TokenType::LeftBrace)) {
+                    break;
+                }
+                if (is_grouping_opener(type)) depth++;
+                else if (is_grouping_closer(type)) depth--;
+                cursor_.advance();
+            }
+
+            if (cursor_.check(TokenType::RightParen)) {
+                cursor_.advance();
+            }
             return nullptr;
         }
     }
@@ -582,6 +606,15 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > &cases,
         std::unique_ptr<Expression> &default_case) {
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
+            bool should_break_out = is_missing_closing_brace() &&
+                                    (is_at_top_level_declaration() ||
+                                     cursor_.peek().type == TokenType::Return ||
+                                     is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+
+            if (should_break_out) {
+                break;
+            }
+
             try {
                 if (cursor_.match({TokenType::Case})) {
                     cases.push_back(parse_switch_case());
@@ -592,15 +625,16 @@ namespace valuascript::compiler {
                     }
                     default_case = parse_switch_default();
                 } else {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody);
+                    if (is_top_level_token(cursor_.peek().type)) {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
+                                             true);
+                    } else {
+                        cursor_.report_error(cursor_.peek(),
+                                             ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody, true);
+                    }
                 }
             } catch (const ParseSyncException &) {
-                while (!cursor_.is_at_end()) {
-                    if (cursor_.check(TokenType::Case) || cursor_.check(TokenType::Default) || cursor_.check(
-                            TokenType::RightBrace))
-                        break;
-                    cursor_.advance();
-                }
+                synchronize_to_switch_boundary();
             }
         }
     }

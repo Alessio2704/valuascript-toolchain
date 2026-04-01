@@ -101,7 +101,7 @@ namespace valuascript::compiler::test {
             SwitchSadParam{"duplicate_default", "let a = switch (res) { default -> 1 default -> 2 }",
             ValuascriptErrorCode::MultipleDefaultCasesInSwitch},
             SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-            ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody},
+            ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere},
             SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", ValuascriptErrorCode::
             MissingOperatorInSwitchCaseResult},
             SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", ValuascriptErrorCode::

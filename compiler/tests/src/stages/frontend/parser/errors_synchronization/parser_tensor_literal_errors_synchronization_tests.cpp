@@ -424,8 +424,8 @@ namespace valuascript::compiler::test {
             "]\n"
             "let recovery = [ 40 ]\n",
             {
-            {Err::InvalidExpression, 3, 1},
-            {Err::InvalidExpression, 7, 1}
+            {Err::InvalidExpression, 2, 7},
+            {Err::InvalidExpression, 6, 8}
             },[](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
 

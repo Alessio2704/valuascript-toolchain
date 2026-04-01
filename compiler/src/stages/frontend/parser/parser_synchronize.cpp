@@ -36,12 +36,34 @@ namespace valuascript::compiler {
     }
 
     void Parser::synchronize_to_switch_boundary() {
+        int depth = 0;
+
         while (!cursor_.is_at_end()) {
             TokenType type = cursor_.peek().type;
-            if (type == TokenType::Case || type == TokenType::Default || type == TokenType::RightBrace) {
-                return;
+
+            if (depth == 0) {
+                if (type == TokenType::Case || type == TokenType::Default || type == TokenType::RightBrace) {
+                    return;
+                }
+                if (is_missing_closing_brace() &&
+                    (is_at_top_level_declaration() ||
+                     type == TokenType::Return ||
+                     is_statement_start(cursor_.peek(), cursor_.peek(1).type))) {
+                    return;
+                }
             }
+
+            if (is_grouping_opener(type)) {
+                depth++;
+            } else if (is_grouping_closer(type)) {
+                depth--;
+            }
+
             cursor_.advance();
+
+            if (depth < 0) {
+                depth = 0;
+            }
         }
     }
 
