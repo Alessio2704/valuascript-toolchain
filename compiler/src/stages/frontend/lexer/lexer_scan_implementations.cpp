@@ -14,18 +14,28 @@ namespace valuascript::compiler {
         }
 
         while (!is_at_end()) {
-            if (is_docstring && peek() == '"' && peek_next() == '"' && source_[current_ + 2] == '"') {
-                break;
-            }
+            if (is_docstring) {
+                if (peek() == '"' && peek_next() == '"') {
+                    if (current_ + 2 < source_.length() && source_[current_ + 2] == '"') {
+                        advance();
+                        advance();
+                        advance();
+                        add_token(TokenType::DocString);
+                        return;
+                    }
+                }
+            } else {
+                if (peek() == '"') {
+                    advance();
+                    add_token(TokenType::String);
+                    return;
+                }
 
-            if (!is_docstring && peek() == '"') {
-                break;
-            }
-
-            if (!is_docstring && peek() == '\n') {
-                report_error(ValuascriptErrorCode::UnclosedString);
-                add_token(TokenType::String);
-                return;
+                if (peek() == '\n') {
+                    report_error(ValuascriptErrorCode::UnclosedString);
+                    add_token(TokenType::String);
+                    return;
+                }
             }
 
             if (peek() == '\n') {
@@ -36,20 +46,8 @@ namespace valuascript::compiler {
             advance();
         }
 
-        if (is_at_end()) {
-            report_error(ValuascriptErrorCode::UnclosedString);
-            return;
-        }
-
-        if (is_docstring) {
-            advance();
-            advance();
-            advance();
-            add_token(TokenType::DocString);
-        } else {
-            advance();
-            add_token(TokenType::String);
-        }
+        report_error(ValuascriptErrorCode::UnclosedString);
+        add_token(is_docstring ? TokenType::DocString : TokenType::String);
     }
 
     void Lexer::consume_digits() {
