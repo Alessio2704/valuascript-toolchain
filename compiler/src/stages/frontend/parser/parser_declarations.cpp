@@ -43,13 +43,29 @@ namespace valuascript::compiler {
             std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
             if (cursor_.match({TokenType::LeftParen})) {
+                CloserTracker tracker(*this, TokenType::RightParen);
                 arguments = parse_key_value_list(
                     TokenType::RightParen,
                     ValuascriptErrorCode::MissingArgumentNameInModifier,
                     ValuascriptErrorCode::MissingColonAfterArgument,
                     ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier,
                     ValuascriptErrorCode::TrailingCommaInModifier);
-                cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs);
+                try {
+                    cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs);
+                } catch (const ParseSyncException &) {
+                    synchronize_and_consume_closer(TokenType::RightParen);
+
+                    Modifier mod;
+                    mod.name = name_token.lexeme;
+                    mod.arguments = std::move(arguments);
+                    mod.span = cursor_.make_span(start_token, cursor_.previous());
+                    modifiers.push_back(std::move(mod));
+
+                    if (is_active_closer(cursor_.peek().type) && cursor_.peek().type != TokenType::RightParen) {
+                        throw ParseSyncException();
+                    }
+                    continue;
+                }
             }
 
             Modifier mod;
@@ -69,6 +85,8 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
 
+        CloserTracker tracker(*this, TokenType::RightBrace);
+
         auto fields = parse_comma_separated_list<std::pair<std::string, std::unique_ptr<TypeAnnotation> > >(
             TokenType::RightBrace,
             std::nullopt,
@@ -77,6 +95,11 @@ namespace valuascript::compiler {
             [this]() {
                 const Token &tok = cursor_.peek();
                 const TokenType next = cursor_.peek(1).type;
+
+                if (tok.type == TokenType::At) {
+                    if (is_at_any_declaration()) return false;
+                }
+
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
 
                 return is_reserved_keyword(tok) && (next == TokenType::Colon);
@@ -88,8 +111,15 @@ namespace valuascript::compiler {
             }
         );
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace,
-                                                 ValuascriptErrorCode::ExpectedRightBraceAfterStructBody);
+        Token end_token = cursor_.previous();
+        try {
+            end_token = cursor_.consume(TokenType::RightBrace,
+                                        ValuascriptErrorCode::ExpectedRightBraceAfterStructBody);
+        } catch (const ParseSyncException &) {
+            synchronize_and_consume_closer(TokenType::RightBrace);
+            end_token = cursor_.previous();
+        }
+
         auto struct_def = std::make_unique<
             StructDefinition>(std::move(modifiers), name_token.lexeme, std::move(fields));
 
@@ -109,6 +139,8 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody);
 
+        CloserTracker tracker(*this, TokenType::RightBrace);
+
         auto cases = parse_comma_separated_list<EnumCase>(
             TokenType::RightBrace,
             std::nullopt,
@@ -117,6 +149,10 @@ namespace valuascript::compiler {
             [this]() {
                 const Token &tok = cursor_.peek();
                 const Token &next = cursor_.peek(1);
+
+                if (tok.type == TokenType::At) {
+                    if (is_at_any_declaration()) return false;
+                }
 
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
 
@@ -146,8 +182,14 @@ namespace valuascript::compiler {
             }
         );
 
-        const Token &end_token = cursor_.consume(TokenType::RightBrace,
-                                                 ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody);
+        Token end_token = cursor_.previous();
+        try {
+            end_token = cursor_.consume(TokenType::RightBrace,
+                                        ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody);
+        } catch (const ParseSyncException &) {
+            synchronize_and_consume_closer(TokenType::RightBrace);
+            end_token = cursor_.previous();
+        }
 
         auto enum_def = std::make_unique<EnumDefinition>(std::move(modifiers), name_token.lexeme,
                                                          std::move(underlying_type), std::move(cases));
@@ -164,22 +206,26 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
-        auto params = parse_comma_separated_list<FunctionParameter>(
-            TokenType::RightParen,
-            ValuascriptErrorCode::TrailingCommaInFunctionCall,
-            ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
-            {},
-            [&]() {
-                auto mods = parse_modifiers();
-                if (!mods.empty()) {
-                    cursor_.report_error_no_panic(cursor_.previous(),
-                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+        std::vector<FunctionParameter> params;
+        {
+            CloserTracker param_tracker(*this, TokenType::RightParen);
+            params = parse_comma_separated_list<FunctionParameter>(
+                TokenType::RightParen,
+                ValuascriptErrorCode::TrailingCommaInFunctionCall,
+                ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
+                {},
+                [&]() {
+                    auto mods = parse_modifiers();
+                    if (!mods.empty()) {
+                        cursor_.report_error_no_panic(cursor_.previous(),
+                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
+                    const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
+                    cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
+                    return FunctionParameter{param_name.lexeme, parse_type_annotation()};
                 }
-                const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
-                cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
-                return FunctionParameter{param_name.lexeme, parse_type_annotation()};
-            }
-        );
+            );
+        }
 
         cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterParameters);
         cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::MissingArrowInFunction);
@@ -199,6 +245,8 @@ namespace valuascript::compiler {
         }
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeFunctionBody);
+
+        CloserTracker body_tracker(*this, TokenType::RightBrace);
 
         std::optional<std::string> docstring = std::nullopt;
         if (cursor_.check(TokenType::DocString)) {
@@ -223,7 +271,8 @@ namespace valuascript::compiler {
             end_token = cursor_.consume(TokenType::RightBrace,
                                         ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody);
         } catch (const ParseSyncException &) {
-            synchronize();
+            synchronize_and_consume_closer(TokenType::RightBrace);
+            end_token = cursor_.previous();
         }
 
         auto func_def = std::make_unique<FunctionDefinition>(std::move(modifiers), name.lexeme, std::move(params),
@@ -238,6 +287,8 @@ namespace valuascript::compiler {
         const Token &start_token = cursor_.peek();
 
         if (cursor_.match({TokenType::LeftParen})) {
+            CloserTracker tracker(*this, TokenType::RightParen);
+
             auto elements = parse_comma_separated_list<std::unique_ptr<TypeAnnotation> >(
                 TokenType::RightParen,
                 ValuascriptErrorCode::SingleElementTuplesNotAllowed,
@@ -248,8 +299,14 @@ namespace valuascript::compiler {
                 }
             );
 
-            const Token &end_token = cursor_.consume(TokenType::RightParen,
-                                                     ValuascriptErrorCode::UnmatchedParenthesisInTuple);
+            Token end_token = cursor_.previous();
+            try {
+                end_token = cursor_.consume(TokenType::RightParen,
+                                            ValuascriptErrorCode::UnmatchedParenthesisInTuple);
+            } catch (const ParseSyncException &) {
+                synchronize_and_consume_closer(TokenType::RightParen);
+                end_token = cursor_.previous();
+            }
 
             auto tuple_type_annotation = std::make_unique<TupleTypeAnnotation>(std::move(elements));
             tuple_type_annotation->span = cursor_.make_span(start_token, end_token);
@@ -270,10 +327,13 @@ namespace valuascript::compiler {
                 }
             );
             if (generic_args.empty()) {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::EmptyGenericTypeAnnotation);
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::EmptyGenericTypeAnnotation);
             }
 
-            cursor_.consume(TokenType::Greater, ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs);
+            try {
+                cursor_.consume(TokenType::Greater, ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs);
+            } catch (const ParseSyncException &) {
+            }
         }
 
         auto type_ann = std::make_unique<TypeAnnotation>(name_token.lexeme, std::move(generic_args));

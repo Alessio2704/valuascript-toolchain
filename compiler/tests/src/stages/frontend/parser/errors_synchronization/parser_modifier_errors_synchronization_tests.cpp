@@ -92,7 +92,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1 let b = 2\n"
             "let recovery = 1\n",
             { {Err::UnmatchedParenthesisAfterModifierArgs, 1, 12} },
-            ExpectModifierSet({ })
+            ExpectModifierSet({{"test", {"a"}}})
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_missing_colon",
@@ -262,7 +262,10 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "modifier_unmatched_arg_paren_at_eof",
             "@test(a: 1\n",
-            { {Err::UnmatchedParenthesisAfterModifierArgs, 1, 11} },
+            {
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 11},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 11},
+            },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
             }
@@ -456,7 +459,10 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "modifier_eof_after_paren",
             "@test(",
-            { {Err::UnmatchedParenthesisAfterModifierArgs, 1, 7} },
+            {
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 7},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 7},
+            },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
             }

@@ -1,7 +1,12 @@
 #include "stages/frontend/parser/parser.h"
 #include "token/reserved_keyword_lookup.h"
+#include <algorithm>
 
 namespace valuascript::compiler {
+    bool Parser::is_active_closer(TokenType type) const {
+        return std::find(active_closers_.begin(), active_closers_.end(), type) != active_closers_.end();
+    }
+
     void Parser::synchronize_to_closer(TokenType closing_token) {
         int internal_depth = 0;
         while (!cursor_.is_at_end()) {
@@ -37,6 +42,17 @@ namespace valuascript::compiler {
 
             cursor_.advance();
             if (internal_depth < 0) internal_depth = 0;
+        }
+    }
+
+    void Parser::synchronize_and_consume_closer(TokenType expected_closer) {
+        synchronize_to_closer(expected_closer);
+        if (cursor_.check(expected_closer)) {
+            cursor_.advance();
+        } else if (is_grouping_closer(cursor_.peek().type)) {
+            if (!is_active_closer(cursor_.peek().type)) {
+                cursor_.advance();
+            }
         }
     }
 

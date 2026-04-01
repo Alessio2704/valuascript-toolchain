@@ -93,8 +93,9 @@ namespace valuascript::compiler {
     bool Parser::is_at_top_level_declaration() const {
         int offset = 0;
 
-        while (cursor_.peek(offset).type == TokenType::At) {
+        while (cursor_.peek(offset).type != TokenType::EndOfFile && cursor_.peek(offset).type == TokenType::At) {
             offset++;
+            if (cursor_.peek(offset).type == TokenType::EndOfFile) break;
             offset++;
 
             if (cursor_.peek(offset).type == TokenType::LeftParen) {
@@ -109,6 +110,34 @@ namespace valuascript::compiler {
         }
 
         return is_top_level_only_declaration(cursor_.peek(offset).type);
+    }
+
+    bool Parser::is_at_any_declaration() const {
+        int offset = 0;
+
+        while (cursor_.peek(offset).type != TokenType::EndOfFile && cursor_.peek(offset).type == TokenType::At) {
+            offset++;
+            if (cursor_.peek(offset).type == TokenType::EndOfFile) break;
+            offset++;
+
+            if (cursor_.peek(offset).type == TokenType::LeftParen) {
+                int depth = 1;
+                offset++;
+                while (depth > 0 && cursor_.peek(offset).type != TokenType::EndOfFile) {
+                    if (cursor_.peek(offset).type == TokenType::LeftParen) depth++;
+                    else if (cursor_.peek(offset).type == TokenType::RightParen) depth--;
+                    offset++;
+                }
+            }
+        }
+
+        TokenType t = cursor_.peek(offset).type;
+        if (t == TokenType::Let || t == TokenType::Var) {
+            if (cursor_.peek(offset + 1).type == TokenType::EndOfFile) return false;
+            return cursor_.peek(offset + 1).type == TokenType::Identifier;
+        }
+
+        return is_top_level_only_declaration(t);
     }
 
     bool Parser::is_missing_closing_brace() const {

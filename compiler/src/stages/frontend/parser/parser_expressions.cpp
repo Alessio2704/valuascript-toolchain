@@ -61,6 +61,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
+        CloserTracker tracker(*this, TokenType::RightParen);
 
         if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end()) {
             const Token &p0 = cursor_.peek();
@@ -91,23 +92,21 @@ namespace valuascript::compiler {
         try {
             const Token &end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterArguments);
-
             auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
-
             func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-
             return func_call;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightParen);
-            if (cursor_.check(TokenType::RightParen)) {
-                cursor_.advance();
-            }
-            throw;
+            synchronize_and_consume_closer(TokenType::RightParen);
+            auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
+            func_call->span = cursor_.combine_spans(target_span,
+                                                    cursor_.make_span(cursor_.previous(), cursor_.previous()));
+            return func_call;
         }
     }
 
     std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
+        CloserTracker tracker(*this, TokenType::RightBracket);
 
         try {
             auto parse_bound = [&]() -> std::unique_ptr<Expression> {
@@ -148,18 +147,15 @@ namespace valuascript::compiler {
 
             const Token &end_token = cursor_.consume(TokenType::RightBracket,
                                                      ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex);
-
             auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
-
             bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-
             return bracket_access;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightBracket);
-            if (cursor_.check(TokenType::RightBracket)) {
-                cursor_.advance();
-            }
-            throw;
+            synchronize_and_consume_closer(TokenType::RightBracket);
+            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), nullptr);
+            bracket_access->span = cursor_.combine_spans(target_span,
+                                                         cursor_.make_span(cursor_.previous(), cursor_.previous()));
+            return bracket_access;
         }
     }
 
@@ -277,6 +273,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_tuple_or_grouping() {
         const Token &start_token = cursor_.previous();
+        CloserTracker tracker(*this, TokenType::RightParen);
 
         if (cursor_.match({TokenType::RightParen})) {
             auto node = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression> >{});
@@ -331,15 +328,7 @@ namespace valuascript::compiler {
             node->span = cursor_.make_span(start_token, end_token);
             return node;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightParen);
-
-            if (!cursor_.check(TokenType::RightParen) && is_grouping_closer(cursor_.peek().type) && cursor_.peek().line
-                == start_token.line) {
-                cursor_.advance();
-            } else if (cursor_.check(TokenType::RightParen)) {
-                cursor_.advance();
-            }
-
+            synchronize_and_consume_closer(TokenType::RightParen);
             auto node = std::make_unique<TupleLiteral>(std::move(elements));
             node->span = cursor_.make_span(start_token, cursor_.previous());
             return node;
@@ -360,15 +349,7 @@ namespace valuascript::compiler {
             node->span = cursor_.make_span(start_token, end_token);
             return node;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightParen);
-
-            if (!cursor_.check(TokenType::RightParen) && is_grouping_closer(cursor_.peek().type) && cursor_.peek().line
-                == start_token.line) {
-                cursor_.advance();
-            } else if (cursor_.check(TokenType::RightParen)) {
-                cursor_.advance();
-            }
-
+            synchronize_and_consume_closer(TokenType::RightParen);
             auto node = std::make_unique<GroupingExpression>(std::move(first_expr));
             node->span = cursor_.make_span(start_token, cursor_.previous());
             return node;
@@ -377,28 +358,26 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_tensor_literal() {
         const Token &start_token = cursor_.previous();
-
+        CloserTracker tracker(*this, TokenType::RightBracket);
         auto elements = parse_expression_list(TokenType::RightBracket);
 
         try {
             const Token &end_token = cursor_.consume(TokenType::RightBracket,
                                                      ValuascriptErrorCode::UnmatchedBracketAfterTensorElements);
-
             auto node = std::make_unique<TensorLiteral>(std::move(elements));
             node->span = cursor_.make_span(start_token, end_token);
-
             return node;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightBracket);
-            if (cursor_.check(TokenType::RightBracket)) {
-                cursor_.advance();
-            }
-            throw;
+            synchronize_and_consume_closer(TokenType::RightBracket);
+            auto node = std::make_unique<TensorLiteral>(std::move(elements));
+            node->span = cursor_.make_span(start_token, cursor_.previous());
+            return node;
         }
     }
 
     std::unique_ptr<Expression> Parser::parse_dict_literal() {
         const Token &start_token = cursor_.previous();
+        CloserTracker tracker(*this, TokenType::RightBrace);
 
         auto elements = parse_comma_separated_list<DictItem>(
             TokenType::RightBrace,
@@ -408,6 +387,10 @@ namespace valuascript::compiler {
             [this]() {
                 const Token &tok = cursor_.peek();
                 const TokenType next = cursor_.peek(1).type;
+
+                if (tok.type == TokenType::At) {
+                    if (is_at_any_declaration()) return false;
+                }
 
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
 
@@ -436,17 +419,14 @@ namespace valuascript::compiler {
         try {
             const Token &end_token = cursor_.consume(TokenType::RightBrace,
                                                      ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
-
             auto node = std::make_unique<DictLiteral>(std::move(elements));
             node->span = cursor_.make_span(start_token, end_token);
-
             return node;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightBrace);
-            if (cursor_.check(TokenType::RightBrace)) {
-                cursor_.advance();
-            }
-            throw;
+            synchronize_and_consume_closer(TokenType::RightBrace);
+            auto node = std::make_unique<DictLiteral>(std::move(elements));
+            node->span = cursor_.make_span(start_token, cursor_.previous());
+            return node;
         }
     }
 
@@ -494,6 +474,7 @@ namespace valuascript::compiler {
         auto target = parse_switch_target();
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody);
+        CloserTracker tracker(*this, TokenType::RightBrace);
 
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case = nullptr;
@@ -508,13 +489,7 @@ namespace valuascript::compiler {
             node->span = cursor_.make_span(start_token, end_token);
             return node;
         } catch (const ParseSyncException &) {
-            synchronize_to_closer(TokenType::RightBrace);
-            if (!cursor_.check(TokenType::RightBrace) && is_grouping_closer(cursor_.peek().type) && cursor_.peek().line
-                == start_token.line) {
-                cursor_.advance();
-            } else if (cursor_.check(TokenType::RightParen)) {
-                cursor_.advance();
-            }
+            synchronize_and_consume_closer(TokenType::RightBrace);
             auto node = std::make_unique<
                 SwitchExpression>(std::move(target), std::move(cases), std::move(default_case));
             node->span = cursor_.make_span(start_token, cursor_.previous());
@@ -598,6 +573,7 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_switch_target() {
         try {
             cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterSwitch);
+            CloserTracker tracker(*this, TokenType::RightParen);
             auto target = parse_expression();
             cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget);
             return target;
@@ -615,6 +591,10 @@ namespace valuascript::compiler {
 
             if (cursor_.check(TokenType::RightParen)) {
                 cursor_.advance();
+            } else if (is_grouping_closer(cursor_.peek().type)) {
+                if (!is_active_closer(cursor_.peek().type)) {
+                    cursor_.advance();
+                }
             }
             return nullptr;
         }

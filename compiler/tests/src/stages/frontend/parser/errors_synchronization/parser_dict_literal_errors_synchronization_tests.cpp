@@ -62,7 +62,7 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             { {Err::UnmatchedBraceInDictionaryLiteral, 1, 15} },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
+            EXPECT_EQ(ast.execution_steps.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBraceInDictionaryLiteral, 3, 15}
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
+            EXPECT_EQ(ast.execution_steps.size(), 4);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -170,7 +170,9 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
             ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 0);
+            ASSERT_EQ(dict->elements.size(), 1);
+            auto tensor = dynamic_cast<TensorLiteral*>(dict->elements[0].value.get());
+            ASSERT_NE(tensor, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -192,7 +194,7 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             { {Err::UnmatchedBraceInDictionaryLiteral, 1, 17} },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
+            EXPECT_EQ(ast.execution_steps.size(), 3);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -220,7 +222,11 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBraceInDictionaryLiteral, 1, 12}
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            EXPECT_EQ(dict->elements.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -231,7 +237,11 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBraceInDictionaryLiteral, 1, 13}
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            EXPECT_EQ(dict->elements.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -241,7 +251,11 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBraceInDictionaryLiteral, 1, 16}
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            EXPECT_EQ(dict->elements.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -269,9 +283,7 @@ namespace valuascript::compiler::test {
             {
             {Err::UnmatchedBraceInDictionaryLiteral, 1, 16}
             },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
+            ExpectDict({{"x", "1"}})
             },
             ParserErrorsSynchronizationTestCase{
             "empty_dict_with_garbage",

@@ -189,7 +189,7 @@ namespace valuascript::compiler::test {
             "func test(a: vector<int) -> int {  }\n"
             "let a = 1\n",
             {{Err::UnmatchedBracketAfterGenericArgs, 1, 24}},
-            ExpectFunction("test", {}, {"int"})
+            ExpectFunction("test", {{"a", "vector"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "error_in_params_types_2",
@@ -203,7 +203,7 @@ namespace valuascript::compiler::test {
             "func test(a: vector<int>, b: vector<>) -> int {  }\n"
             "let a = 1\n",
             {{Err::EmptyGenericTypeAnnotation, 1, 37}},
-            ExpectFunction("test", {{"a", "vector"}}, {"int"})
+            ExpectFunction("test", {{"a", "vector"}, {"b", "vector"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_colon",

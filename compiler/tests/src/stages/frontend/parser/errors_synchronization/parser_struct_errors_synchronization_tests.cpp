@@ -83,11 +83,11 @@ namespace valuascript::compiler::test {
             ExpectNoStructs()
             },
             ParserErrorsSynchronizationTestCase{
-            "no_right_brace_struct_empty_ast",
+            "no_right_brace_struct",
             "struct Test { id: int \n"
             "let a = 1\n",
             { {Err::ExpectedRightBraceAfterStructBody, 1, 22} },
-            ExpectNoStructs()
+            ExpectStruct("Test", {{"id", "int"}})
             },
             ParserErrorsSynchronizationTestCase{
             "no_colon_empty_struct_in_ast",

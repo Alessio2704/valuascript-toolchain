@@ -105,14 +105,14 @@ namespace valuascript::compiler::test {
             ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_empty_ast_1",
+            "wrong_generic_type_enum_ast_1",
             "enum Test : vector<int { A }\n"
             "let a = 1\n",
             { {Err::UnmatchedBracketAfterGenericArgs, 1, 24} },
-            ExpectNoEnums()
+            ExpectEnum("Test", "vector", {"A"})
             },
             ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_empty_ast_2",
+            "wrong_generic_type_enum_ast_2",
             "enum Test : vector<int, > { A }\n"
             "let a = 1\n",
             {{Err::TrailingCommaInGenericArgument, 1, 23}},
@@ -124,14 +124,14 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_empty_ast_3",
+            "wrong_generic_type_enum_ast_3",
             "enum Test : vector<*> { A }\n"
             "let a = 1\n",
             {
             {Err::MissingTypeAnnotation, 1, 20},
             {Err::EmptyGenericTypeAnnotation, 1, 21}
             },
-            ExpectNoEnums()
+            ExpectEnum("Test", "vector", {"A"})
             },
             ParserErrorsSynchronizationTestCase{
             "wrong_generic_type_enum_empty_ast_4",
@@ -154,11 +154,11 @@ namespace valuascript::compiler::test {
             ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "no_right_brace_enum_empty_ast",
+            "no_right_brace_enum_ast",
             "enum Test : int { A \n"
             "let a = 1\n",
             { {Err::ExpectedRightBraceAfterEnumBody, 1, 20} },
-            ExpectNoEnums()
+            ExpectEnum("Test", "int", {"A"})
             },
             ParserErrorsSynchronizationTestCase{
             "no_commas_all_cases_enum_in_ast",
@@ -282,14 +282,14 @@ namespace valuascript::compiler::test {
             ExpectEnum("Test", "int", { {"A", "1"} })
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_expression_and_brace_should_invalidate_all_enum_definition",
+            "missing_expression_and_brace",
             "enum Test : int { A = 1, B = \n"
             "let a = 1\n",
             {
             {Err::InvalidExpression, 1, 29},
             {Err::ExpectedRightBraceAfterEnumBody, 1, 29}
             },
-            ExpectNoEnums()
+            ExpectEnum("Test", "int", {{"A", "1"}})
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_1",
@@ -399,7 +399,8 @@ namespace valuascript::compiler::test {
             {Err::MissingDirectiveName, 1, 21},
             },
             [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 0);
+            EXPECT_EQ(ast.enum_definitions.size(), 1);
+            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 0);
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
             }

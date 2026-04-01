@@ -8,7 +8,18 @@
 namespace valuascript::compiler {
     class Parser {
     private:
+        struct CloserTracker {
+            Parser& parser;
+            CloserTracker(Parser& p, TokenType t) : parser(p) {
+                parser.active_closers_.push_back(t);
+            }
+            ~CloserTracker() {
+                parser.active_closers_.pop_back();
+            }
+        };
+
         TokenCursor cursor_;
+        std::vector<TokenType> active_closers_;
 
     public:
         explicit Parser(TokenCursor cursor);
@@ -120,6 +131,8 @@ namespace valuascript::compiler {
 
         bool is_at_top_level_declaration() const;
 
+        bool is_at_any_declaration() const;
+
         bool is_missing_closing_brace() const;
 
         static bool is_statement_start(const Token &token, TokenType next_type);
@@ -131,6 +144,10 @@ namespace valuascript::compiler {
         void synchronize();
 
         void synchronize_block_statement();
+
+        void synchronize_and_consume_closer(TokenType expected_closer);
+
+        bool is_active_closer(TokenType type) const;
 
         static bool is_grouping_opener(TokenType type);
 

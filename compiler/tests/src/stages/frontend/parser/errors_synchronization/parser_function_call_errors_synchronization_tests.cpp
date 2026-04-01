@@ -93,13 +93,22 @@ namespace valuascript::compiler::test {
         FunctionCallParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_function_call_in_assignment",
+            "function_call_in_assignment_missing_closing_paren",
             "let a = f(a: 1\n"
             "let recovery = 1\n",
             {
             {Err::ExpectedRightParenAfterArguments, 1, 15},
             },
-            ExpectNoFunctionCall()
+            [](const Program &ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            auto func_call = dynamic_cast<FunctionCall*>(assign->value.get());
+            ASSERT_NE(func_call, nullptr);
+            EXPECT_EQ(func_call->arguments.size(), 1);
+            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+            ASSERT_NE(func_call_id, nullptr);
+            EXPECT_EQ(func_call_id->name, "f");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "missing_comma_recovers_both_args",
@@ -177,13 +186,13 @@ namespace valuascript::compiler::test {
             ExpectFunctionCall("f", {{"let", "1"}, {"if", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_closing_parenthesis_drops_statement",
+            "missing_closing_parenthesis",
             "f(a: 1 \n"
             "let recovery = 1\n",
             {
             {Err::ExpectedRightParenAfterArguments, 1, 7}
             },
-            ExpectNoFunctionCall()
+            ExpectFunctionCall("f", {{"a", "1"}})
             },
             ParserErrorsSynchronizationTestCase{
             "garbage_tokens_recovers_gracefully",

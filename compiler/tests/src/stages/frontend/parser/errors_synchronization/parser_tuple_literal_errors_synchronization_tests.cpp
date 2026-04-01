@@ -161,15 +161,17 @@ namespace valuascript::compiler::test {
             auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto grouping = dynamic_cast<GroupingExpression*>(assignment->value.get());
             EXPECT_NE(grouping, nullptr);
-            EXPECT_EQ(grouping->expression, nullptr);
+            EXPECT_NE(grouping->expression, nullptr);
+            auto tensor = dynamic_cast<TensorLiteral*>(grouping->expression.get());
+            EXPECT_EQ(tensor->elements.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
             "array_inside_tuple_second_element_error",
-            "let a = (1,[1, 2)\n"
+            "let a = (1, [1, 2)\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 17} },
-            ExpectTuple(1)
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 18} },
+            ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_deeply_nested_error",
@@ -282,7 +284,7 @@ namespace valuascript::compiler::test {
             {
             {Err::UnmatchedBracketAfterTensorElements, 1, 17}
             },
-            ExpectTuple(2)
+            ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_nested_paren_overshoot_heuristic",
