@@ -2,17 +2,21 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
 #include "stages/frontend/parser/ast.h"
 #include "stages/frontend/parser/token_cursor.h"
+#include "stages/frontend/parser/token_traits.h"
 
 namespace valuascript::compiler {
     class Parser {
     private:
         struct CloserTracker {
-            Parser& parser;
-            CloserTracker(Parser& p, TokenType t) : parser(p) {
+            Parser &parser;
+
+            CloserTracker(Parser &p, TokenType t) : parser(p) {
                 parser.active_closers_.push_back(t);
             }
+
             ~CloserTracker() {
                 parser.active_closers_.pop_back();
             }
@@ -27,25 +31,16 @@ namespace valuascript::compiler {
         std::unique_ptr<Program> parse_program();
 
     private:
-        enum class Precedence {
-            None = 0, Or = 1, And = 2, Comparison = 3, Term = 4, Factor = 5, Power = 6
-        };
-
         enum class ParseContext { TopLevel, FunctionBody };
 
-        static Precedence get_operator_precedence(TokenType type);
-
-        [[nodiscard]] static bool is_operator_right_associative(TokenType type);
-
-        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool is_statement_context = true);
-
-        static bool is_top_level_only_declaration(TokenType type);
-
-        std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
+        void parse_statement_or_declaration(ParseContext ctx, Program *program,
+                                            std::vector<std::unique_ptr<Statement> > &block);
 
         std::unique_ptr<ImportStatement> parse_import_statement();
 
         std::unique_ptr<Directive> parse_directive();
+
+        std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
 
         std::unique_ptr<StructDefinition> parse_struct_definition(std::vector<Modifier> modifiers);
 
@@ -54,9 +49,6 @@ namespace valuascript::compiler {
         std::unique_ptr<FunctionDefinition> parse_function_definition(std::vector<Modifier> modifiers);
 
         std::unique_ptr<TypeAnnotation> parse_type_annotation();
-
-        void parse_statement_or_declaration(ParseContext ctx, Program *program,
-                                            std::vector<std::unique_ptr<Statement> > &block);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -74,14 +66,10 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_tuple_or_grouping();
 
-        std::unique_ptr<Expression> complete_tuple(
-            std::unique_ptr<Expression> first_expr,
-            const Token &start_token);
+        std::unique_ptr<Expression> complete_tuple(std::unique_ptr<Expression> first_expr, const Token &start_token);
 
-        std::unique_ptr<Expression> complete_grouping(
-            std::unique_ptr<Expression> first_expr,
-            bool first_expr_failed,
-            const Token &start_token);
+        std::unique_ptr<Expression> complete_grouping(std::unique_ptr<Expression> first_expr, bool first_expr_failed,
+                                                      const Token &start_token);
 
         std::unique_ptr<Expression> parse_tensor_literal();
 
@@ -99,9 +87,8 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_switch_target();
 
-        void parse_switch_body(
-            std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > &cases,
-            std::unique_ptr<Expression> &default_case);
+        void parse_switch_body(std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > &cases,
+                               std::unique_ptr<Expression> &default_case);
 
         std::pair<std::vector<std::string>, std::unique_ptr<Expression> > parse_switch_case();
 
@@ -109,56 +96,42 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_switch_result();
 
-        void synchronize_to_switch_boundary();
-
-        void synchronize_to_conditional_boundary();
-
-        static bool is_valid_lvalue(const Expression *expr);
-
-        static bool acts_like_identifier(const Token &token, TokenType next_type);
-
-        static bool is_expression_start(TokenType type);
-
-        static bool is_binary_operator(TokenType type);
-
-        static bool is_unary_operator(TokenType type);
-
-        static bool is_dangling_operator(TokenType type);
+        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool is_statement_context = true);
 
         void verify_statement_end() const;
 
-        [[nodiscard]] static bool is_top_level_token(TokenType type);
-
-        bool is_at_top_level_declaration() const;
-
-        bool is_at_any_declaration() const;
-
-        bool is_missing_closing_brace() const;
-
-        static bool is_statement_start(const Token &token, TokenType next_type);
-
-        static bool is_identifier_start(const Token& token);
-
         void consume_unexpected_statement_gracefully();
+
+        [[nodiscard]] TokenType peek_past_modifiers() const;
+
+        [[nodiscard]] bool is_at_top_level_declaration() const;
+
+        [[nodiscard]] bool is_at_any_declaration() const;
+
+        [[nodiscard]] bool is_missing_closing_brace() const;
+
+        [[nodiscard]] bool is_active_closer(TokenType type) const;
+
+        using SyncPredicate = std::function<bool(TokenType, int)>;
+
+        void recover(const SyncPredicate &stop_condition);
 
         void synchronize();
 
         void synchronize_block_statement();
 
+        void synchronize_to_closer(TokenType closing_token);
+
         void synchronize_and_consume_closer(TokenType expected_closer);
 
-        bool is_active_closer(TokenType type) const;
+        void synchronize_to_switch_boundary();
 
-        static bool is_grouping_opener(TokenType type);
-
-        static bool is_grouping_closer(TokenType type);
-
-        void synchronize_to_closer(TokenType closing_token);
+        void synchronize_to_conditional_boundary();
 
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
             TokenType closing_token,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
-            std::initializer_list<TokenType> panic_stops = {});
+            std::vector<TokenType> panic_stops = {});
 
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > parse_key_value_list(
             TokenType closing_token,
@@ -166,7 +139,7 @@ namespace valuascript::compiler {
             ValuascriptErrorCode colon_err,
             ValuascriptErrorCode missing_comma_err,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
-            std::initializer_list<TokenType> panic_stops = {});
+            std::vector<TokenType> panic_stops = {});
 
         template<typename T, typename IsElementStart, typename ElementParser>
             requires requires(IsElementStart is_start, ElementParser parser)
@@ -174,23 +147,19 @@ namespace valuascript::compiler {
                 { is_start() } -> std::convertible_to<bool>;
                 { parser() } -> std::convertible_to<T>;
             }
-        std::vector<T> parse_comma_separated_list(
+        std::vector<T> parse_list(
             const TokenType closing_token,
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const std::optional<ValuascriptErrorCode> missing_comma_err,
-            const std::initializer_list<TokenType> &panic_stops,
+            const std::vector<TokenType> &panic_stops,
             IsElementStart is_element_start,
             ElementParser parse_element) {
             std::vector<T> elements;
 
-            auto is_hard_stop = [&](const Token &token, TokenType next_type) {
+            auto is_hard_stop = [&](const Token &token, TokenType next) {
                 if (is_element_start()) return false;
-                if (is_statement_start(token, next_type)) return true;
-
-                TokenType type = token.type;
-                for (TokenType stop: panic_stops) {
-                    if (type == stop) return true;
-                }
+                if (TokenTraits::is_statement_start(token, next)) return true;
+                for (TokenType stop: panic_stops) if (token.type == stop) return true;
                 return false;
             };
 
@@ -205,10 +174,7 @@ namespace valuascript::compiler {
                     } else if (!cursor_.check(closing_token)) {
                         if (is_element_start()) {
                             if (missing_comma_err) {
-                                try {
-                                    cursor_.report_error(cursor_.peek(), *missing_comma_err);
-                                } catch (const ParseSyncException &) {
-                                }
+                                cursor_.report_error_no_panic(cursor_.peek(), *missing_comma_err);
                             }
                         } else {
                             break;
@@ -220,10 +186,7 @@ namespace valuascript::compiler {
                         const TokenType next = cursor_.peek(1).type;
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
-
-                        if (is_statement_start(tok, next)) {
-                            break;
-                        }
+                        if (TokenTraits::is_statement_start(tok, next)) break;
 
                         cursor_.advance();
                     }
@@ -233,10 +196,7 @@ namespace valuascript::compiler {
                     }
                 }
 
-                const Token &current = cursor_.peek();
-                if (current.type != closing_token && is_hard_stop(current, cursor_.peek(1).type)) {
-                    break;
-                }
+                if (cursor_.peek().type != closing_token && is_hard_stop(cursor_.peek(), cursor_.peek(1).type)) break;
             }
             return elements;
         }
@@ -246,21 +206,18 @@ namespace valuascript::compiler {
             {
                 { parser() } -> std::convertible_to<T>;
             }
-        std::vector<T> parse_comma_separated_list(
+        std::vector<T> parse_list(
             const TokenType closing_token,
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const ValuascriptErrorCode missing_comma_err,
-            const std::initializer_list<TokenType> &panic_stops,
+            const std::vector<TokenType> &panic_stops,
             ElementParser parse_element) {
-            return parse_comma_separated_list<T>(
-                closing_token,
-                trailing_comma_err,
-                missing_comma_err,
-                panic_stops,
+            return parse_list<T>(
+                closing_token, trailing_comma_err, std::make_optional(missing_comma_err), panic_stops,
                 [this]() {
                     const Token &tok = cursor_.peek();
-                    return tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type) || tok.
-                           type == TokenType::LeftParen;
+                    return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
+                               tok, cursor_.peek(1).type) || tok.type == TokenType::LeftParen;
                 },
                 parse_element
             );

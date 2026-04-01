@@ -199,6 +199,22 @@ namespace valuascript::compiler::test {
             ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
+            "illegal_nested_import_multiple",
+            "func test() -> int {\n"
+            "    import \"module.vs\"\n"
+            "    import \"module.vs\"\n"
+            "    import \"module.vs\"\n"
+            "    return 1\n"
+            "}\n"
+            "let a = 1\n",
+            {
+            {Err::TopLevelDeclarationNotAllowedHere, 2, 5},
+            {Err::TopLevelDeclarationNotAllowedHere, 3, 5},
+            {Err::TopLevelDeclarationNotAllowedHere, 4, 5},
+            },
+            ExpectFunctionBodySize("test", 1)
+            },
+            ParserErrorsSynchronizationTestCase{
             "illegal_nested_directive",
             "func test() -> int {\n"
             "    #pragma = 1\n"

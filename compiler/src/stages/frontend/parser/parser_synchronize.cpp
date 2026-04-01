@@ -1,5 +1,4 @@
 #include "stages/frontend/parser/parser.h"
-#include "token/reserved_keyword_lookup.h"
 #include <algorithm>
 
 namespace valuascript::compiler {
@@ -7,144 +6,85 @@ namespace valuascript::compiler {
         return std::find(active_closers_.begin(), active_closers_.end(), type) != active_closers_.end();
     }
 
-    void Parser::synchronize_to_closer(TokenType closing_token) {
-        int internal_depth = 0;
+    void Parser::recover(const SyncPredicate &stop_condition) {
+        int depth = 0;
         while (!cursor_.is_at_end()) {
-            const Token &tok = cursor_.peek();
-            const TokenType next = cursor_.peek(1).type;
+            TokenType t = cursor_.peek().type;
 
-            if (internal_depth == 0) {
-                if (tok.type == closing_token) return;
+            if (stop_condition(t, depth)) return;
 
-                if (is_grouping_closer(tok.type)) {
-                    if (next == TokenType::Comma) {
-                        cursor_.advance();
-                        return;
-                    }
-                    return;
-                }
-
-                if (is_statement_start(tok, next)) {
-                    return;
-                }
-
-                if (tok.type == TokenType::Then || tok.type == TokenType::Else ||
-                    tok.type == TokenType::Case || tok.type == TokenType::Default) {
-                    return;
-                }
-            }
-
-            if (is_grouping_opener(tok.type)) {
-                internal_depth++;
-            } else if (is_grouping_closer(tok.type)) {
-                internal_depth--;
+            if (TokenTraits::is_grouping_opener(t)) {
+                depth++;
+            } else if (TokenTraits::is_grouping_closer(t)) {
+                depth--;
             }
 
             cursor_.advance();
-            if (internal_depth < 0) internal_depth = 0;
+            if (depth < 0) depth = 0;
         }
+    }
+
+    void Parser::synchronize_to_closer(TokenType closing_token) {
+        recover([&](TokenType t, int depth) {
+            if (depth == 0) {
+                if (t == closing_token) return true;
+                if (TokenTraits::is_grouping_closer(t)) {
+                    if (cursor_.peek(1).type == TokenType::Comma) cursor_.advance();
+                    return true;
+                }
+                if (TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) return true;
+                if (t == TokenType::Then || t == TokenType::Else || t == TokenType::Case || t == TokenType::Default)
+                    return true;
+            }
+            return false;
+        });
     }
 
     void Parser::synchronize_and_consume_closer(TokenType expected_closer) {
         synchronize_to_closer(expected_closer);
         if (cursor_.check(expected_closer)) {
             cursor_.advance();
-        } else if (is_grouping_closer(cursor_.peek().type)) {
-            if (!is_active_closer(cursor_.peek().type)) {
-                cursor_.advance();
-            }
+        } else if (TokenTraits::is_grouping_closer(cursor_.peek().type) && !is_active_closer(cursor_.peek().type)) {
+            cursor_.advance();
         }
     }
 
     void Parser::synchronize_to_switch_boundary() {
-        int depth = 0;
-
-        while (!cursor_.is_at_end()) {
-            TokenType type = cursor_.peek().type;
-
+        recover([&](TokenType t, int depth) {
             if (depth == 0) {
-                if (type == TokenType::Case || type == TokenType::Default || type == TokenType::RightBrace) {
-                    return;
-                }
-                if (is_missing_closing_brace() &&
-                    (is_at_top_level_declaration() ||
-                     type == TokenType::Return ||
-                     is_statement_start(cursor_.peek(), cursor_.peek(1).type))) {
-                    return;
-                }
+                if (t == TokenType::Case || t == TokenType::Default || t == TokenType::RightBrace) return true;
+                if (is_missing_closing_brace() && (
+                        is_at_top_level_declaration() || t == TokenType::Return || TokenTraits::is_statement_start(
+                            cursor_.peek(), cursor_.peek(1).type)))
+                    return true;
             }
-
-            if (is_grouping_opener(type)) {
-                depth++;
-            } else if (is_grouping_closer(type)) {
-                depth--;
-            }
-
-            cursor_.advance();
-
-            if (depth < 0) {
-                depth = 0;
-            }
-        }
+            return false;
+        });
     }
 
     void Parser::synchronize_to_conditional_boundary() {
-        int depth = 0;
-
-        while (!cursor_.is_at_end()) {
-            TokenType type = cursor_.peek().type;
-
+        recover([&](TokenType t, int depth) {
             if (depth == 0) {
-                if (type == TokenType::Then || type == TokenType::Else) {
-                    return;
-                }
-                if (is_missing_closing_brace() &&
-                    (is_at_top_level_declaration() ||
-                     type == TokenType::Return ||
-                     is_statement_start(cursor_.peek(), cursor_.peek(1).type))) {
-                    return;
-                }
-                if (is_grouping_closer(type)) {
-                    return;
-                }
+                if (t == TokenType::Then || t == TokenType::Else || TokenTraits::is_grouping_closer(t)) return true;
+                if (is_missing_closing_brace() && (
+                        is_at_top_level_declaration() || t == TokenType::Return || TokenTraits::is_statement_start(
+                            cursor_.peek(), cursor_.peek(1).type)))
+                    return true;
             }
+            return false;
+        });
+    }
 
-            if (is_grouping_opener(type)) {
-                depth++;
-            } else if (is_grouping_closer(type)) {
-                depth--;
-            }
-
-            cursor_.advance();
-
-            if (depth < 0) {
-                depth = 0;
-            }
-        }
+    void Parser::synchronize_block_statement() {
+        recover([&](TokenType t, int /*depth*/) {
+            return t == TokenType::RightBrace || t == TokenType::Return || TokenTraits::is_statement_start(
+                       cursor_.peek(), cursor_.peek(1).type);
+        });
     }
 
     void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
-            if (is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-                return;
-            }
-            cursor_.advance();
-        }
-    }
-
-    void Parser::synchronize_block_statement() {
-        while (!cursor_.is_at_end()) {
-            TokenType type = cursor_.peek().type;
-
-            if (type == TokenType::RightBrace) {
-                return;
-            }
-
-            if (type == TokenType::Return ||
-                is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-                return;
-            }
-
+            if (TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) return;
             cursor_.advance();
         }
     }

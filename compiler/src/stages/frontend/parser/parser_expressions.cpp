@@ -5,12 +5,12 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_expression(const Precedence precedence) {
         auto left = parse_unary_expression();
 
-        while (get_operator_precedence(cursor_.peek().type) >= precedence) {
+        while (TokenTraits::get_operator_precedence(cursor_.peek().type) >= precedence) {
             Token op = cursor_.advance();
 
-            Precedence op_precedence = get_operator_precedence(op.type);
+            Precedence op_precedence = TokenTraits::get_operator_precedence(op.type);
 
-            const Precedence next_precedence = is_operator_right_associative(op.type)
+            const Precedence next_precedence = TokenTraits::is_operator_right_associative(op.type)
                                                    ? op_precedence
                                                    : static_cast<Precedence>(static_cast<int>(op_precedence) + 1);
 
@@ -23,7 +23,7 @@ namespace valuascript::compiler {
             left->span = combined;
 
             if (op_precedence == Precedence::Comparison &&
-                get_operator_precedence(cursor_.peek().type) == Precedence::Comparison) {
+                TokenTraits::get_operator_precedence(cursor_.peek().type) == Precedence::Comparison) {
                 cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
             }
         }
@@ -32,7 +32,7 @@ namespace valuascript::compiler {
     }
 
     std::unique_ptr<Expression> Parser::parse_unary_expression() {
-        if (is_unary_operator(cursor_.peek().type)) {
+        if (TokenTraits::is_unary_operator(cursor_.peek().type)) {
             Token op = cursor_.advance();
             auto right = parse_unary_expression();
             auto unary = std::make_unique<UnaryExpression>(op.type, std::move(right));
@@ -67,14 +67,14 @@ namespace valuascript::compiler {
             const Token &p0 = cursor_.peek();
             const TokenType p1 = cursor_.peek(1).type;
 
-            bool is_id_like = p0.type == TokenType::Identifier || acts_like_identifier(p0, p1);
+            bool is_id_like = p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1);
 
             if (is_id_like) {
-                if (p1 != TokenType::Colon && is_binary_operator(p1)) {
+                if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1)) {
                     cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
                 }
             } else {
-                if (is_expression_start(p0.type)) {
+                if (TokenTraits::is_expression_start(p0.type)) {
                     cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
                 } else if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)) {
                     cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
@@ -117,7 +117,7 @@ namespace valuascript::compiler {
                 auto expr = parse_expression();
 
                 if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
-                    if (is_expression_start(cursor_.peek().type)) {
+                    if (TokenTraits::is_expression_start(cursor_.peek().type)) {
                         cursor_.report_error(cursor_.peek(),
                                              ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
                     } else if (cursor_.check(TokenType::Comma)) {
@@ -161,13 +161,9 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
-
         Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, false);
-
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
-
         dot_access->span = cursor_.combine_spans(target_span, cursor_.make_span(property_token, property_token));
-
         return dot_access;
     }
 
@@ -224,21 +220,20 @@ namespace valuascript::compiler {
                 const Token &tok = cursor_.peek();
                 const Token &next = cursor_.peek(1);
 
-                bool is_stmt_start = is_statement_start(tok, next.type);
+                bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type);
                 bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
                 if (is_stmt_start) {
                     const Token &prev = cursor_.previous();
 
-                    if (tok.line > prev.line && is_dangling_operator(prev.type)) {
+                    if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
                         cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
                     }
 
                     cursor_.report_error_no_panic(tok, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
-
                     consume_unexpected_statement_gracefully();
 
-                    if (is_expression_start(cursor_.peek().type)) {
+                    if (TokenTraits::is_expression_start(cursor_.peek().type)) {
                         return parse_primary_expression();
                     }
 
@@ -251,7 +246,7 @@ namespace valuascript::compiler {
                     tok.type == TokenType::Then || tok.type == TokenType::Else) {
                     const Token &prev = cursor_.previous();
 
-                    if (tok.line > prev.line && is_dangling_operator(prev.type)) {
+                    if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
                         cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, false);
                     }
 
@@ -293,8 +288,8 @@ namespace valuascript::compiler {
             while (!cursor_.is_at_end()) {
                 const Token &tok = cursor_.peek();
                 if (internal_depth == 0 && (tok.type == TokenType::Comma || tok.type == TokenType::RightParen)) break;
-                if (is_grouping_opener(tok.type)) internal_depth++;
-                else if (is_grouping_closer(tok.type)) internal_depth--;
+                if (TokenTraits::is_grouping_opener(tok.type)) internal_depth++;
+                else if (TokenTraits::is_grouping_closer(tok.type)) internal_depth--;
 
                 cursor_.advance();
                 if (internal_depth < 0) break;
@@ -338,8 +333,8 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::complete_grouping(std::unique_ptr<Expression> first_expr,
                                                           bool first_expr_failed, const Token &start_token) {
         try {
-            if (!first_expr_failed && !cursor_.check(TokenType::RightParen) &&
-                is_expression_start(cursor_.peek().type)) {
+            if (!first_expr_failed && !cursor_.check(TokenType::RightParen) && TokenTraits::is_expression_start(
+                    cursor_.peek().type)) {
                 cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
             }
 
@@ -379,11 +374,11 @@ namespace valuascript::compiler {
         const Token &start_token = cursor_.previous();
         CloserTracker tracker(*this, TokenType::RightBrace);
 
-        auto elements = parse_comma_separated_list<DictItem>(
+        auto elements = parse_list<DictItem>(
             TokenType::RightBrace,
             std::nullopt,
             ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral,
-            {},
+            std::vector<TokenType>{},
             [this]() {
                 const Token &tok = cursor_.peek();
                 const TokenType next = cursor_.peek(1).type;
@@ -407,7 +402,8 @@ namespace valuascript::compiler {
                 } else {
                     val = parse_expression();
 
-                    if (is_expression_start(cursor_.peek().type) && cursor_.peek(1).type != TokenType::Colon) {
+                    if (TokenTraits::is_expression_start(cursor_.peek().type) && cursor_.peek(1).type !=
+                        TokenType::Colon) {
                         cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
                     }
                 }
@@ -441,7 +437,6 @@ namespace valuascript::compiler {
         }
 
         std::unique_ptr<Expression> then_branch = nullptr;
-
         if (!cursor_.match({TokenType::Then})) {
             cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingThenToken);
         }
@@ -453,24 +448,20 @@ namespace valuascript::compiler {
         }
 
         std::unique_ptr<Expression> else_branch = nullptr;
-
         if (!cursor_.match({TokenType::Else})) {
             cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingElseToken);
         }
 
         else_branch = parse_expression();
 
-        auto cond_expr = std::make_unique<ConditionalExpression>(
-            std::move(condition), std::move(then_branch), std::move(else_branch));
-
+        auto cond_expr = std::make_unique<ConditionalExpression>(std::move(condition), std::move(then_branch),
+                                                                 std::move(else_branch));
         cond_expr->span = cursor_.make_span(start_token, cursor_.previous());
-
         return cond_expr;
     }
 
     std::unique_ptr<Expression> Parser::parse_switch_expression() {
         const Token &start_token = cursor_.previous();
-
         auto target = parse_switch_target();
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody);
@@ -502,26 +493,23 @@ namespace valuascript::compiler {
 
         while (true) {
             const Token &tok = cursor_.peek();
-            if (tok.type == TokenType::Identifier || acts_like_identifier(tok, cursor_.peek(1).type)) {
+            if (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, cursor_.peek(1).type)) {
                 Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
                 identifiers.push_back(id_token.lexeme);
             } else {
                 cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, true);
-
                 if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)) {
                     throw ParseSyncException();
                 }
             }
 
-            if (cursor_.match({TokenType::Comma})) {
-                continue;
-            } else if (cursor_.check(TokenType::Identifier)) {
+            if (cursor_.match({TokenType::Comma})) continue;
+            if (cursor_.check(TokenType::Identifier)) {
                 cursor_.report_error_no_panic(cursor_.peek(),
                                               ValuascriptErrorCode::ExpectedCommaBetweenCaseIdentifiers);
                 continue;
-            } else {
-                break;
             }
+            break;
         }
 
         std::unique_ptr<Expression> result = nullptr;
@@ -546,18 +534,16 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_switch_result() {
         cursor_.consume(TokenType::Arrow, ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier);
-
         auto expr = parse_expression();
 
         bool should_break_out = is_missing_closing_brace() &&
-                                (is_at_top_level_declaration() ||
-                                 cursor_.peek().type == TokenType::Return ||
-                                 is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+                                (is_at_top_level_declaration() || cursor_.peek().type == TokenType::Return ||
+                                 TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type));
 
         if (!should_break_out && !cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) &&
             !cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
             if (cursor_.peek().line == cursor_.previous().line) {
-                if (is_expression_start(cursor_.peek().type)) {
+                if (TokenTraits::is_expression_start(cursor_.peek().type)) {
                     cursor_.report_error_no_panic(cursor_.peek(),
                                                   ValuascriptErrorCode::MissingOperatorInSwitchCaseResult, true);
                 } else {
@@ -568,7 +554,6 @@ namespace valuascript::compiler {
         }
         return expr;
     }
-
 
     std::unique_ptr<Expression> Parser::parse_switch_target() {
         try {
@@ -581,20 +566,16 @@ namespace valuascript::compiler {
             int depth = 0;
             while (!cursor_.is_at_end()) {
                 TokenType type = cursor_.peek().type;
-                if (depth == 0 && (type == TokenType::RightParen || type == TokenType::LeftBrace)) {
-                    break;
-                }
-                if (is_grouping_opener(type)) depth++;
-                else if (is_grouping_closer(type)) depth--;
+                if (depth == 0 && (type == TokenType::RightParen || type == TokenType::LeftBrace)) break;
+                if (TokenTraits::is_grouping_opener(type)) depth++;
+                else if (TokenTraits::is_grouping_closer(type)) depth--;
                 cursor_.advance();
             }
 
             if (cursor_.check(TokenType::RightParen)) {
                 cursor_.advance();
-            } else if (is_grouping_closer(cursor_.peek().type)) {
-                if (!is_active_closer(cursor_.peek().type)) {
-                    cursor_.advance();
-                }
+            } else if (TokenTraits::is_grouping_closer(cursor_.peek().type)) {
+                if (!is_active_closer(cursor_.peek().type)) cursor_.advance();
             }
             return nullptr;
         }
@@ -605,13 +586,10 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> &default_case) {
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
             bool should_break_out = is_missing_closing_brace() &&
-                                    (is_at_top_level_declaration() ||
-                                     cursor_.peek().type == TokenType::Return ||
-                                     is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+                                    (is_at_top_level_declaration() || cursor_.peek().type == TokenType::Return ||
+                                     TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type));
 
-            if (should_break_out) {
-                break;
-            }
+            if (should_break_out) break;
 
             try {
                 if (cursor_.match({TokenType::Case})) {
@@ -623,7 +601,7 @@ namespace valuascript::compiler {
                     }
                     default_case = parse_switch_default();
                 } else {
-                    if (is_top_level_token(cursor_.peek().type)) {
+                    if (TokenTraits::is_top_level_token(cursor_.peek().type)) {
                         cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
                                              true);
                     } else {

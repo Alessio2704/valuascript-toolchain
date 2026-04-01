@@ -10,7 +10,7 @@ namespace valuascript::compiler {
 
         Program dummy_program;
 
-        if (ctx == ParseContext::FunctionBody && is_top_level_only_declaration(type)) {
+        if (ctx == ParseContext::FunctionBody && TokenTraits::is_top_level_only_declaration(type)) {
             cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
                                           true);
 
@@ -78,7 +78,7 @@ namespace valuascript::compiler {
             case TokenType::Identifier: {
                 if (!modifiers.empty()) {
                     cursor_.report_error_no_panic(cursor_.peek(),
-                                             ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                 }
                 auto expr_stmt = parse_expression_statement();
                 if (program) program->execution_steps.push_back(std::move(expr_stmt));
@@ -97,7 +97,8 @@ namespace valuascript::compiler {
                     throw ParseSyncException();
                 } else {
                     if (!modifiers.empty()) {
-                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                        cursor_.report_error_no_panic(cursor_.peek(),
+                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                     }
                     auto expr_stmt = parse_expression_statement();
                     if (program) program->execution_steps.push_back(std::move(expr_stmt));
@@ -121,7 +122,8 @@ namespace valuascript::compiler {
                 auto first = inner_mods.front().span;
                 auto back = inner_mods.back().span;
                 auto combined_span = cursor_.combine_spans(first, back);
-                cursor_.report_error_no_panic(combined_span, ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements);
+                cursor_.report_error_no_panic(combined_span,
+                                              ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements);
             }
 
             const Token &target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
@@ -144,7 +146,7 @@ namespace valuascript::compiler {
 
         cursor_.consume(TokenType::Assign, ValuascriptErrorCode::IncompleteAssignment);
 
-        if (cursor_.is_at_end() || is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+        if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
             cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
         }
 
@@ -167,7 +169,7 @@ namespace valuascript::compiler {
         }
 
         if (cursor_.match({TokenType::Assign})) {
-            if (!is_valid_lvalue(expr.get())) {
+            if (!TokenTraits::is_valid_lvalue(expr.get())) {
                 cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment);
             }
 
