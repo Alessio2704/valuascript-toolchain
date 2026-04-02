@@ -144,15 +144,27 @@ namespace valuascript::compiler {
             }
         } while (true);
 
-        cursor_.consume(TokenType::Assign, ValuascriptErrorCode::IncompleteAssignment);
+        std::unique_ptr<Expression> value = nullptr;
 
-        if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
+        if (cursor_.match({TokenType::Assign})) {
+            if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                cursor_.report_error_no_panic(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
+            } else {
+                value = parse_expression();
+            }
+        } else {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::IncompleteAssignment);
+
+            if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals);
+            } else {
+                throw ParseSyncException();
+            }
         }
 
-        auto value = parse_expression();
-
-        verify_statement_end();
+        if (value) {
+            verify_statement_end();
+        }
 
         auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
                                                    is_mutable);

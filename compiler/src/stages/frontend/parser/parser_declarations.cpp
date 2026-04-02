@@ -84,6 +84,13 @@ namespace valuascript::compiler {
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
         CloserTracker tracker(*this, TokenType::RightBrace);
 
+        auto is_at_parent_boundary = [this](int offset = 0) {
+            const Token &tok = cursor_.peek(offset);
+            const TokenType next = cursor_.peek(offset + 1).type;
+            return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
+                   TokenType::Colon;
+        };
+
         auto fields = parse_list<std::pair<std::string, std::unique_ptr<TypeAnnotation> > >(
             TokenType::RightBrace,
             std::nullopt,
@@ -104,7 +111,7 @@ namespace valuascript::compiler {
             [&]() {
                 Token field_name = consume_identifier(ValuascriptErrorCode::ExpectedStructFieldName, false);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterStructFieldName);
-                return std::make_pair(field_name.lexeme, parse_type_annotation());
+                return std::make_pair(field_name.lexeme, parse_type_annotation(is_at_parent_boundary));
             }
         );
 
@@ -191,6 +198,13 @@ namespace valuascript::compiler {
         const Token &name = consume_identifier(ValuascriptErrorCode::MissingFunctionName);
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
+        auto is_at_parent_boundary = [this](int offset = 0) {
+            const Token &tok = cursor_.peek(offset);
+            const TokenType next = cursor_.peek(offset + 1).type;
+            return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
+                   TokenType::Colon;
+        };
+
         std::vector<FunctionParameter> params;
         {
             CloserTracker param_tracker(*this, TokenType::RightParen);
@@ -209,7 +223,7 @@ namespace valuascript::compiler {
                     }
                     const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
                     cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
-                    auto type = parse_type_annotation();
+                    auto type = parse_type_annotation(is_at_parent_boundary);
 
                     std::unique_ptr<Expression> default_value = nullptr;
                     if (cursor_.match({TokenType::Assign})) {
@@ -281,7 +295,7 @@ namespace valuascript::compiler {
         return func_def;
     }
 
-    std::unique_ptr<TypeAnnotation> Parser::parse_type_annotation() {
+    std::unique_ptr<TypeAnnotation> Parser::parse_type_annotation(ParentBoundaryPredicate is_at_parent_boundary) {
         const Token &start_token = cursor_.peek();
 
         if (cursor_.match({TokenType::LeftParen})) {
@@ -292,15 +306,21 @@ namespace valuascript::compiler {
                 std::make_optional(ValuascriptErrorCode::SingleElementTuplesNotAllowed),
                 ValuascriptErrorCode::ExpectedCommaSeparatorInTupleType,
                 std::vector<TokenType>{},
-                [&]() { return parse_type_annotation(); }
+                [&]() { return parse_type_annotation(is_at_parent_boundary); },
+                is_at_parent_boundary
             );
 
             Token end_token = cursor_.previous();
             try {
                 end_token = cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::UnmatchedParenthesisInTuple);
             } catch (const ParseSyncException &) {
-                synchronize_and_consume_closer(TokenType::RightParen);
-                end_token = cursor_.previous();
+                TokenType peek_type = cursor_.peek().type;
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) &&
+                    !is_active_closer(peek_type)) {
+                    end_token = cursor_.advance();
+                } else {
+                    end_token = cursor_.previous();
+                }
             }
 
             auto tuple_type_annotation = std::make_unique<TupleTypeAnnotation>(std::move(elements));
@@ -317,7 +337,8 @@ namespace valuascript::compiler {
                 std::make_optional(ValuascriptErrorCode::TrailingCommaInGenericArgument),
                 ValuascriptErrorCode::ExpectedCommaSeparatorInGenericArgs,
                 std::vector<TokenType>{},
-                [&]() { return parse_type_annotation(); }
+                [&]() { return parse_type_annotation(is_at_parent_boundary); },
+                is_at_parent_boundary
             );
 
             if (generic_args.empty()) {
@@ -327,6 +348,11 @@ namespace valuascript::compiler {
             try {
                 cursor_.consume(TokenType::Greater, ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs);
             } catch (const ParseSyncException &) {
+                TokenType peek_type = cursor_.peek().type;
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) &&
+                    !is_active_closer(peek_type)) {
+                    cursor_.advance();
+                }
             }
         }
 

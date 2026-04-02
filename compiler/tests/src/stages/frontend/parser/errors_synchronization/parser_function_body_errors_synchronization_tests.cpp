@@ -156,7 +156,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 3, 17},
             {Err::InvalidExpression, 4, 11}
             },
-            ExpectFunctionBodySize("test", 0)
+            ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
             "illegal_nested_func",

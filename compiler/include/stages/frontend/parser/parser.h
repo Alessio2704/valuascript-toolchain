@@ -48,7 +48,15 @@ namespace valuascript::compiler {
 
         std::unique_ptr<FunctionDefinition> parse_function_definition(std::vector<Modifier> modifiers);
 
-        std::unique_ptr<TypeAnnotation> parse_type_annotation();
+        /**
+        * A predicate used during nested list parsing (like generic arguments or tuple types).
+        * It helps identify if we have "leaked" out of the current type and are looking at
+        * tokens that actually belong to the next element in the caller's list
+        * (e.g. the next field in a struct or the next parameter in a function).
+         */
+        using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
+
+        std::unique_ptr<TypeAnnotation> parse_type_annotation(ParentBoundaryPredicate is_at_parent_boundary = nullptr);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -153,7 +161,8 @@ namespace valuascript::compiler {
             const std::optional<ValuascriptErrorCode> missing_comma_err,
             const std::vector<TokenType> &panic_stops,
             IsElementStart is_element_start,
-            ElementParser parse_element) {
+            ElementParser parse_element,
+            ParentBoundaryPredicate is_at_parent_boundary = nullptr) {
             std::vector<T> elements;
 
             auto is_hard_stop = [&](const Token &token, TokenType next) {
@@ -164,10 +173,21 @@ namespace valuascript::compiler {
             };
 
             while (!cursor_.check(closing_token) && !cursor_.is_at_end()) {
+                if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
+
                 try {
                     elements.push_back(parse_element());
 
-                    if (cursor_.match({TokenType::Comma})) {
+                    if (is_at_parent_boundary && is_at_parent_boundary(0)) {
+                        break;
+                    }
+
+                    if (cursor_.check(TokenType::Comma)) {
+                        if (is_at_parent_boundary && is_at_parent_boundary(1)) {
+                            break;
+                        }
+                        cursor_.advance();
+
                         if (cursor_.check(closing_token) && trailing_comma_err) {
                             cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                         }
@@ -187,11 +207,15 @@ namespace valuascript::compiler {
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
                         if (TokenTraits::is_statement_start(tok, next)) break;
+                        if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
 
                         cursor_.advance();
                     }
 
                     if (cursor_.check(TokenType::Comma)) {
+                        if (is_at_parent_boundary && is_at_parent_boundary(1)) {
+                            break;
+                        }
                         cursor_.advance();
                     }
                 }
@@ -211,7 +235,8 @@ namespace valuascript::compiler {
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const ValuascriptErrorCode missing_comma_err,
             const std::vector<TokenType> &panic_stops,
-            ElementParser parse_element) {
+            ElementParser parse_element,
+            ParentBoundaryPredicate is_at_parent_boundary = nullptr) {
             return parse_list<T>(
                 closing_token, trailing_comma_err, std::make_optional(missing_comma_err), panic_stops,
                 [this]() {
@@ -219,7 +244,8 @@ namespace valuascript::compiler {
                     return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
                                tok, cursor_.peek(1).type) || tok.type == TokenType::LeftParen;
                 },
-                parse_element
+                parse_element,
+                is_at_parent_boundary
             );
         }
     };
