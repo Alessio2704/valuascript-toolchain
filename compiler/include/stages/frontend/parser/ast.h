@@ -258,6 +258,7 @@ namespace valuascript::compiler {
     struct FunctionParameter {
         std::string name;
         std::unique_ptr<TypeAnnotation> type;
+        std::unique_ptr<Expression> default_value = nullptr;
     };
 
     class FunctionDefinition : public AstNode {

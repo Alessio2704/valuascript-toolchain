@@ -194,6 +194,8 @@ namespace valuascript::compiler {
         std::vector<FunctionParameter> params;
         {
             CloserTracker param_tracker(*this, TokenType::RightParen);
+            bool seen_default_param = false;
+
             params = parse_list<FunctionParameter>(
                 TokenType::RightParen,
                 std::make_optional(ValuascriptErrorCode::TrailingCommaInFunctionCall),
@@ -207,7 +209,22 @@ namespace valuascript::compiler {
                     }
                     const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
                     cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
-                    return FunctionParameter{param_name.lexeme, parse_type_annotation()};
+                    auto type = parse_type_annotation();
+
+                    std::unique_ptr<Expression> default_value = nullptr;
+                    if (cursor_.match({TokenType::Assign})) {
+                        if (cursor_.check(TokenType::Comma) || cursor_.check(TokenType::RightParen)) {
+                            cursor_.report_error(cursor_.previous(),
+                                                 ValuascriptErrorCode::MissingDefaultParameterValue);
+                        }
+                        default_value = parse_expression();
+                        seen_default_param = true;
+                    } else if (seen_default_param) {
+                        cursor_.report_error_no_panic(
+                            param_name, ValuascriptErrorCode::NonDefaultParameterAfterDefault);
+                    }
+
+                    return FunctionParameter{param_name.lexeme, std::move(type), std::move(default_value)};
                 }
             );
         }

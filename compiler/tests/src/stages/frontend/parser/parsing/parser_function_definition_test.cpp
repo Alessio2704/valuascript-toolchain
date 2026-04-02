@@ -50,6 +50,17 @@ namespace valuascript::compiler::test {
             FunctionHappyParam{"nested_generic_param", "func process(data: vector<vector<scalar>>) -> scalar {}", 1, 1,
             0,
             false},
+            FunctionHappyParam{"single_param_default", "func test(a: scalar = 1) -> scalar {}", 1, 1, 0, false},
+            FunctionHappyParam{"multi_param_default", "func test(a: scalar = 1, b: boolean = true) -> scalar {}", 2, 1,
+            0, false},
+            FunctionHappyParam{"generic_param_default", "func process(data: vector<matrix> = []) -> scalar {}", 1, 1, 0,
+            false},
+            FunctionHappyParam{"nested_generic_param_default",
+            "func process(data: vector<vector<scalar>> = [[1]]) -> scalar {}", 1, 1,
+            0,
+            false},
+            FunctionHappyParam{"multi_param_default_on_only_one", "func test(a: scalar, b: boolean = true) -> scalar {}"
+            , 2, 1, 0, false},
             FunctionHappyParam{"tuple_return", "func bounds() -> (scalar, scalar) {}", 0, 1, 0, false},
             FunctionHappyParam{"tuple_return_generic", "func bounds() -> (scalar, vector<scalar>) {}", 0, 1, 0, false},
             FunctionHappyParam{"tuple_param", "func bounds(a: (scalar, scalar, Custom)) -> (scalar, Custom) {}", 1, 1, 0
@@ -147,7 +158,10 @@ namespace valuascript::compiler::test {
             TopLevelDeclarationNotAllowedHere},
             FunctionSadParam{"top_level_declaration_in_func_4",
             "func test(a: s) -> s { return 1 \n let a = b()\n func other() -> scalar {}\n }", ValuascriptErrorCode::
-            TopLevelDeclarationNotAllowedHere}
+            TopLevelDeclarationNotAllowedHere},
+            FunctionSadParam{"single_param_default", "func test(a: scalar = ) -> scalar {}", ValuascriptErrorCode::MissingDefaultParameterValue},
+            FunctionSadParam{"multi_param_default", "func test(a: scalar = 1, b: boolean) -> scalar {}",
+            ValuascriptErrorCode::NonDefaultParameterAfterDefault}
         ),
         [](const testing::TestParamInfo<FunctionSadParam>& info) {
         return info.param.test_name;

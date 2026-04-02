@@ -415,4 +415,111 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(return_type_2->name, "scalar");
         EXPECT_EQ(return_type_2->generic_args.size(), 0);
     }
+
+    TEST_F(AstBaseTest, ValidatesFunctionWithSimpleDefaultParameters) {
+        auto ast = parse_code(R"(func config(a: int = 1, b: string = "hello", c: boolean = true) -> void {})");
+        auto func = get_first_func(ast);
+        ASSERT_NE(func, nullptr);
+        ASSERT_EQ(func->parameters.size(), 3);
+
+        // a: int = 1
+        EXPECT_EQ(func->parameters[0].name, "a");
+        auto def_a = dynamic_cast<NumberLiteral *>(func->parameters[0].default_value.get());
+        ASSERT_NE(def_a, nullptr);
+        EXPECT_EQ(def_a->value, "1");
+
+        // b: string = "hello"
+        EXPECT_EQ(func->parameters[1].name, "b");
+        auto def_b = dynamic_cast<StringLiteral *>(func->parameters[1].default_value.get());
+        ASSERT_NE(def_b, nullptr);
+        EXPECT_EQ(def_b->value, "\"hello\"");
+
+        // c: boolean = true
+        EXPECT_EQ(func->parameters[2].name, "c");
+        auto def_c = dynamic_cast<BooleanLiteral *>(func->parameters[2].default_value.get());
+        ASSERT_NE(def_c, nullptr);
+        EXPECT_EQ(def_c->value, true);
+    }
+
+    TEST_F(AstBaseTest, ValidatesFunctionWithCollectionDefaultParameters) {
+        auto ast = parse_code(
+            R"(func setup(vec: vector = [1, 2], map: dict = {x: 10}, tup: tuple = (true, false)) -> void {})");
+        auto func = get_first_func(ast);
+        ASSERT_NE(func, nullptr);
+        ASSERT_EQ(func->parameters.size(), 3);
+
+        // vec: vector = [1, 2]
+        EXPECT_EQ(func->parameters[0].name, "vec");
+        auto def_vec = dynamic_cast<TensorLiteral *>(func->parameters[0].default_value.get());
+        ASSERT_NE(def_vec, nullptr);
+        ASSERT_EQ(def_vec->elements.size(), 2);
+
+        auto vec_el_1 = dynamic_cast<NumberLiteral *>(def_vec->elements[0].get());
+        auto vec_el_2 = dynamic_cast<NumberLiteral *>(def_vec->elements[1].get());
+        ASSERT_NE(vec_el_1, nullptr);
+        ASSERT_NE(vec_el_2, nullptr);
+        EXPECT_EQ(vec_el_1->value, "1");
+        EXPECT_EQ(vec_el_2->value, "2");
+
+        // map: dict = {"x": 10}
+        EXPECT_EQ(func->parameters[1].name, "map");
+        auto def_map = dynamic_cast<DictLiteral *>(func->parameters[1].default_value.get());
+        ASSERT_NE(def_map, nullptr);
+        ASSERT_EQ(def_map->elements.size(), 1);
+        EXPECT_EQ(def_map->elements[0].key, "x");
+
+        auto map_val = dynamic_cast<NumberLiteral *>(def_map->elements[0].value.get());
+        ASSERT_NE(map_val, nullptr);
+        EXPECT_EQ(map_val->value, "10");
+
+        // tup: tuple = (true, false)
+        EXPECT_EQ(func->parameters[2].name, "tup");
+        auto def_tup = dynamic_cast<TupleLiteral *>(func->parameters[2].default_value.get());
+        ASSERT_NE(def_tup, nullptr);
+        ASSERT_EQ(def_tup->elements.size(), 2);
+
+        auto tup_el_1 = dynamic_cast<BooleanLiteral *>(def_tup->elements[0].get());
+        auto tup_el_2 = dynamic_cast<BooleanLiteral *>(def_tup->elements[1].get());
+        ASSERT_NE(tup_el_1, nullptr);
+        ASSERT_NE(tup_el_2, nullptr);
+        EXPECT_EQ(tup_el_1->value, true);
+        EXPECT_EQ(tup_el_2->value, false);
+    }
+
+    TEST_F(AstBaseTest, ValidatesFunctionWithComplexDefaultParameters) {
+        auto ast = parse_code(
+            R"(func process(mode: Mode = System.Auto, data: vector = [{val: Color.Red}]) -> void {})");
+        auto func = get_first_func(ast);
+        ASSERT_NE(func, nullptr);
+        ASSERT_EQ(func->parameters.size(), 2);
+
+        // mode: Mode = System.Auto
+        EXPECT_EQ(func->parameters[0].name, "mode");
+        auto def_mode = dynamic_cast<DotAccess *>(func->parameters[0].default_value.get());
+        ASSERT_NE(def_mode, nullptr);
+
+        auto target_sys = dynamic_cast<IdentifierAccess *>(def_mode->target.get());
+        ASSERT_NE(target_sys, nullptr);
+        EXPECT_EQ(target_sys->name, "System");
+        EXPECT_EQ(def_mode->property_name, "Auto");
+
+        // data: vector = [{"val": Color.Red}]
+        EXPECT_EQ(func->parameters[1].name, "data");
+        auto def_data = dynamic_cast<TensorLiteral *>(func->parameters[1].default_value.get());
+        ASSERT_NE(def_data, nullptr);
+        ASSERT_EQ(def_data->elements.size(), 1);
+
+        auto dict_elem = dynamic_cast<DictLiteral *>(def_data->elements[0].get());
+        ASSERT_NE(dict_elem, nullptr);
+        ASSERT_EQ(dict_elem->elements.size(), 1);
+        EXPECT_EQ(dict_elem->elements[0].key, "val");
+
+        auto nested_dot = dynamic_cast<DotAccess *>(dict_elem->elements[0].value.get());
+        ASSERT_NE(nested_dot, nullptr);
+
+        auto target_color = dynamic_cast<IdentifierAccess *>(nested_dot->target.get());
+        ASSERT_NE(target_color, nullptr);
+        EXPECT_EQ(target_color->name, "Color");
+        EXPECT_EQ(nested_dot->property_name, "Red");
+    }
 }

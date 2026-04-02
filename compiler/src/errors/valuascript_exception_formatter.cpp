@@ -20,11 +20,13 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::DecimalMissingLeadingZero:
                 return "Syntax Error: Decimals must start with a leading zero (e.g., '0.5' instead of '.5').";
             case ValuascriptErrorCode::TrailingSeparatorInNumberLiteral:
-                return "Syntax Error: Trailing separator '_' in number literal (remove it or complete with digits after separator).";
+                return
+                        "Syntax Error: Trailing separator '_' in number literal (remove it or complete with digits after separator).";
 
             // --- Parser Errors ---
             case ValuascriptErrorCode::UnexpectedTopLevelToken:
-                return "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.";
+                return
+                        "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.";
             case ValuascriptErrorCode::ExpectedImportToken:
                 return "Expected 'import'.";
             case ValuascriptErrorCode::MissingImportPathString:
@@ -35,7 +37,7 @@ namespace valuascript::compiler {
                 return "Syntax Error: Expected directive name after '#'.";
             case ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration:
                 return "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).";
-            case ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements:
+            case ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements:
                 return "Syntax Error: Modifiers for multi assignment must be attached before the overall statement.";
             case ValuascriptErrorCode::ExpectedModifierName:
                 return "Syntax Error: Expected modifier name after '@'.";
@@ -85,6 +87,10 @@ namespace valuascript::compiler {
                 return "Syntax Error: Expected parameter name.";
             case ValuascriptErrorCode::MissingColonAfterParameter:
                 return "Expected ':' after parameter name.";
+            case ValuascriptErrorCode::MissingDefaultParameterValue:
+                return "Syntax Error: Expected an expression for the default parameter value.";
+            case ValuascriptErrorCode::NonDefaultParameterAfterDefault:
+                return "Syntax Error: Non-default parameters cannot follow default parameters.";
             case ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList:
                 return "Syntax Error: Missing comma ',' between parameters.";
             case ValuascriptErrorCode::ExpectedRightParenAfterParameters:
@@ -126,7 +132,8 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::MultiReassignmentNotSupported:
                 return "Syntax Error: Multiple reassignment is not supported. Reassign variables individually.";
             case ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment:
-                return "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.";
+                return
+                        "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.";
             case ValuascriptErrorCode::InvalidStandaloneStatement:
                 return "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.";
             case ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations:
@@ -148,7 +155,8 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor:
                 return "Syntax Error: Missing operator or expected ':' or ']' in tensor access.";
             case ValuascriptErrorCode::UnexpectedCommaInBracketAccess:
-                return "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.";
+                return
+                        "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.";
             case ValuascriptErrorCode::EmptyBracketAccess:
                 return "Expected an index or slice inside '[]'.";
             case ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex:

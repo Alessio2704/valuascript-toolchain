@@ -73,12 +73,6 @@ namespace valuascript::compiler::test {
                 ExpectFunctionCallArgs(call, args);
             };
         }
-
-        auto ExpectNoFunctionCall() {
-            return [](const Program &ast) {
-                EXPECT_EQ(ast.execution_steps.size(), 1) << "Expected only the recovery statement to survive.";
-            };
-        }
     }
 
     class FunctionCallParserSynchronizationTest : public ParserErrorsSynchronizationBase {

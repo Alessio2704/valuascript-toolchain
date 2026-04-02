@@ -323,6 +323,142 @@ namespace valuascript::compiler::test {
             {Err::ExpectedCommaSeparatorInTupleType, 1, 27},
             },
             ExpectFunction("test", {{"a", "int"}}, {"tuple"})
+            },
+            ParserErrorsSynchronizationTestCase{
+            "missing_default_parameter_value_syncs_to_comma",
+            "func test(a: int =, b: string) -> int {}\n"
+            "let a = 1\n",
+            {{Err::MissingDefaultParameterValue, 1, 18}},
+            ExpectFunction("test", {{"b", "string"}}, {"int"})
+            },
+            ParserErrorsSynchronizationTestCase{
+            "missing_default_parameter_value_syncs_to_paren",
+            "func test(a: int =) -> int {}\n"
+            "let a = 1\n",
+            {{Err::MissingDefaultParameterValue, 1, 18}},
+            ExpectFunction("test", {}, {"int"})
+            },
+            ParserErrorsSynchronizationTestCase{
+            "non_default_parameter_after_default_reports_error",
+            "func test(a: int = 1, b: int) -> int {}\n"
+            "let a = 1\n",
+            {{Err::NonDefaultParameterAfterDefault, 1, 23}},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_EQ(f->parameters[0].name, "a");
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_EQ(f->parameters[1].name, "b");
+            EXPECT_EQ(f->parameters[1].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "invalid_expression_in_default_value_recovers_to_comma",
+            "func test(a: int = *, b: string) -> int {}\n"
+            "let a = 1\n",
+            {{Err::InvalidExpression, 1, 20}},
+            ExpectFunction("test", {{"b", "string"}}, {"int"})
+            },
+            ParserErrorsSynchronizationTestCase{
+            "multiple_non_default_parameters_after_default_reports_multiple_errors",
+            "func test(a: int = 1, b: int, c: int) -> int {}\n"
+            "let a = 1\n",
+            {
+            {Err::NonDefaultParameterAfterDefault, 1, 23},
+            {Err::NonDefaultParameterAfterDefault, 1, 31}
+            },
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 3);
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_EQ(f->parameters[1].default_value, nullptr);
+            EXPECT_EQ(f->parameters[2].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "valid_default_parameters_parse_correctly",
+            "func test(a: int = 1, b: string = \"hello\") -> int {}\n"
+            "let a = 1\n",
+            {},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_NE(f->parameters[1].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "valid_dict_literal_default_value",
+            "func test(a: dict = {key: 1}, b: int = 2) -> int {}\n"
+            "let a = 1\n",
+            {},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_NE(f->parameters[1].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "valid_tensor_literal_default_value",
+            "func test(a: vector = [1, 2, 3]) -> int {}\n"
+            "let a = 1\n",
+            {},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 1);
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "broken_tuple_default_value_recovers",
+            "func test(a: tuple = (1, *), b: int = 1) -> int {}\n"
+            "let a = 1\n",
+            {{Err::InvalidExpression, 1, 26}},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_EQ(f->parameters[0].name, "a");
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_EQ(f->parameters[1].name, "b");
+            EXPECT_NE(f->parameters[1].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "broken_tensor_default_value_recovers",
+            "func test(a: vector = [1, *], b: int = 1) -> int {}\n"
+            "let a = 1\n",
+            {{Err::InvalidExpression, 1, 27}},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_EQ(f->parameters[0].name, "a");
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_EQ(f->parameters[1].name, "b");
+            EXPECT_NE(f->parameters[1].default_value, nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "broken_dict_default_value_recovers",
+            "func test(a: dict = {x *}, b: int = 1) -> int {}\n"
+            "let a = 1\n",
+            {{Err::ExpectedColonAfterDictionaryKey, 1, 24}},
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 2);
+            EXPECT_EQ(f->parameters[0].name, "a");
+            EXPECT_NE(f->parameters[0].default_value, nullptr);
+            EXPECT_EQ(f->parameters[1].name, "b");
+            EXPECT_NE(f->parameters[1].default_value, nullptr);
+            }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase> &info) {

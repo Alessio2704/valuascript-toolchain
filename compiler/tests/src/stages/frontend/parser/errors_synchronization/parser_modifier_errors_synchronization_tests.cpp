@@ -346,7 +346,7 @@ namespace valuascript::compiler::test {
             "@test let a: int, @broken b: int = 1\n"
             "let recovery = 1\n",
             {
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19}
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 19}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -362,7 +362,7 @@ namespace valuascript::compiler::test {
             "@test let a: int, @one @two @three b: int = 1\n"
             "let recovery = 1\n",
             {
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19}
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 19}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -378,8 +378,8 @@ namespace valuascript::compiler::test {
             "@test let a: int, @one @two @three b: int, @four c = 1\n"
             "let recovery = 1\n",
             {
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19},
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 44},
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 19},
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 44},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -395,8 +395,8 @@ namespace valuascript::compiler::test {
             "@test let a: int, @one @two @three(a: 1) b: int, @four c = 1\n"
             "let recovery = 1\n",
             {
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 19},
-            {Err::ModifiersAttachedToMultiAssignementSingleElements, 1, 50},
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 19},
+            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 50},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);

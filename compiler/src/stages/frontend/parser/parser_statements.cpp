@@ -123,7 +123,7 @@ namespace valuascript::compiler {
                 auto back = inner_mods.back().span;
                 auto combined_span = cursor_.combine_spans(first, back);
                 cursor_.report_error_no_panic(combined_span,
-                                              ValuascriptErrorCode::ModifiersAttachedToMultiAssignementSingleElements);
+                                              ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements);
             }
 
             const Token &target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
