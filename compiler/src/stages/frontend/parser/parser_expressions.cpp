@@ -2,10 +2,10 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    std::unique_ptr<Expression> Parser::parse_expression(const Precedence precedence) {
+    std::unique_ptr<Expression> Parser::parse_expression(const Precedence min_precedence) {
         auto left = parse_unary_expression();
 
-        while (TokenTraits::get_operator_precedence(cursor_.peek().type) >= precedence) {
+        while (TokenTraits::get_operator_precedence(cursor_.peek().type) >= min_precedence) {
             Token op = cursor_.advance();
 
             Precedence op_precedence = TokenTraits::get_operator_precedence(op.type);

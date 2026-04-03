@@ -2,7 +2,7 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err, bool is_statement_context) {
+    const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords) {
         if (cursor_.check(TokenType::Identifier)) {
             return cursor_.advance();
         }
@@ -13,7 +13,7 @@ namespace valuascript::compiler {
             bool acts_like_id = TokenTraits::acts_like_identifier(cursor_.peek(), next);
             bool forms_statement = TokenTraits::is_statement_start(cursor_.peek(), next);
 
-            if (acts_like_id || !is_statement_context || !forms_statement) {
+            if (acts_like_id || !allow_top_level_keywords || !forms_statement) {
                 cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
                 return cursor_.advance();
             }
@@ -33,12 +33,12 @@ namespace valuascript::compiler {
     std::vector<std::unique_ptr<Expression> > Parser::parse_expression_list(
         const TokenType closing_token,
         const std::optional<ValuascriptErrorCode> trailing_comma_err,
-        const std::vector<TokenType> panic_stops) {
+        const std::vector<TokenType> recovery_boundaries) {
         return parse_list<std::unique_ptr<Expression> >(
             closing_token,
             trailing_comma_err,
             ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions,
-            panic_stops,
+            recovery_boundaries,
             [this]() { return TokenTraits::is_expression_start(cursor_.peek().type); },
             [this]() { return parse_expression(); }
         );
@@ -50,12 +50,12 @@ namespace valuascript::compiler {
         const ValuascriptErrorCode colon_err,
         const ValuascriptErrorCode missing_comma_err,
         const std::optional<ValuascriptErrorCode> trailing_comma_err,
-        const std::vector<TokenType> panic_stops) {
+        const std::vector<TokenType> recovery_boundaries) {
         return parse_list<std::pair<std::string, std::unique_ptr<Expression> > >(
             closing_token,
             trailing_comma_err,
             missing_comma_err,
-            panic_stops,
+            recovery_boundaries,
             [this]() {
                 const Token &tok = cursor_.peek();
                 bool is_id_like = tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(

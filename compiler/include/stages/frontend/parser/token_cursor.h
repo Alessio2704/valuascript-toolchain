@@ -28,9 +28,9 @@ namespace valuascript::compiler {
     public:
         TokenCursor(const std::vector<Token> &tokens, std::string file_path, CompilerContext &context);
 
-        [[nodiscard]] const Token &peek(int num = 0) const;
+        [[nodiscard]] const Token &peek(int lookahead = 0) const;
 
-        [[nodiscard]] const Token &previous(int num = 1) const;
+        [[nodiscard]] const Token &previous(int lookback = 1) const;
 
         [[nodiscard]] bool is_at_end() const;
 
@@ -49,9 +49,9 @@ namespace valuascript::compiler {
         void report_error_no_panic(const SourceSpan &span, ValuascriptErrorCode code) const;
 
         void report_error_no_panic(const Token &token, ValuascriptErrorCode code,
-                                   bool force_token_location = false) const;
+                                   bool use_exact_token_range = false) const;
 
         [[noreturn]] void report_error(const Token &token, ValuascriptErrorCode code,
-                                       bool force_token_location = false) const;
+                                       bool use_exact_token_range = false) const;
     };
 }

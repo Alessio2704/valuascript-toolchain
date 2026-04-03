@@ -106,7 +106,7 @@ namespace valuascript::compiler::test {
         ASSERT_NE(pair1_mult, nullptr);
         EXPECT_EQ(pair1_mult->op, TokenType::Star);
 
-        auto pair1_add = dynamic_cast<BinaryExpression *>(unwrap(pair1_mult->left.get()));
+        auto pair1_add = dynamic_cast<BinaryExpression *>(unwrap_grouping(pair1_mult->left.get()));
         ASSERT_NE(pair1_add, nullptr);
         EXPECT_EQ(pair1_add->op, TokenType::Plus);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(pair1_mult->right.get())->name, "multiplier");

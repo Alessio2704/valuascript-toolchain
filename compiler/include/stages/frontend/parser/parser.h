@@ -64,7 +64,7 @@ namespace valuascript::compiler {
 
         std::unique_ptr<ReturnStatement> parse_return_statement();
 
-        std::unique_ptr<Expression> parse_expression(Precedence precedence = Precedence::Or);
+        std::unique_ptr<Expression> parse_expression(Precedence min_precedence = Precedence::Or);
 
         std::unique_ptr<Expression> parse_unary_expression();
 
@@ -104,7 +104,7 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_switch_result();
 
-        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool is_statement_context = true);
+        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords = true);
 
         void verify_statement_end() const;
 
@@ -120,7 +120,7 @@ namespace valuascript::compiler {
 
         [[nodiscard]] bool is_active_closer(TokenType type) const;
 
-        using SyncPredicate = std::function<bool(TokenType, int)>;
+        using SyncPredicate = std::function<bool(TokenType type, int nesting_depth)>;
 
         void recover(const SyncPredicate &stop_condition);
 
@@ -139,7 +139,7 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<Expression> > parse_expression_list(
             TokenType closing_token,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
-            std::vector<TokenType> panic_stops = {});
+            std::vector<TokenType> recovery_boundaries = {});
 
         std::vector<std::pair<std::string, std::unique_ptr<Expression> > > parse_key_value_list(
             TokenType closing_token,
@@ -147,28 +147,28 @@ namespace valuascript::compiler {
             ValuascriptErrorCode colon_err,
             ValuascriptErrorCode missing_comma_err,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
-            std::vector<TokenType> panic_stops = {});
+            std::vector<TokenType> recovery_boundaries = {});
 
-        template<typename T, typename IsElementStart, typename ElementParser>
+        template<typename ElementType, typename IsElementStart, typename ElementParser>
             requires requires(IsElementStart is_start, ElementParser parser)
             {
                 { is_start() } -> std::convertible_to<bool>;
-                { parser() } -> std::convertible_to<T>;
+                { parser() } -> std::convertible_to<ElementType>;
             }
-        std::vector<T> parse_list(
+        std::vector<ElementType> parse_list(
             const TokenType closing_token,
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const std::optional<ValuascriptErrorCode> missing_comma_err,
-            const std::vector<TokenType> &panic_stops,
+            const std::vector<TokenType> &recovery_boundaries,
             IsElementStart is_element_start,
             ElementParser parse_element,
-            ParentBoundaryPredicate is_at_parent_boundary = nullptr) {
-            std::vector<T> elements;
+            const ParentBoundaryPredicate &is_at_parent_boundary = nullptr) {
+            std::vector<ElementType> elements;
 
             auto is_hard_stop = [&](const Token &token, TokenType next) {
                 if (is_element_start()) return false;
                 if (TokenTraits::is_statement_start(token, next)) return true;
-                for (TokenType stop: panic_stops) if (token.type == stop) return true;
+                for (TokenType stop: recovery_boundaries) if (token.type == stop) return true;
                 return false;
             };
 
@@ -225,20 +225,23 @@ namespace valuascript::compiler {
             return elements;
         }
 
-        template<typename T, typename ElementParser>
+        template<typename ElementType, typename ElementParser>
             requires requires(ElementParser parser)
             {
-                { parser() } -> std::convertible_to<T>;
+                { parser() } -> std::convertible_to<ElementType>;
             }
-        std::vector<T> parse_list(
+        std::vector<ElementType> parse_list(
             const TokenType closing_token,
             const std::optional<ValuascriptErrorCode> trailing_comma_err,
             const ValuascriptErrorCode missing_comma_err,
-            const std::vector<TokenType> &panic_stops,
+            const std::vector<TokenType> &recovery_boundaries,
             ElementParser parse_element,
             ParentBoundaryPredicate is_at_parent_boundary = nullptr) {
-            return parse_list<T>(
-                closing_token, trailing_comma_err, std::make_optional(missing_comma_err), panic_stops,
+            return parse_list<ElementType>(
+                closing_token,
+                trailing_comma_err,
+                std::make_optional(missing_comma_err),
+                recovery_boundaries,
                 [this]() {
                     const Token &tok = cursor_.peek();
                     return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(

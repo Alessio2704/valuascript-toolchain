@@ -295,7 +295,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            auto num = dynamic_cast<NumberLiteral*>(unwrap(assign->value.get()));
+            auto num = dynamic_cast<NumberLiteral*>(unwrap_grouping(assign->value.get()));
             ASSERT_NE(num, nullptr);
             EXPECT_EQ(num->value, "1");
             }
@@ -308,7 +308,7 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            const auto binary_exp = dynamic_cast<BinaryExpression*>(unwrap(assign_1->value.get()));
+            const auto binary_exp = dynamic_cast<BinaryExpression*>(unwrap_grouping(assign_1->value.get()));
             ASSERT_NE(binary_exp, nullptr);
             const auto left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
             ASSERT_NE(left, nullptr);

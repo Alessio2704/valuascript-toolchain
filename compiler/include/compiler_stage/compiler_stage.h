@@ -20,8 +20,8 @@ namespace valuascript::compiler {
     public:
         CompilerStage(std::string name,
                       CompilerStageArtifactCode output,
-                      std::set<CompilerStageArtifactCode> deps)
-            : name_(std::move(name)), output_artifact_(output), dependencies_(std::move(deps)) {
+                      std::set<CompilerStageArtifactCode> required_dependencies)
+            : name_(std::move(name)), output_artifact_(output), dependencies_(std::move(required_dependencies)) {
         }
 
         virtual ~CompilerStage() = default;

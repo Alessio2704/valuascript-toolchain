@@ -214,7 +214,7 @@ namespace valuascript::compiler::test {
             const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
             ASSERT_EQ(tensor->elements.size(), 2);
-            auto first_elem = dynamic_cast<BinaryExpression*>(unwrap(tensor->elements[0].get()));
+            auto first_elem = dynamic_cast<BinaryExpression*>(unwrap_grouping(tensor->elements[0].get()));
             ASSERT_NE(first_elem, nullptr);
             ASSERT_EQ(first_elem->op, TokenType::Plus);
             auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());

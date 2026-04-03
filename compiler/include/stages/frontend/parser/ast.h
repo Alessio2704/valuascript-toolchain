@@ -353,7 +353,7 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
     };
 
-    inline Expression *unwrap(Expression *expr) {
+    inline Expression *unwrap_grouping(Expression *expr) {
         while (auto *grouping = dynamic_cast<GroupingExpression *>(expr)) {
             expr = grouping->expression.get();
         }

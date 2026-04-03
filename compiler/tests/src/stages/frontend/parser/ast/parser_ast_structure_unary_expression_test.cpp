@@ -98,7 +98,7 @@ namespace valuascript::compiler::test {
 
         // Right of *: Grouped Addition (b + c)
         // Parentheses must be stripped, leaving just the BinaryExpression
-        auto grouped_add = dynamic_cast<BinaryExpression *>(unwrap(left_mult->right.get()));
+        auto grouped_add = dynamic_cast<BinaryExpression *>(unwrap_grouping(left_mult->right.get()));
         ASSERT_NE(grouped_add, nullptr) << "Right side of multiplication must be the Grouped Addition";
         EXPECT_EQ(grouped_add->op, TokenType::Plus);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(grouped_add->left.get())->name, "b");
@@ -112,7 +112,7 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(right_div->op, TokenType::Slash);
 
         // Left of /: Unary NOT (!d)
-        auto unary_not = dynamic_cast<UnaryExpression *>(unwrap(right_div->left.get()));
+        auto unary_not = dynamic_cast<UnaryExpression *>(unwrap_grouping(right_div->left.get()));
         ASSERT_NE(unary_not, nullptr) << "Left side of division must be a UnaryExpression";
         EXPECT_EQ(unary_not->op, TokenType::Not);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(unary_not->right.get())->name, "d");
@@ -148,7 +148,7 @@ namespace valuascript::compiler::test {
 
         // Right of *: Grouped Addition (b + c)
         // Parentheses must be stripped, leaving just the BinaryExpression
-        auto grouped_add = dynamic_cast<BinaryExpression *>(unwrap(left_mult->right.get()));
+        auto grouped_add = dynamic_cast<BinaryExpression *>(unwrap_grouping(left_mult->right.get()));
         ASSERT_NE(grouped_add, nullptr) << "Right side of multiplication must be the Grouped Addition";
         EXPECT_EQ(grouped_add->op, TokenType::Plus);
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(grouped_add->left.get())->name, "b");

@@ -44,7 +44,7 @@ namespace valuascript::compiler::test {
         auto access = dynamic_cast<BracketAccess *>(get_assigned_value(ast));
         ASSERT_NE(access, nullptr);
 
-        auto bin_op = dynamic_cast<BinaryExpression *>(unwrap(access->target.get()));
+        auto bin_op = dynamic_cast<BinaryExpression *>(unwrap_grouping(access->target.get()));
         ASSERT_NE(bin_op, nullptr) << "Target of access should be a BinaryExpression (due to parentheses)";
         EXPECT_EQ(bin_op->op, TokenType::Plus);
 

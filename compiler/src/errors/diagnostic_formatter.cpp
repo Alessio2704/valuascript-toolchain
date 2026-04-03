@@ -6,13 +6,13 @@
 
 namespace valuascript::compiler {
     void DiagnosticFormatter::print_errors(const std::vector<ValuaScriptException> &errors,
-                                           const SourceRegistry &registry) {
+                                           const SourceRegistry &source_registry) {
         for (const auto &err: errors) {
             const auto& loc = err.get_span();
             std::string source_code;
 
-            if (registry.contains(loc.file_path)) {
-                source_code = registry.at(loc.file_path);
+            if (source_registry.contains(loc.file_path)) {
+                source_code = source_registry.at(loc.file_path);
             }
 
             std::cout << format_error(err, source_code) << "\n\n";

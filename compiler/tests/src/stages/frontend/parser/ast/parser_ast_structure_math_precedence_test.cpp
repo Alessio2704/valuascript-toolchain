@@ -110,7 +110,7 @@ namespace valuascript::compiler::test {
         ASSERT_NE(mul_node, nullptr);
         EXPECT_EQ(mul_node->op, TokenType::Star);
 
-        auto unary_node = dynamic_cast<UnaryExpression *>(unwrap(mul_node->left.get()));
+        auto unary_node = dynamic_cast<UnaryExpression *>(unwrap_grouping(mul_node->left.get()));
         ASSERT_NE(unary_node, nullptr);
         EXPECT_EQ(unary_node->op, TokenType::Minus);
 
@@ -135,7 +135,7 @@ namespace valuascript::compiler::test {
         ASSERT_NE(mul_node, nullptr) << "Root is not Multiplication";
         EXPECT_EQ(mul_node->op, TokenType::Star);
 
-        auto add_node = dynamic_cast<BinaryExpression *>(unwrap(mul_node->left.get()));
+        auto add_node = dynamic_cast<BinaryExpression *>(unwrap_grouping(mul_node->left.get()));
         ASSERT_NE(add_node, nullptr) << "Left branch is not Addition";
         EXPECT_EQ(add_node->op, TokenType::Plus);
     }
@@ -159,17 +159,17 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(div_node->op, TokenType::Slash);
 
         // Left of division is the multiplication
-        auto mul_node = dynamic_cast<BinaryExpression *>(unwrap(div_node->left.get()));
+        auto mul_node = dynamic_cast<BinaryExpression *>(unwrap_grouping(div_node->left.get()));
         ASSERT_NE(mul_node, nullptr);
         EXPECT_EQ(mul_node->op, TokenType::Star);
 
         // Left of multiplication is addition
-        auto add_node = dynamic_cast<BinaryExpression *>(unwrap(mul_node->left.get()));
+        auto add_node = dynamic_cast<BinaryExpression *>(unwrap_grouping(mul_node->left.get()));
         ASSERT_NE(add_node, nullptr);
         EXPECT_EQ(add_node->op, TokenType::Plus);
 
         // Right of multiplication is subtraction
-        auto sub_node = dynamic_cast<BinaryExpression *>(unwrap(mul_node->right.get()));
+        auto sub_node = dynamic_cast<BinaryExpression *>(unwrap_grouping(mul_node->right.get()));
         ASSERT_NE(sub_node, nullptr);
         EXPECT_EQ(sub_node->op, TokenType::Minus);
     }

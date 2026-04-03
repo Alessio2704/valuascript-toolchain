@@ -2,8 +2,8 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    Precedence TokenTraits::get_operator_precedence(const TokenType type) {
-        switch (type) {
+    Precedence TokenTraits::get_operator_precedence(const TokenType op_type) {
+        switch (op_type) {
             case TokenType::Or: return Precedence::Or;
             case TokenType::And: return Precedence::And;
             case TokenType::Equals:
@@ -22,8 +22,8 @@ namespace valuascript::compiler {
         }
     }
 
-    bool TokenTraits::is_operator_right_associative(TokenType type) {
-        return type == TokenType::Caret;
+    bool TokenTraits::is_operator_right_associative(TokenType op_type) {
+        return op_type == TokenType::Caret;
     }
 
     bool TokenTraits::is_binary_operator(const TokenType type) {

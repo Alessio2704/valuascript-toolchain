@@ -2,10 +2,10 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    bool TokenTraits::is_valid_lvalue(const Expression *expr) {
-        return dynamic_cast<const IdentifierAccess *>(expr) ||
-               dynamic_cast<const DotAccess *>(expr) ||
-               dynamic_cast<const BracketAccess *>(expr);
+    bool TokenTraits::is_valid_lvalue(const Expression *target_expression) {
+        return dynamic_cast<const IdentifierAccess *>(target_expression) ||
+               dynamic_cast<const DotAccess *>(target_expression) ||
+               dynamic_cast<const BracketAccess *>(target_expression);
     }
 
     bool TokenTraits::is_expression_start(const TokenType type) {
@@ -29,8 +29,8 @@ namespace valuascript::compiler {
         }
     }
 
-    bool TokenTraits::is_statement_start(const Token &token, TokenType next_type) {
-        return is_top_level_token(token.type) && !acts_like_identifier(token, next_type);
+    bool TokenTraits::is_statement_start(const Token &token, TokenType lookahead_type) {
+        return is_top_level_token(token.type) && !acts_like_identifier(token, lookahead_type);
     }
 
     bool TokenTraits::is_identifier_start(const Token &token) {
@@ -38,13 +38,13 @@ namespace valuascript::compiler {
                    is_reserved_keyword(token) && !is_top_level_only_declaration(token.type));
     }
 
-    bool TokenTraits::acts_like_identifier(const Token &token, TokenType next_type) {
+    bool TokenTraits::acts_like_identifier(const Token &token, TokenType lookahead_type) {
         if (!is_reserved_keyword(token)) return false;
-        return (next_type == TokenType::Comma || next_type == TokenType::Colon || next_type == TokenType::Assign ||
-                next_type == TokenType::LeftParen || next_type == TokenType::RightParen || next_type ==
+        return (lookahead_type == TokenType::Comma || lookahead_type == TokenType::Colon || lookahead_type == TokenType::Assign ||
+                lookahead_type == TokenType::LeftParen || lookahead_type == TokenType::RightParen || lookahead_type ==
                 TokenType::LeftBrace ||
-                next_type == TokenType::RightBrace || next_type == TokenType::Less || next_type == TokenType::Greater ||
-                next_type == TokenType::EndOfFile);
+                lookahead_type == TokenType::RightBrace || lookahead_type == TokenType::Less || lookahead_type == TokenType::Greater ||
+                lookahead_type == TokenType::EndOfFile);
     }
 
     bool TokenTraits::is_top_level_token(const TokenType type) {

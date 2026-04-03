@@ -17,7 +17,7 @@ namespace valuascript::compiler::test {
 
         ASSERT_EQ(tuple_val, nullptr) << "Assigned value must not be a TupleLiteral";
 
-        auto value = dynamic_cast<NumberLiteral *>(unwrap(get_assigned_value(ast)));
+        auto value = dynamic_cast<NumberLiteral *>(unwrap_grouping(get_assigned_value(ast)));
         ASSERT_EQ(value->value, "1");
     }
 
@@ -118,7 +118,7 @@ namespace valuascript::compiler::test {
         // ==========================================
         // The parser must completely discard the parentheses here and just return the BinaryExpression.
         // If it incorrectly wrapped it in a TupleLiteral, this dynamic_cast will fail.
-        auto elem1_math = dynamic_cast<BinaryExpression *>(unwrap(root_tuple->elements[1].get()));
+        auto elem1_math = dynamic_cast<BinaryExpression *>(unwrap_grouping(root_tuple->elements[1].get()));
         ASSERT_NE(elem1_math, nullptr) << "Element 1 must be a pure BinaryExpression, NOT a TupleLiteral";
         EXPECT_EQ(elem1_math->op, TokenType::Plus);
 
@@ -159,12 +159,12 @@ namespace valuascript::compiler::test {
         // ELEMENT 1: Precedence-Overridden Math (((1 + 3) * 4))
         // ==========================================
         // 1. The outermost parentheses must be gone. The root of this element MUST be the '*'.
-        auto elem1_mult = dynamic_cast<BinaryExpression *>(unwrap(root_tuple->elements[1].get()));
+        auto elem1_mult = dynamic_cast<BinaryExpression *>(unwrap_grouping(root_tuple->elements[1].get()));
         ASSERT_NE(elem1_mult, nullptr) << "Element 1 must be a BinaryExpression (Multiplication)";
         EXPECT_EQ(elem1_mult->op, TokenType::Star);
 
         // 2. The left side of the '*' MUST be the '+' because of the (1 + 3) override.
-        auto math_left_add = dynamic_cast<BinaryExpression *>(unwrap(elem1_mult->left.get()));
+        auto math_left_add = dynamic_cast<BinaryExpression *>(unwrap_grouping(elem1_mult->left.get()));
         ASSERT_NE(math_left_add, nullptr) << "Left side of multiplication must be the addition operation";
         EXPECT_EQ(math_left_add->op, TokenType::Plus);
 

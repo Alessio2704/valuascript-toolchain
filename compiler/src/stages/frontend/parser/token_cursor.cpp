@@ -9,12 +9,12 @@ namespace valuascript::compiler {
         : tokens_(tokens), file_path_(std::move(file_path)), context_(context) {
     }
 
-    const Token &TokenCursor::peek(const int num) const {
-        return tokens_[current_ + num];
+    const Token &TokenCursor::peek(const int lookahead) const {
+        return tokens_[current_ + lookahead];
     }
 
-    const Token &TokenCursor::previous(const int num) const {
-        return tokens_[current_ - num];
+    const Token &TokenCursor::previous(const int lookback) const {
+        return tokens_[current_ - lookback];
     }
 
     bool TokenCursor::is_at_end() const {
@@ -71,12 +71,12 @@ namespace valuascript::compiler {
 
     void TokenCursor::report_error_no_panic(const Token &token,
                                             const ValuascriptErrorCode code,
-                                            const bool force_token_location) const {
+                                            const bool use_exact_token_range) const {
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
 
-        if (!force_token_location && current_ > 0) {
+        if (!use_exact_token_range && current_ > 0) {
             const Token &prev = tokens_[current_ - 1];
             if (token.line > prev.line || token.type == TokenType::EndOfFile) {
                 err_line = prev.line;
@@ -98,8 +98,8 @@ namespace valuascript::compiler {
 
     [[noreturn]] void TokenCursor::report_error(const Token &token,
                                                 const ValuascriptErrorCode code,
-                                                const bool force_token_location) const {
-        report_error_no_panic(token, code, force_token_location);
+                                                const bool use_exact_token_range) const {
+        report_error_no_panic(token, code, use_exact_token_range);
         throw ParseSyncException();
     }
 }
