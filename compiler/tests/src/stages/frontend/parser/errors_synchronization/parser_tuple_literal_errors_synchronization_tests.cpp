@@ -322,7 +322,7 @@ namespace valuascript::compiler::test {
             "let a = (1, 2)))\n"
             "let recovery = 1\n",
             {
-            {Err::UnexpectedTopLevelToken, 1, 15}
+            {Err::InvalidExpression, 1, 15}
             },
             ExpectTuple(2)
             },

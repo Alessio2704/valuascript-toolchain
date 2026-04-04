@@ -168,7 +168,11 @@ namespace valuascript::compiler {
     }
 
     std::unique_ptr<Expression> Parser::parse_primary_expression() {
-        switch (cursor_.peek().type) {
+        const Token &tok = cursor_.peek();
+        const Token &next = cursor_.peek(1);
+        const Token &prev = cursor_.previous();
+
+        switch (tok.type) {
             case TokenType::Number: {
                 cursor_.advance();
                 auto node = std::make_unique<NumberLiteral>(cursor_.previous().lexeme);
@@ -217,21 +221,23 @@ namespace valuascript::compiler {
                 cursor_.advance();
                 return parse_dict_literal();
             default: {
-                const Token &tok = cursor_.peek();
-                const Token &next = cursor_.peek(1);
-
                 bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type);
                 bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
                 if (is_stmt_start) {
-                    const Token &prev = cursor_.previous();
-
                     if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
                         cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
                     }
 
                     cursor_.report_error_no_panic(tok, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
-                    consume_unexpected_statement_gracefully();
+
+                    if (tok.type == TokenType::At) {
+                        cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration,
+                                                      true);
+                        parse_modifiers();
+                    } else {
+                        consume_unexpected_statement_gracefully();
+                    }
 
                     if (TokenTraits::is_expression_start(cursor_.peek().type)) {
                         return parse_primary_expression();
@@ -244,8 +250,6 @@ namespace valuascript::compiler {
                     tok.type == TokenType::RightBrace || tok.type == TokenType::RightParen ||
                     tok.type == TokenType::RightBracket || tok.type == TokenType::Return ||
                     tok.type == TokenType::Then || tok.type == TokenType::Else) {
-                    const Token &prev = cursor_.previous();
-
                     if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
                         cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, false);
                     }

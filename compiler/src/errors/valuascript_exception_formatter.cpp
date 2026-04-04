@@ -164,7 +164,7 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::ExpectedPropertyName:
                 return "Expected property name after '.'.";
             case ValuascriptErrorCode::InvalidExpression:
-                return "Syntax Error: Expected an expression.";
+                return "Syntax Error: Invalid expression.";
             case ValuascriptErrorCode::SingleElementTuplesNotAllowed:
                 return "Syntax Error: Trailing commas and 1-element tuples are not allowed.";
             case ValuascriptErrorCode::TrailingCommaInTuple:
@@ -223,6 +223,8 @@ namespace valuascript::compiler {
                 return "Syntax Error: Missing comma ',' between fields.";
             case ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere:
                 return "Syntax Error: Top level declaration not allowed here.";
+            case ValuascriptErrorCode::ReturnUsedInToplevel:
+                return "Syntax Error: 'return' keyword used at top level.";
 
             // --- Import Resolver Errors ---
             case ValuascriptErrorCode::CircularImportDetected:

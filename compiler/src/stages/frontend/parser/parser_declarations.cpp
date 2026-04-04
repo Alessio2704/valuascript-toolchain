@@ -38,41 +38,60 @@ namespace valuascript::compiler {
 
         while (cursor_.match({TokenType::At})) {
             const Token &start_token = cursor_.previous();
-            Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName, is_statement_context);
 
-            std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+            try {
+                Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName, is_statement_context);
 
-            if (cursor_.match({TokenType::LeftParen})) {
-                CloserTracker tracker(*this, TokenType::RightParen);
-                arguments = parse_key_value_list(
-                    TokenType::RightParen,
-                    ValuascriptErrorCode::MissingArgumentNameInModifier,
-                    ValuascriptErrorCode::MissingColonAfterArgument,
-                    ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier,
-                    std::make_optional(ValuascriptErrorCode::TrailingCommaInModifier));
-                try {
-                    cursor_.consume(TokenType::RightParen, ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs);
-                } catch (const ParseSyncException &) {
-                    synchronize_and_consume_closer(TokenType::RightParen);
+                std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
 
-                    Modifier mod;
-                    mod.name = name_token.lexeme;
-                    mod.arguments = std::move(arguments);
-                    mod.span = cursor_.make_span(start_token, cursor_.previous());
-                    modifiers.push_back(std::move(mod));
+                if (cursor_.match({TokenType::LeftParen})) {
+                    CloserTracker tracker(*this, TokenType::RightParen);
+                    arguments = parse_key_value_list(
+                        TokenType::RightParen,
+                        ValuascriptErrorCode::MissingArgumentNameInModifier,
+                        ValuascriptErrorCode::MissingColonAfterArgument,
+                        ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInModifier,
+                        std::make_optional(ValuascriptErrorCode::TrailingCommaInModifier));
 
-                    if (is_active_closer(cursor_.peek().type) && cursor_.peek().type != TokenType::RightParen) {
-                        throw ParseSyncException();
+                    try {
+                        cursor_.consume(TokenType::RightParen,
+                                        ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs);
+                    } catch (const ParseSyncException &) {
+                        synchronize_and_consume_closer(TokenType::RightParen);
+
+                        Modifier mod;
+                        mod.name = name_token.lexeme;
+                        mod.arguments = std::move(arguments);
+                        mod.span = cursor_.make_span(start_token, cursor_.previous());
+                        modifiers.push_back(std::move(mod));
+
+                        if (is_active_closer(cursor_.peek().type) && cursor_.peek().type != TokenType::RightParen) {
+                            throw ParseSyncException();
+                        }
+                        continue;
                     }
-                    continue;
+                }
+
+                Modifier mod;
+                mod.name = name_token.lexeme;
+                mod.arguments = std::move(arguments);
+                mod.span = cursor_.make_span(start_token, cursor_.previous());
+                modifiers.push_back(std::move(mod));
+            } catch (const ParseSyncException &) {
+                if (is_active_closer(cursor_.peek().type)) {
+                    throw;
+                }
+
+                if (cursor_.is_at_end() ||
+                    TokenTraits::is_grouping_closer(cursor_.peek().type) ||
+                    TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                    break;
+                }
+
+                if (cursor_.peek().type != TokenType::At) {
+                    cursor_.advance();
                 }
             }
-
-            Modifier mod;
-            mod.name = name_token.lexeme;
-            mod.arguments = std::move(arguments);
-            mod.span = cursor_.make_span(start_token, cursor_.previous());
-            modifiers.push_back(std::move(mod));
         }
 
         return modifiers;

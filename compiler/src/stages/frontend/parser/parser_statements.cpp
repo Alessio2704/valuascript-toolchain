@@ -10,6 +10,14 @@ namespace valuascript::compiler {
 
         Program dummy_program;
 
+        if (type == TokenType::EndOfFile) {
+            if (!modifiers.empty()) {
+                cursor_.report_error_no_panic(cursor_.peek(),
+                                              ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+            }
+            return;
+        }
+
         if (ctx == ParseContext::FunctionBody && TokenTraits::is_top_level_only_declaration(type)) {
             cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
                                           true);
@@ -66,7 +74,7 @@ namespace valuascript::compiler {
                 }
 
                 if (ctx == ParseContext::TopLevel) {
-                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken, true);
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReturnUsedInToplevel, true);
                     auto ret = parse_return_statement();
                     if (program) program->execution_steps.push_back(std::move(ret));
                 } else {
@@ -75,7 +83,10 @@ namespace valuascript::compiler {
                 }
                 break;
             }
-            case TokenType::Identifier: {
+            case TokenType::Identifier:
+            case TokenType::LeftParen:
+            case TokenType::LeftBracket:
+            default: {
                 if (!modifiers.empty()) {
                     cursor_.report_error_no_panic(cursor_.peek(),
                                                   ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
@@ -83,27 +94,6 @@ namespace valuascript::compiler {
                 auto expr_stmt = parse_expression_statement();
                 if (program) program->execution_steps.push_back(std::move(expr_stmt));
                 else block.push_back(std::move(expr_stmt));
-                break;
-            }
-            default: {
-                if (ctx == ParseContext::TopLevel) {
-                    if (!modifiers.empty()) {
-                        cursor_.report_error_no_panic(cursor_.peek(),
-                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    } else {
-                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::UnexpectedTopLevelToken,
-                                                      true);
-                    }
-                    throw ParseSyncException();
-                } else {
-                    if (!modifiers.empty()) {
-                        cursor_.report_error_no_panic(cursor_.peek(),
-                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
-                    auto expr_stmt = parse_expression_statement();
-                    if (program) program->execution_steps.push_back(std::move(expr_stmt));
-                    else block.push_back(std::move(expr_stmt));
-                }
                 break;
             }
         }
@@ -137,8 +127,9 @@ namespace valuascript::compiler {
             targets.emplace_back(target.lexeme, std::move(type_annotation));
 
             if (!cursor_.match({TokenType::Comma})) {
-                if (cursor_.peek().type == TokenType::Identifier) {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
+                if (cursor_.peek().type == TokenType::Identifier || cursor_.peek().type == TokenType::At) {
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
+                    continue;
                 }
                 break;
             }
@@ -147,8 +138,13 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> value = nullptr;
 
         if (cursor_.match({TokenType::Assign})) {
-            if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-                cursor_.report_error_no_panic(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
+            bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                  (cursor_.peek().line > cursor_.previous().line &&
+                                   cursor_.peek().type == TokenType::Identifier &&
+                                   cursor_.peek(1).type == TokenType::Assign);
+
+            if (cursor_.is_at_end() || is_pseudo_stmt) {
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
             } else {
                 value = parse_expression();
             }
@@ -185,9 +181,21 @@ namespace valuascript::compiler {
                 cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment);
             }
 
-            auto value = parse_expression();
-            const SourceSpan end_span = value->span;
-            verify_statement_end();
+            std::unique_ptr<Expression> value = nullptr;
+
+            bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                  (cursor_.peek().line > cursor_.previous().line &&
+                                   cursor_.peek().type == TokenType::Identifier &&
+                                   cursor_.peek(1).type == TokenType::Assign);
+
+            if (cursor_.is_at_end() || is_pseudo_stmt) {
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression, false);
+            } else {
+                value = parse_expression();
+            }
+
+            const SourceSpan end_span = value ? value->span : start_span;
+            if (value) verify_statement_end();
 
             auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
             reassignment->span = cursor_.combine_spans(start_span, end_span);

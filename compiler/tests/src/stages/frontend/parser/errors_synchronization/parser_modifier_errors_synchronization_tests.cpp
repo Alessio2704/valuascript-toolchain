@@ -283,7 +283,7 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 1, 13},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 19},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 13},
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -450,7 +450,7 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_eof_after_at",
-            "let a = 1\n@ ",
+            "let a = 1\n@",
             { {Err::ExpectedModifierName, 2, 2} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -592,8 +592,22 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "dict_key_modifier_missing_name",
+            "let obj = { @* a: 1, other: 2 }\nlet recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 14} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 2);
+            EXPECT_EQ(dict->elements[0].key, "a");
+            EXPECT_EQ(dict->elements[1].key, "other");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_modifier_missing_name_and_dict_key",
             "let obj = { @ 1: 1, other: 2 }\nlet recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 15} },
+            { {Err::ExpectedModifierName, 1, 15},
+            {Err::ExpectedDictionaryKey, 1, 16}
+            },
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
@@ -647,7 +661,7 @@ namespace valuascript::compiler::test {
             "let obj = { k: @modifier 1 }\nlet recovery = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 1, 16},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 26},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 16},
             },
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -657,8 +671,23 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "dict_key_multiple_modifiers_one_missing_name",
-            "let obj = { @ok @ 1: 1, other: 2 }\nlet recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 19} },
+            "let obj = { @ok @* a: 1, other: 2 }\nlet recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 18} },
+            [](const Program& ast) {
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_EQ(dict->elements.size(), 2);
+            EXPECT_EQ(dict->elements[0].key, "a");
+            EXPECT_EQ(dict->elements[1].key, "other");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_key_multiple_modifiers_one_missing_name_amd_key",
+            "let obj = { @ok @1 : 1, other: 2 }\nlet recovery = 1\n",
+            {
+            {Err::ExpectedModifierName, 1, 18},
+            {Err::ExpectedDictionaryKey, 1, 20}
+            },
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());

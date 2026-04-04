@@ -83,7 +83,7 @@ namespace valuascript::compiler::test {
 
             ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ValuascriptErrorCode::ExpectedRightParenAfterExpression
             },
-            ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ValuascriptErrorCode::UnexpectedTopLevelToken},
+            ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ValuascriptErrorCode::InvalidExpression},
             ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", ValuascriptErrorCode::
             UnmatchedBracketAfterTensorElements},
 

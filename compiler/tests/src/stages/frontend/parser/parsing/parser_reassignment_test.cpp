@@ -72,17 +72,17 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         ReassignmentSadPathTest,
         testing::Values(
-            ReassignmentSadParam{"assign_to_number", "10 = 5", ValuascriptErrorCode::UnexpectedTopLevelToken},
-            ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ValuascriptErrorCode::UnexpectedTopLevelToken},
+            ReassignmentSadParam{"assign_to_number", "10 = 5", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment},
+            ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment},
             ReassignmentSadParam{"assign_to_function", "get_rate() = 5", ValuascriptErrorCode::
             InvalidLeftSideExpressionInReassignment}
             ,
             ReassignmentSadParam{"assign_to_binary_expr", "a + b = 10", ValuascriptErrorCode::
             InvalidLeftSideExpressionInReassignment},
             ReassignmentSadParam{"missing_rhs", "a = ", ValuascriptErrorCode::InvalidExpression},
-            ReassignmentSadParam{"standalone_literal", "42", ValuascriptErrorCode::UnexpectedTopLevelToken},
+            ReassignmentSadParam{"standalone_literal", "42", ValuascriptErrorCode::InvalidStandaloneStatement},
             ReassignmentSadParam{"standalone_variable", "my_var", ValuascriptErrorCode::InvalidStandaloneStatement},
-            ReassignmentSadParam{"standalone_binary", "1 + 1", ValuascriptErrorCode::UnexpectedTopLevelToken},
+            ReassignmentSadParam{"standalone_binary", "1 + 1", ValuascriptErrorCode::InvalidStandaloneStatement},
             ReassignmentSadParam{"standalone_bracket_access", "tensor[0]", ValuascriptErrorCode::
             InvalidStandaloneStatement},
             ReassignmentSadParam{"multiple_reassignment", "a, b = 1, 2", ValuascriptErrorCode::

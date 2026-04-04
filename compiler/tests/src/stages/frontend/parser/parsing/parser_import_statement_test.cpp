@@ -71,7 +71,7 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         ImportStatementSadPathTest,
         testing::Values(
-            ImportStatementSadParam{"missing_import", " \"file/path\"", ValuascriptErrorCode::UnexpectedTopLevelToken},
+            ImportStatementSadParam{"missing_import", " \"file/path\"", ValuascriptErrorCode::InvalidStandaloneStatement},
             ImportStatementSadParam{"docstring", "import \"\"\"file/path\"\"\"", ValuascriptErrorCode::
             MissingImportPathString},
             ImportStatementSadParam{"identifier", "import identifier", ValuascriptErrorCode::MissingImportPathString},

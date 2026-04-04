@@ -152,7 +152,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::MissingValueAfterEquals, 2, 11},
+            {Err::MissingValueAfterEquals, 2, 12},
             {Err::InvalidExpression, 3, 17},
             {Err::InvalidExpression, 4, 11}
             },
@@ -386,7 +386,7 @@ namespace valuascript::compiler::test {
             {
             {Err::ExpectedCommaInMultiAssignment, 2, 16}
             },
-            ExpectFunctionBodySize("test", 1)
+            ExpectFunctionBodySize("test", 2)
             },
             ParserErrorsSynchronizationTestCase{
             "nested_struct_with_proper_closing_brace_stays_in_function",

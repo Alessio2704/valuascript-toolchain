@@ -187,9 +187,9 @@ namespace valuascript::compiler::test {
             "func valid2() -> int { return 0 }\n"
             "* let bad_start = 0\n",
             {
-            {ValuascriptErrorCode::UnexpectedTopLevelToken, 1, 1},
-            {ValuascriptErrorCode::UnexpectedTopLevelToken, 3, 1},
-            {ValuascriptErrorCode::UnexpectedTopLevelToken, 5, 1}
+            {ValuascriptErrorCode::InvalidExpression, 1, 1},
+            {ValuascriptErrorCode::InvalidExpression, 3, 1},
+            {ValuascriptErrorCode::InvalidExpression, 5, 1}
             }
             },
             ParserErrorsSynchronizationTestCase{
