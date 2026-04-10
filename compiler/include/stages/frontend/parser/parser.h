@@ -104,7 +104,8 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> parse_switch_result();
 
-        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords = true);
+        const Token &consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords = true,
+                                        bool check_statement_boundary = false);
 
         void verify_statement_end() const;
 
@@ -168,6 +169,8 @@ namespace valuascript::compiler {
             auto is_hard_stop = [&](const Token &token, TokenType next) {
                 if (is_element_start()) return false;
                 if (TokenTraits::is_statement_start(token, next)) return true;
+                if (token.line > cursor_.previous().line && TokenTraits::is_expression_statement_start(token, next))
+                    return true;
                 for (TokenType stop: recovery_boundaries) if (token.type == stop) return true;
                 return false;
             };
@@ -207,6 +210,8 @@ namespace valuascript::compiler {
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
                         if (TokenTraits::is_statement_start(tok, next)) break;
+                        if (tok.line > cursor_.previous().line && TokenTraits::is_expression_statement_start(tok, next))
+                            break;
                         if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
 
                         cursor_.advance();

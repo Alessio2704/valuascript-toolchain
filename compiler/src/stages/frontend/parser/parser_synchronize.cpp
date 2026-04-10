@@ -33,6 +33,9 @@ namespace valuascript::compiler {
                     return true;
                 }
                 if (TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) return true;
+                if (cursor_.peek().line > cursor_.previous().line &&
+                    TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type))
+                    return true;
                 if (t == TokenType::Then || t == TokenType::Else || t == TokenType::Case || t == TokenType::Default)
                     return true;
             }
@@ -54,8 +57,10 @@ namespace valuascript::compiler {
             if (depth == 0) {
                 if (t == TokenType::Case || t == TokenType::Default || t == TokenType::RightBrace) return true;
                 if (is_missing_closing_brace() && (
-                        is_at_top_level_declaration() || t == TokenType::Return || TokenTraits::is_statement_start(
-                            cursor_.peek(), cursor_.peek(1).type)))
+                        is_at_top_level_declaration() || t == TokenType::Return ||
+                        TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                        (cursor_.peek().line > cursor_.previous().line &&
+                         TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type))))
                     return true;
             }
             return false;
@@ -67,8 +72,10 @@ namespace valuascript::compiler {
             if (depth == 0) {
                 if (t == TokenType::Then || t == TokenType::Else || TokenTraits::is_grouping_closer(t)) return true;
                 if (is_missing_closing_brace() && (
-                        is_at_top_level_declaration() || t == TokenType::Return || TokenTraits::is_statement_start(
-                            cursor_.peek(), cursor_.peek(1).type)))
+                        is_at_top_level_declaration() || t == TokenType::Return ||
+                        TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                        (cursor_.peek().line > cursor_.previous().line &&
+                         TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type))))
                     return true;
             }
             return false;
@@ -77,14 +84,20 @@ namespace valuascript::compiler {
 
     void Parser::synchronize_block_statement() {
         recover([&](TokenType t, int /*depth*/) {
-            return t == TokenType::RightBrace || t == TokenType::Return || TokenTraits::is_statement_start(
-                       cursor_.peek(), cursor_.peek(1).type);
+            return t == TokenType::RightBrace || t == TokenType::Return ||
+                   TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                   (cursor_.peek().line > cursor_.previous().line &&
+                    TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type));
         });
     }
 
     void Parser::synchronize() {
         while (!cursor_.is_at_end()) {
             if (TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) return;
+            if (cursor_.peek().line > cursor_.previous().line &&
+                TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                return;
+            }
             cursor_.advance();
         }
     }

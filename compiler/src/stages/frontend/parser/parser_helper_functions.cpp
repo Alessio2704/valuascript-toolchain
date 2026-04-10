@@ -2,7 +2,12 @@
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler {
-    const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords) {
+    const Token &Parser::consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords,
+                                            bool check_statement_boundary) {
+        if (check_statement_boundary && cursor_.peek().line > cursor_.previous().line &&
+            TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+            cursor_.report_error(cursor_.peek(), fallback_err);
+        }
         if (cursor_.check(TokenType::Identifier)) {
             return cursor_.advance();
         }
@@ -11,7 +16,9 @@ namespace valuascript::compiler {
             TokenType next = cursor_.peek(1).type;
 
             bool acts_like_id = TokenTraits::acts_like_identifier(cursor_.peek(), next);
-            bool forms_statement = TokenTraits::is_statement_start(cursor_.peek(), next);
+            bool forms_statement = TokenTraits::is_statement_start(cursor_.peek(), next) ||
+                                   (check_statement_boundary && cursor_.peek().line > cursor_.previous().line &&
+                                    TokenTraits::is_expression_statement_start(cursor_.peek(), next));
 
             if (acts_like_id || !allow_top_level_keywords || !forms_statement) {
                 cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);

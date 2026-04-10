@@ -107,6 +107,7 @@ namespace valuascript::compiler {
     std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(*this, TokenType::RightBracket);
+        std::unique_ptr<Expression> index_expr = nullptr;
 
         try {
             auto parse_bound = [&]() -> std::unique_ptr<Expression> {
@@ -128,7 +129,7 @@ namespace valuascript::compiler {
                 return expr;
             };
 
-            std::unique_ptr<Expression> index_expr = parse_bound();
+            index_expr = parse_bound();
 
             if (cursor_.match({TokenType::Colon})) {
                 std::unique_ptr<Expression> end_expr = parse_bound();
@@ -152,7 +153,7 @@ namespace valuascript::compiler {
             return bracket_access;
         } catch (const ParseSyncException &) {
             synchronize_and_consume_closer(TokenType::RightBracket);
-            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), nullptr);
+            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
             bracket_access->span = cursor_.combine_spans(target_span,
                                                          cursor_.make_span(cursor_.previous(), cursor_.previous()));
             return bracket_access;
@@ -161,7 +162,7 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target) {
         const SourceSpan target_span = target->span;
-        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, false);
+        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, true, true);
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
         dot_access->span = cursor_.combine_spans(target_span, cursor_.make_span(property_token, property_token));
         return dot_access;
@@ -542,7 +543,9 @@ namespace valuascript::compiler {
 
         bool should_break_out = is_missing_closing_brace() &&
                                 (is_at_top_level_declaration() || cursor_.peek().type == TokenType::Return ||
-                                 TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+                                 TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                 (cursor_.peek().line > cursor_.previous().line &&
+                                  TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type)));
 
         if (!should_break_out && !cursor_.check(TokenType::Case) && !cursor_.check(TokenType::Default) &&
             !cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
@@ -591,7 +594,10 @@ namespace valuascript::compiler {
         while (!cursor_.check(TokenType::RightBrace) && !cursor_.is_at_end()) {
             bool should_break_out = is_missing_closing_brace() &&
                                     (is_at_top_level_declaration() || cursor_.peek().type == TokenType::Return ||
-                                     TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type));
+                                     TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                     (cursor_.peek().line > cursor_.previous().line &&
+                                      TokenTraits::is_expression_statement_start(
+                                          cursor_.peek(), cursor_.peek(1).type)));
 
             if (should_break_out) break;
 

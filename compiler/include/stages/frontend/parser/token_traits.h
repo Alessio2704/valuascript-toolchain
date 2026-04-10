@@ -29,10 +29,12 @@ namespace valuascript::compiler {
 
         static bool is_statement_start(const Token &token, TokenType lookahead_type);
 
+        static bool is_expression_statement_start(const Token &token, TokenType lookahead_type);
+
         static bool is_identifier_start(const Token &token);
 
         static bool is_grouping_opener(TokenType type);
 
         static bool is_grouping_closer(TokenType type);
-    };
+    };  
 }
