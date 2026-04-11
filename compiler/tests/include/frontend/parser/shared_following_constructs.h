@@ -8,6 +8,19 @@
 #include "stages/frontend/parser/ast.h"
 
 namespace valuascript::compiler::test {
+    template<typename Predicate>
+    const Statement *find_statement(const Program &program, Predicate pred) {
+        for (const auto &stmt: program.execution_steps) {
+            if (pred(stmt.get())) return stmt.get();
+        }
+        for (const auto &func_def: program.function_definitions) {
+            for (const auto &stmt: func_def->body) {
+                if (pred(stmt.get())) return stmt.get();
+            }
+        }
+        return nullptr;
+    }
+
     struct FollowingConstruct {
         std::string name;
         std::string source;
@@ -32,17 +45,17 @@ namespace valuascript::compiler::test {
     }
 
     template<typename TargetType, typename ReceiverType>
-    void check_reassign(const Program &p) {
-        auto it = std::find_if(p.execution_steps.begin(), p.execution_steps.end(), [](const auto &s) {
-            auto rs = dynamic_cast<Reassignment *>(s.get());
-            auto target = rs ? dynamic_cast<TargetType *>(rs->target.get()) : nullptr;
+    void check_reassign(const Program &program) {
+        auto target_statement = find_statement(program, [](const Statement *stmt) {
+            auto reassignment = dynamic_cast<const Reassignment *>(stmt);
+            auto target = reassignment ? dynamic_cast<TargetType *>(reassignment->target.get()) : nullptr;
             if constexpr (std::is_same_v<TargetType, IdentifierAccess>) {
                 return target != nullptr;
             } else {
                 return target && dynamic_cast<ReceiverType *>(target->target.get());
             }
         });
-        EXPECT_NE(it, p.execution_steps.end()) << "Failed to recover reassignment for target type.";
+        EXPECT_NE(target_statement, nullptr) << "Failed to recover reassignment for target type.";
     }
 
     inline std::vector<FollowingConstruct> get_all_top_level_following_constructs() {
@@ -54,117 +67,118 @@ namespace valuascript::compiler::test {
 
         std::vector<CoreConstruct> cores = {
             {
-                "func", "func rec_func() -> void {}\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.function_definitions.begin(), p.function_definitions.end(),
-                                           [](auto &f) { return f->name == "rec_func"; });
-                    ASSERT_NE(it, p.function_definitions.end());
+                "func", "func rec_func() -> void {}\n", true, [](const Program &program, int modifiers_count) {
+                    auto it = std::find_if(program.function_definitions.begin(), program.function_definitions.end(),
+                                           [](const auto &func_def) { return func_def->name == "rec_func"; });
+                    ASSERT_NE(it, program.function_definitions.end());
                     check_mods((*it)->modifiers, modifiers_count);
                 }
             },
             {
-                "struct", "struct RecStruct {}\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.struct_definitions.begin(), p.struct_definitions.end(),
-                                           [](auto &s) { return s->name == "RecStruct"; });
-                    ASSERT_NE(it, p.struct_definitions.end());
+                "struct", "struct RecStruct {}\n", true, [](const Program &program, int modifiers_count) {
+                    auto it = std::find_if(program.struct_definitions.begin(), program.struct_definitions.end(),
+                                           [](const auto &struct_def) { return struct_def->name == "RecStruct"; });
+                    ASSERT_NE(it, program.struct_definitions.end());
                     check_mods((*it)->modifiers, modifiers_count);
                 }
             },
             {
-                "enum", "enum RecEnum: int {}\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.enum_definitions.begin(), p.enum_definitions.end(),
-                                           [](auto &e) { return e->name == "RecEnum"; });
-                    ASSERT_NE(it, p.enum_definitions.end());
+                "enum", "enum RecEnum: int {}\n", true, [](const Program &program, int modifiers_count) {
+                    auto it = std::find_if(program.enum_definitions.begin(), program.enum_definitions.end(),
+                                           [](const auto &enum_def) { return enum_def->name == "RecEnum"; });
+                    ASSERT_NE(it, program.enum_definitions.end());
                     check_mods((*it)->modifiers, modifiers_count);
                 }
             },
             {
-                "typealias", "typealias RecAlias = int\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.type_aliases.begin(), p.type_aliases.end(),
-                                           [](auto &t) { return t->name == "RecAlias"; });
-                    ASSERT_NE(it, p.type_aliases.end());
+                "typealias", "typealias RecAlias = int\n", true, [](const Program &program, int modifiers_count) {
+                    auto it = std::find_if(program.type_aliases.begin(), program.type_aliases.end(),
+                                           [](const auto &type_alias) { return type_alias->name == "RecAlias"; });
+                    ASSERT_NE(it, program.type_aliases.end());
                     check_mods((*it)->modifiers, modifiers_count);
                 }
             },
             {
-                "let", "let rec_let = 1\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.execution_steps.begin(), p.execution_steps.end(), [](auto &s) {
-                        auto a = dynamic_cast<Assignment *>(s.get());
-                        return a && !a->targets.empty() && a->targets[0].first == "rec_let";
+                "let", "let rec_let = 1\n", true, [](const Program &program, int modifiers_count) {
+                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
+                        auto assignment = dynamic_cast<const Assignment *>(stmt);
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "rec_let";
                     });
-                    ASSERT_NE(it, p.execution_steps.end());
-                    check_mods(dynamic_cast<Assignment *>(it->get())->modifiers, modifiers_count);
+                    ASSERT_NE(target_stmt, nullptr);
+                    check_mods(dynamic_cast<const Assignment *>(target_stmt)->modifiers, modifiers_count);
                 }
             },
             {
-                "var", "var rec_var = 1\n", true, [](const Program &p, int modifiers_count) {
-                    auto it = std::find_if(p.execution_steps.begin(), p.execution_steps.end(), [](auto &s) {
-                        auto a = dynamic_cast<Assignment *>(s.get());
-                        return a && !a->targets.empty() && a->targets[0].first == "rec_var";
+                "var", "var rec_var = 1\n", true, [](const Program &program, int modifiers_count) {
+                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
+                        auto assignment = dynamic_cast<const Assignment *>(stmt);
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "rec_var";
                     });
-                    ASSERT_NE(it, p.execution_steps.end());
-                    check_mods(dynamic_cast<Assignment *>(it->get())->modifiers, modifiers_count);
+                    ASSERT_NE(target_stmt, nullptr);
+                    check_mods(dynamic_cast<const Assignment *>(target_stmt)->modifiers, modifiers_count);
                 }
             },
             {
-                "import", "import \"lib\"\n", false, [](const Program &p, int) {
-                    EXPECT_FALSE(p.import_statements.empty());
+                "import", "import \"lib\"\n", false, [](const Program &program, int) {
+                    EXPECT_FALSE(program.import_statements.empty());
                 }
             },
             {
-                "directive", "#dir\n", false, [](const Program &p, int) {
-                    EXPECT_FALSE(p.directives.empty());
+                "directive", "#dir\n", false, [](const Program &program, int) {
+                    EXPECT_FALSE(program.directives.empty());
                 }
             },
             {
-                "call", "rec_call()\n", false, [](const Program &p, int) {
-                    EXPECT_TRUE(std::any_of(p.execution_steps.begin(), p.execution_steps.end(), [](auto& s){
-                        auto es = dynamic_cast<ExpressionStatement*>(s.get()); return es && dynamic_cast<FunctionCall*>(
-                            es->expr.get());
-                        }));
+                "call", "rec_call()\n", false, [](const Program &program, int) {
+                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
+                        auto expr_stmt = dynamic_cast<const ExpressionStatement *>(stmt);
+                        return expr_stmt && dynamic_cast<const FunctionCall *>(expr_stmt->expr.get());
+                    });
+                    EXPECT_NE(target_stmt, nullptr);
                 }
             },
             {
-                "reassign_id", "rec_x = 1\n", false, [](const Program &p, int) {
-                    check_reassign<IdentifierAccess, void>(p);
-                }
+                "reassign_id", "rec_x = 1\n", false,
+                [](const Program &program, int) { check_reassign<IdentifierAccess, void>(program); }
             },
             {
-                "self_dot", "self.prop = 1\n", false, [](const Program &p, int) {
-                    check_reassign<DotAccess, SelfExpression>(p);
-                }
+                "self_dot", "self.prop = 1\n", false,
+                [](const Program &program, int) { check_reassign<DotAccess, SelfExpression>(program); }
             },
             {
-                "self_bracket", "self[0] = 1\n", false, [](const Program &p, int) {
-                    check_reassign<BracketAccess, SelfExpression>(p);
-                }
+                "self_bracket", "self[0] = 1\n", false,
+                [](const Program &program, int) { check_reassign<BracketAccess, SelfExpression>(program); }
             },
             {
-                "id_dot", "obj.prop = 1\n", false, [](const Program &p, int) {
-                    check_reassign<DotAccess, IdentifierAccess>(p);
-                }
+                "id_dot", "obj.prop = 1\n", false,
+                [](const Program &program, int) { check_reassign<DotAccess, IdentifierAccess>(program); }
             },
             {
-                "id_bracket", "arr[0] = 1\n", false, [](const Program &p, int) {
-                    check_reassign<BracketAccess, IdentifierAccess>(p);
-                }
+                "id_bracket", "arr[0] = 1\n", false,
+                [](const Program &program, int) { check_reassign<BracketAccess, IdentifierAccess>(program); }
             }
         };
 
         std::vector<FollowingConstruct> universe;
-        for (const auto &core: cores) {
-            universe.push_back({core.name + "_mod0", core.source, [=](const Program &p) { core.verify(p, 0); }});
+        for (const auto &core_construct: cores) {
+            universe.push_back({
+                core_construct.name + "_mod0", core_construct.source,
+                [=](const Program &program) { core_construct.verify(program, 0); }
+            });
 
-            if (core.supports_modifiers) {
+            if (core_construct.supports_modifiers) {
                 universe.push_back({
-                    core.name + "_mod1", mod_samples[0] + core.source, [=](const Program &p) { core.verify(p, 1); }
+                    core_construct.name + "_mod1", mod_samples[0] + core_construct.source,
+                    [=](const Program &program) { core_construct.verify(program, 1); }
                 });
                 universe.push_back({
-                    core.name + "_mod2", mod_samples[0] + mod_samples[1] + core.source,
-                    [=](const Program &p) { core.verify(p, 2); }
+                    core_construct.name + "_mod2", mod_samples[0] + mod_samples[1] + core_construct.source,
+                    [=](const Program &program) { core_construct.verify(program, 2); }
                 });
                 universe.push_back({
-                    core.name + "_mod3", mod_samples[0] + mod_samples[1] + mod_samples[2] + core.source,
-                    [=](const Program &p) { core.verify(p, 3); }
+                    core_construct.name + "_mod3",
+                    mod_samples[0] + mod_samples[1] + mod_samples[2] + core_construct.source,
+                    [=](const Program &program) { core_construct.verify(program, 3); }
                 });
             }
         }
