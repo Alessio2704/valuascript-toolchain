@@ -522,4 +522,50 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(target_color->name, "Color");
         EXPECT_EQ(nested_dot->property_name, "Red");
     }
+
+    TEST_F(AstBaseTest, ValidatesSelfInFunctionDefaultParameters) {
+        // Proves that 'self' is structurally valid as a default value for a parameter.
+
+        auto ast = parse_code("func apply(rate: float = self.default_rate) -> void {}");
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+
+        auto &params = ast->function_definitions[0]->parameters;
+        ASSERT_EQ(params.size(), 1);
+        EXPECT_EQ(params[0].name, "rate");
+
+        auto default_val = dynamic_cast<DotAccess *>(params[0].default_value.get());
+        ASSERT_NE(default_val, nullptr);
+        EXPECT_EQ(default_val->property_name, "default_rate");
+        ASSERT_NE(dynamic_cast<SelfExpression*>(default_val->target.get()), nullptr);
+    }
+
+    TEST_F(AstBaseTest, ValidatesSelfInReturnAndCollections) {
+        // Proves 'self' can be used in return statements and inside Tensor/List literals.
+
+        std::string code =
+                "func get_data() -> int {\n"
+                "  let list = [self.a, self.b]\n"
+                "  return self.status, self.value\n"
+                "}";
+
+        auto ast = parse_code(code);
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto &body = ast->function_definitions[0]->body;
+        ASSERT_EQ(body.size(), 2);
+
+        // Check Assignment: [self.a, self.b]
+        auto assign = dynamic_cast<Assignment *>(body[0].get());
+        auto tensor = dynamic_cast<TensorLiteral *>(assign->value.get());
+        ASSERT_NE(tensor, nullptr);
+        ASSERT_EQ(tensor->elements.size(), 2);
+        ASSERT_NE(dynamic_cast<SelfExpression*>(dynamic_cast<DotAccess*>(tensor->elements[0].get())->target.get()),
+                  nullptr);
+
+        // Check Return: self.status, self.value
+        auto ret = dynamic_cast<ReturnStatement *>(body[1].get());
+        ASSERT_NE(ret, nullptr);
+        ASSERT_EQ(ret->values.size(), 2);
+        ASSERT_NE(dynamic_cast<SelfExpression*>(dynamic_cast<DotAccess*>(ret->values[0].get())->target.get()), nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression*>(dynamic_cast<DotAccess*>(ret->values[1].get())->target.get()), nullptr);
+    }
 }

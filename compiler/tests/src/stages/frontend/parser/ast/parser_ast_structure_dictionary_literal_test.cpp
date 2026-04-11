@@ -172,4 +172,172 @@ namespace valuascript::compiler::test {
         ASSERT_NE(inner_unary_inner, nullptr);
         EXPECT_EQ(inner_unary_inner->op, TokenType::Not);
     }
+
+    TEST_F(AstBaseTest, ValidatesSelfPropertyAccess) {
+        // Proves the parser correctly forms a DotAccess node with a SelfExpression target.
+
+        auto ast = parse_code("let obj = { a: 1, b: self.a }");
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 2);
+
+        EXPECT_EQ(dict_val->elements[1].key, "b");
+        auto b_val = dynamic_cast<DotAccess *>(dict_val->elements[1].value.get());
+        ASSERT_NE(b_val, nullptr) << "Value for 'b' must be a DotAccess expression";
+
+        EXPECT_EQ(b_val->property_name, "a");
+        auto self_expr = dynamic_cast<SelfExpression *>(b_val->target.get());
+        ASSERT_NE(self_expr, nullptr) << "Target of the DotAccess must be a SelfExpression";
+    }
+
+    TEST_F(AstBaseTest, ValidatesDeeplyChainedSelfAccess) {
+        // Proves the parser correctly handles highly nested property access chaining on 'self' (e.g., self.a.b.c).
+
+        auto ast = parse_code("let obj = { nested: { deep: { val: 42 } }, ref: self.nested.deep.val }");
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 2);
+
+        // Analyze: self.nested.deep.val
+        auto val_access = dynamic_cast<DotAccess *>(dict_val->elements[1].value.get());
+        ASSERT_NE(val_access, nullptr);
+        EXPECT_EQ(val_access->property_name, "val");
+
+        // -> target: self.nested.deep
+        auto deep_access = dynamic_cast<DotAccess *>(val_access->target.get());
+        ASSERT_NE(deep_access, nullptr);
+        EXPECT_EQ(deep_access->property_name, "deep");
+
+        // -> target: self.nested
+        auto nested_access = dynamic_cast<DotAccess *>(deep_access->target.get());
+        ASSERT_NE(nested_access, nullptr);
+        EXPECT_EQ(nested_access->property_name, "nested");
+
+        // -> target: self
+        auto self_expr = dynamic_cast<SelfExpression *>(nested_access->target.get());
+        ASSERT_NE(self_expr, nullptr);
+    }
+
+    TEST_F(AstBaseTest, ValidatesSelfUsedWithBracketAndMethodCall) {
+        // Proves that 'self' supports matrix/dictionary bracket access, and can be invoked as a method target.
+
+        auto ast = parse_code(
+            "let obj = { matrix: [[1]], data: self[\"matrix\"][0], fetch: self.calc(arg: self.data) }");
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 3);
+
+        // ==========================================
+        // PAIR 1: data: self["matrix"][0]
+        // ==========================================
+        auto outer_bracket = dynamic_cast<BracketAccess *>(dict_val->elements[1].value.get());
+        ASSERT_NE(outer_bracket, nullptr);
+        EXPECT_EQ(dynamic_cast<NumberLiteral *>(outer_bracket->index.get())->value, "0");
+
+        auto inner_bracket = dynamic_cast<BracketAccess *>(outer_bracket->target.get());
+        ASSERT_NE(inner_bracket, nullptr);
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(inner_bracket->index.get())->value, "\"matrix\"");
+
+        ASSERT_NE(dynamic_cast<SelfExpression *>(inner_bracket->target.get()), nullptr);
+
+        // ==========================================
+        // PAIR 2: fetch: self.calc(arg: self.data)
+        // ==========================================
+        auto func_call = dynamic_cast<FunctionCall *>(dict_val->elements[2].value.get());
+        ASSERT_NE(func_call, nullptr);
+
+        auto target_method = dynamic_cast<DotAccess *>(func_call->target.get());
+        ASSERT_NE(target_method, nullptr);
+        EXPECT_EQ(target_method->property_name, "calc");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(target_method->target.get()), nullptr);
+
+        ASSERT_EQ(func_call->arguments.size(), 1);
+        EXPECT_EQ(func_call->arguments[0].first, "arg");
+
+        auto arg_value = dynamic_cast<DotAccess *>(func_call->arguments[0].second.get());
+        ASSERT_NE(arg_value, nullptr);
+        EXPECT_EQ(arg_value->property_name, "data");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(arg_value->target.get()), nullptr);
+    }
+
+    TEST_F(AstBaseTest, ValidatesOmnibusSelfExpressions) {
+        // Proves 'self' behaves perfectly as a primary expression embedded anywhere inside
+        // logical, mathematical, tuple, grouping, and conditional constructs.
+
+        std::string code =
+                "let omnibus = {\n"
+                "    a: 10,\n"
+                "    b: 20,\n"
+                "    math: (self.a + self.b) / self[\"a\"],\n"
+                "    logic: not self.is_ready,\n"
+                "    cond: if self.flag then self.x else self.y,\n"
+                "    nested_tuple: (self.a, { inner: self.b })\n"
+                "}";
+
+        auto ast = parse_code(code);
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 6);
+
+        // ==========================================
+        // math: (self.a + self.b) / self["a"]
+        // ==========================================
+        auto math_div = dynamic_cast<BinaryExpression *>(dict_val->elements[2].value.get());
+        ASSERT_NE(math_div, nullptr);
+        EXPECT_EQ(math_div->op, TokenType::Slash);
+
+        auto math_add = dynamic_cast<BinaryExpression *>(unwrap_grouping(math_div->left.get()));
+        ASSERT_NE(math_add, nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(math_add->left.get())->target.get()),
+                  nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(math_add->right.get())->target.get()),
+                  nullptr);
+
+        auto math_right_bracket = dynamic_cast<BracketAccess *>(math_div->right.get());
+        ASSERT_NE(math_right_bracket, nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(math_right_bracket->target.get()), nullptr);
+
+        // ==========================================
+        // logic: not self.is_ready
+        // ==========================================
+        auto logic_not = dynamic_cast<UnaryExpression *>(dict_val->elements[3].value.get());
+        ASSERT_NE(logic_not, nullptr);
+        auto logic_dot = dynamic_cast<DotAccess *>(logic_not->right.get());
+        ASSERT_NE(logic_dot, nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(logic_dot->target.get()), nullptr);
+
+        // ==========================================
+        // cond: if self.flag then self.x else self.y
+        // ==========================================
+        auto cond_expr = dynamic_cast<ConditionalExpression *>(dict_val->elements[4].value.get());
+        ASSERT_NE(cond_expr, nullptr);
+
+        ASSERT_NE(dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(cond_expr->condition.get())->target.get()),
+                  nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(cond_expr->then_branch.get())->target.get()),
+                  nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(cond_expr->else_branch.get())->target.get()),
+                  nullptr);
+
+        // ==========================================
+        // nested_tuple: (self.a, { inner: self.b })
+        // ==========================================
+        auto tuple_expr = dynamic_cast<TupleLiteral *>(dict_val->elements[5].value.get());
+        ASSERT_NE(tuple_expr, nullptr);
+        ASSERT_EQ(tuple_expr->elements.size(), 2);
+
+        ASSERT_NE(
+            dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(tuple_expr->elements[0].get())->target.get()),
+            nullptr);
+
+        auto inner_dict = dynamic_cast<DictLiteral *>(tuple_expr->elements[1].get());
+        ASSERT_NE(inner_dict, nullptr);
+        ASSERT_NE(
+            dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(inner_dict->elements[0].value.get())->target.get()
+            ), nullptr);
+    }
 }

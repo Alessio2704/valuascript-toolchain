@@ -189,7 +189,7 @@ namespace valuascript::compiler {
                                    cursor_.peek(1).type == TokenType::Assign);
 
             if (cursor_.is_at_end() || is_pseudo_stmt) {
-                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression, false);
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
             } else {
                 value = parse_expression();
             }

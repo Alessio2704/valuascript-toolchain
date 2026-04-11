@@ -79,10 +79,10 @@ namespace valuascript::compiler::test {
 
     TEST(LexerStageTest, TokenizesKeywords) {
         auto tokens = tokenize_code(
-            "let if then else true false and or not func struct return import enum switch case default mod var");
+            "let if then else true false and or not func struct return import enum switch case default mod var self");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
-        ASSERT_EQ(tokens.size(), 20);
+        ASSERT_EQ(tokens.size(), 21);
         EXPECT_EQ(tokens[0].type, TokenType::Let);
         EXPECT_EQ(tokens[1].type, TokenType::If);
         EXPECT_EQ(tokens[2].type, TokenType::Then);
@@ -102,6 +102,7 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[16].type, TokenType::Default);
         EXPECT_EQ(tokens[17].type, TokenType::Mod);
         EXPECT_EQ(tokens[18].type, TokenType::Var);
+        EXPECT_EQ(tokens[19].type, TokenType::Self);
     }
 
     TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {

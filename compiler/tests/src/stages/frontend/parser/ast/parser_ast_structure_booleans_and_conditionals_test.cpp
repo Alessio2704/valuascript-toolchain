@@ -241,4 +241,30 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(dynamic_cast<IdentifierAccess*>(else_arg_call->target.get())->name, "get_default");
         EXPECT_EQ(else_arg_call->arguments.size(), 0); // get_default takes no args
     }
+
+    TEST_F(AstBaseTest, ValidatesSelfInComplexLogicalChains) {
+        // Proves 'self' works in deeply nested logical and comparison operations.
+
+        auto ast = parse_code("let valid = not self.is_expired and (self.count > 0 or self.force_allow)");
+        auto expr = get_assigned_value(ast);
+
+        auto logic_and = dynamic_cast<BinaryExpression *>(expr);
+        ASSERT_NE(logic_and, nullptr);
+        EXPECT_EQ(logic_and->op, TokenType::And);
+
+        // Left side: not self.is_expired
+        auto logic_not = dynamic_cast<UnaryExpression *>(logic_and->left.get());
+        ASSERT_NE(logic_not, nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression*>(dynamic_cast<DotAccess*>(logic_not->right.get())->target.get()),
+                  nullptr);
+
+        // Right side: (self.count > 0 or self.force_allow)
+        auto group = dynamic_cast<BinaryExpression *>(unwrap_grouping(logic_and->right.get()));
+        ASSERT_NE(group, nullptr);
+        EXPECT_EQ(group->op, TokenType::Or);
+
+        auto comp = dynamic_cast<BinaryExpression *>(group->left.get());
+        ASSERT_NE(comp, nullptr);
+        ASSERT_NE(dynamic_cast<SelfExpression*>(dynamic_cast<DotAccess*>(comp->left.get())->target.get()), nullptr);
+    }
 }

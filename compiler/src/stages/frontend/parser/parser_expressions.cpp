@@ -214,6 +214,12 @@ namespace valuascript::compiler {
                 node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
                 return node;
             }
+            case TokenType::Self: {
+                cursor_.advance();
+                auto node = std::make_unique<SelfExpression>();
+                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
+                return node;
+            }
             case TokenType::Switch:
                 cursor_.advance();
                 return parse_switch_expression();

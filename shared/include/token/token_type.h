@@ -59,6 +59,7 @@ namespace valuascript::shared  {
         Switch, // switch
         Case, // case
         Default, // default
+        Self, // self
         EndOfFile
     };
 }

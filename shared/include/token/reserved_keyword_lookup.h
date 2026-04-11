@@ -24,6 +24,7 @@ namespace valuascript::shared {
         {"switch", TokenType::Switch},
         {"case", TokenType::Case},
         {"default", TokenType::Default},
+        {"self", TokenType::Self},
         {"return", TokenType::Return},
     };
 

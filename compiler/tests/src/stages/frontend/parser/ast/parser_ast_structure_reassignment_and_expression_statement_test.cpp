@@ -176,4 +176,36 @@ namespace valuascript::compiler::test {
         ASSERT_NE(switch_expr->default_case, nullptr);
         EXPECT_EQ(dynamic_cast<NumberLiteral*>(switch_expr->default_case.get())->value, "0");
     }
+
+    TEST_F(AstBaseTest, ValidatesReassignmentToSelfProperty) {
+        // Proves that TokenTraits::is_valid_lvalue() implicitly allows DotAccess targets
+        // that are based on 'self', allowing statements like `self.val = 10`.
+        // (Note: Semantic validation of WHERE this happens is deferred to the semantic analyzer).
+
+        auto ast = parse_code("self.counter = self.counter + 1");
+
+        ASSERT_EQ(ast->execution_steps.size(), 1);
+        auto reassignment = dynamic_cast<Reassignment *>(ast->execution_steps[0].get());
+        ASSERT_NE(reassignment, nullptr) << "Top-level statement must be parsed as a Reassignment";
+
+        // Target: self.counter
+        auto target_dot = dynamic_cast<DotAccess *>(reassignment->target.get());
+        ASSERT_NE(target_dot, nullptr) << "Reassignment target must be a DotAccess";
+        EXPECT_EQ(target_dot->property_name, "counter");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(target_dot->target.get()), nullptr);
+
+        // Value: self.counter + 1
+        auto bin_expr = dynamic_cast<BinaryExpression *>(reassignment->value.get());
+        ASSERT_NE(bin_expr, nullptr);
+        EXPECT_EQ(bin_expr->op, TokenType::Plus);
+
+        auto left_dot = dynamic_cast<DotAccess *>(bin_expr->left.get());
+        ASSERT_NE(left_dot, nullptr);
+        EXPECT_EQ(left_dot->property_name, "counter");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(left_dot->target.get()), nullptr);
+
+        auto right_num = dynamic_cast<NumberLiteral *>(bin_expr->right.get());
+        ASSERT_NE(right_num, nullptr);
+        EXPECT_EQ(right_num->value, "1");
+    }
 }

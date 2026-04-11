@@ -53,6 +53,8 @@ namespace valuascript::compiler::test {
             HappyLexerParam{"function_call", "let a = some_func()", 7},
             HappyLexerParam{"multi_assignment", "let a, b = some_func()", 9},
             HappyLexerParam{"conditional_expression", "let a = if true then 10 else 4", 10},
+            HappyLexerParam{"dict_literal", "let a = {b: 1}", 9},
+            HappyLexerParam{"dict_literal_self", "let a = {b: self.c}", 11},
 
             // Operators
             HappyLexerParam{"or", "let a = x or y", 7},

@@ -361,6 +361,187 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(func_call->arguments.size(), 2);
             EXPECT_EQ(func_call->arguments[1].first, "b");
             }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_incomplete_property_access",
+            "let a = { x: self., y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedPropertyName, 1, 19} },
+            ExpectDict({ {"y", "2"} })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_bracket_unexpected_comma",
+            "let a = { x: self[1, ], y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::UnexpectedCommaInBracketAccess, 1, 20} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2) << "Both dictionary items should be preserved";
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
+            ASSERT_NE(bracket, nullptr) << "BracketAccess should be recovered gracefully";
+
+            ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr) << "Target must be self";
+            EXPECT_EQ(bracket->index.get(), nullptr) <<
+            "Index should be nullptr because comma aborted the bound parsing";
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
+            ASSERT_NE(y_val, nullptr);
+            EXPECT_EQ(y_val->value, "2");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_method_call_broken_args",
+            "let a = { x: self.calc(arg: *), y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 29} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2);
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto func_call = dynamic_cast<FunctionCall*>(dict->elements[0].value.get());
+            ASSERT_NE(func_call, nullptr) << "FunctionCall should be constructed through recovery";
+
+            auto target_dot = dynamic_cast<DotAccess*>(func_call->target.get());
+            ASSERT_NE(target_dot, nullptr);
+            EXPECT_EQ(target_dot->property_name, "calc");
+            ASSERT_NE(dynamic_cast<SelfExpression*>(target_dot->target.get()), nullptr) << "Dot target must be self";
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_standalone_missing_operator",
+            "let a = { x: self 10, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::MissingOperator, 1, 19} },
+            ExpectDict({ {"y", "2"} })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_key_missing_colon",
+            "let a = {x self.a, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedColonAfterDictionaryKey, 1, 12} },
+            ExpectDict({ {"y", "2"} })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_deep_chain_interrupted",
+            "let a = { x: self.a.b[ * ], y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 24} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2) <<
+            "Both dictionary items should be preserved due to local bracket recovery";
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
+            ASSERT_NE(bracket, nullptr);
+            EXPECT_EQ(bracket->index.get(), nullptr);
+
+            auto target_b = dynamic_cast<DotAccess*>(bracket->target.get());
+            ASSERT_NE(target_b, nullptr);
+            EXPECT_EQ(target_b->property_name, "b");
+
+            auto target_a = dynamic_cast<DotAccess*>(target_b->target.get());
+            ASSERT_NE(target_a, nullptr);
+            EXPECT_EQ(target_a->property_name, "a");
+
+            ASSERT_NE(dynamic_cast<SelfExpression*>(target_a->target.get()), nullptr);
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_in_broken_binary_expr",
+            "let a = { x: self.a + *, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 23} },
+            ExpectDict({ {"y", "2"} })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_in_switch_target_error",
+            "let a = { x: switch(self.) { case A -> 1 }, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedPropertyName, 1, 26} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2);
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto switch_expr = dynamic_cast<SwitchExpression*>(dict->elements[0].value.get());
+            ASSERT_NE(switch_expr, nullptr);
+            EXPECT_EQ(switch_expr->target.get(), nullptr) << "Switch target should be nullptr due to local recovery";
+            ASSERT_EQ(switch_expr->cases.size(), 1);
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_in_tuple_error_recovery",
+            "let a = { x: (self.a, *), y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 23} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2);
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto tuple_expr = dynamic_cast<TupleLiteral*>(dict->elements[0].value.get());
+            ASSERT_NE(tuple_expr, nullptr);
+            ASSERT_EQ(tuple_expr->elements.size(), 1) << "Tuple should contain only the successfully parsed self.a";
+
+            auto dot_access = dynamic_cast<DotAccess*>(tuple_expr->elements[0].get());
+            ASSERT_NE(dot_access, nullptr);
+            ASSERT_NE(dynamic_cast<SelfExpression*>(dot_access->target.get()), nullptr);
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_in_nested_dict_error",
+            "let a = { x: { inner: self. }, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedPropertyName, 1, 29} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+            ASSERT_NE(dict, nullptr);
+            ASSERT_EQ(dict->elements.size(), 2);
+
+            EXPECT_EQ(dict->elements[0].key, "x");
+            auto inner_dict = dynamic_cast<DictLiteral*>(dict->elements[0].value.get());
+            ASSERT_NE(inner_dict, nullptr);
+            EXPECT_EQ(inner_dict->elements.size(), 0) << "Inner dictionary should be empty after dropping broken pair";
+
+            EXPECT_EQ(dict->elements[1].key, "y");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_self_missing_dot_between_properties",
+            "let a = { x: self a, y: 2 }\n"
+            "let recovery = 1\n",
+            { {Err::MissingOperator, 1, 19} },
+            ExpectDict({ {"y", "2"} })
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {

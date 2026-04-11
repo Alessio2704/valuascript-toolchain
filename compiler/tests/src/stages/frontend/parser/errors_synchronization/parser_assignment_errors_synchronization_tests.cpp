@@ -207,7 +207,7 @@ namespace valuascript::compiler::test {
             "missing_value_after_equals_reassignment_eof",
             "a = ",
             {
-            {Err::InvalidExpression, 1, 4}
+            {Err::MissingValueAfterEquals, 1, 4}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -224,7 +224,7 @@ namespace valuascript::compiler::test {
             "a =\n"
             "let c = 2\n",
             {
-            {Err::InvalidExpression, 1, 4}
+            {Err::MissingValueAfterEquals, 1, 4}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -277,7 +277,7 @@ namespace valuascript::compiler::test {
             "a[0] =\n"
             "let c = 2\n",
             {
-            {Err::InvalidExpression, 1, 7}
+            {Err::MissingValueAfterEquals, 1, 7}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -533,7 +533,7 @@ namespace valuascript::compiler::test {
             "  b = 2\n"
             "}\n",
             {
-            {Err::InvalidExpression, 2, 6}
+            {Err::MissingValueAfterEquals, 2, 6}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
@@ -733,6 +733,181 @@ namespace valuascript::compiler::test {
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_invalid_lvalue_self_standalone",
+            "self = 42\n"
+            "let c = 2\n",
+            {
+            {Err::InvalidLeftSideExpressionInReassignment, 1, 6}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_self_missing_property_name",
+            "self. = 42\n"
+            "let c = 2\n",
+            {
+            {Err::ExpectedPropertyName, 1, 7}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_self_bracket_unexpected_comma",
+            "self[0, ] = 42\n"
+            "let c = 2\n",
+            {
+            {Err::UnexpectedCommaInBracketAccess, 1, 7}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+
+            auto reassign = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(reassign, nullptr);
+
+            auto bracket = dynamic_cast<BracketAccess*>(reassign->target.get());
+            ASSERT_NE(bracket, nullptr);
+            ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr);
+            EXPECT_EQ(bracket->index, nullptr) << "Index should be null due to local comma error recovery";
+
+            auto val = dynamic_cast<NumberLiteral*>(reassign->value.get());
+            ASSERT_NE(val, nullptr);
+            EXPECT_EQ(val->value, "42");
+
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_self_method_call_invalid_lvalue",
+            "self.calc() = 42\n"
+            "let c = 2\n",
+            {
+            {Err::InvalidLeftSideExpressionInReassignment, 1, 13}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "assignment_self_target_missing_property",
+            "let a = self.\n"
+            "let c = 2\n",
+            {
+            {Err::ExpectedPropertyName, 1, 14}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_self_valid_target_missing_value",
+            "self.counter =\n"
+            "let c = 2\n",
+            {
+            {Err::MissingValueAfterEquals, 1, 15}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+
+            auto reassign = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(reassign, nullptr);
+
+            auto dot = dynamic_cast<DotAccess*>(reassign->target.get());
+            ASSERT_NE(dot, nullptr);
+            ASSERT_NE(dynamic_cast<SelfExpression*>(dot->target.get()), nullptr);
+            EXPECT_EQ(dot->property_name, "counter");
+
+            EXPECT_EQ(reassign->value, nullptr);
+
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reassignment_self_chained_invalid",
+            "self.a = self.b = 10\n"
+            "let c = 2\n",
+            {
+            {Err::InvalidExpression, 1, 17}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+
+            auto reassign = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(reassign, nullptr);
+
+            auto target_dot = dynamic_cast<DotAccess*>(reassign->target.get());
+            ASSERT_NE(target_dot, nullptr);
+            EXPECT_EQ(target_dot->property_name, "a");
+            ASSERT_NE(dynamic_cast<SelfExpression*>(target_dot->target.get()), nullptr);
+
+            auto val_dot = dynamic_cast<DotAccess*>(reassign->value.get());
+            ASSERT_NE(val_dot, nullptr);
+            EXPECT_EQ(val_dot->property_name, "b");
+            ASSERT_NE(dynamic_cast<SelfExpression*>(val_dot->target.get()), nullptr);
+
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_c, nullptr);
+            EXPECT_EQ(assign_c->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "block_reassignment_self_missing_value",
+            "func f() -> void {\n"
+            "  self.state =\n"
+            "  let b = 2\n"
+            "}\n",
+            {
+            {Err::MissingValueAfterEquals, 2, 15}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->body.size(), 2);
+
+            auto reassign = dynamic_cast<Reassignment*>(func->body[0].get());
+            ASSERT_NE(reassign, nullptr);
+
+            auto dot = dynamic_cast<DotAccess*>(reassign->target.get());
+            ASSERT_NE(dot, nullptr);
+            ASSERT_NE(dynamic_cast<SelfExpression*>(dot->target.get()), nullptr);
+            EXPECT_EQ(dot->property_name, "state");
+            EXPECT_EQ(reassign->value, nullptr);
+
+            auto assign_b = dynamic_cast<Assignment*>(func->body[1].get());
+            ASSERT_NE(assign_b, nullptr);
+            EXPECT_EQ(assign_b->targets[0].first, "b");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "assignment_self_as_target_error",
+            "let self = 10\n"
+            "let recovery = 1\n",
+            { {Err::ReservedKeywordAsIdentifier, 1, 5} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            EXPECT_EQ(assign->targets[0].first, "self");
             }
             }
         ),

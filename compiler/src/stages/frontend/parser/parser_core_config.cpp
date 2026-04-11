@@ -24,6 +24,7 @@ namespace valuascript::compiler {
             case TokenType::LeftBrace:
             case TokenType::Minus:
             case TokenType::Plus:
+            case TokenType::Self:
             case TokenType::Not: return true;
             default: return false;
         }

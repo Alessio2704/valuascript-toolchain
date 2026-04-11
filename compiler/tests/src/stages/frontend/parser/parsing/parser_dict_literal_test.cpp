@@ -43,7 +43,13 @@ namespace valuascript::compiler::test {
             DictLiteralHappyParam{"dict_complex_2",
             "{ name: func_call(), age: matrix[0][:], money: if a() then b else if c() then d(c: 12) else 10 }"},
             DictLiteralHappyParam{"dict_complex_3",
-            "{ name: \"one\", age: 20, assets: [one, two, three], obj: {a: 1, b: 2} }"}
+            "{ name: \"one\", age: 20, assets: [one, two, three], obj: {a: 1, b: 2} }"},
+            DictLiteralHappyParam{"dict_self_property_access", "{ a: 1, b: self.a }"},
+            DictLiteralHappyParam{"dict_self_method_call", "{ a: 1, b: self.calc() }"},
+            DictLiteralHappyParam{"dict_self_nested_access", "{ a: { x: 10 }, b: self.a.x }"},
+            DictLiteralHappyParam{"dict_self_math_operation", "{ a: 10, b: self.a * 2 + 5 }"},
+            DictLiteralHappyParam{"dict_self_bracket_access_1", "{ a: 10, b: self[\"a\"] }"},
+            DictLiteralHappyParam{"dict_self_bracket_access_2", "{ a: 10, b: self.a[0] }"}
         ),
         [](const testing::TestParamInfo<DictLiteralHappyParam>& info) {
         return info.param.test_name;
@@ -91,7 +97,13 @@ namespace valuascript::compiler::test {
             DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ValuascriptErrorCode::ExpectedDictionaryKey
             },
             DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", ValuascriptErrorCode
-            ::MissingOperator}
+            ::MissingOperator},
+            DictLiteralSadParam{"dict_self_missing_property_name", "{ a: 1, b: self. }", ValuascriptErrorCode::
+            ExpectedPropertyName},
+            DictLiteralSadParam{"dict_self_empty_bracket", "{ a: 1, b: self[] }", ValuascriptErrorCode::
+            EmptyBracketAccess},
+            DictLiteralSadParam{"dict_self_missing_operator", "{ a: 1, b: self.a 5 }", ValuascriptErrorCode::
+            MissingOperator}
         ),
         [](const testing::TestParamInfo<DictLiteralSadParam>& info) {
         return info.param.test_name;

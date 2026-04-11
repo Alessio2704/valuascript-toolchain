@@ -412,4 +412,74 @@ namespace valuascript::compiler::test {
         ASSERT_NE(pct_2_5, nullptr);
         EXPECT_EQ(pct_2_5->value, "2.5%");
     }
+
+    TEST_F(AstBaseTest, ValidatesStandaloneSelfAndFunctionArguments) {
+        // Proves that 'self' doesn't strictly require a dot or bracket after it in the parser.
+        // The parser successfully builds a standalone SelfExpression.
+
+        auto ast = parse_code("let obj = { me: self, invoke: wrap(target: self) }");
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 2);
+
+        // ==========================================
+        // PAIR 0: me: self
+        // ==========================================
+        EXPECT_EQ(dict_val->elements[0].key, "me");
+        auto standalone_self = dynamic_cast<SelfExpression *>(dict_val->elements[0].value.get());
+        ASSERT_NE(standalone_self, nullptr) << "'self' should parse as a standalone expression";
+
+        // ==========================================
+        // PAIR 1: invoke: wrap(target: self)
+        // ==========================================
+        EXPECT_EQ(dict_val->elements[1].key, "invoke");
+        auto func_call = dynamic_cast<FunctionCall *>(dict_val->elements[1].value.get());
+        ASSERT_NE(func_call, nullptr);
+        ASSERT_EQ(func_call->arguments.size(), 1);
+        EXPECT_EQ(func_call->arguments[0].first, "target");
+
+        auto arg_self = dynamic_cast<SelfExpression *>(func_call->arguments[0].second.get());
+        ASSERT_NE(arg_self, nullptr) << "'self' must be valid as a standalone function argument";
+    }
+
+    TEST_F(AstBaseTest, ValidatesSelfInSwitchExpressions) {
+        // Proves 'self' can safely be used as both the target of a switch and inside the case results.
+
+        std::string code =
+                "let obj = {\n"
+                "    val: switch (self.state) {\n"
+                "        case Active -> self.on_val\n"
+                "        default -> self.off_val\n"
+                "    }\n"
+                "}";
+
+        auto ast = parse_code(code);
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 1);
+
+        auto switch_expr = dynamic_cast<SwitchExpression *>(dict_val->elements[0].value.get());
+        ASSERT_NE(switch_expr, nullptr);
+
+        // Target: self.state
+        auto switch_target = dynamic_cast<DotAccess *>(switch_expr->target.get());
+        ASSERT_NE(switch_target, nullptr);
+        EXPECT_EQ(switch_target->property_name, "state");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(switch_target->target.get()), nullptr);
+
+        // Case Result: self.on_val
+        ASSERT_EQ(switch_expr->cases.size(), 1);
+        auto case_result = dynamic_cast<DotAccess *>(switch_expr->cases[0].second.get());
+        ASSERT_NE(case_result, nullptr);
+        EXPECT_EQ(case_result->property_name, "on_val");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(case_result->target.get()), nullptr);
+
+        // Default Result: self.off_val
+        auto default_result = dynamic_cast<DotAccess *>(switch_expr->default_case.get());
+        ASSERT_NE(default_result, nullptr);
+        EXPECT_EQ(default_result->property_name, "off_val");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(default_result->target.get()), nullptr);
+    }
 }

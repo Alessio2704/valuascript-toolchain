@@ -79,7 +79,7 @@ namespace valuascript::compiler::test {
             ,
             ReassignmentSadParam{"assign_to_binary_expr", "a + b = 10", ValuascriptErrorCode::
             InvalidLeftSideExpressionInReassignment},
-            ReassignmentSadParam{"missing_rhs", "a = ", ValuascriptErrorCode::InvalidExpression},
+            ReassignmentSadParam{"missing_rhs", "a = ", ValuascriptErrorCode::MissingValueAfterEquals},
             ReassignmentSadParam{"standalone_literal", "42", ValuascriptErrorCode::InvalidStandaloneStatement},
             ReassignmentSadParam{"standalone_variable", "my_var", ValuascriptErrorCode::InvalidStandaloneStatement},
             ReassignmentSadParam{"standalone_binary", "1 + 1", ValuascriptErrorCode::InvalidStandaloneStatement},
