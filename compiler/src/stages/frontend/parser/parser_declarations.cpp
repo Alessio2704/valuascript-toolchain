@@ -379,4 +379,42 @@ namespace valuascript::compiler {
         type_ann->span = cursor_.make_span(start_token, cursor_.previous());
         return type_ann;
     }
+
+    std::unique_ptr<TypeAliasDefinition> Parser::parse_type_alias_definition(std::vector<Modifier> modifiers) {
+        const Token &start_token = cursor_.consume(TokenType::Typealias, ValuascriptErrorCode::ExpectedTypeAliasToken);
+        Token name_token = consume_identifier(ValuascriptErrorCode::ExpectedTypeAliasName);
+
+        cursor_.consume(TokenType::Assign, ValuascriptErrorCode::ExpectedAssignAfterTypeAliasName);
+
+        bool next_is_newline_stmt = cursor_.peek().line > cursor_.previous().line &&
+                                    (TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                     TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type));
+
+        if (cursor_.is_at_end() || next_is_newline_stmt) {
+            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingTypeAnnotation, false);
+        }
+
+        if (is_reserved_keyword(cursor_.peek())) {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
+            cursor_.advance();
+            throw ParseSyncException();
+        }
+
+        if (!TokenTraits::is_identifier_start(cursor_.peek()) && !cursor_.check(TokenType::LeftParen)) {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingTypeAnnotation, true);
+            cursor_.advance();
+            throw ParseSyncException();
+        }
+
+        auto target_type = parse_type_annotation();
+
+        if (target_type) {
+            verify_statement_end();
+        }
+
+        auto type_alias = std::make_unique<TypeAliasDefinition>(std::move(modifiers), name_token.lexeme,
+                                                                std::move(target_type));
+        type_alias->span = cursor_.make_span(start_token, cursor_.previous());
+        return type_alias;
+    }
 }

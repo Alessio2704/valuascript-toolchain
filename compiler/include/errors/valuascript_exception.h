@@ -119,6 +119,9 @@ namespace valuascript::compiler {
         MissingCommaBetweenFields,
         TopLevelDeclarationNotAllowedHere,
         ReturnUsedInToplevel,
+        ExpectedTypeAliasToken,
+        ExpectedTypeAliasName,
+        ExpectedAssignAfterTypeAliasName,
 
         // --- Import Resolver Errors ---
         CircularImportDetected,

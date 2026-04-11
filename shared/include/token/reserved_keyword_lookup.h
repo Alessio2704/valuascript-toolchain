@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <optional>
+#include <vector>
 #include <string>
 #include "token.h"
 
@@ -25,20 +26,13 @@ namespace valuascript::shared {
         {"case", TokenType::Case},
         {"default", TokenType::Default},
         {"self", TokenType::Self},
+        {"typealias", TokenType::Typealias},
         {"return", TokenType::Return},
     };
 
-    inline std::optional<TokenType> get_keyword_type(const std::string &lexeme) {
-        if (const auto it = kReservedKeywords.find(lexeme); it != kReservedKeywords.end()) {
-            return it->second;
-        }
-        return std::nullopt;
-    }
+    std::optional<TokenType> get_keyword_type(const std::string &lexeme);
 
-    inline bool is_reserved_keyword(const Token &token) {
-        if (const auto res = get_keyword_type(token.lexeme); res.has_value()) {
-            return true;
-        }
-        return false;
-    }
+    bool is_reserved_keyword(const Token &token);
+
+    std::vector<std::string> get_all_reserved_keyword_strings();
 }

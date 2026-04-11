@@ -225,6 +225,12 @@ namespace valuascript::compiler {
                 return "Syntax Error: Top level declaration not allowed here.";
             case ValuascriptErrorCode::ReturnUsedInToplevel:
                 return "Syntax Error: 'return' keyword used at top level.";
+            case ValuascriptErrorCode::ExpectedTypeAliasToken:
+                return "Expected 'typealias' keyword.";
+            case ValuascriptErrorCode::ExpectedTypeAliasName:
+                return "Expected type alias name.";
+            case ValuascriptErrorCode::ExpectedAssignAfterTypeAliasName:
+                return "Expected '=' after type alias name.";
 
             // --- Import Resolver Errors ---
             case ValuascriptErrorCode::CircularImportDetected:

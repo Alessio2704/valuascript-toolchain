@@ -51,6 +51,7 @@ namespace valuascript::compiler {
 
     bool TokenTraits::acts_like_identifier(const Token &token, TokenType lookahead_type) {
         if (!is_reserved_keyword(token)) return false;
+
         return (lookahead_type == TokenType::Comma ||
                 lookahead_type == TokenType::Colon ||
                 lookahead_type == TokenType::Assign ||
@@ -72,6 +73,7 @@ namespace valuascript::compiler {
             case TokenType::Func:
             case TokenType::Struct:
             case TokenType::Enum:
+            case TokenType::Typealias:
             case TokenType::Import:
             case TokenType::At:
             case TokenType::Hash: return true;
@@ -93,6 +95,7 @@ namespace valuascript::compiler {
             case TokenType::Hash:
             case TokenType::Func:
             case TokenType::Struct:
+            case TokenType::Typealias:
             case TokenType::Enum: return true;
             default: return false;
         }

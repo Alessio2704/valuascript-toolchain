@@ -82,6 +82,9 @@ namespace valuascript::compiler::test {
             // Import
             HappyLexerParam{"import", "import \"file/path\"", 3},
 
+            // Typealias
+            HappyLexerParam{"typealias", "typealias Container = vector<int>", 8},
+
             // Structs
             HappyLexerParam{"struct", "struct Assumption { cagr: Decimal }", 8},
 

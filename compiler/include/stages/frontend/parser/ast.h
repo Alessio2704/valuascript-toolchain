@@ -348,6 +348,19 @@ namespace valuascript::compiler {
         }
     };
 
+    class TypeAliasDefinition : public AstNode {
+    public:
+        std::vector<Modifier> modifiers;
+        std::string name;
+        std::unique_ptr<TypeAnnotation> target_type;
+
+        explicit TypeAliasDefinition(std::vector<Modifier> modifiers,
+                                     std::string name,
+                                     std::unique_ptr<TypeAnnotation> target_type)
+            : modifiers(std::move(modifiers)), name(std::move(name)), target_type(std::move(target_type)) {
+        }
+    };
+
     class Program : public AstNode {
     public:
         std::vector<std::unique_ptr<ImportStatement> > import_statements;
@@ -356,6 +369,7 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
         std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
         std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
+        std::vector<std::unique_ptr<TypeAliasDefinition> > type_aliases;
     };
 
     inline Expression *unwrap_grouping(Expression *expr) {

@@ -46,6 +46,8 @@ namespace valuascript::compiler {
 
         std::unique_ptr<EnumDefinition> parse_enum_definition(std::vector<Modifier> modifiers);
 
+        std::unique_ptr<TypeAliasDefinition> parse_type_alias_definition(std::vector<Modifier> modifiers);
+
         std::unique_ptr<FunctionDefinition> parse_function_definition(std::vector<Modifier> modifiers);
 
         /**
@@ -195,7 +197,10 @@ namespace valuascript::compiler {
                             cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                         }
                     } else if (!cursor_.check(closing_token)) {
-                        if (is_element_start()) {
+                        bool is_newline_decl = cursor_.peek().line > cursor_.previous().line &&
+                                               TokenTraits::is_top_level_only_declaration(cursor_.peek().type);
+
+                        if (is_element_start() && !is_newline_decl) {
                             if (missing_comma_err) {
                                 cursor_.report_error_no_panic(cursor_.peek(), *missing_comma_err);
                             }
@@ -209,6 +214,9 @@ namespace valuascript::compiler {
                         const TokenType next = cursor_.peek(1).type;
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
+
+                        if (tok.line > cursor_.previous().line && TokenTraits::is_top_level_only_declaration(tok.type))
+                            break;
                         if (TokenTraits::is_statement_start(tok, next)) break;
                         if (tok.line > cursor_.previous().line && TokenTraits::is_expression_statement_start(tok, next))
                             break;

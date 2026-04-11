@@ -60,6 +60,11 @@ namespace valuascript::compiler {
                 if (program) program->enum_definitions.push_back(std::move(enm));
                 break;
             }
+            case TokenType::Typealias: {
+                auto alias_def = parse_type_alias_definition(std::move(modifiers));
+                if (program) program->type_aliases.push_back(std::move(alias_def));
+                break;
+            }
             case TokenType::Let:
             case TokenType::Var: {
                 auto assign = parse_assignment(std::move(modifiers));
