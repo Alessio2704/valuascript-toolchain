@@ -173,8 +173,8 @@ namespace valuascript::compiler::test {
             "let c = 10 * / 5\n"
             "let d = (10 + 5] \n",
             {
-            {ValuascriptErrorCode::InvalidExpression, 1, 12},
-            {ValuascriptErrorCode::InvalidExpression, 2, 10},
+            {ValuascriptErrorCode::InvalidExpression, 1, 11},
+            {ValuascriptErrorCode::InvalidExpression, 2, 9},
             {ValuascriptErrorCode::InvalidExpression, 3, 14},
             {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 4, 16}
             }

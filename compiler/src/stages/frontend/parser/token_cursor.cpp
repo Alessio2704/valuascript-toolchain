@@ -14,6 +14,9 @@ namespace valuascript::compiler {
     }
 
     const Token &TokenCursor::previous(const int lookback) const {
+        if (current_ < static_cast<size_t>(lookback)) {
+            return tokens_.front();
+        }
         return tokens_[current_ - lookback];
     }
 
@@ -45,6 +48,15 @@ namespace valuascript::compiler {
     }
 
     SourceSpan TokenCursor::make_span(const Token &start_token, const Token &end_token) const {
+        if (end_token.line < start_token.line ||
+            (end_token.line == start_token.line && end_token.column < start_token.column)) {
+            size_t end_col = start_token.column;
+            if (start_token.type != TokenType::EndOfFile) {
+                end_col += start_token.lexeme.length();
+            }
+            return {start_token.line, start_token.column, start_token.line, end_col, file_path_};
+        }
+
         size_t end_col = end_token.column;
         if (end_token.type != TokenType::EndOfFile) {
             end_col += end_token.lexeme.length();
@@ -58,6 +70,7 @@ namespace valuascript::compiler {
 
     void TokenCursor::report_error_no_panic(const SourceSpan &span,
                                             const ValuascriptErrorCode code) const {
+        if (suppress_errors_) return;
         std::string message = format_error(code);
 
         ValuaScriptException ex(
@@ -72,6 +85,7 @@ namespace valuascript::compiler {
     void TokenCursor::report_error_no_panic(const Token &token,
                                             const ValuascriptErrorCode code,
                                             const bool use_exact_token_range) const {
+        if (suppress_errors_) return;
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());

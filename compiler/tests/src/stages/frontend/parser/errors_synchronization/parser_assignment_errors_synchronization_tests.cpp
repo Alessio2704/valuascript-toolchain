@@ -314,7 +314,7 @@ namespace valuascript::compiler::test {
             "modifiers_on_reassignment",
             "@modifier a = 1\n",
             {
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 11}
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 1}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -327,7 +327,7 @@ namespace valuascript::compiler::test {
             "@modifier 1 + 2\n"
             "let c = 2\n",
             {
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 11},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
             {Err::InvalidStandaloneStatement, 1, 15},
             },
             [](const Program& ast) {
@@ -492,7 +492,7 @@ namespace valuascript::compiler::test {
             "@modifier a.b = 1\n"
             "let c = 2\n",
             {
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 11}
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 1}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);

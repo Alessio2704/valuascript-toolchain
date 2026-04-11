@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../ast_base_test.h"
+#include "frontend/parser/ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 

@@ -91,12 +91,17 @@ namespace valuascript::compiler {
     }
 
     void Parser::consume_unexpected_statement_gracefully() {
+        bool prev_suppress = cursor_.get_suppress_errors();
+        cursor_.set_suppress_errors(true);
+
         Program dummy;
         try {
             std::vector<std::unique_ptr<Statement> > dummy_block;
             parse_statement_or_declaration(ParseContext::TopLevel, &dummy, dummy_block);
         } catch (const ParseSyncException &) {
         }
+
+        cursor_.set_suppress_errors(prev_suppress);
     }
 
     TokenType Parser::peek_past_modifiers() const {

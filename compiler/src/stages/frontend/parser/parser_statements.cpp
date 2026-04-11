@@ -4,6 +4,7 @@
 namespace valuascript::compiler {
     void Parser::parse_statement_or_declaration(ParseContext ctx, Program *program,
                                                 std::vector<std::unique_ptr<Statement> > &block) {
+        const Token &start_token = cursor_.peek();
         std::vector<Modifier> modifiers = parse_modifiers(true);
 
         TokenType type = cursor_.peek().type;
@@ -12,95 +13,113 @@ namespace valuascript::compiler {
 
         if (type == TokenType::EndOfFile) {
             if (!modifiers.empty()) {
-                cursor_.report_error_no_panic(cursor_.peek(),
-                                              ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                cursor_.report_error_no_panic(span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
             }
             return;
         }
 
+        bool is_invalid_top_level = false;
         if (ctx == ParseContext::FunctionBody && TokenTraits::is_top_level_only_declaration(type)) {
-            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
-                                          true);
-
+            is_invalid_top_level = true;
             ctx = ParseContext::TopLevel;
             program = &dummy_program;
         }
 
-        switch (type) {
-            case TokenType::Import: {
-                if (!modifiers.empty()) {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+        try {
+            switch (type) {
+                case TokenType::Import: {
+                    if (!modifiers.empty()) {
+                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                        cursor_.report_error_no_panic(
+                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
+                    auto stmt = parse_import_statement();
+                    if (program) program->import_statements.push_back(std::move(stmt));
+                    break;
                 }
-                auto stmt = parse_import_statement();
-                if (program) program->import_statements.push_back(std::move(stmt));
-                break;
-            }
-            case TokenType::Hash: {
-                if (!modifiers.empty()) {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                case TokenType::Hash: {
+                    if (!modifiers.empty()) {
+                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                        cursor_.report_error_no_panic(
+                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
+                    auto dir = parse_directive();
+                    if (program) program->directives.push_back(std::move(dir));
+                    break;
                 }
-                auto dir = parse_directive();
-                if (program) program->directives.push_back(std::move(dir));
-                break;
-            }
-            case TokenType::Func: {
-                auto func = parse_function_definition(std::move(modifiers));
-                if (program) program->function_definitions.push_back(std::move(func));
-                break;
-            }
-            case TokenType::Struct: {
-                auto str = parse_struct_definition(std::move(modifiers));
-                if (program) program->struct_definitions.push_back(std::move(str));
-                break;
-            }
-            case TokenType::Enum: {
-                auto enm = parse_enum_definition(std::move(modifiers));
-                if (program) program->enum_definitions.push_back(std::move(enm));
-                break;
-            }
-            case TokenType::Typealias: {
-                auto alias_def = parse_type_alias_definition(std::move(modifiers));
-                if (program) program->type_aliases.push_back(std::move(alias_def));
-                break;
-            }
-            case TokenType::Let:
-            case TokenType::Var: {
-                auto assign = parse_assignment(std::move(modifiers));
-                if (program) program->execution_steps.push_back(std::move(assign));
-                else block.push_back(std::move(assign));
-                break;
-            }
-            case TokenType::Return: {
-                if (!modifiers.empty()) {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                case TokenType::Func: {
+                    auto func = parse_function_definition(std::move(modifiers));
+                    if (program) program->function_definitions.push_back(std::move(func));
+                    break;
                 }
+                case TokenType::Struct: {
+                    auto str = parse_struct_definition(std::move(modifiers));
+                    if (program) program->struct_definitions.push_back(std::move(str));
+                    break;
+                }
+                case TokenType::Enum: {
+                    auto enm = parse_enum_definition(std::move(modifiers));
+                    if (program) program->enum_definitions.push_back(std::move(enm));
+                    break;
+                }
+                case TokenType::Typealias: {
+                    auto alias_def = parse_type_alias_definition(std::move(modifiers));
+                    if (program) program->type_aliases.push_back(std::move(alias_def));
+                    break;
+                }
+                case TokenType::Let:
+                case TokenType::Var: {
+                    auto assign = parse_assignment(std::move(modifiers));
+                    if (program) program->execution_steps.push_back(std::move(assign));
+                    else block.push_back(std::move(assign));
+                    break;
+                }
+                case TokenType::Return: {
+                    if (!modifiers.empty()) {
+                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                        cursor_.report_error_no_panic(
+                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
 
-                if (ctx == ParseContext::TopLevel) {
-                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ReturnUsedInToplevel, true);
-                    auto ret = parse_return_statement();
-                    if (program) program->execution_steps.push_back(std::move(ret));
-                } else {
-                    auto ret = parse_return_statement();
-                    block.push_back(std::move(ret));
+                    if (ctx == ParseContext::TopLevel) {
+                        const Token &ret_start = cursor_.peek();
+                        auto ret = parse_return_statement();
+                        SourceSpan span = cursor_.make_span(ret_start, cursor_.previous());
+                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::ReturnUsedInToplevel);
+                        if (program) program->execution_steps.push_back(std::move(ret));
+                    } else {
+                        auto ret = parse_return_statement();
+                        block.push_back(std::move(ret));
+                    }
+                    break;
                 }
-                break;
-            }
-            case TokenType::Identifier:
-            case TokenType::LeftParen:
-            case TokenType::LeftBracket:
-            default: {
-                if (!modifiers.empty()) {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                case TokenType::Identifier:
+                case TokenType::LeftParen:
+                case TokenType::LeftBracket:
+                default: {
+                    if (!modifiers.empty()) {
+                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                        cursor_.report_error_no_panic(
+                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                    }
+                    auto expr_stmt = parse_expression_statement();
+                    if (program) program->execution_steps.push_back(std::move(expr_stmt));
+                    else block.push_back(std::move(expr_stmt));
+                    break;
                 }
-                auto expr_stmt = parse_expression_statement();
-                if (program) program->execution_steps.push_back(std::move(expr_stmt));
-                else block.push_back(std::move(expr_stmt));
-                break;
             }
+        } catch (const ParseSyncException &) {
+            if (is_invalid_top_level) {
+                SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+                cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
+            }
+            throw;
+        }
+
+        if (is_invalid_top_level) {
+            SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
+            cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
         }
     }
 

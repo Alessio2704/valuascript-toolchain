@@ -169,10 +169,15 @@ namespace valuascript::compiler {
             std::vector<ElementType> elements;
 
             auto is_hard_stop = [&](const Token &token, TokenType next) {
-                if (is_element_start()) return false;
-                if (TokenTraits::is_statement_start(token, next)) return true;
-                if (token.line > cursor_.previous().line && TokenTraits::is_expression_statement_start(token, next))
-                    return true;
+                if (is_element_start()) {
+                    if (token.type != TokenType::At && TokenTraits::is_newline_statement_boundary(
+                            cursor_.previous(), token, next)) {
+                        return true;
+                    }
+                    return false;
+                }
+
+                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), token, next)) return true;
                 for (TokenType stop: recovery_boundaries) if (token.type == stop) return true;
                 return false;
             };
@@ -181,6 +186,22 @@ namespace valuascript::compiler {
                 if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
 
                 try {
+                    const Token &tok = cursor_.peek();
+                    TokenType next = cursor_.peek(1).type;
+
+                    if (TokenTraits::is_statement_start(tok, next) && !is_element_start()) {
+                        if (tok.line > cursor_.previous().line) {
+                            break;
+                        } else {
+                            const Token &start_tok = cursor_.peek();
+                            consume_unexpected_statement_gracefully();
+                            SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
+                            cursor_.report_error_no_panic(
+                                span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
+                            throw ParseSyncException();
+                        }
+                    }
+
                     elements.push_back(parse_element());
 
                     if (is_at_parent_boundary && is_at_parent_boundary(0)) {
@@ -197,10 +218,11 @@ namespace valuascript::compiler {
                             cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                         }
                     } else if (!cursor_.check(closing_token)) {
-                        bool is_newline_decl = cursor_.peek().line > cursor_.previous().line &&
-                                               TokenTraits::is_top_level_only_declaration(cursor_.peek().type);
+                        bool is_boundary = cursor_.peek().type != TokenType::At &&
+                                           TokenTraits::is_newline_statement_boundary(
+                                               cursor_.previous(), cursor_.peek(), cursor_.peek(1).type);
 
-                        if (is_element_start() && !is_newline_decl) {
+                        if (is_element_start() && !is_boundary) {
                             if (missing_comma_err) {
                                 cursor_.report_error_no_panic(cursor_.peek(), *missing_comma_err);
                             }
@@ -215,10 +237,8 @@ namespace valuascript::compiler {
 
                         if (tok.type == TokenType::Comma || tok.type == closing_token) break;
 
-                        if (tok.line > cursor_.previous().line && TokenTraits::is_top_level_only_declaration(tok.type))
-                            break;
-                        if (TokenTraits::is_statement_start(tok, next)) break;
-                        if (tok.line > cursor_.previous().line && TokenTraits::is_expression_statement_start(tok, next))
+                        if (tok.type != TokenType::At && TokenTraits::is_newline_statement_boundary(
+                                cursor_.previous(), tok, next))
                             break;
                         if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
 

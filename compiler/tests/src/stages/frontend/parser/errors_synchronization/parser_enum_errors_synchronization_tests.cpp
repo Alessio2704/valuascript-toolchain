@@ -73,7 +73,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        EnumStressTest,
         EnumParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
@@ -286,7 +286,7 @@ namespace valuascript::compiler::test {
             "enum Test : int { A = 1, B = \n"
             "let a = 1\n",
             {
-            {Err::InvalidExpression, 1, 29},
+            {Err::InvalidExpression, 1, 28},
             {Err::ExpectedRightBraceAfterEnumBody, 1, 29}
             },
             ExpectEnum("Test", "int", {{"A", "1"}})
@@ -390,13 +390,24 @@ namespace valuascript::compiler::test {
             ExpectEnum("Test", "int", {{"let", "1"}, {"if", "3"}})
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_char",
+            "reserved_char_1",
             "enum Test : int { # }\n"
             "let a = 1\n",
             {
+            {Err::TopLevelDeclarationNotAllowedHere, 1, 19},
+            },
+            [](const Program& ast) {
+            EXPECT_EQ(ast.enum_definitions.size(), 1);
+            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 0);
+            EXPECT_EQ(ast.execution_steps.size(), 1);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "reserved_char_2",
+            "enum Test : int { / }\n"
+            "let a = 1\n",
+            {
             {Err::ExpectedEnumCaseName, 1, 19},
-            {Err::ExpectedRightBraceAfterEnumBody, 1, 19},
-            {Err::MissingDirectiveName, 1, 21},
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.enum_definitions.size(), 1);

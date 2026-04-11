@@ -154,7 +154,7 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingValueAfterEquals, 2, 12},
             {Err::InvalidExpression, 3, 17},
-            {Err::InvalidExpression, 4, 11}
+            {Err::InvalidExpression, 4, 5}
             },
             ExpectFunctionBodySize("test", 1)
             },
@@ -231,7 +231,7 @@ namespace valuascript::compiler::test {
             "    return 1\n"
             "}\n"
             "let a = 1\n",
-            {{Err::TopLevelDeclarationNotAllowedHere, 2, 13}},
+            {{Err::TopLevelDeclarationNotAllowedHere, 2, 5}},
             ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
@@ -267,7 +267,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::InvalidExpression, 2, 16},
+            {Err::InvalidExpression, 2, 15},
             },
             ExpectFunctionBodySize("test", 1)
             },
@@ -300,7 +300,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::ModifiersAttachedToInvalidDeclaration, 2, 15}
+            {Err::ModifiersAttachedToInvalidDeclaration, 2, 5}
             },
             ExpectFunctionBodySize("test", 1)
             },
@@ -311,7 +311,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::ModifiersAttachedToInvalidDeclaration, 2, 15}
+            {Err::ModifiersAttachedToInvalidDeclaration, 2, 5}
             },
             ExpectFunctionBodySize("test", 1)
             },
@@ -472,7 +472,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let c = 1\n",
             {
-            {Err::InvalidExpression, 3, 12}
+            {Err::InvalidExpression, 3, 11}
             }
             }
         ),

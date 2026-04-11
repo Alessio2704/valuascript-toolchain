@@ -192,7 +192,20 @@ namespace valuascript::compiler::test {
             "dict_total_mangle",
             "let a = { x: 1, let y = 2\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 17} },
+            {
+            {Err::TopLevelDeclarationNotAllowedHere, 1, 17},
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 26}
+            },
+            [](const Program& ast) {
+            EXPECT_EQ(ast.execution_steps.size(), 2);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "dict_total_mangle_new_line",
+            "let a = { x: 1,\n"
+            "let y = 2\n"
+            "let recovery = 1\n",
+            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 16} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 3);
             }

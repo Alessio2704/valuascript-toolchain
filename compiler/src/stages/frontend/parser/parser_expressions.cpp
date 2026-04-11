@@ -80,11 +80,15 @@ namespace valuascript::compiler {
 
             if (is_id_like) {
                 if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1)) {
-                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                    if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1)) {
+                        cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                    }
                 }
             } else {
                 if (TokenTraits::is_expression_start(p0.type)) {
-                    cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                    if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1)) {
+                        cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                    }
                 } else if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)) {
                     cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
                 }
@@ -127,11 +131,14 @@ namespace valuascript::compiler {
                 auto expr = parse_expression();
 
                 if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::RightBracket)) {
-                    if (TokenTraits::is_expression_start(cursor_.peek().type)) {
-                        cursor_.report_error(cursor_.peek(),
-                                             ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
-                    } else if (cursor_.check(TokenType::Comma)) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedCommaInBracketAccess);
+                    if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                    cursor_.peek(1).type)) {
+                        if (TokenTraits::is_expression_start(cursor_.peek().type)) {
+                            cursor_.report_error(cursor_.peek(),
+                                                 ValuascriptErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor);
+                        } else if (cursor_.check(TokenType::Comma)) {
+                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::UnexpectedCommaInBracketAccess);
+                        }
                     }
                 }
 
@@ -241,18 +248,27 @@ namespace valuascript::compiler {
                 bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
                 if (is_stmt_start) {
-                    if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
-                        cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
+                    if (tok.line > prev.line) {
+                        if (TokenTraits::is_dangling_operator(prev.type) ||
+                            TokenTraits::is_grouping_opener(prev.type)) {
+                            cursor_.report_error(prev, ValuascriptErrorCode::InvalidExpression);
+                        } else {
+                            cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
+                        }
                     }
 
-                    cursor_.report_error_no_panic(tok, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, true);
+                    const Token &start_tok = cursor_.peek();
 
                     if (tok.type == TokenType::At) {
-                        cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration,
-                                                      true);
                         parse_modifiers();
+                        SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
+                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
+                        cursor_.report_error_no_panic(
+                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                     } else {
                         consume_unexpected_statement_gracefully();
+                        SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
+                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
                     }
 
                     if (TokenTraits::is_expression_start(cursor_.peek().type)) {
@@ -266,8 +282,11 @@ namespace valuascript::compiler {
                     tok.type == TokenType::RightBrace || tok.type == TokenType::RightParen ||
                     tok.type == TokenType::RightBracket || tok.type == TokenType::Return ||
                     tok.type == TokenType::Then || tok.type == TokenType::Else) {
-                    if (tok.line > prev.line && TokenTraits::is_dangling_operator(prev.type)) {
-                        cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, false);
+                    if (tok.line > prev.line) {
+                        if (TokenTraits::is_dangling_operator(prev.type) ||
+                            TokenTraits::is_grouping_opener(prev.type)) {
+                            cursor_.report_error(prev, ValuascriptErrorCode::InvalidExpression);
+                        }
                     }
 
                     cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
@@ -355,7 +374,10 @@ namespace valuascript::compiler {
         try {
             if (!first_expr_failed && !cursor_.check(TokenType::RightParen) && TokenTraits::is_expression_start(
                     cursor_.peek().type)) {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+                if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                cursor_.peek(1).type)) {
+                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperatorInsideGrouping);
+                }
             }
 
             const Token &end_token = cursor_.consume(TokenType::RightParen,
@@ -424,7 +446,10 @@ namespace valuascript::compiler {
 
                     if (TokenTraits::is_expression_start(cursor_.peek().type) && cursor_.peek(1).type !=
                         TokenType::Colon) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                        cursor_.peek(1).type)) {
+                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        }
                     }
                 }
 
@@ -627,8 +652,11 @@ namespace valuascript::compiler {
                     default_case = parse_switch_default();
                 } else {
                     if (TokenTraits::is_top_level_token(cursor_.peek().type)) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere,
-                                             true);
+                        const Token &start_tok = cursor_.peek();
+                        consume_unexpected_statement_gracefully();
+                        SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
+                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
+                        throw ParseSyncException();
                     } else {
                         cursor_.report_error(cursor_.peek(),
                                              ValuascriptErrorCode::ExpectedCaseOrDefaultInsideSwitchBody, true);

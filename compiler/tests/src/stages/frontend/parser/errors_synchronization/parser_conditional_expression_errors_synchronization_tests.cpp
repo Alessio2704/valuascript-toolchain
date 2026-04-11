@@ -208,11 +208,13 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             {
             {Err::MissingElseToken, 1, 20},
-            {Err::TopLevelDeclarationNotAllowedHere, 2, 1}
+            {Err::InvalidExpression, 1, 20}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
-
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            const auto* assign = dynamic_cast<const Assignment*>(ast.execution_steps.front().get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].first, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{

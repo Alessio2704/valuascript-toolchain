@@ -139,10 +139,10 @@ namespace valuascript::compiler::test {
             "let a = arr[\n"
             "let b = 2\n",
             {
-            {Err::TopLevelDeclarationNotAllowedHere, 2, 1},
+            {Err::InvalidExpression, 1, 12},
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "a");

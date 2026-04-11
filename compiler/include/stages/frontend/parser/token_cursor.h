@@ -24,9 +24,13 @@ namespace valuascript::compiler {
         std::string file_path_;
         size_t current_ = 0;
         CompilerContext &context_;
+        bool suppress_errors_ = false;
 
     public:
         TokenCursor(const std::vector<Token> &tokens, std::string file_path, CompilerContext &context);
+
+        void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
+        [[nodiscard]] bool get_suppress_errors() const { return suppress_errors_; }
 
         [[nodiscard]] const Token &peek(int lookahead = 0) const;
 

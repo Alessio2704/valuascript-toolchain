@@ -79,7 +79,7 @@ namespace valuascript::compiler::test {
             "binary_missing_right_newline",
             "let a = 1 +\n"
             "let b = 2\n",
-            { {Err::InvalidExpression, 1, 12} },
+            { {Err::InvalidExpression, 1, 11} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -113,7 +113,7 @@ namespace valuascript::compiler::test {
             "unary_missing_operand",
             "let a = -\n"
             "let b = 2\n",
-            { {Err::InvalidExpression, 1, 10} },
+            { {Err::InvalidExpression, 1, 9} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -267,7 +267,7 @@ namespace valuascript::compiler::test {
             "unary_not_missing_operand",
             "let a = not\n"
             "let b = 2\n",
-            { {Err::InvalidExpression, 1, 12} },
+            { {Err::InvalidExpression, 1, 9} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());

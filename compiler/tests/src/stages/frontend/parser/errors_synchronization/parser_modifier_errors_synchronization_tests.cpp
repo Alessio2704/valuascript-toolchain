@@ -125,7 +125,7 @@ namespace valuascript::compiler::test {
             "@test\n"
             "f()\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 6} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 1} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto* f_call = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
@@ -136,7 +136,7 @@ namespace valuascript::compiler::test {
             "modifier_on_return_in_func",
             "func f() -> int { @test return 1 }\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 25} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 19} },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             ASSERT_EQ(ast.function_definitions[0]->body.size(), 1);
@@ -264,7 +264,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1\n",
             {
             {Err::UnmatchedParenthesisAfterModifierArgs, 1, 11},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 11},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
@@ -308,7 +308,7 @@ namespace valuascript::compiler::test {
             "modifier_on_directive",
             "@test #version = 1\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 7} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 1} },
             [](const Program& ast) {
             ASSERT_EQ(ast.directives.size(), 1);
             }
@@ -317,7 +317,7 @@ namespace valuascript::compiler::test {
             "modifier_on_import",
             "@test import \"module.vs\"\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 7} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 1} },
             [](const Program& ast) {
             ASSERT_EQ(ast.import_statements.size(), 1);
             EXPECT_EQ(ast.import_statements[0]->path, "\"module.vs\"");
@@ -328,7 +328,7 @@ namespace valuascript::compiler::test {
             "let x = 0\n"
             "@test x = 1\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 2, 7} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 2, 1} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 3);
             auto statement = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
@@ -461,7 +461,7 @@ namespace valuascript::compiler::test {
             "@test(",
             {
             {Err::UnmatchedParenthesisAfterModifierArgs, 1, 7},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 7},
+            {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
@@ -502,7 +502,7 @@ namespace valuascript::compiler::test {
             "modifier_interrupted_by_hash_directive",
             "@test \n #directive let a = 1\n"
             "let recovery = 1\n",
-            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 6} },
+            { {Err::ModifiersAttachedToInvalidDeclaration, 1, 1} },
             [](const Program& ast) {
             ASSERT_EQ(ast.directives.size(), 1);
             ASSERT_EQ(ast.execution_steps.size(), 2);

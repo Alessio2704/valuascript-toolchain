@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "lexer_tests_utils.h"
+#include "frontend/lexer/lexer_tests_utils.h"
 #include "stages/frontend/lexer/lexer_stage.h"
 #include "token/token.h"
 

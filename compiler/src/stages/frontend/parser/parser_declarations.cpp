@@ -18,15 +18,24 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> value = nullptr;
 
         if (cursor_.match({TokenType::Assign})) {
-            if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingValueAfterEquals);
+            bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                                  (cursor_.peek().line > cursor_.previous().line &&
+                                   cursor_.peek().type == TokenType::Identifier &&
+                                   cursor_.peek(1).type == TokenType::Assign);
+
+            if (cursor_.is_at_end() || is_pseudo_stmt) {
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
+            } else {
+                value = parse_expression();
             }
-            value = parse_expression();
-        } else if (!cursor_.is_at_end() && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+        } else if (cursor_.peek().line == cursor_.previous().line && TokenTraits::is_expression_start(
+                       cursor_.peek().type)) {
             value = parse_expression();
         }
 
-        verify_statement_end();
+        if (value) {
+            verify_statement_end();
+        }
 
         auto dir = std::make_unique<Directive>(directive_name, std::move(value));
         dir->span = cursor_.make_span(start_token, cursor_.previous());
@@ -191,7 +200,10 @@ namespace valuascript::compiler {
 
                     if (TokenTraits::is_expression_start(cursor_.peek().type) && cursor_.peek(1).type !=
                         TokenType::Assign) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                        cursor_.peek(1).type)) {
+                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        }
                     }
                 }
                 return EnumCase{std::move(case_modifiers), case_name.lexeme, std::move(raw_value)};
@@ -232,8 +244,13 @@ namespace valuascript::compiler {
             params = parse_list<FunctionParameter>(
                 TokenType::RightParen,
                 std::make_optional(ValuascriptErrorCode::TrailingCommaInFunctionCall),
-                ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList,
+                std::make_optional(ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList),
                 std::vector<TokenType>{},
+                [this]() {
+                    const Token &tok = cursor_.peek();
+                    return tok.type == TokenType::At || tok.type == TokenType::Identifier ||
+                           TokenTraits::acts_like_identifier(tok, cursor_.peek(1).type);
+                },
                 [&]() {
                     auto mods = parse_modifiers();
                     if (!mods.empty()) {

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "mock_stages.h"
+#include "compiler_orchestrator/mock_stages.h"
 #include <stdexcept>
 #include <memory>
 

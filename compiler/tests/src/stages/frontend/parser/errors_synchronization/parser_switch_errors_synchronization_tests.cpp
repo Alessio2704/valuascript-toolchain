@@ -110,7 +110,7 @@ namespace valuascript::compiler::test {
             "    case A -> \n"
             "}\n"
             "let a = 1\n",
-            {{Err::InvalidExpression, 2, 14}},
+            {{Err::InvalidExpression, 2, 12}},
             ExpectSwitchCases(1, false)
             },
             ParserErrorsSynchronizationTestCase{
@@ -251,7 +251,7 @@ namespace valuascript::compiler::test {
             {
             {Err::ExpectedEnumCaseNameAfterCase, 2, 10},
             {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 13},
-            {Err::InvalidExpression, 4, 14}
+            {Err::InvalidExpression, 4, 12}
             },
             ExpectSwitchCases(2, false)
             },
@@ -287,7 +287,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::InvalidExpression, 2, 18},
+            {Err::InvalidExpression, 2, 17},
             },
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);

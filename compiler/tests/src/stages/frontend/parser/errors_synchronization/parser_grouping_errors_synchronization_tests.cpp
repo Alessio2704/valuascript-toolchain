@@ -213,7 +213,6 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 1, 15},
-            {Err::InvalidExpression, 1, 23}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);

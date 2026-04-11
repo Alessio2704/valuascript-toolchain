@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
+#include "frontend/parser/shared_following_constructs.h"
+
+using namespace valuascript::shared;
 
 namespace valuascript::compiler::test {
     namespace {
@@ -9,41 +12,6 @@ namespace valuascript::compiler::test {
             ValuascriptErrorCode expected_err;
             size_t err_col;
             std::function<void(const Program &)> verify;
-        };
-
-        struct FollowingConstruct {
-            std::string name;
-            std::string source;
-            std::function<void(const Program &)> verify;
-        };
-
-        auto check_assignment_recovery = [](const Program &p, const std::string &target_name,
-                                            const std::string &expected_mod) {
-            bool found = false;
-            auto check_block = [&](const std::vector<std::unique_ptr<Statement> > &block) {
-                for (const auto &s: block) {
-                    if (auto a = dynamic_cast<Assignment *>(s.get())) {
-                        if (!a->targets.empty() && a->targets[0].first == target_name) {
-                            found = true;
-                            if (!expected_mod.empty()) {
-                                EXPECT_EQ(a->modifiers.size(), 1) << "Expected modifier on " << target_name;
-                                if (!a->modifiers.empty()) {
-                                    EXPECT_EQ(a->modifiers[0].name, expected_mod);
-                                }
-                            } else {
-                                EXPECT_TRUE(a->modifiers.empty()) << "Did not expect modifier on " << target_name;
-                            }
-                        }
-                    }
-                }
-            };
-
-            check_block(p.execution_steps);
-            for (const auto &f: p.function_definitions) {
-                check_block(f->body);
-            }
-
-            EXPECT_TRUE(found) << "Failed to recover assignment for " << target_name;
         };
 
         std::vector<MissingConstruct> missing_constructs = {
@@ -143,137 +111,10 @@ namespace valuascript::compiler::test {
             }
         };
 
-        std::vector<FollowingConstruct> following_constructs = {
-            {
-                "func",
-                "func valid_func() -> int {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &f: p.function_definitions) {
-                        if (f->name == "valid_func") found = true;
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover valid_func";
-                }
-            },
-            {
-                "struct",
-                "struct ValidStruct {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &s: p.struct_definitions) {
-                        if (s->name == "ValidStruct") found = true;
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover ValidStruct";
-                }
-            },
-            {
-                "enum",
-                "enum ValidEnum: int {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &e: p.enum_definitions) {
-                        if (e->name == "ValidEnum") found = true;
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover ValidEnum";
-                }
-            },
-            {
-                "directive",
-                "#valid_directive\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &d: p.directives) {
-                        if (d->name == "valid_directive") found = true;
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover valid_directive";
-                }
-            },
-            {
-                "import",
-                "import \"valid_import\"\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &i: p.import_statements) {
-                        if (i->path == "\"valid_import\"") found = true;
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover import";
-                }
-            },
-            {
-                "let",
-                "let valid_let = 1\n",
-                [](const Program &p) { check_assignment_recovery(p, "valid_let", ""); }
-            },
-            {
-                "var",
-                "var valid_var = 1\n",
-                [](const Program &p) { check_assignment_recovery(p, "valid_var", ""); }
-            },
-            {
-                "modifier_func",
-                "@valid_mod func valid_mod_func() -> int {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &f: p.function_definitions) {
-                        if (f->name == "valid_mod_func") {
-                            found = true;
-                            EXPECT_EQ(f->modifiers.size(), 1);
-                            if (!f->modifiers.empty()) {
-                                EXPECT_EQ(f->modifiers[0].name, "valid_mod");
-                            }
-                        }
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover valid_mod_func with modifier";
-                }
-            },
-            {
-                "modifier_struct",
-                "@valid_mod struct ValidModStruct {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &s: p.struct_definitions) {
-                        if (s->name == "ValidModStruct") {
-                            found = true;
-                            EXPECT_EQ(s->modifiers.size(), 1);
-                            if (!s->modifiers.empty()) {
-                                EXPECT_EQ(s->modifiers[0].name, "valid_mod");
-                            }
-                        }
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover ValidModStruct with modifier";
-                }
-            },
-            {
-                "modifier_enum",
-                "@valid_mod enum ValidModEnum: int {}\n",
-                [](const Program &p) {
-                    bool found = false;
-                    for (const auto &e: p.enum_definitions) {
-                        if (e->name == "ValidModEnum") {
-                            found = true;
-                            EXPECT_EQ(e->modifiers.size(), 1);
-                            if (!e->modifiers.empty()) {
-                                EXPECT_EQ(e->modifiers[0].name, "valid_mod");
-                            }
-                        }
-                    }
-                    EXPECT_TRUE(found) << "Failed to recover ValidModEnum with modifier";
-                }
-            },
-            {
-                "modifier_let",
-                "@valid_mod let valid_mod_let = 1\n",
-                [](const Program &p) { check_assignment_recovery(p, "valid_mod_let", "valid_mod"); }
-            },
-            {
-                "modifier_var",
-                "@valid_mod var valid_mod_var = 1\n",
-                [](const Program &p) { check_assignment_recovery(p, "valid_mod_var", "valid_mod"); }
-            }
-        };
-
         std::vector<ParserErrorsSynchronizationTestCase> GenerateTestCases() {
             std::vector<ParserErrorsSynchronizationTestCase> cases;
+            auto following_constructs = get_all_top_level_following_constructs();
+
             for (const auto &mc: missing_constructs) {
                 for (const auto &fc: following_constructs) {
                     std::string test_name = mc.name + "_recovers_" + fc.name;
@@ -281,14 +122,19 @@ namespace valuascript::compiler::test {
 
                     size_t expected_line = 1;
                     size_t expected_col = mc.err_col;
-
+                    bool is_absorbed = false;
                     if (mc.name == "func") {
-                        if (fc.name == "let" || fc.name == "var") {
+                        if (fc.name.find("func") != 0 && fc.name.find("struct") != 0 &&
+                            fc.name.find("enum") != 0 && fc.name.find("typealias") != 0 &&
+                            fc.name.find("import") != 0 && fc.name.find("directive") != 0) {
+                            is_absorbed = true;
                             expected_line = 2;
-                            expected_col = 18;
-                        } else if (fc.name == "modifier_let" || fc.name == "modifier_var") {
-                            expected_line = 2;
-                            expected_col = 33;
+
+                            std::string stripped_fc = fc.source;
+                            while (!stripped_fc.empty() && stripped_fc.back() == '\n') {
+                                stripped_fc.pop_back();
+                            }
+                            expected_col = stripped_fc.length() + 1;
                         }
                     }
 
@@ -296,8 +142,18 @@ namespace valuascript::compiler::test {
                         test_name,
                         source,
                         {{mc.expected_err, expected_line, expected_col}},
-                        [mc_verify = mc.verify, fc_verify = fc.verify](const Program &p) {
+                        [mc_verify = mc.verify, fc_verify = fc.verify, is_absorbed](const Program &p) {
                             mc_verify(p);
+
+                            if (is_absorbed) {
+                                Program &mutable_p = const_cast<Program &>(p);
+                                for (auto &f: mutable_p.function_definitions) {
+                                    for (auto &s: f->body) {
+                                        mutable_p.execution_steps.push_back(std::move(s));
+                                    }
+                                }
+                            }
+
                             fc_verify(p);
                         }
                     });

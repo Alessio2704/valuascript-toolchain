@@ -44,6 +44,23 @@ namespace valuascript::compiler {
         return false;
     }
 
+    bool TokenTraits::is_newline_statement_boundary(const Token &prev, const Token &current, TokenType next) {
+        if (current.line <= prev.line) return false;
+        if (prev.type == TokenType::Comma) return false;
+
+        if (is_top_level_only_declaration(current.type)) return true;
+        if (is_statement_start(current, next)) return true;
+
+        if (is_expression_statement_start(current, next)) {
+            if (is_dangling_operator(prev.type) || is_grouping_opener(prev.type)) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     bool TokenTraits::is_identifier_start(const Token &token) {
         return token.type == TokenType::Identifier || (
                    is_reserved_keyword(token) && !is_top_level_only_declaration(token.type));

@@ -316,10 +316,30 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_with_illegal_statement_inside",
-            "let a = [ \n  func f() -> void {}, \n  1 \n]\n"
+            "let a = [ func f() -> void {},  1]\n"
             "let recovery = 1\n",
-            { {Err::TopLevelDeclarationNotAllowedHere, 2, 3} },
+            { {Err::TopLevelDeclarationNotAllowedHere, 1, 11} },
             ExpectTensor({ "1" })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "tensor_with_illegal_statement_inside_new_line",
+            "let a = [ \n"
+            "func f() -> void {}, \n"
+            "1 \n"
+            "]\n"
+            "let recovery = 1\n",
+            {
+            {Err::UnmatchedBracketAfterTensorElements, 1, 10},
+            {Err::InvalidExpression, 2, 20},
+            },
+            [](const Program& ast) {
+            EXPECT_EQ(ast.function_definitions.size(), 1);
+            EXPECT_EQ(ast.execution_steps.size(), 2);
+
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
+            EXPECT_EQ(tensor->elements.size(), 0);
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_literal_with_slice_syntax",
@@ -431,8 +451,8 @@ namespace valuascript::compiler::test {
             "]\n"
             "let recovery = [ 40 ]\n",
             {
-            {Err::InvalidExpression, 2, 7},
-            {Err::InvalidExpression, 6, 8}
+            {Err::InvalidExpression, 2, 6},
+            {Err::InvalidExpression, 6, 6}
             },[](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
 

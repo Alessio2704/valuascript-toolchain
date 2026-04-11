@@ -1,4 +1,4 @@
-#include "../ast_base_test.h"
+#include "frontend/parser/ast_base_test.h"
 
 namespace valuascript::compiler::test {
     TEST_F(AstBaseTest, ValidatesStandardPrecedence) {
