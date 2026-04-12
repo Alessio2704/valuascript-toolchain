@@ -83,7 +83,7 @@ namespace valuascript::compiler {
             artifacts, CompilerStageArtifactCode::FilePath
         );
 
-        std::string absolute_file_path = std::filesystem::absolute(raw_file_path).string();
+        std::string absolute_file_path = std::filesystem::weakly_canonical(raw_file_path).string();
 
         ResolvedProjectArtifact project;
         project.entry_file_path = absolute_file_path;

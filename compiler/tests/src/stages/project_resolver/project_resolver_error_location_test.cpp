@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include <filesystem>
-
+#include "utils/pid.h"
 #include "errors/valuascript_exception.h"
 #include "stages/project_resolver/project_resolver_stage.h"
 #include "compiler_context/compiler_context.h"
@@ -11,24 +11,28 @@ using namespace valuascript::compiler;
 namespace valuascript::compiler::test {
     class ProjectResolverMultiErrorTest : public testing::Test {
     protected:
-        const std::string main_file = "test_main.vs";
-        const std::string module_a_file = "test_module_a.vs";
-        const std::string missing_file = "test_missing_module.vs";
+        std::filesystem::path temp_dir;
+        std::string main_file;
+        std::string module_a_file;
 
         void SetUp() override {
-            std::ofstream main_out(main_file);
+            temp_dir = generate_test_workspace("vs_multi", reinterpret_cast<uintptr_t>(this));
+
+            main_file = std::filesystem::weakly_canonical(temp_dir / "test_main.vs").string();
+            module_a_file = std::filesystem::weakly_canonical(temp_dir / "test_module_a.vs").string();
+
+            std::ofstream main_out(main_file, std::ios::binary);
             main_out << "import \"test_module_a.vs\"\n";
             main_out << "import \"test_missing_module.vs\"\n";
             main_out.close();
 
-            std::ofstream mod_a_out(module_a_file);
+            std::ofstream mod_a_out(module_a_file, std::ios::binary);
             mod_a_out << "import \"test_main.vs\"\n";
             mod_a_out.close();
         }
 
         void TearDown() override {
-            std::filesystem::remove(main_file);
-            std::filesystem::remove(module_a_file);
+            cleanup_test_workspace(temp_dir);
         }
     };
 

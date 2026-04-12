@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/ast_base_test.h"
+#include "stages/frontend/parser/ast_base_test.h"
 
 using namespace valuascript::compiler;
 

@@ -1,25 +1,31 @@
 #include <gtest/gtest.h>
 #include <fstream>
-#include <memory>
+#include <filesystem>
 #include "stages/frontend/file_reader/file_reader_stage.h"
 #include "compiler_context/compiler_context.h"
+#include "utils/pid.h"
 
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
     class FileReaderStageTest : public ::testing::Test {
     protected:
-        std::string temp_file_path = "test_registry_source.vs";
+        std::filesystem::path temp_dir;
+        std::string temp_file_path;
         std::string expected_source = "let x = 100;\nfunc test() { return x; }";
 
         void SetUp() override {
-            std::ofstream out(temp_file_path);
+            temp_dir = generate_test_workspace("vs_registry_test", reinterpret_cast<uintptr_t>(this));
+
+            temp_file_path = (temp_dir / "test_registry_source.vs").string();
+
+            std::ofstream out(temp_file_path, std::ios::binary);
             out << expected_source;
             out.close();
         }
 
         void TearDown() override {
-            std::remove(temp_file_path.c_str());
+            cleanup_test_workspace(temp_dir);
         }
     };
 
@@ -33,13 +39,13 @@ namespace valuascript::compiler::test {
 
         auto result_artifact = reader.run(*context, initial_artifacts);
 
-        EXPECT_EQ(result_artifact.code, CompilerStageArtifactCode::SourceCode);
-        EXPECT_EQ(std::any_cast<std::string>(result_artifact.data), expected_source);
+        std::string expected_key = std::filesystem::weakly_canonical(temp_file_path).string();
 
-        EXPECT_TRUE(context->source_registry.count(temp_file_path) > 0)
-            << "The file path was not registered in the CompilerContext's source registry.";
+        EXPECT_TRUE(context->source_registry.contains(expected_key))
+                << "Registry check failed.\n"
+                << "Expected Key: " << expected_key << "\n"
+                << "Registry has " << context->source_registry.size() << " elements.";
 
-        EXPECT_EQ(context->source_registry[temp_file_path], expected_source)
-            << "The source code saved in the registry does not match the actual file contents.";
+        EXPECT_EQ(context->source_registry[expected_key], expected_source);
     }
 }

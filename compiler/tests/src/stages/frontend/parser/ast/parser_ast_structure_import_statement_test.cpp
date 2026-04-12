@@ -1,4 +1,4 @@
-#include "frontend/parser/ast_base_test.h"
+#include "stages/frontend/parser/ast_base_test.h"
 
 namespace valuascript::compiler::test {
     TEST_F(AstBaseTest, ValidatesImportStatement) {

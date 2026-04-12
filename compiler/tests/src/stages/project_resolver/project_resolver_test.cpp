@@ -3,33 +3,28 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "project_resolver_test_utils.h"
+#include "stages/project_resolver/project_resolver_test_utils.h"
 #include "errors/valuascript_exception.h"
 #include "stages/project_resolver/project_resolver_stage.h"
+#include "utils/pid.h"
 
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
     class ProjectResolverTest : public ::testing::Test {
     protected:
-        std::string temp_dir = "test_project_workspace";
-        ProjectResolverStage resolver;
+       std::filesystem::path temp_dir;
 
         void SetUp() override {
-            if (std::filesystem::exists(temp_dir)) {
-                std::filesystem::remove_all(temp_dir);
-            }
-            std::filesystem::create_directory(temp_dir);
+            temp_dir = generate_test_workspace("vs_test", reinterpret_cast<uintptr_t>(this));
         }
 
         void TearDown() override {
-            if (std::filesystem::exists(temp_dir)) {
-                std::filesystem::remove_all(temp_dir);
-            }
+            cleanup_test_workspace(temp_dir);
         }
 
         std::string create_file(const std::string &filename, const std::string &content) {
-            std::filesystem::path full_path = std::filesystem::path(temp_dir) / filename;
+            std::filesystem::path full_path = temp_dir / filename;
             std::filesystem::create_directories(full_path.parent_path());
 
             std::ofstream out(full_path);

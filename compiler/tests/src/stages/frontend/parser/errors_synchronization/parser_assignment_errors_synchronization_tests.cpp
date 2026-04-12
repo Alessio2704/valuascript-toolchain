@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/parser_errors_synchronization_base.h"
+#include "stages/frontend/parser/parser_errors_synchronization_base.h"
 
 namespace valuascript::compiler::test {
     class AssignmentParserSynchronizationTest : public ParserErrorsSynchronizationBase {

@@ -3,33 +3,27 @@
 #include <filesystem>
 #include <stdexcept>
 
-#include "project_resolver_test_utils.h"
-#include "errors/valuascript_exception.h"
+#include "stages/project_resolver/project_resolver_test_utils.h"
 #include "stages/project_resolver/project_resolver_stage.h"
+#include "utils/pid.h"
 
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
     class ProjectResolverTest : public ::testing::Test {
     protected:
-        std::string temp_dir = "test_project_workspace";
-        ProjectResolverStage resolver;
+        std::filesystem::path temp_dir;
 
         void SetUp() override {
-            if (std::filesystem::exists(temp_dir)) {
-                std::filesystem::remove_all(temp_dir);
-            }
-            std::filesystem::create_directory(temp_dir);
+            temp_dir = generate_test_workspace("vs_test", reinterpret_cast<uintptr_t>(this));
         }
 
         void TearDown() override {
-            if (std::filesystem::exists(temp_dir)) {
-                std::filesystem::remove_all(temp_dir);
-            }
+            cleanup_test_workspace(temp_dir);
         }
 
         std::string create_file(const std::string &filename, const std::string &content) {
-            std::filesystem::path full_path = std::filesystem::path(temp_dir) / filename;
+            std::filesystem::path full_path = temp_dir / filename;
             std::filesystem::create_directories(full_path.parent_path());
 
             std::ofstream out(full_path);
@@ -53,6 +47,7 @@ let wacc = get_wacc()
 
 struct Segment {
     market_share: Decimal,
+    @correlated(with: [ { name: self.market_size, direction: CorrelationDirection.Positive } ]) // It implies that the more the market grows the more people tend to start using the leader of the market services
     target_market_share: Decimal,
     market_size: Decimal,
     cagr: Decimal,
@@ -69,13 +64,13 @@ struct Segment {
 
 @scenario(type: "base")
 let gcp_segment: Segment = {
-    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 11%,
     target_market_share: Uniform(min: 10%, max: 15%),
-    market_size: 13_624 / 11% * 4,
+    market_size: 13_624 / self.market_share * 4,
     cagr: Pert(min: 15%, likely: 20%, max: 25%),
     cagr_variation_per_period: 0%,
     current_margin: 15%,
+    @correlated(with: [ { name: gcp_revenues, direction: CorrelationDirection.Positive } ])
     target_margin: Uniform(min: 30%, max: 40%),
     sales_to_capital: 22%,
     target_sales_to_capital: 100%
@@ -83,13 +78,13 @@ let gcp_segment: Segment = {
 
 @scenario(type: "base")
 let yt_segment: Segment = {
-    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 9_796 * 4,
     cagr: 11%,
     cagr_variation_per_period: 0%,
     current_margin: 40%,
+    @correlated(with: [ { name: yt_revenues, direction: CorrelationDirection.Positive } ])
     target_margin: Uniform(min: 40%, max: 45%),
     sales_to_capital: 100%,
     target_sales_to_capital: 200%
@@ -97,7 +92,6 @@ let yt_segment: Segment = {
 
 @scenario(type: "base")
 let google_network_segment: Segment = {
-    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 7_354 * 4,
@@ -111,13 +105,13 @@ let google_network_segment: Segment = {
 
 @scenario(type: "base")
 let google_subscriptions_segment: Segment = {
-    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 11_203 * 4,
     cagr: 10%,
     cagr_variation_per_period: 0%,
     current_margin: 20%,
+    @correlated(with: [ { name: google_subscriptions_revenues, direction: CorrelationDirection.Positive } ])
     target_margin: Uniform(min: 20%, max: 25%),
     sales_to_capital: 200%,
     target_sales_to_capital: 200%
@@ -125,13 +119,13 @@ let google_subscriptions_segment: Segment = {
 
 @scenario(type: "base")
 let google_search_segment: Segment = {
-    @correlated(with: [ { name: market_size, direction: CorrelationDirection.Positive } ])
     market_share: 100%,
     target_market_share: 100%,
     market_size: 54_190 * 4,
     cagr: 10%,
     cagr_variation_per_period: -15%,
     current_margin: 30%,
+    @correlated(with: [ { name: google_search_revenues, direction: CorrelationDirection.Positive } ])
     target_margin: Uniform(min: 30%, max: 40%),
     sales_to_capital: 200%,
     target_sales_to_capital: 200%

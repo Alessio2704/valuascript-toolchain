@@ -45,4 +45,6 @@ runs:
       shell: bash
       run: |
         cd build
-        ctest --verbose --output-on-failure
+        CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
+        echo "Running CTest with $CORES cores..."
+        ctest --parallel $CORES --verbose --output-on-failure

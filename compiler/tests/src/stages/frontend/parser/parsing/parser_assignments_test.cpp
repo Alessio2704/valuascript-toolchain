@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <utility>
-#include "frontend/parser/ast_base_test.h"
+#include "stages/frontend/parser/ast_base_test.h"
 #include "errors/valuascript_exception.h"
 
 using namespace valuascript::compiler;
