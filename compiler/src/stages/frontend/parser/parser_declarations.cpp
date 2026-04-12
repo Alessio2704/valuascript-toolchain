@@ -119,7 +119,7 @@ namespace valuascript::compiler {
                    TokenType::Colon;
         };
 
-        auto fields = parse_list<std::pair<std::string, std::unique_ptr<TypeAnnotation> > >(
+        auto fields = parse_list<StructField>(
             TokenType::RightBrace,
             std::nullopt,
             std::make_optional(ValuascriptErrorCode::ExpectedCommaSeparatorInStruct),
@@ -130,16 +130,23 @@ namespace valuascript::compiler {
 
                 if (tok.type == TokenType::At) {
                     if (is_at_any_declaration()) return false;
+                    return true;
                 }
 
-                if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
+                if (tok.type == TokenType::Identifier) return true;
 
                 return is_reserved_keyword(tok) && (next == TokenType::Colon);
             },
             [&]() {
+                const Token &field_start = cursor_.peek();
+                auto field_mods = parse_modifiers();
+
                 Token field_name = consume_identifier(ValuascriptErrorCode::ExpectedStructFieldName, false);
                 cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterStructFieldName);
-                return std::make_pair(field_name.lexeme, parse_type_annotation(is_at_parent_boundary));
+                auto type = parse_type_annotation(is_at_parent_boundary);
+
+                SourceSpan span = cursor_.make_span(field_start, cursor_.previous());
+                return StructField{std::move(field_mods), field_name.lexeme, std::move(type), span};
             }
         );
 
@@ -176,6 +183,7 @@ namespace valuascript::compiler {
 
                 if (tok.type == TokenType::At) {
                     if (is_at_any_declaration()) return false;
+                    return true;
                 }
 
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;

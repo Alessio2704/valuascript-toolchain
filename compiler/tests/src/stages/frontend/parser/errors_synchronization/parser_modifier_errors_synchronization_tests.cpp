@@ -969,6 +969,174 @@ namespace valuascript::compiler::test {
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "recovery");
             }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_missing_name",
+            "struct S { @1 id: int, next: float }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 13} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+
+            ASSERT_EQ(s->fields.size(), 2);
+            EXPECT_EQ(s->fields[0].name, "id");
+            EXPECT_EQ(s->fields[1].name, "next");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_missing_colon_in_arg",
+            "struct S { @meta(key \"val\") id: int, next: float }\n"
+            "let recovery = 1\n",
+            { {Err::MissingColonAfterArgument, 1, 22} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+
+            ASSERT_EQ(s->fields.size(), 2);
+            EXPECT_EQ(s->fields[0].name, "id");
+            EXPECT_FALSE(s->fields[0].modifiers.empty());
+                EXPECT_EQ(s->fields[0].modifiers[0].name, "meta");
+                EXPECT_TRUE(s->fields[0].modifiers[0].arguments.empty());
+
+            EXPECT_EQ(s->fields[1].name, "next");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_broken_expression_in_arg",
+            "struct S { @test(val: 1 + *) id: int, next: float }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 27} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+            ASSERT_EQ(s->fields.size(), 2);
+
+            EXPECT_EQ(s->fields[0].name, "id");
+            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
+            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
+
+            EXPECT_EQ(s->fields[1].name, "next");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_reserved_keyword_as_modifier",
+            "struct S { @func id: int, @let next: float }\n"
+            "let recovery = 1\n",
+            {
+            {Err::ReservedKeywordAsIdentifier, 1, 13},
+            {Err::ReservedKeywordAsIdentifier, 1, 28}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+            ASSERT_EQ(s->fields.size(), 2);
+
+            EXPECT_EQ(s->fields[0].name, "id");
+            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
+            EXPECT_EQ(s->fields[0].modifiers[0].name, "func");
+
+            EXPECT_EQ(s->fields[1].name, "next");
+            ASSERT_EQ(s->fields[1].modifiers.size(), 1);
+            EXPECT_EQ(s->fields[1].modifiers[0].name, "let");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_stacked_modifiers_one_broken",
+            "struct S { @valid @broken(x: *) @last field: int }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 30} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+            ASSERT_EQ(s->fields.size(), 1);
+
+            const auto& f = s->fields[0];
+            EXPECT_EQ(f.name, "field");
+            ASSERT_EQ(f.modifiers.size(), 3);
+
+            EXPECT_EQ(f.modifiers[0].name, "valid");
+            EXPECT_EQ(f.modifiers[1].name, "broken");
+            EXPECT_EQ(f.modifiers[2].name, "last");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_missing_field_name",
+            "struct S { @test(a: 1) : int, next: float }\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedStructFieldName, 1, 24} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+
+            bool found_next = false;
+            for (const auto& field : s->fields) {
+            if (field.name == "next") found_next = true;
+            }
+            EXPECT_TRUE(found_next) << "Failed to recover to field 'next'";
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_arg_missing_value_hits_brace",
+            "struct S { @test(a: ) id: int }\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 21} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+            ASSERT_EQ(s->fields.size(), 1);
+            EXPECT_EQ(s->fields[0].name, "id");
+            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
+            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_missing_commas_in_args",
+            "struct S { @test(a: 1 b: 2 c: 3) id: int }\n"
+            "let recovery = 1\n",
+            {
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 23},
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 28}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            auto s = ast.struct_definitions[0].get();
+            ASSERT_EQ(s->fields.size(), 1);
+
+            EXPECT_EQ(s->fields[0].name, "id");
+            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
+            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
+            EXPECT_EQ(s->fields[0].modifiers[0].arguments.size(), 3);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_missing_right_brace_in_struct",
+            "struct S { @test(a: 1) id: int \n"
+            "let recovery = 1\n",
+            {
+            {Err::ExpectedRightBraceAfterStructBody, 1, 31}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.struct_definitions.size(), 1);
+            EXPECT_EQ(ast.struct_definitions[0]->name, "S");
+
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].first, "recovery");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "struct_field_modifier_unmatched_paren_stretches_to_eof",
+            "struct S { @test(a: 1 \n",
+            {
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 22},
+            {Err::ExpectedStructFieldName, 1, 22},
+            {Err::ExpectedRightBraceAfterStructBody, 1, 22}
+            },
+            [](const Program& ast) {
+            EXPECT_EQ(ast.execution_steps.size(), 0);
+            }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {

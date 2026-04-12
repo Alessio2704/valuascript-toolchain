@@ -18,13 +18,13 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(struct_def->fields.size(), expected_fields.size()) << "Recovered field count mismatch!";
 
             for (size_t i = 0; i < expected_fields.size(); ++i) {
-                EXPECT_EQ(struct_def->fields[i].first, expected_fields[i].first)
+                EXPECT_EQ(struct_def->fields[i].name, expected_fields[i].first)
                      << "Field name mismatch at index " << i;
 
-                ASSERT_NE(struct_def->fields[i].second, nullptr)
+                ASSERT_NE(struct_def->fields[i].type, nullptr)
                      << "Type annotation missing at index " << i;
 
-                EXPECT_EQ(struct_def->fields[i].second->name, expected_fields[i].second)
+                EXPECT_EQ(struct_def->fields[i].type->name, expected_fields[i].second)
                      << "Type name mismatch at index " << i;
             }
         }

@@ -568,7 +568,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(not_found.modifiers[0].name, "alias");
         ASSERT_EQ(not_found.modifiers[0].arguments.size(), 1);
         EXPECT_EQ(not_found.modifiers[0].arguments[0].first, "name");
-        EXPECT_EQ(dynamic_cast<StringLiteral *>(not_found.modifiers[0].arguments[0].second.get())->value, "\"NOT_FOUND\"");
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(not_found.modifiers[0].arguments[0].second.get())->value,
+                  "\"NOT_FOUND\"");
 
         auto val_404 = dynamic_cast<NumberLiteral *>(not_found.value.get());
         ASSERT_NE(val_404, nullptr);
@@ -582,7 +583,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(server_error.modifiers[0].name, "deprecated");
         ASSERT_EQ(server_error.modifiers[0].arguments.size(), 1);
         EXPECT_EQ(server_error.modifiers[0].arguments[0].first, "since");
-        EXPECT_EQ(dynamic_cast<StringLiteral *>(server_error.modifiers[0].arguments[0].second.get())->value, "\"v1.2\"");
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(server_error.modifiers[0].arguments[0].second.get())->value,
+                  "\"v1.2\"");
 
         auto val_500 = dynamic_cast<NumberLiteral *>(server_error.value.get());
         ASSERT_NE(val_500, nullptr);
@@ -1005,5 +1007,159 @@ namespace valuascript::compiler::test {
         auto default_val = dynamic_cast<NumberLiteral *>(param.default_value.get());
         ASSERT_NE(default_val, nullptr);
         EXPECT_EQ(default_val->value, "1000");
+    }
+
+    TEST_F(AstBaseTest, ValidatesStructWithoutAnyModifiers) {
+        auto ast = parse_code("struct Basic { x: int, y: float }");
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        auto node = ast->struct_definitions[0].get();
+
+        EXPECT_EQ(node->name, "Basic");
+        EXPECT_TRUE(node->modifiers.empty());
+        ASSERT_EQ(node->fields.size(), 2);
+
+        EXPECT_EQ(node->fields[0].name, "x");
+        EXPECT_TRUE(node->fields[0].modifiers.empty());
+
+        EXPECT_EQ(node->fields[1].name, "y");
+        EXPECT_TRUE(node->fields[1].modifiers.empty());
+    }
+
+    TEST_F(AstBaseTest, ValidatesStackedModifiersOnStructAndFields) {
+        auto ast = parse_code(
+            "@export @packed "
+            "struct User { "
+            "  @id id: int, "
+            "  @json(name: \"username\") @unique name: string "
+            "}"
+        );
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        auto node = ast->struct_definitions[0].get();
+
+        // 1. Verify Struct-Level Modifiers
+        ASSERT_EQ(node->modifiers.size(), 2);
+        EXPECT_EQ(node->modifiers[0].name, "export");
+        EXPECT_EQ(node->modifiers[1].name, "packed");
+
+        // 2. Verify Field-Level Modifiers
+        ASSERT_EQ(node->fields.size(), 2);
+
+        // Field: id
+        EXPECT_EQ(node->fields[0].name, "id");
+        ASSERT_EQ(node->fields[0].modifiers.size(), 1);
+        EXPECT_EQ(node->fields[0].modifiers[0].name, "id");
+
+        // Field: name
+        EXPECT_EQ(node->fields[1].name, "name");
+        ASSERT_EQ(node->fields[1].modifiers.size(), 2);
+        EXPECT_EQ(node->fields[1].modifiers[0].name, "json");
+        EXPECT_EQ(node->fields[1].modifiers[1].name, "unique");
+
+        // Check argument on @json
+        const auto &json_mod = node->fields[1].modifiers[0];
+        ASSERT_EQ(json_mod.arguments.size(), 1);
+        EXPECT_EQ(json_mod.arguments[0].first, "name");
+        EXPECT_EQ(dynamic_cast<StringLiteral*>(json_mod.arguments[0].second.get())->value, "\"username\"");
+    }
+
+    TEST_F(AstBaseTest, ValidatesStructFieldModifierWithComplexArguments) {
+        auto ast = parse_code(
+            "struct Data { "
+            "  @clamp(min: 0, max: 10 * 10) "
+            "  @meta(tags: [\"raw\", \"input\"], config: { sync: true }) "
+            "  value: int "
+            "}"
+        );
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        auto node = ast->struct_definitions[0].get();
+        const auto &field = node->fields[0];
+
+        ASSERT_EQ(field.modifiers.size(), 2);
+
+        // Mod 0: @clamp(min: 0, max: 10 * 10)
+        const auto &clamp = field.modifiers[0];
+        EXPECT_EQ(clamp.name, "clamp");
+        ASSERT_EQ(clamp.arguments.size(), 2);
+
+        // Arg 1 (Math): max: 10 * 10
+        EXPECT_EQ(clamp.arguments[1].first, "max");
+        auto math = dynamic_cast<BinaryExpression *>(clamp.arguments[1].second.get());
+        ASSERT_NE(math, nullptr);
+        EXPECT_EQ(math->op, TokenType::Star);
+
+        // Mod 1: @meta(tags: [...], config: {...})
+        const auto &meta = field.modifiers[1];
+        EXPECT_EQ(meta.name, "meta");
+        ASSERT_EQ(meta.arguments.size(), 2);
+
+        // Arg 0 (Tensor): tags: ["raw", "input"]
+        EXPECT_EQ(meta.arguments[0].first, "tags");
+        auto tensor = dynamic_cast<TensorLiteral *>(meta.arguments[0].second.get());
+        ASSERT_NE(tensor, nullptr);
+        EXPECT_EQ(tensor->elements.size(), 2);
+
+        // Arg 1 (Dict): config: { sync: true }
+        EXPECT_EQ(meta.arguments[1].first, "config");
+        auto dict = dynamic_cast<DictLiteral *>(meta.arguments[1].second.get());
+        ASSERT_NE(dict, nullptr);
+        EXPECT_EQ(dict->elements[0].key, "sync");
+        EXPECT_EQ(dynamic_cast<BooleanLiteral*>(dict->elements[0].value.get())->value, true);
+    }
+
+    TEST_F(AstBaseTest, ValidatesStructFieldModifierWithEmptyParens) {
+        auto ast = parse_code(
+            "struct Settings { "
+            "  @internal() @obsolete(reason: \"old\") "
+            "  flag: bool, "
+            "}"
+        );
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        auto node = ast->struct_definitions[0].get();
+        const auto &field = node->fields[0];
+
+        ASSERT_EQ(field.modifiers.size(), 2);
+
+        // @internal() -> 0 args
+        EXPECT_EQ(field.modifiers[0].name, "internal");
+        EXPECT_TRUE(field.modifiers[0].arguments.empty());
+
+        // @obsolete(reason: "old",) -> 1 arg
+        EXPECT_EQ(field.modifiers[1].name, "obsolete");
+        ASSERT_EQ(field.modifiers[1].arguments.size(), 1);
+        EXPECT_EQ(field.modifiers[1].arguments[0].first, "reason");
+    }
+
+    TEST_F(AstBaseTest, ValidatesStructFieldModifiersWithDotAccess) {
+        auto ast = parse_code(
+            "struct Window { "
+            "  @theme(color: Colors.Blue, font: Fonts.Main.Bold) "
+            "  title: string "
+            "}"
+        );
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        const auto &field = ast->struct_definitions[0]->fields[0];
+        const auto &mod = field.modifiers[0];
+
+        ASSERT_EQ(mod.arguments.size(), 2);
+
+        // color: Colors.Blue
+        EXPECT_EQ(mod.arguments[0].first, "color");
+        auto dot1 = dynamic_cast<DotAccess *>(mod.arguments[0].second.get());
+        ASSERT_NE(dot1, nullptr);
+        EXPECT_EQ(dot1->property_name, "Blue");
+
+        // font: Fonts.Main.Bold (Deep Dot Access)
+        EXPECT_EQ(mod.arguments[1].first, "font");
+        auto dot_deep = dynamic_cast<DotAccess *>(mod.arguments[1].second.get());
+        ASSERT_NE(dot_deep, nullptr);
+        EXPECT_EQ(dot_deep->property_name, "Bold");
+
+        auto dot_mid = dynamic_cast<DotAccess *>(dot_deep->target.get());
+        EXPECT_EQ(dot_mid->property_name, "Main");
     }
 }

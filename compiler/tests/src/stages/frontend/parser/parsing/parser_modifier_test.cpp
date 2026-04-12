@@ -53,7 +53,8 @@ namespace valuascript::compiler::test {
             Assignment, 1, "matrix", 1},
             ModifierHappyParam{"StackedMixedMods", "@export @bind(target: \"web\") let r = 0", TargetNodeType::
             Assignment, 2, "export", 0},
-            ModifierHappyParam{"ModWithEmptyParentheses", "@bind() let x = 1", TargetNodeType::Assignment, 1, "bind", 0},
+            ModifierHappyParam{"ModWithEmptyParentheses", "@bind() let x = 1", TargetNodeType::Assignment, 1, "bind", 0}
+            ,
             ModifierHappyParam{"FuncSingleMod", "@inline func fast() -> scalar { return 1 }", TargetNodeType::Function,
             1, "inline", 0},
             ModifierHappyParam{"FuncStackedWithArgs", "@export @test(name: \"math_check\") func verify() -> void { }",
@@ -91,7 +92,19 @@ namespace valuascript::compiler::test {
             ModifierHappyParam{"FuncParamModWithArgs", "func foo(@clamp(min: 0, max: 10) a: int) -> void {}",
             TargetNodeType::FunctionParameter, 1, "clamp", 2},
             ModifierHappyParam{"FuncParamModEmptyParens", "func foo(@inject() a: int) -> void {}", TargetNodeType::
-            FunctionParameter, 1, "inject", 0}
+            FunctionParameter, 1, "inject", 0},
+            ModifierHappyParam{"StructFieldSingleMod", "struct S { @id id: int }", TargetNodeType::StructField, 1, "id",
+            0},
+            ModifierHappyParam{"StructFieldStackedMods", "struct S { @root @primary id: int }", TargetNodeType::
+            StructField, 2, "root", 0},
+            ModifierHappyParam{"StructFieldModWithArgs", "struct S { @json(name: \"user_id\") id: int }", TargetNodeType
+            ::StructField, 1, "json", 1},
+            ModifierHappyParam{"StructFieldModWithComplexMath", "struct S { @clamp(limit: 10 * 10) val: int }",
+            TargetNodeType::StructField, 1, "clamp", 1},
+            ModifierHappyParam{"StructFieldModEmptyParens", "struct S { @internal() val: int }", TargetNodeType::
+            StructField, 1, "internal", 0},
+            ModifierHappyParam{"StructFieldModWithTensor", "struct S { @matrix(shape: [3, 1]) v: vec }", TargetNodeType
+            ::StructField, 1, "matrix", 1}
         ),
         [](const testing::TestParamInfo<ModifierHappyParam>& info) {
         return info.param.test_name;
@@ -148,7 +161,11 @@ namespace valuascript::compiler::test {
             ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", ValuascriptErrorCode::
             MissingOperatorOrArgumentName},
             ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", ValuascriptErrorCode::
-            MissingOperator}
+            MissingOperator},
+            ModifierSadParam{"ModifierOnStructFieldType", "struct S { name: @mut string }", ValuascriptErrorCode::
+            MissingTypeAnnotation},
+            ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", ValuascriptErrorCode::
+            ExpectedModifierName}
         ),
         [](const testing::TestParamInfo<ModifierSadParam>& info) {
         return info.param.test_name;

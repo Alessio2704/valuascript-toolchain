@@ -397,11 +397,11 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 2);
 
-            EXPECT_EQ(s->fields[0].first, "a");
-            ExpectBaseType(s->fields[0].second.get(), "vector", 1);
+            EXPECT_EQ(s->fields[0].name, "a");
+            ExpectBaseType(s->fields[0].type.get(), "vector", 1);
 
-            EXPECT_EQ(s->fields[1].first, "b");
-            ExpectBaseType(s->fields[1].second.get(), "string", 0);
+            EXPECT_EQ(s->fields[1].name, "b");
+            ExpectBaseType(s->fields[1].type.get(), "string", 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -501,14 +501,14 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 2);
 
-            EXPECT_EQ(s->fields[0].first, "a");
+            EXPECT_EQ(s->fields[0].name, "a");
 
-            auto t_ann = dynamic_cast<TupleTypeAnnotation*>(s->fields[0].second.get());
+            auto t_ann = dynamic_cast<TupleTypeAnnotation*>(s->fields[0].type.get());
             ASSERT_NE(t_ann, nullptr);
             EXPECT_EQ(t_ann->element_types.size(), 2);
 
-            EXPECT_EQ(s->fields[1].first, "b");
-            ExpectBaseType(s->fields[1].second.get(), "bool", 0);
+            EXPECT_EQ(s->fields[1].name, "b");
+            ExpectBaseType(s->fields[1].type.get(), "bool", 0);
             }
             },ParserErrorsSynchronizationTestCase{
             "struct_field_deeply_broken_generic_recovers_next_field",
@@ -525,14 +525,14 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 2);
 
-            EXPECT_EQ(s->fields[0].first, "a");
-            auto d_ann = dynamic_cast<TypeAnnotation*>(s->fields[0].second.get());
+            EXPECT_EQ(s->fields[0].name, "a");
+            auto d_ann = dynamic_cast<TypeAnnotation*>(s->fields[0].type.get());
             ASSERT_NE(d_ann, nullptr);
             EXPECT_EQ(d_ann->name, "dict");
             ASSERT_EQ(d_ann->generic_args.size(), 2);
 
-            EXPECT_EQ(s->fields[1].first, "b");
-            ExpectBaseType(s->fields[1].second.get(), "float", 0);
+            EXPECT_EQ(s->fields[1].name, "b");
+            ExpectBaseType(s->fields[1].type.get(), "float", 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -596,7 +596,7 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 1);
 
-            auto t = s->fields[0].second.get();
+            auto t = s->fields[0].type.get();
             EXPECT_EQ(t->name, "dict");
             ASSERT_EQ(t->generic_args.size(), 2);
 
@@ -619,9 +619,9 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 2);
 
-            EXPECT_EQ(s->fields[0].first, "a");
-            EXPECT_EQ(s->fields[1].first, "b");
-            ExpectBaseType(s->fields[1].second.get(), "int", 0);
+            EXPECT_EQ(s->fields[0].name, "a");
+            EXPECT_EQ(s->fields[1].name, "b");
+            ExpectBaseType(s->fields[1].type.get(), "int", 0);
             }
             }
         ),

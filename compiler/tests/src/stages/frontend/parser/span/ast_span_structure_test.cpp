@@ -127,7 +127,7 @@ namespace valuascript::compiler::test {
         assert_span(struct_def->span, 1, 1, 1, 36);
 
         // Check first field type annotation 'float' starts at 19, ends at 24
-        auto field1_type = struct_def->fields[0].second.get();
+        auto field1_type = struct_def->fields[0].type.get();
         ASSERT_NE(field1_type, nullptr);
         assert_span(field1_type->span, 1, 19, 1, 24);
     }

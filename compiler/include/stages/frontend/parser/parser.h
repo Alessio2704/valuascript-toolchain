@@ -170,9 +170,10 @@ namespace valuascript::compiler {
 
             auto is_hard_stop = [&](const Token &token, TokenType next) {
                 if (is_element_start()) {
-                    if (token.type != TokenType::At && TokenTraits::is_newline_statement_boundary(
-                            cursor_.previous(), token, next)) {
-                        return true;
+                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), token, next)) {
+                        if (token.type != TokenType::At || is_at_any_declaration()) {
+                            return true;
+                        }
                     }
                     return false;
                 }
@@ -218,9 +219,15 @@ namespace valuascript::compiler {
                             cursor_.report_error(cursor_.previous(), *trailing_comma_err);
                         }
                     } else if (!cursor_.check(closing_token)) {
-                        bool is_boundary = cursor_.peek().type != TokenType::At &&
-                                           TokenTraits::is_newline_statement_boundary(
-                                               cursor_.previous(), cursor_.peek(), cursor_.peek(1).type);
+                        bool is_boundary = TokenTraits::is_newline_statement_boundary(
+                            cursor_.previous(), cursor_.peek(), cursor_.peek(1).type);
+
+                        if (is_boundary && cursor_.peek().type == TokenType::At) {
+                            if (is_at_any_declaration()) {
+                            } else {
+                                is_boundary = false;
+                            }
+                        }
 
                         if (is_element_start() && !is_boundary) {
                             if (missing_comma_err) {

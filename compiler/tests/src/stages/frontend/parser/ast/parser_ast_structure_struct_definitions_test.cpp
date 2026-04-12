@@ -13,16 +13,16 @@ namespace valuascript::compiler::test {
         ASSERT_EQ(struct_def->fields.size(), 3);
 
         // Field 0: cagr: Decimal
-        EXPECT_EQ(struct_def->fields[0].first, "cagr");
-        EXPECT_EQ(struct_def->fields[0].second->name, "Decimal");
+        EXPECT_EQ(struct_def->fields[0].name, "cagr");
+        EXPECT_EQ(struct_def->fields[0].type->name, "Decimal");
 
         // Field 1: yrs: Integer
-        EXPECT_EQ(struct_def->fields[1].first, "yrs");
-        EXPECT_EQ(struct_def->fields[1].second->name, "Integer");
+        EXPECT_EQ(struct_def->fields[1].name, "yrs");
+        EXPECT_EQ(struct_def->fields[1].type->name, "Integer");
 
         // Field 2: name: String
-        EXPECT_EQ(struct_def->fields[2].first, "name");
-        EXPECT_EQ(struct_def->fields[2].second->name, "String");
+        EXPECT_EQ(struct_def->fields[2].name, "name");
+        EXPECT_EQ(struct_def->fields[2].type->name, "String");
     }
 
     TEST_F(AstBaseTest, ValidatesStructWithDeeplyNestedComplexTypes) {
@@ -48,8 +48,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // FIELD 0: rates: Vector<scalar>
         // ==========================================
-        EXPECT_EQ(struct_def->fields[0].first, "rates");
-        auto field0_type = struct_def->fields[0].second.get();
+        EXPECT_EQ(struct_def->fields[0].name, "rates");
+        auto field0_type = struct_def->fields[0].type.get();
         EXPECT_EQ(field0_type->name, "Vector");
         ASSERT_EQ(field0_type->generic_args.size(), 1);
         EXPECT_EQ(field0_type->generic_args[0]->name, "scalar");
@@ -57,8 +57,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // FIELD 1: bounds: (integer, integer)
         // ==========================================
-        EXPECT_EQ(struct_def->fields[1].first, "bounds");
-        auto field1_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[1].second.get());
+        EXPECT_EQ(struct_def->fields[1].name, "bounds");
+        auto field1_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[1].type.get());
         ASSERT_NE(field1_tuple, nullptr) << "Field 'bounds' must be a TupleTypeAnnotation";
         ASSERT_EQ(field1_tuple->element_types.size(), 2);
         EXPECT_EQ(field1_tuple->element_types[0]->name, "integer");
@@ -67,8 +67,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // FIELD 2: nested_generic: Result<Vector<scalar>, Error>
         // ==========================================
-        EXPECT_EQ(struct_def->fields[2].first, "nested_generic");
-        auto field2_type = struct_def->fields[2].second.get();
+        EXPECT_EQ(struct_def->fields[2].name, "nested_generic");
+        auto field2_type = struct_def->fields[2].type.get();
         EXPECT_EQ(field2_type->name, "Result");
         ASSERT_EQ(field2_type->generic_args.size(), 2) << "Result must have 2 generic arguments";
 
@@ -86,8 +86,8 @@ namespace valuascript::compiler::test {
         // ==========================================
         // FIELD 3: matrix_tuple: (Matrix<scalar>, (integer, integer))
         // ==========================================
-        EXPECT_EQ(struct_def->fields[3].first, "matrix_tuple");
-        auto field3_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[3].second.get());
+        EXPECT_EQ(struct_def->fields[3].name, "matrix_tuple");
+        auto field3_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[3].type.get());
         ASSERT_NE(field3_tuple, nullptr) << "Field 'matrix_tuple' must be a TupleTypeAnnotation";
         ASSERT_EQ(field3_tuple->element_types.size(), 2);
 

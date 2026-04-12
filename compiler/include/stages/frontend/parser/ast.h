@@ -287,15 +287,22 @@ namespace valuascript::compiler {
         }
     };
 
+    struct StructField {
+        std::vector<Modifier> modifiers;
+        std::string name;
+        std::unique_ptr<TypeAnnotation> type;
+        SourceSpan span;
+    };
+
     class StructDefinition : public AstNode {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
-        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields;
+        std::vector<StructField> fields;
 
         explicit StructDefinition(std::vector<Modifier> modifiers,
                                   std::string name,
-                                  std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > fields)
+                                  std::vector<StructField> fields)
             : modifiers(std::move(modifiers)), name(std::move(name)), fields(std::move(fields)) {
         }
     };

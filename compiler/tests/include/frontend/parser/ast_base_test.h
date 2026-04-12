@@ -15,7 +15,8 @@ namespace valuascript::compiler::test {
         Enum,
         DictKey,
         EnumCase,
-        FunctionParameter
+        FunctionParameter,
+        StructField
     };
 
     class AstBaseTest : public testing::Test {
@@ -129,19 +130,13 @@ namespace valuascript::compiler::test {
                     }
                     break;
                 case TargetNodeType::Function:
-                    if (!ast->function_definitions.empty()) {
-                        return &ast->function_definitions[0]->modifiers;
-                    }
+                    if (!ast->function_definitions.empty()) return &ast->function_definitions[0]->modifiers;
                     break;
                 case TargetNodeType::Struct:
-                    if (!ast->struct_definitions.empty()) {
-                        return &ast->struct_definitions[0]->modifiers;
-                    }
+                    if (!ast->struct_definitions.empty()) return &ast->struct_definitions[0]->modifiers;
                     break;
                 case TargetNodeType::Enum:
-                    if (!ast->enum_definitions.empty()) {
-                        return &ast->enum_definitions[0]->modifiers;
-                    }
+                    if (!ast->enum_definitions.empty()) return &ast->enum_definitions[0]->modifiers;
                     break;
                 case TargetNodeType::DictKey:
                     if (!ast->execution_steps.empty()) {
@@ -153,17 +148,18 @@ namespace valuascript::compiler::test {
                     }
                     break;
                 case TargetNodeType::EnumCase:
-                    if (!ast->enum_definitions.empty()) {
-                        if (!ast->enum_definitions[0]->cases.empty()) {
-                            return &ast->enum_definitions[0]->cases[0].modifiers;
-                        }
+                    if (!ast->enum_definitions.empty() && !ast->enum_definitions[0]->cases.empty()) {
+                        return &ast->enum_definitions[0]->cases[0].modifiers;
                     }
                     break;
                 case TargetNodeType::FunctionParameter:
-                    if (!ast->function_definitions.empty()) {
-                        if (!ast->function_definitions[0]->parameters.empty()) {
-                            return &ast->function_definitions[0]->parameters[0].modifiers;
-                        }
+                    if (!ast->function_definitions.empty() && !ast->function_definitions[0]->parameters.empty()) {
+                        return &ast->function_definitions[0]->parameters[0].modifiers;
+                    }
+                    break;
+                case TargetNodeType::StructField:
+                    if (!ast->struct_definitions.empty() && !ast->struct_definitions[0]->fields.empty()) {
+                        return &ast->struct_definitions[0]->fields[0].modifiers;
                     }
                     break;
             }

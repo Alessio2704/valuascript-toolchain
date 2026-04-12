@@ -427,6 +427,7 @@ namespace valuascript::compiler {
 
                 if (tok.type == TokenType::At) {
                     if (is_at_any_declaration()) return false;
+                    return true;
                 }
 
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
