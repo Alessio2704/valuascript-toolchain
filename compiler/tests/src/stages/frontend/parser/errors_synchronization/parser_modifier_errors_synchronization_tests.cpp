@@ -548,7 +548,7 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "all_identifiers_are_reserved",
-            "@func(let: var) let a = 1\n"
+            "@func(let: let) let a = 1\n"
             "let recovery = 1\n",
             {
             {Err::ReservedKeywordAsIdentifier, 1, 2},
@@ -564,7 +564,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
             ASSERT_EQ(step->modifiers[0].arguments[0].first, "let");
             auto arg_value = dynamic_cast<IdentifierAccess*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_EQ(arg_value->name, "var");
+            ASSERT_EQ(arg_value->name, "let");
             }
             },
             ParserErrorsSynchronizationTestCase{

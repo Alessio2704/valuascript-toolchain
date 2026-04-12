@@ -41,7 +41,6 @@ namespace valuascript::compiler::test {
         ModifierHappyPathTest,
         testing::Values(
             ModifierHappyParam{"SingleModNoArgsLet", "@export let x = 1", TargetNodeType::Assignment, 1, "export", 0},
-            ModifierHappyParam{"SingleModNoArgsVar", "@mutable var y = 2", TargetNodeType::Assignment, 1, "mutable", 0},
             ModifierHappyParam{"StackedMods", "@export @memoize let z = 3", TargetNodeType::Assignment, 2, "export", 0},
             ModifierHappyParam{"SingleModOneArg", "@bind(ui: \"slider\") let a = 5", TargetNodeType::Assignment, 1,
             "bind", 1},

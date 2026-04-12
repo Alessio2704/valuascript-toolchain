@@ -203,13 +203,11 @@ namespace valuascript::compiler {
         std::vector<Modifier> modifiers;
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         std::unique_ptr<Expression> value;
-        bool is_mutable;
 
         Assignment(std::vector<Modifier> modifiers,
                    std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
-                   std::unique_ptr<Expression> value, bool is_mutable)
-            : modifiers(std::move(modifiers)), targets(std::move(targets)), value(std::move(value)),
-              is_mutable(is_mutable) {
+                   std::unique_ptr<Expression> value)
+            : modifiers(std::move(modifiers)), targets(std::move(targets)), value(std::move(value)) {
         }
     };
 

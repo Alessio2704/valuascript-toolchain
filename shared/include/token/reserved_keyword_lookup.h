@@ -9,7 +9,6 @@ namespace valuascript::shared {
     inline const std::unordered_map<std::string, TokenType> kReservedKeywords = {
         {"import", TokenType::Import},
         {"let", TokenType::Let},
-        {"var", TokenType::Var},
         {"if", TokenType::If},
         {"then", TokenType::Then},
         {"else", TokenType::Else},

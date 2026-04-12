@@ -26,7 +26,7 @@ namespace valuascript::compiler {
             // --- Parser Errors ---
             case ValuascriptErrorCode::UnexpectedTopLevelToken:
                 return
-                        "Syntax Error: Invalid syntax. Expected '#', 'let', 'var', 'enum', 'struct', 'func' or an identifier.";
+                        "Syntax Error: Invalid syntax. Expected '#', 'let', 'enum', 'struct', 'func' or an identifier.";
             case ValuascriptErrorCode::ExpectedImportToken:
                 return "Expected 'import'.";
             case ValuascriptErrorCode::MissingImportPathString:
@@ -36,7 +36,7 @@ namespace valuascript::compiler {
             case ValuascriptErrorCode::MissingDirectiveName:
                 return "Syntax Error: Expected directive name after '#'.";
             case ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration:
-                return "Syntax Error: Modifiers must be attached to a declaration (let, var, func, struct, enum).";
+                return "Syntax Error: Modifiers must be attached to a declaration";
             case ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements:
                 return "Syntax Error: Modifiers for multi assignment must be attached before the overall statement.";
             case ValuascriptErrorCode::ExpectedModifierName:
@@ -119,8 +119,8 @@ namespace valuascript::compiler {
                 return "Expected '>' after generic type arguments.";
             case ValuascriptErrorCode::TrailingCommaInGenericArgument:
                 return "Syntax Error: Trailing comma in generic arguments.";
-            case ValuascriptErrorCode::ExpectedLetOrVarToken:
-                return "Expected 'let' or 'var'.";
+            case ValuascriptErrorCode::ExpectedLetToken:
+                return "Expected 'let' keyword for declaration.";
             case ValuascriptErrorCode::ReservedKeywordAsIdentifier:
                 return "Syntax Error: Cannot use a reserved keyword as an identifier.";
             case ValuascriptErrorCode::ExpectedCommaInMultiAssignment:

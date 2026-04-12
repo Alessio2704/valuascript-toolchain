@@ -266,27 +266,27 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_params_2",
-            "func test(let: int, var: int, then: string) -> int {}\n"
+            "func test(let: int, if: int, then: string) -> int {}\n"
             "let a = 1\n",
             {
             {Err::ReservedKeywordAsIdentifier, 1, 11},
             {Err::ReservedKeywordAsIdentifier, 1, 21},
-            {Err::ReservedKeywordAsIdentifier, 1, 31},
+            {Err::ReservedKeywordAsIdentifier, 1, 30},
             },
-            ExpectFunction("test", {{"let", "int"}, {"var", "int"}, {"then", "string"}}, {"int"})
+            ExpectFunction("test", {{"let", "int"}, {"if", "int"}, {"then", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_params_3",
-            "func test(let: int var: int then: string) -> int {}\n"
+            "func test(let: int if: int then: string) -> int {}\n"
             "let a = 1\n",
             {
             {Err::ReservedKeywordAsIdentifier, 1, 11},
             {Err::ExpectedCommaSeparatorInParameterList, 1, 20},
             {Err::ReservedKeywordAsIdentifier, 1, 20},
-            {Err::ExpectedCommaSeparatorInParameterList, 1, 29},
-            {Err::ReservedKeywordAsIdentifier, 1, 29},
+            {Err::ExpectedCommaSeparatorInParameterList, 1, 28},
+            {Err::ReservedKeywordAsIdentifier, 1, 28},
             },
-            ExpectFunction("test", {{"let", "int"}, {"var", "int"}, {"then", "string"}}, {"int"})
+            ExpectFunction("test", {{"let", "int"}, {"if", "int"}, {"then", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_params_type_1",

@@ -68,8 +68,7 @@ namespace valuascript::compiler {
                     if (program) program->type_aliases.push_back(std::move(alias_def));
                     break;
                 }
-                case TokenType::Let:
-                case TokenType::Var: {
+                case TokenType::Let: {
                     auto assign = parse_assignment(std::move(modifiers));
                     if (program) program->execution_steps.push_back(std::move(assign));
                     else block.push_back(std::move(assign));
@@ -126,8 +125,7 @@ namespace valuascript::compiler {
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.peek();
 
-        bool is_mutable = cursor_.match({TokenType::Var});
-        if (!is_mutable) cursor_.consume(TokenType::Let, ValuascriptErrorCode::ExpectedLetOrVarToken);
+        cursor_.consume(TokenType::Let, ValuascriptErrorCode::ExpectedLetToken);
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         do {
@@ -186,8 +184,7 @@ namespace valuascript::compiler {
             verify_statement_end();
         }
 
-        auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value),
-                                                   is_mutable);
+        auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value));
         assign->span = cursor_.make_span(start_token, cursor_.previous());
         return assign;
     }

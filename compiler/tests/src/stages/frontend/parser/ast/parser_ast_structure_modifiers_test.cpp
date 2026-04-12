@@ -16,7 +16,7 @@ namespace valuascript::compiler::test {
     }
 
     TEST_F(AstBaseTest, ValidatesModifierWithEmptyParentheses) {
-        auto ast = parse_code("@inject() var service = get_service()");
+        auto ast = parse_code("@inject() let service = get_service()");
 
         ASSERT_EQ(ast->execution_steps.size(), 1);
         auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
@@ -368,7 +368,6 @@ namespace valuascript::compiler::test {
             get());
         EXPECT_EQ(correlation_1_dict_direction_enum->name, "CorrelationDirection");
 
-        EXPECT_FALSE(assign_node->is_mutable);
         EXPECT_EQ(assign_node->targets.size(), 1);
         EXPECT_EQ(assign_node->targets[0].first, "rf");
         EXPECT_EQ(assign_node->targets[0].second, nullptr);

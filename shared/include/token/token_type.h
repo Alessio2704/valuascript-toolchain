@@ -42,7 +42,6 @@ namespace valuascript::shared  {
         // Keywords
         Import, // import
         Let, // let
-        Var, // var
         If, // if
         Then, // then
         Else, // else

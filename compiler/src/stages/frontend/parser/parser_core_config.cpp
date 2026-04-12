@@ -86,7 +86,6 @@ namespace valuascript::compiler {
     bool TokenTraits::is_top_level_token(const TokenType type) {
         switch (type) {
             case TokenType::Let:
-            case TokenType::Var:
             case TokenType::Func:
             case TokenType::Struct:
             case TokenType::Enum:

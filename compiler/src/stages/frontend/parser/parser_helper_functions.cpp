@@ -130,7 +130,7 @@ namespace valuascript::compiler {
 
     bool Parser::is_at_any_declaration() const {
         TokenType t = peek_past_modifiers();
-        if (t == TokenType::Let || t == TokenType::Var) return true;
+        if (t == TokenType::Let) return true;
         return TokenTraits::is_top_level_only_declaration(t);
     }
 

@@ -256,8 +256,8 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "var_missing_value",
-            "var a : int =\n"
+            "let_missing_value",
+            "let a : int =\n"
             "let b = 2\n",
             {
             {Err::MissingValueAfterEquals, 1, 14}
@@ -266,7 +266,6 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            EXPECT_TRUE(assign_a->is_mutable);
             EXPECT_NE(assign_a->targets[0].second, nullptr);
             EXPECT_EQ(assign_a->targets[0].second->name, "int");
             EXPECT_EQ(assign_a->value, nullptr);

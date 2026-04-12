@@ -194,15 +194,15 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_3",
-            "struct Test { var: string, if: int, let: int }\n"
+            "struct Test { case: string, if: int, let: int }\n"
             "let a = 1\n",
             {
             {Err::ReservedKeywordAsIdentifier, 1, 15},
-            {Err::ReservedKeywordAsIdentifier, 1, 28},
-            {Err::ReservedKeywordAsIdentifier, 1, 37}
+            {Err::ReservedKeywordAsIdentifier, 1, 29},
+            {Err::ReservedKeywordAsIdentifier, 1, 38}
             },
             ExpectStruct("Test", {
-                {"var", "string"},
+                {"case", "string"},
                 {"if", "int"},
                 {"let", "int"},
                 })

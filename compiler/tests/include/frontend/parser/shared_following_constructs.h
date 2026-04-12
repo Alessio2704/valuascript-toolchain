@@ -109,16 +109,6 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                "var", "var rec_var = 1\n", true, [](const Program &program, int modifiers_count) {
-                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
-                        auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "rec_var";
-                    });
-                    ASSERT_NE(target_stmt, nullptr);
-                    check_mods(dynamic_cast<const Assignment *>(target_stmt)->modifiers, modifiers_count);
-                }
-            },
-            {
                 "import", "import \"lib\"\n", false, [](const Program &program, int) {
                     EXPECT_FALSE(program.import_statements.empty());
                 }
