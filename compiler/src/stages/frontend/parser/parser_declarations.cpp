@@ -253,10 +253,6 @@ namespace valuascript::compiler {
                 },
                 [&]() {
                     auto mods = parse_modifiers();
-                    if (!mods.empty()) {
-                        cursor_.report_error_no_panic(cursor_.previous(),
-                                                      ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
                     const Token &param_name = consume_identifier(ValuascriptErrorCode::MissingParameterName);
                     cursor_.consume(TokenType::Colon, ValuascriptErrorCode::MissingColonAfterParameter);
                     auto type = parse_type_annotation(is_at_parent_boundary);
@@ -274,7 +270,9 @@ namespace valuascript::compiler {
                             param_name, ValuascriptErrorCode::NonDefaultParameterAfterDefault);
                     }
 
-                    return FunctionParameter{param_name.lexeme, std::move(type), std::move(default_value)};
+                    return FunctionParameter{
+                        std::move(mods), param_name.lexeme, std::move(type), std::move(default_value)
+                    };
                 }
             );
         }

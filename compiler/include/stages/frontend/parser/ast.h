@@ -261,6 +261,7 @@ namespace valuascript::compiler {
     };
 
     struct FunctionParameter {
+        std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<TypeAnnotation> type;
         std::unique_ptr<Expression> default_value = nullptr;

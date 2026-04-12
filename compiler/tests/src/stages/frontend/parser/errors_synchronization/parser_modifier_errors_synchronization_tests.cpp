@@ -509,21 +509,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_on_func_param_unsupported",
-            "func f(@test a: int, b: int) -> int { return 1 }\n"
-            "let recovery = 1\n",
-            {
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 9}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->modifiers.size(), 0);
-            EXPECT_EQ(ast.function_definitions[0]->parameters.size(), 2);
-            EXPECT_EQ(ast.function_definitions[0]->parameters[0].name, "a");
-            EXPECT_EQ(ast.function_definitions[0]->parameters[1].name, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_name_is_combined_keywords",
             "@let_var let a = 1\n"
             "let recovery = 1\n",
@@ -797,6 +782,192 @@ namespace valuascript::compiler::test {
             auto val_c = dynamic_cast<NumberLiteral*>(dict->elements[2].value.get());
             ASSERT_NE(val_c, nullptr);
             EXPECT_EQ(val_c->value, "3");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_missing_name",
+            "func f(@ 1 a: int, b: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::ExpectedModifierName, 1, 10} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+
+            ASSERT_EQ(func->parameters.size(), 2);
+            EXPECT_EQ(func->parameters[0].name, "a");
+            EXPECT_TRUE(func->parameters[0].modifiers.empty());
+
+            EXPECT_EQ(func->parameters[1].name, "b");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_missing_colon_in_arg",
+            "func f(@test(x 1) a: int, b: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::MissingColonAfterArgument, 1, 16} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+
+            ASSERT_EQ(func->parameters.size(), 2);
+            EXPECT_EQ(func->parameters[0].name, "a");
+
+            EXPECT_FALSE(func->parameters[0].modifiers.empty());
+
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
+            EXPECT_TRUE(func->parameters[0].modifiers[0].arguments.empty());
+
+            EXPECT_EQ(func->parameters[1].name, "b");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_broken_expression_in_arg",
+            "func f(@test(x: 1 + *) a: int, b: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 21} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 2);
+
+            EXPECT_EQ(func->parameters[0].name, "a");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
+
+            EXPECT_EQ(func->parameters[1].name, "b");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_reserved_keyword_as_modifier",
+            "func f(@func() a: int, @let b: int) -> void {}\n"
+            "let recovery = 1\n",
+            {
+            {Err::ReservedKeywordAsIdentifier, 1, 9},
+            {Err::ReservedKeywordAsIdentifier, 1, 25}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 2);
+
+            EXPECT_EQ(func->parameters[0].name, "a");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "func");
+
+            EXPECT_EQ(func->parameters[1].name, "b");
+            ASSERT_EQ(func->parameters[1].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[1].modifiers[0].name, "let");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_stacked_modifiers_one_broken",
+            "func f(@valid @broken(x: *) @ok p: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 26} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 1);
+
+            EXPECT_EQ(func->parameters[0].name, "p");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 3);
+
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "valid");
+            EXPECT_EQ(func->parameters[0].modifiers[1].name, "broken");
+            EXPECT_EQ(func->parameters[0].modifiers[2].name, "ok");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_missing_param_name",
+            "func f(@test(a: 1) : int, b: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::MissingParameterName, 1, 20} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+
+            bool found_b = false;
+            for (const auto& p : func->parameters) {
+            if (p.name == "b") found_b = true;
+            }
+            EXPECT_TRUE(found_b) << "Parser failed to recover to parameter 'b'";
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_arg_missing_value_hits_paren",
+            "func f(@test(a: ) b: int) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 17} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 1);
+
+            EXPECT_EQ(func->parameters[0].name, "b");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_missing_commas_in_args",
+            "func f(@test(a: 1 b: 2 c: 3) p: int) -> void {}\n"
+            "let recovery = 1\n",
+            {
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 19},
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 1);
+
+            EXPECT_EQ(func->parameters[0].name, "p");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
+            EXPECT_EQ(func->parameters[0].modifiers[0].arguments.size(), 3);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_with_default_value_recovery",
+            "func f(@test(x: *) p: int = 10, @ok q: int = 20) -> void {}\n"
+            "let recovery = 1\n",
+            { {Err::InvalidExpression, 1, 17} },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 1);
+            auto func = ast.function_definitions[0].get();
+            ASSERT_EQ(func->parameters.size(), 2);
+
+            EXPECT_EQ(func->parameters[0].name, "p");
+            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
+            auto def_p = dynamic_cast<NumberLiteral*>(func->parameters[0].default_value.get());
+            ASSERT_NE(def_p, nullptr);
+            EXPECT_EQ(def_p->value, "10");
+
+            EXPECT_EQ(func->parameters[1].name, "q");
+            ASSERT_EQ(func->parameters[1].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[1].modifiers[0].name, "ok");
+            auto def_q = dynamic_cast<NumberLiteral*>(func->parameters[1].default_value.get());
+            ASSERT_NE(def_q, nullptr);
+            EXPECT_EQ(def_q->value, "20");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "func_param_modifier_missing_right_paren_in_args",
+            "func f(@test(a: 1 p: int) -> void {}\n"
+            "let recovery = 1\n",
+            {
+            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 19},
+            {Err::MissingParameterName, 1, 27},
+            {Err::ExpectedRightParenAfterParameters, 1, 37}
+            },
+            [](const Program& ast) {
+            ASSERT_EQ(ast.function_definitions.size(), 0);
+
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].first, "recovery");
             }
             }
         ),

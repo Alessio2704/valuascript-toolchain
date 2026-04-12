@@ -810,4 +810,200 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(start_case.modifiers[0].name, "init");
         EXPECT_TRUE(start_case.modifiers[0].arguments.empty());
     }
+
+    TEST_F(AstBaseTest, ValidatesFunctionParametersWithoutModifiers) {
+        auto ast = parse_code("func add(a: int, b: int) -> int {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 2);
+
+        EXPECT_EQ(func_node->parameters[0].name, "a");
+        EXPECT_TRUE(func_node->parameters[0].modifiers.empty());
+
+        EXPECT_EQ(func_node->parameters[1].name, "b");
+        EXPECT_TRUE(func_node->parameters[1].modifiers.empty());
+    }
+
+    TEST_F(AstBaseTest, ValidatesSimpleModifierOnFunctionParameter) {
+        auto ast = parse_code("func update(@mut value: int) -> void {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 1);
+        const auto &param = func_node->parameters[0];
+
+        EXPECT_EQ(param.name, "value");
+        ASSERT_EQ(param.modifiers.size(), 1);
+
+        EXPECT_EQ(param.modifiers[0].name, "mut");
+        EXPECT_TRUE(param.modifiers[0].arguments.empty());
+    }
+
+    TEST_F(AstBaseTest, ValidatesMultipleFunctionParametersWithModifiers) {
+        auto ast = parse_code("func swap(@ref a: int, @ref b: int, @unused ctx: context) -> void {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 3);
+
+        // Param 0: @ref a
+        EXPECT_EQ(func_node->parameters[0].name, "a");
+        ASSERT_EQ(func_node->parameters[0].modifiers.size(), 1);
+        EXPECT_EQ(func_node->parameters[0].modifiers[0].name, "ref");
+
+        // Param 1: @ref b
+        EXPECT_EQ(func_node->parameters[1].name, "b");
+        ASSERT_EQ(func_node->parameters[1].modifiers.size(), 1);
+        EXPECT_EQ(func_node->parameters[1].modifiers[0].name, "ref");
+
+        // Param 2: @unused ctx
+        EXPECT_EQ(func_node->parameters[2].name, "ctx");
+        ASSERT_EQ(func_node->parameters[2].modifiers.size(), 1);
+        EXPECT_EQ(func_node->parameters[2].modifiers[0].name, "unused");
+    }
+
+    TEST_F(AstBaseTest, ValidatesModifierWithArgumentsOnFunctionParameter) {
+        auto ast = parse_code("func set_age(@clamp(min: 0, max: 120) age: int) -> void {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 1);
+        const auto &param = func_node->parameters[0];
+
+        EXPECT_EQ(param.name, "age");
+        ASSERT_EQ(param.modifiers.size(), 1);
+
+        const auto &mod = param.modifiers[0];
+        EXPECT_EQ(mod.name, "clamp");
+        ASSERT_EQ(mod.arguments.size(), 2);
+
+        // Arg 0: min: 0
+        EXPECT_EQ(mod.arguments[0].first, "min");
+        auto min_val = dynamic_cast<NumberLiteral *>(mod.arguments[0].second.get());
+        ASSERT_NE(min_val, nullptr);
+        EXPECT_EQ(min_val->value, "0");
+
+        // Arg 1: max: 120
+        EXPECT_EQ(mod.arguments[1].first, "max");
+        auto max_val = dynamic_cast<NumberLiteral *>(mod.arguments[1].second.get());
+        ASSERT_NE(max_val, nullptr);
+        EXPECT_EQ(max_val->value, "120");
+    }
+
+    TEST_F(AstBaseTest, ValidatesStackedModifiersOnFunctionParameter) {
+        auto ast = parse_code("func process(@mut @log(level: \"debug\") @inject() data: string) -> void {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 1);
+        const auto &param = func_node->parameters[0];
+
+        EXPECT_EQ(param.name, "data");
+        ASSERT_EQ(param.modifiers.size(), 3);
+
+        // Mod 0: @mut
+        EXPECT_EQ(param.modifiers[0].name, "mut");
+        EXPECT_TRUE(param.modifiers[0].arguments.empty());
+
+        // Mod 1: @log(level: "debug")
+        EXPECT_EQ(param.modifiers[1].name, "log");
+        ASSERT_EQ(param.modifiers[1].arguments.size(), 1);
+        EXPECT_EQ(param.modifiers[1].arguments[0].first, "level");
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(param.modifiers[1].arguments[0].second.get())->value, "\"debug\"");
+
+        // Mod 2: @inject()
+        EXPECT_EQ(param.modifiers[2].name, "inject");
+        EXPECT_TRUE(param.modifiers[2].arguments.empty());
+    }
+
+    TEST_F(AstBaseTest, ValidatesModifierWithComplexArgumentsOnFunctionParameter) {
+        auto ast = parse_code(
+            "func route(@meta(headers: { auth: true }, tags: [\"api\", \"v1\"]) req: Request) -> void {}"
+        );
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 1);
+        const auto &param = func_node->parameters[0];
+        ASSERT_EQ(param.modifiers.size(), 1);
+
+        const auto &mod = param.modifiers[0];
+        EXPECT_EQ(mod.name, "meta");
+        ASSERT_EQ(mod.arguments.size(), 2);
+
+        // Arg 0: headers: { auth: true }
+        EXPECT_EQ(mod.arguments[0].first, "headers");
+        auto dict_val = dynamic_cast<DictLiteral *>(mod.arguments[0].second.get());
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 1);
+        EXPECT_EQ(dict_val->elements[0].key, "auth");
+        EXPECT_EQ(dynamic_cast<BooleanLiteral *>(dict_val->elements[0].value.get())->value, true);
+
+        // Arg 1: tags: ["api", "v1"]
+        EXPECT_EQ(mod.arguments[1].first, "tags");
+        auto tensor_val = dynamic_cast<TensorLiteral *>(mod.arguments[1].second.get());
+        ASSERT_NE(tensor_val, nullptr);
+        ASSERT_EQ(tensor_val->elements.size(), 2);
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(tensor_val->elements[0].get())->value, "\"api\"");
+        EXPECT_EQ(dynamic_cast<StringLiteral *>(tensor_val->elements[1].get())->value, "\"v1\"");
+    }
+
+    TEST_F(AstBaseTest, ValidatesFunctionLevelAndParameterLevelModifiersSeparately) {
+        // Ensures that the parser doesn't accidentally attach function modifiers to the first parameter
+        auto ast = parse_code(
+            "@export @api(route: \"/test\") "
+            "func execute(@mut state: int, @optional config: Dict) -> void {}"
+        );
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        // Check Function Modifiers
+        ASSERT_EQ(func_node->modifiers.size(), 2);
+        EXPECT_EQ(func_node->modifiers[0].name, "export");
+        EXPECT_EQ(func_node->modifiers[1].name, "api");
+
+        // Check Parameter Modifiers
+        ASSERT_EQ(func_node->parameters.size(), 2);
+
+        // Param 0: @mut state
+        EXPECT_EQ(func_node->parameters[0].name, "state");
+        ASSERT_EQ(func_node->parameters[0].modifiers.size(), 1);
+        EXPECT_EQ(func_node->parameters[0].modifiers[0].name, "mut");
+
+        // Param 1: @optional config
+        EXPECT_EQ(func_node->parameters[1].name, "config");
+        ASSERT_EQ(func_node->parameters[1].modifiers.size(), 1);
+        EXPECT_EQ(func_node->parameters[1].modifiers[0].name, "optional");
+    }
+
+    TEST_F(AstBaseTest, ValidatesModifierOnFunctionParameterWithDefaultValue) {
+        // Ensure modifiers don't break default parameter value parsing
+        auto ast = parse_code("func connect(@timeout(ms: 500) duration: int = 1000) -> void {}");
+
+        ASSERT_EQ(ast->function_definitions.size(), 1);
+        auto func_node = ast->function_definitions[0].get();
+
+        ASSERT_EQ(func_node->parameters.size(), 1);
+        const auto &param = func_node->parameters[0];
+
+        EXPECT_EQ(param.name, "duration");
+
+        // Verify Modifier
+        ASSERT_EQ(param.modifiers.size(), 1);
+        EXPECT_EQ(param.modifiers[0].name, "timeout");
+
+        // Verify Default Value
+        ASSERT_NE(param.default_value, nullptr);
+        auto default_val = dynamic_cast<NumberLiteral *>(param.default_value.get());
+        ASSERT_NE(default_val, nullptr);
+        EXPECT_EQ(default_val->value, "1000");
+    }
 }

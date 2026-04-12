@@ -8,7 +8,15 @@
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
-    enum class TargetNodeType { Assignment, Function, Struct, Enum };
+    enum class TargetNodeType {
+        Assignment,
+        Function,
+        Struct,
+        Enum,
+        DictKey,
+        EnumCase,
+        FunctionParameter
+    };
 
     class AstBaseTest : public testing::Test {
     protected:
@@ -121,13 +129,42 @@ namespace valuascript::compiler::test {
                     }
                     break;
                 case TargetNodeType::Function:
-                    if (!ast->function_definitions.empty()) return &ast->function_definitions[0]->modifiers;
+                    if (!ast->function_definitions.empty()) {
+                        return &ast->function_definitions[0]->modifiers;
+                    }
                     break;
                 case TargetNodeType::Struct:
-                    if (!ast->struct_definitions.empty()) return &ast->struct_definitions[0]->modifiers;
+                    if (!ast->struct_definitions.empty()) {
+                        return &ast->struct_definitions[0]->modifiers;
+                    }
                     break;
                 case TargetNodeType::Enum:
-                    if (!ast->enum_definitions.empty()) return &ast->enum_definitions[0]->modifiers;
+                    if (!ast->enum_definitions.empty()) {
+                        return &ast->enum_definitions[0]->modifiers;
+                    }
+                    break;
+                case TargetNodeType::DictKey:
+                    if (!ast->execution_steps.empty()) {
+                        if (const auto assign = dynamic_cast<Assignment *>(ast->execution_steps[0].get())) {
+                            if (const auto dict = dynamic_cast<DictLiteral *>(assign->value.get())) {
+                                if (!dict->elements.empty()) return &dict->elements[0].modifiers;
+                            }
+                        }
+                    }
+                    break;
+                case TargetNodeType::EnumCase:
+                    if (!ast->enum_definitions.empty()) {
+                        if (!ast->enum_definitions[0]->cases.empty()) {
+                            return &ast->enum_definitions[0]->cases[0].modifiers;
+                        }
+                    }
+                    break;
+                case TargetNodeType::FunctionParameter:
+                    if (!ast->function_definitions.empty()) {
+                        if (!ast->function_definitions[0]->parameters.empty()) {
+                            return &ast->function_definitions[0]->parameters[0].modifiers;
+                        }
+                    }
                     break;
             }
             return {};

@@ -53,6 +53,7 @@ namespace valuascript::compiler::test {
             Assignment, 1, "matrix", 1},
             ModifierHappyParam{"StackedMixedMods", "@export @bind(target: \"web\") let r = 0", TargetNodeType::
             Assignment, 2, "export", 0},
+            ModifierHappyParam{"ModWithEmptyParentheses", "@bind() let x = 1", TargetNodeType::Assignment, 1, "bind", 0},
             ModifierHappyParam{"FuncSingleMod", "@inline func fast() -> scalar { return 1 }", TargetNodeType::Function,
             1, "inline", 0},
             ModifierHappyParam{"FuncStackedWithArgs", "@export @test(name: \"math_check\") func verify() -> void { }",
@@ -65,7 +66,32 @@ namespace valuascript::compiler::test {
             "flags", 0},
             ModifierHappyParam{"EnumStacked", "@export @hidden enum State: int { A = 0 }", TargetNodeType::Enum, 2,
             "export", 0},
-            ModifierHappyParam{"ModWithEmptyParentheses", "@bind() let x = 1", TargetNodeType::Assignment, 1, "bind", 0}
+            ModifierHappyParam{"DictKeySingleMod", "let d = { @optional key: 1 }", TargetNodeType::DictKey, 1,
+            "optional", 0},
+            ModifierHappyParam{"DictKeyStackedMods", "let d = { @root @transient key: 1 }", TargetNodeType::DictKey, 2,
+            "root", 0},
+            ModifierHappyParam{"DictKeyModWithArgs", "let d = { @rename(to: \"id\") key: 1 }", TargetNodeType::DictKey,
+            1, "rename", 1},
+            ModifierHappyParam{"DictKeyModEmptyParens", "let d = { @ignore() key: 1 }", TargetNodeType::DictKey, 1,
+            "ignore", 0},
+            ModifierHappyParam{"EnumCaseSingleMod", "enum E: int { @deprecated A = 0 }", TargetNodeType::EnumCase, 1,
+            "deprecated", 0},
+            ModifierHappyParam{"EnumCaseStackedMods", "enum E: int { @hidden @internal A = 0 }", TargetNodeType::
+            EnumCase, 2, "hidden", 0},
+            ModifierHappyParam{"EnumCaseModWithArgs", "enum E: int { @alias(name: \"Old\") A = 0 }", TargetNodeType::
+            EnumCase, 1, "alias", 1},
+            ModifierHappyParam{"EnumCaseModEmptyParens", "enum E: int { @init() A = 0 }", TargetNodeType::EnumCase, 1,
+            "init", 0},
+            ModifierHappyParam{"FuncParamNoMods", "func foo(a: int) -> void {}", TargetNodeType::FunctionParameter, 0,
+            "", 0},
+            ModifierHappyParam{"FuncParamSingleMod", "func foo(@mut a: int) -> void {}", TargetNodeType::
+            FunctionParameter, 1, "mut", 0},
+            ModifierHappyParam{"FuncParamStackedMods", "func foo(@mut @ref a: int) -> void {}", TargetNodeType::
+            FunctionParameter, 2, "mut", 0},
+            ModifierHappyParam{"FuncParamModWithArgs", "func foo(@clamp(min: 0, max: 10) a: int) -> void {}",
+            TargetNodeType::FunctionParameter, 1, "clamp", 2},
+            ModifierHappyParam{"FuncParamModEmptyParens", "func foo(@inject() a: int) -> void {}", TargetNodeType::
+            FunctionParameter, 1, "inject", 0}
         ),
         [](const testing::TestParamInfo<ModifierHappyParam>& info) {
         return info.param.test_name;
