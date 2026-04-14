@@ -3,29 +3,26 @@
 #include "token/reserved_keyword_lookup.h"
 #include "stages/frontend/parser/ast.h"
 #include <algorithm>
-#include "stages/frontend/parser/shared_following_constructs.h"
+#include "stages/frontend/parser/language_constructs_provider.h"
 
 using namespace valuascript::shared;
 
 namespace valuascript::compiler::test {
     namespace {
-        auto all_following_constructs = get_all_top_level_following_constructs();
-
-        std::vector<ParserErrorsSynchronizationTestCase> GenerateExhaustiveRhsTests() {
+        std::vector<ParserErrorsSynchronizationTestCase> GenerateResilienceTests() {
             std::vector<ParserErrorsSynchronizationTestCase> test_cases;
-            auto all_keywords = get_all_reserved_keyword_strings();
+            auto keywords = get_all_reserved_keyword_strings();
+            auto followers = LanguageConstructsProvider::build_all_test_variants();
 
-            test_cases.reserve(all_keywords.size());
-            for (const auto &keyword: all_keywords) {
-                for (const auto &following_construct: all_following_constructs) {
-                    std::string test_name = "rhs_keyword_" + keyword + "_recovers_" + following_construct.name;
-                    std::string source_code = "typealias Broken = " + keyword + "\n" + following_construct.source;
+            for (const auto &kw: keywords) {
+                for (const auto &follow: followers) {
+                    std::string source = "typealias Broken = " + kw + "\n" + follow.source;
 
                     test_cases.push_back({
-                        test_name,
-                        source_code,
+                        "alias_resilience_" + kw + "_to_" + follow.name,
+                        source,
                         {{Err::ReservedKeywordAsIdentifier, 1, 20}},
-                        [verify_following_construct = following_construct.verify](const Program &program) {
+                        [verify_following_construct = follow.verify](const Program &program) {
                             auto it = std::find_if(program.type_aliases.begin(), program.type_aliases.end(),
                                                    [](const auto &type_alias) { return type_alias->name == "Broken"; });
 
@@ -43,19 +40,13 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class TypeAliasRhsResilienceTest : public ParserErrorsSynchronizationBase {
+    class TypeAliasResilienceTest : public ParserErrorsSynchronizationBase {
     };
 
-    TEST_P(TypeAliasRhsResilienceTest, RecoversAnyValidConstructAfterIllegalRhsKeyword) {
+    TEST_P(TypeAliasResilienceTest, VerifyRecovery) {
         run_parser_and_check_errors(GetParam());
     }
 
-    INSTANTIATE_TEST_SUITE_P(
-        TypeAliasExhaustiveResilience,
-        TypeAliasRhsResilienceTest,
-        ::testing::ValuesIn(GenerateExhaustiveRhsTests()),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
-        }
-    );
+    INSTANTIATE_TEST_SUITE_P(ParserResilience, TypeAliasResilienceTest, ::testing::ValuesIn(GenerateResilienceTests()),
+                             [](const auto& info) { return info.param.test_name; });
 }

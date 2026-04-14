@@ -1,19 +1,19 @@
 #include <gtest/gtest.h>
 #include "stages/frontend/parser/parser_errors_synchronization_base.h"
-#include "stages/frontend/parser/shared_following_constructs.h"
+#include "stages/frontend/parser/language_constructs_provider.h"
 
 using namespace valuascript::shared;
 
 namespace valuascript::compiler::test {
     namespace {
-        struct MissingConstruct {
+        struct MissingClosingScenario {
             std::string name;
             std::string source;
-            ValuascriptErrorCode expected_err;
+            Err expected_err;
             std::function<void(const Program &)> verify;
         };
 
-        std::vector<MissingConstruct> all_missing_constructs = {
+        std::vector<MissingClosingScenario> scenarios = {
             {
                 "grouping", "let a = (1 + 2\n", Err::ExpectedRightParenAfterExpression,
                 [](const Program &program) {
@@ -84,43 +84,31 @@ namespace valuascript::compiler::test {
             }
         };
 
-        std::vector<ParserErrorsSynchronizationTestCase> GenerateTestCases() {
+        std::vector<ParserErrorsSynchronizationTestCase> GenerateSyncTests() {
             std::vector<ParserErrorsSynchronizationTestCase> test_cases;
-            auto all_following_constructs = get_all_top_level_following_constructs();
+            auto followers = LanguageConstructsProvider::build_all_test_variants();
 
-            for (const auto &missing_construct: all_missing_constructs) {
-                for (const auto &following_construct: all_following_constructs) {
-                    std::string test_name = missing_construct.name + "_recovers_" + following_construct.name;
-                    std::string combined_source = missing_construct.source + following_construct.source;
+            for (const auto &scenario: scenarios) {
+                for (const auto &follow: followers) {
+                    std::string test_name = scenario.name + "_syncs_to_" + follow.name;
+                    std::string combined_source = scenario.source + follow.source;
 
-                    size_t expected_line = 1;
-                    size_t expected_column = missing_construct.source.length();
+                    size_t exp_line = 1;
+                    size_t exp_col = scenario.source.length();
 
-                    if (missing_construct.name == "func") {
-                        if (following_construct.name.find("func") != 0 && following_construct.name.find("struct") != 0
-                            &&
-                            following_construct.name.find("enum") != 0 && following_construct.name.find("typealias") !=
-                            0 &&
-                            following_construct.name.find("import") != 0 && following_construct.name.find("directive")
-                            != 0) {
-                            expected_line = 2;
-
-                            std::string stripped_following_source = following_construct.source;
-                            while (!stripped_following_source.empty() && stripped_following_source.back() == '\n') {
-                                stripped_following_source.pop_back();
-                            }
-                            expected_column = stripped_following_source.length() + 1;
-                        }
+                    if (scenario.name == "func" && !follow.is_top_level_only) {
+                        exp_line = 2;
+                        std::string stripped = follow.source;
+                        while (!stripped.empty() && stripped.back() == '\n') stripped.pop_back();
+                        exp_col = stripped.length() + 1;
                     }
 
-                    test_cases.push_back(ParserErrorsSynchronizationTestCase{
-                        test_name,
-                        combined_source,
-                        {{missing_construct.expected_err, expected_line, expected_column}},
-                        [verify_missing_construct = missing_construct.verify,
-                            verify_following_construct = following_construct.verify](const Program &program) {
-                            verify_missing_construct(program);
-                            verify_following_construct(program);
+                    test_cases.push_back({
+                        test_name, combined_source,
+                        {{scenario.expected_err, exp_line, exp_col}},
+                        [v_scene = scenario.verify, v_follow = follow.verify](const Program &p) {
+                            v_scene(p);
+                            v_follow(p);
                         }
                     });
                 }
@@ -129,18 +117,18 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class MissingClosingTokenRecoveryTest : public ParserErrorsSynchronizationBase {
+    class MissingClosingTokenSyncTest : public ParserErrorsSynchronizationBase {
     };
 
-    TEST_P(MissingClosingTokenRecoveryTest, RecoversSubsequentTopLevelDeclarations) {
+    TEST_P(MissingClosingTokenSyncTest, VerifyRecovery) {
         run_parser_and_check_errors(GetParam());
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserMissingClosingTests,
-        MissingClosingTokenRecoveryTest,
-        ::testing::ValuesIn(GenerateTestCases()),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
+        ParserSync,
+        MissingClosingTokenSyncTest,
+        ::testing::ValuesIn(GenerateSyncTests()),
+        [](const auto& info) {
         return info.param.test_name;
         }
     );

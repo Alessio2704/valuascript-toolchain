@@ -14,16 +14,21 @@ namespace valuascript::compiler {
         if (type == TokenType::EndOfFile) {
             if (!modifiers.empty()) {
                 SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                cursor_.report_error_no_panic(span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
+                cursor_.report_error_no_panic(
+                    span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
             }
             return;
         }
 
         bool is_invalid_top_level = false;
+
+        bool prev_suppress = cursor_.get_suppress_errors();
+
         if (ctx == ParseContext::FunctionBody && TokenTraits::is_top_level_only_declaration(type)) {
             is_invalid_top_level = true;
             ctx = ParseContext::TopLevel;
             program = &dummy_program;
+            cursor_.set_suppress_errors(true);
         }
 
         try {
@@ -110,6 +115,7 @@ namespace valuascript::compiler {
             }
         } catch (const ParseSyncException &) {
             if (is_invalid_top_level) {
+                cursor_.set_suppress_errors(prev_suppress);
                 SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
                 cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
             }
@@ -117,6 +123,7 @@ namespace valuascript::compiler {
         }
 
         if (is_invalid_top_level) {
+            cursor_.set_suppress_errors(prev_suppress);
             SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
             cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
         }

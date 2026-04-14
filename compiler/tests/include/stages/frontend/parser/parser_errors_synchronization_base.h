@@ -19,6 +19,8 @@ namespace valuascript::compiler::test {
         Err code;
         size_t line;
         size_t column;
+        size_t line_end = 0;
+        size_t column_end = 0;
     };
 
     struct ParserErrorsSynchronizationTestCase {
@@ -57,8 +59,8 @@ namespace valuascript::compiler::test {
             const auto &actual_errors = context->diagnostics.get_errors();
 
             EXPECT_EQ(actual_errors.size(), param.expected_errors.size())
-            << "Mismatch in the number of collected errors.\n"
-            << "Expected " << param.expected_errors.size() << ", but got " << actual_errors.size();
+                << "Mismatch in the number of collected errors.\n"
+                << "Expected " << param.expected_errors.size() << ", but got " << actual_errors.size();
 
             size_t errors_to_check = std::min(actual_errors.size(), param.expected_errors.size());
             for (size_t i = 0; i < errors_to_check; ++i) {
@@ -66,20 +68,30 @@ namespace valuascript::compiler::test {
                 const auto &expected = param.expected_errors[i];
 
                 EXPECT_EQ(actual.get_code(), expected.code)
-                << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
-                << "\nActual Code: " << static_cast<int>(actual.get_code())
-                << "\nActual Message: " << actual.what();
+                    << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
+                    << "\nActual Code: " << static_cast<int>(actual.get_code())
+                    << "\nActual Message: " << actual.what();
 
                 EXPECT_EQ(actual.get_span().line_start, expected.line)
-                << "Error [" << i << "] Line mismatch for error: " << actual.what();
+                    << "Error [" << i << "] Line mismatch for error: " << actual.what();
 
                 EXPECT_EQ(actual.get_span().column_start, expected.column)
-                << "Error [" << i << "] Column mismatch for error: " << actual.what();
+                    << "Error [" << i << "] Column mismatch for error: " << actual.what();
+
+                if (expected.line_end != 0) {
+                    EXPECT_EQ(actual.get_span().line_end, expected.line_end)
+                        << "Error [" << i << "] End line mismatch for error: " << actual.what();
+                }
+
+                if (expected.column_end != 0) {
+                    EXPECT_EQ(actual.get_span().column_end, expected.column_end)
+                        << "Error[" << i << "] End column mismatch for error: " << actual.what();
+                }
             }
 
             if (param.verify_ast) {
                 ASSERT_EQ(ast_artifact.code, CompilerStageArtifactCode::Ast)
-                << "Parser did not return an AST artifact.";
+                    << "Parser did not return an AST artifact.";
 
                 auto ast = std::any_cast<std::shared_ptr<Program> >(ast_artifact.data);
                 ASSERT_NE(ast, nullptr) << "Parsed AST is null.";
