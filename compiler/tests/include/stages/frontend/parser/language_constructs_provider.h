@@ -76,6 +76,16 @@ namespace valuascript::compiler::test {
 
     class LanguageConstructsProvider {
     public:
+        static std::vector<std::string> get_mod_samples() {
+            static const std::vector<std::string> mod_samples{
+                "@simple ",
+                "@param(id: 100) ",
+                "@complex(a: 1, b: \"str\", c: [1, 2]) "
+            };
+
+            return mod_samples;
+        };
+
         static std::vector<LanguageConstructDefinition> get_raw_definitions() {
             return {
                 {
@@ -118,9 +128,18 @@ namespace valuascript::compiler::test {
                     "import", "import \"lib\"\n", false, true,
                     [](const Program &p, int) { EXPECT_FALSE(p.import_statements.empty()); }
                 },
-                {"directive_no_value", "#dir\n", false, true, [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }},
-                {"directive_value_equals", "#dir = directive_value\n", false, true, [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }},
-                {"directive_value_no_equals", "#dir directive_value\n", false, true, [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }},
+                {
+                    "directive_no_value", "#dir\n", false, true,
+                    [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }
+                },
+                {
+                    "directive_value_equals", "#dir = directive_value\n", false, true,
+                    [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }
+                },
+                {
+                    "directive_value_no_equals", "#dir directive_value\n", false, true,
+                    [](const Program &p, int) { EXPECT_FALSE(p.directives.empty()); }
+                },
                 {
                     "func_multi", "func rec_func_multi() -> void {\n    let x = 1\n}\n", true, true,
                     [](const Program &p, int m) {
@@ -193,15 +212,53 @@ namespace valuascript::compiler::test {
             };
         }
 
+        static std::vector<LanguageConstructDefinition> get_raw_broken_definitions() {
+            auto no_op = [](const Program &, int) {
+            };
+            return {
+                {"func_broken", "func b() -> void {\n    let a = *\n}\n", true, true, no_op},
+                {"struct_broken", "struct A {\n    a\n}\n", true, true, no_op},
+                {"enum_broken", "enum A {\n    *,\n    B\n}\n", true, true, no_op},
+                {"typealias_broken", "typealias A = *\n", true, true, no_op},
+                {"import_broken", "import *\n", false, true, no_op},
+                {"directive_broken_no_name", "#*\n", false, true, no_op},
+                {"directive_broken_value", "#dir = *\n", false, true, no_op}
+            };
+        }
+
         static std::vector<TestConstruct> build_all_test_variants() {
             std::vector<TestConstruct> variants;
-            std::vector<std::string> mod_samples = {
-                "@simple ",
-                "@param(id: 100) ",
-                "@complex(a: 1, b: \"str\", c: [1, 2]) "
-            };
+            std::vector<std::string> mod_samples = get_mod_samples();
 
             for (const auto &core: get_raw_definitions()) {
+                variants.push_back({
+                    core.name + "_mod0", core.source, core.is_top_level_only,
+                    [=](const Program &p) { core.verify(p, 0); }
+                });
+
+                if (core.supports_modifiers) {
+                    variants.push_back({
+                        core.name + "_mod1", mod_samples[0] + core.source, core.is_top_level_only,
+                        [=](const Program &p) { core.verify(p, 1); }
+                    });
+                    variants.push_back({
+                        core.name + "_mod2", mod_samples[0] + mod_samples[1] + core.source, core.is_top_level_only,
+                        [=](const Program &p) { core.verify(p, 2); }
+                    });
+                    variants.push_back({
+                        core.name + "_mod3", mod_samples[0] + mod_samples[1] + mod_samples[2] + core.source,
+                        core.is_top_level_only, [=](const Program &p) { core.verify(p, 3); }
+                    });
+                }
+            }
+            return variants;
+        }
+
+        static std::vector<TestConstruct> build_all_broken_test_variants() {
+            std::vector<TestConstruct> variants;
+            std::vector<std::string> mod_samples = get_mod_samples();
+
+            for (const auto &core: get_raw_broken_definitions()) {
                 variants.push_back({
                     core.name + "_mod0", core.source, core.is_top_level_only,
                     [=](const Program &p) { core.verify(p, 0); }

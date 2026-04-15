@@ -190,7 +190,8 @@ namespace valuascript::compiler {
                     const Token &tok = cursor_.peek();
                     TokenType next = cursor_.peek(1).type;
 
-                    if (TokenTraits::is_statement_start(tok, next) && !is_element_start()) {
+                    if ((TokenTraits::is_statement_start(tok, next) ||
+                         TokenTraits::is_top_level_only_declaration(tok.type)) && !is_element_start()) {
                         if (tok.line > cursor_.previous().line) {
                             break;
                         } else {

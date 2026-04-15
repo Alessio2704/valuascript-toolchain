@@ -259,7 +259,7 @@ namespace valuascript::compiler {
 
                     const Token &start_tok = cursor_.peek();
 
-                    if (tok.type == TokenType::At) {
+                    if (tok.type == TokenType::At && !is_at_any_declaration()) {
                         parse_modifiers();
                         SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
                         cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);

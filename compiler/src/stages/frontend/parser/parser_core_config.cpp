@@ -31,7 +31,8 @@ namespace valuascript::compiler {
     }
 
     bool TokenTraits::is_statement_start(const Token &token, TokenType lookahead_type) {
-        return is_top_level_token(token.type) && !acts_like_identifier(token, lookahead_type);
+        if (acts_like_identifier(token, lookahead_type)) return false;
+        return is_top_level_token(token.type);
     }
 
     bool TokenTraits::is_expression_statement_start(const Token &token, TokenType lookahead_type) {
@@ -47,7 +48,6 @@ namespace valuascript::compiler {
     bool TokenTraits::is_newline_statement_boundary(const Token &prev, const Token &current, TokenType next) {
         if (current.line <= prev.line) return false;
 
-        if (is_top_level_only_declaration(current.type)) return true;
         if (is_statement_start(current, next)) return true;
 
         if (is_expression_statement_start(current, next)) {

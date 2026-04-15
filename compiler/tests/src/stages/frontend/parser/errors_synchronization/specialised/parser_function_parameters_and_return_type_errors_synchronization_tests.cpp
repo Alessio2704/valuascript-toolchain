@@ -107,7 +107,7 @@ namespace valuascript::compiler::test {
             ExpectNoFunctions()
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_arrow_func_empty_ast",
+            "missing_arrow_func",
             "func test(a: int) { return 1 }\n"
             "let a = 1\n",
             {{Err::MissingArrowInFunction, 1, 19}},
@@ -121,7 +121,7 @@ namespace valuascript::compiler::test {
             ExpectNoFunctions()
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_right_brace_func_empty_ast",
+            "missing_right_brace_func",
             "func test(a: int) -> int  { return 1 \n",
             {{Err::ExpectedRightBraceAfterFunctionBody, 1, 37}},
             [](const Program& ast) {
@@ -137,6 +137,7 @@ namespace valuascript::compiler::test {
             {{Err::ExpectedRightBraceAfterFunctionBody, 2, 10}},
             [](const Program& ast) {
             EXPECT_EQ(ast.function_definitions.size(), 1);
+            EXPECT_EQ(ast.function_definitions[0]->body.size(), 2);
             EXPECT_EQ(ast.execution_steps.size(), 0);
             },
             },
