@@ -23,11 +23,17 @@ namespace valuascript::compiler::test {
         };
 
         void ExpectEnumCases(const EnumDefinition *enum_def,
-                             const std::string &expected_type,
+                             const std::optional<std::string> &expected_type,
                              const std::vector<ExpectedEnumCase> &expected_cases) {
             ASSERT_NE(enum_def, nullptr) << "Enum definition was null!";
-            ASSERT_NE(enum_def->underlying_type, nullptr) << "Type annotation missing!";
-            EXPECT_EQ(enum_def->underlying_type->name, expected_type) << "Underlying type mismatch!";
+
+            if (expected_type.has_value()) {
+                ASSERT_NE(enum_def->underlying_type, nullptr) << "Type annotation missing!";
+                EXPECT_EQ(enum_def->underlying_type->name, expected_type.value()) << "Underlying type mismatch!";
+            } else {
+                ASSERT_EQ(enum_def->underlying_type, nullptr) << "Type annotation is not missing!";
+            }
+
             ASSERT_EQ(enum_def->cases.size(), expected_cases.size()) << "Recovered case count mismatch!";
 
             for (size_t i = 0; i < expected_cases.size(); ++i) {
@@ -50,7 +56,7 @@ namespace valuascript::compiler::test {
             }
         }
 
-        auto ExpectEnum(std::string name, std::string type, std::vector<ExpectedEnumCase> cases = {}) {
+        auto ExpectEnum(std::string name, std::optional<std::string> type, std::vector<ExpectedEnumCase> cases = {}) {
             return [name = std::move(name), type = std::move(type), cases = std::move(cases)](const Program &ast) {
                 auto e = ExpectRecoveredEnum(ast, name);
                 ExpectEnumCases(e, type, cases);
@@ -77,11 +83,11 @@ namespace valuascript::compiler::test {
         EnumParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_name_enum_empty_ast",
+            "no_name_enum",
             "enum : int { A }\n"
             "let a = 1\n",
             { {Err::ExpectedEnumName, 1, 6} },
-            ExpectNoEnums()
+            ExpectEnum("<error>", "int", {"A"})
             },
             ParserErrorsSynchronizationTestCase{
             "name_reserved_keyword_full_ast",
@@ -102,7 +108,7 @@ namespace valuascript::compiler::test {
             "enum Test : { A }\n"
             "let a = 1\n",
             { {Err::MissingTypeAnnotation, 1, 13} },
-            ExpectNoEnums()
+            ExpectEnum("Test", std::nullopt, {"A"})
             },
             ParserErrorsSynchronizationTestCase{
             "wrong_generic_type_enum_ast_1",
@@ -175,21 +181,21 @@ namespace valuascript::compiler::test {
             "enum Test : int { Red, +-*/, Blue }\n"
             "let a = 1\n",
             { {Err::ExpectedEnumCaseName, 1, 24} },
-            ExpectEnum("Test", "int", {"Red", "Blue"})
+            ExpectEnum("Test", "int", {"Red","<error>", "Blue"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_case_name_recovers_valid_cases",
             "enum Test : int { Red, , Blue }\n"
             "let a = 1\n",
             { {Err::ExpectedEnumCaseName, 1, 24} },
-            ExpectEnum("Test", "int", {"Red", "Blue"})
+            ExpectEnum("Test", "int", {"Red", "<error>", "Blue"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_value_assignment_discards_case_and_recovers",
             "enum Test : int { Red =, Blue }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 24} },
-            ExpectEnum("Test", "int", {"Blue"})
+            ExpectEnum("Test", "int", {"Red", "Blue"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_value_assignment_discards_case_and_recovers_multiple",
@@ -200,14 +206,14 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 1, 32},
             {Err::InvalidExpression, 1, 64},
             },
-            ExpectEnum("Test", "int", {"Green", "Yellow", "Black"})
+            ExpectEnum("Test", "int", {"Red", "Blue", "Green", "Yellow", "Black", "White"})
             },
             ParserErrorsSynchronizationTestCase{
             "garbage_expression_after_assign_discards_case_and_recovers",
             "enum Test : int { A = *10, B = 2 }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 23} },
-            ExpectEnum("Test", "int", {{"B", "2"}})
+            ExpectEnum("Test", "int", {"A", {"B", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_comma_after_valid_assignment_recovers_both_cases",
@@ -221,7 +227,7 @@ namespace valuascript::compiler::test {
             "enum Test : int { A = 1, B = }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 30} },
-            ExpectEnum("Test", "int", {{"A", "1"}})
+            ExpectEnum("Test", "int", {{"A", "1"}, "B"})
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_with_inner_error_discards_case",
@@ -265,21 +271,21 @@ namespace valuascript::compiler::test {
             "enum Test : int { A = 1, B = +-*/, C = 3 }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 32} },
-            ExpectEnum("Test", "int", { {"A", "1"}, {"C", "3"} })
+            ExpectEnum("Test", "int", { {"A", "1"}, "B", {"C", "3"} })
             },
             ParserErrorsSynchronizationTestCase{
             "missing_expression_discards_case_and_saves_valid_ones",
             "enum Test : int { A = 1, B = , C = 3 }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 30} },
-            ExpectEnum("Test", "int", { {"A", "1"}, {"C", "3"} })
+            ExpectEnum("Test", "int", { {"A", "1"}, "B", {"C", "3"} })
             },
             ParserErrorsSynchronizationTestCase{
             "missing_expression_at_end_discards_last_case_only",
             "enum Test : int { A = 1, B = }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 30} },
-            ExpectEnum("Test", "int", { {"A", "1"} })
+            ExpectEnum("Test", "int", { {"A", "1"}, "B" })
             },
             ParserErrorsSynchronizationTestCase{
             "missing_expression_and_brace",
@@ -289,7 +295,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 1, 28},
             {Err::ExpectedRightBraceAfterEnumBody, 1, 29}
             },
-            ExpectEnum("Test", "int", {{"A", "1"}})
+            ExpectEnum("Test", "int", {{"A", "1"}, "B"})
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_1",
@@ -339,7 +345,16 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingOperator, 1, 25},
             },
-            ExpectEnum("Test", "int", {{"B", "2"}})
+            [](const Program& ast) {
+            auto& enum_def = ast.enum_definitions[0];
+            ASSERT_EQ(enum_def->cases.size(), 2);
+            auto val_1 = dynamic_cast<IdentifierAccess*>(enum_def->cases[0].value.get());
+            ASSERT_NE(val_1, nullptr);
+            ASSERT_EQ(val_1->name, "a");
+            auto val_2 = dynamic_cast<NumberLiteral*>(enum_def->cases[1].value.get());
+            ASSERT_NE(val_2, nullptr);
+            ASSERT_EQ(val_2->value, "2");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_1",
@@ -387,7 +402,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 1, 35},
             {Err::ReservedKeywordAsIdentifier, 1, 37},
             },
-            ExpectEnum("Test", "int", {{"let", "1"}, {"if", "3"}})
+            ExpectEnum("Test", "int", {{"let", "1"}, "true", {"if", "3"}})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_char_1",
@@ -411,7 +426,8 @@ namespace valuascript::compiler::test {
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.enum_definitions.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 0);
+            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
+            EXPECT_EQ(ast.enum_definitions[0]->cases[0].name, "<error>");
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
             }

@@ -44,7 +44,7 @@ namespace valuascript::compiler {
 
         bool match(std::initializer_list<TokenType> types);
 
-        const Token &consume(TokenType type, ValuascriptErrorCode code);
+        const Token &consume(TokenType type, ValuascriptErrorCode code, bool use_exact_token_range = false);
 
         [[nodiscard]] SourceSpan make_span(const Token &start_token, const Token &end_token) const;
 

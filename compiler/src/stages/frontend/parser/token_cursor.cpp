@@ -1,5 +1,6 @@
 #include "stages/frontend/parser/token_cursor.h"
 #include "stages/frontend/parser/parser.h"
+#include "stages/frontend/parser/token_traits.h"
 #include "errors/error_formatter.h"
 #include <algorithm>
 
@@ -42,9 +43,11 @@ namespace valuascript::compiler {
         return false;
     }
 
-    const Token &TokenCursor::consume(const TokenType type, const ValuascriptErrorCode code) {
+    const Token &TokenCursor::consume(const TokenType type,
+                                      const ValuascriptErrorCode code,
+                                      bool use_exact_token_range) {
         if (check(type)) return advance();
-        report_error(peek(), code);
+        report_error(peek(), code, use_exact_token_range);
     }
 
     SourceSpan TokenCursor::make_span(const Token &start_token, const Token &end_token) const {
@@ -92,7 +95,23 @@ namespace valuascript::compiler {
 
         if (!use_exact_token_range && current_ > 0) {
             const Token &prev = tokens_[current_ - 1];
-            if (token.line > prev.line || token.type == TokenType::EndOfFile) {
+
+            bool should_shift = token.type == TokenType::EndOfFile;
+
+            if (!should_shift && token.line > prev.line) {
+                if (TokenTraits::is_newline_statement_boundary(prev, token, peek(1).type)) {
+                    should_shift = true;
+                } else if (TokenTraits::is_dangling_operator(prev.type) && prev.type != TokenType::Comma) {
+                    should_shift = true;
+                } else if (prev.type == TokenType::At || prev.type == TokenType::Hash) {
+                    should_shift = true;
+                } else if (code == ValuascriptErrorCode::MissingOperator ||
+                           code == ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions) {
+                    should_shift = true;
+                }
+            }
+
+            if (should_shift) {
                 err_line = prev.line;
                 err_column_start = prev.column + prev.lexeme.size();
                 err_column_end = err_column_start + 1;

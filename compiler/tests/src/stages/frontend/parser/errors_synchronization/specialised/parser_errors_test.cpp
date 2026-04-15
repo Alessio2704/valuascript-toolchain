@@ -61,6 +61,7 @@ namespace valuascript::compiler::test {
             {ValuascriptErrorCode::MissingThenToken, 1, 19},
             {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 17},
             {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 29},
+            {ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 34},
             {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 37}
             }
             },

@@ -46,7 +46,6 @@ namespace valuascript::compiler {
 
     bool TokenTraits::is_newline_statement_boundary(const Token &prev, const Token &current, TokenType next) {
         if (current.line <= prev.line) return false;
-        if (prev.type == TokenType::Comma) return false;
 
         if (is_top_level_only_declaration(current.type)) return true;
         if (is_statement_start(current, next)) return true;

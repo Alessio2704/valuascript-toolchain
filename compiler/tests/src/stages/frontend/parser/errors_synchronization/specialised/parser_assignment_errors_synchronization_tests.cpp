@@ -197,8 +197,11 @@ namespace valuascript::compiler::test {
             {Err::InvalidIdentifier, 1, 5}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_1, nullptr);
+            EXPECT_EQ(assign_1->targets[0].first, "<error>");
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_c, nullptr);
             EXPECT_EQ(assign_c->targets[0].first, "c");
             }
@@ -359,8 +362,9 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->modifiers.size(), 1);
+            EXPECT_EQ(assign->modifiers.size(), 2);
             EXPECT_EQ(assign->modifiers[0].name, "mod1");
+            EXPECT_EQ(assign->modifiers[1].name, "<error>");
             auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_2, nullptr);
             EXPECT_EQ(assign_2->targets[0].first, "c");
@@ -408,15 +412,20 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "assignment_missing_type_annotation_after_colon",
             "let a: = 1\n"
-            "let b = 2\n",
+            "let b: int = 2\n",
             {
             {Err::MissingTypeAnnotation, 1, 8}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_1, nullptr);
+            EXPECT_EQ(assign_1->targets[0].first, "a");
+            EXPECT_EQ(assign_1->targets[0].second.get(), nullptr);
+            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_2, nullptr);
+            EXPECT_EQ(assign_2->targets[0].first, "b");
+            EXPECT_NE(assign_2->targets[0].second.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -427,10 +436,16 @@ namespace valuascript::compiler::test {
             {Err::InvalidIdentifier, 1, 7}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "c");
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_1, nullptr);
+            EXPECT_EQ(assign_1->targets.size(), 3);
+            EXPECT_EQ(assign_1->targets[0].first, "a");
+            EXPECT_EQ(assign_1->targets[1].first, "<error>");
+            EXPECT_EQ(assign_1->targets[2].first, "b");
+            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_2, nullptr);
+            EXPECT_EQ(assign_2->targets[0].first, "c");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -670,7 +685,13 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->body.size(), 0);
+            ASSERT_EQ(func->body.size(), 1);
+            auto assign_1 = dynamic_cast<Assignment*>(func->body[0].get());
+            ASSERT_NE(assign_1, nullptr);
+            EXPECT_EQ(assign_1->targets[0].first, "<error>");
+            EXPECT_EQ(assign_1->targets[0].second.get(), nullptr);
+            auto assign_1_value = dynamic_cast<NumberLiteral*>(assign_1->value.get());
+            EXPECT_EQ(assign_1_value->value, "5");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -731,7 +752,13 @@ namespace valuascript::compiler::test {
             {Err::InvalidIdentifier, 1, 5}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign_1, nullptr);
+            EXPECT_EQ(assign_1->targets[0].first, "<error>");
+            EXPECT_EQ(assign_1->targets[0].second.get(), nullptr);
+            auto assign_1_value = dynamic_cast<NumberLiteral*>(assign_1->value.get());
+            EXPECT_EQ(assign_1_value->value, "5");
             }
             },
             ParserErrorsSynchronizationTestCase{

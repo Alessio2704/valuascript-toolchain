@@ -175,9 +175,10 @@ namespace valuascript::compiler::test {
                 auto call = dynamic_cast<const FunctionCall*>(expr);
                 ASSERT_NE(call, nullptr);
                 ExpectIdentifier(call->target.get(), "test");
-                ASSERT_EQ(call->arguments.size(), 1);
-                EXPECT_EQ(call->arguments[0].first, "arg2");
-                ExpectNumber(call->arguments[0].second.get(), "2");
+                ASSERT_EQ(call->arguments.size(), 2);
+                EXPECT_EQ(call->arguments[0].first, "arg1");
+                EXPECT_EQ(call->arguments[1].first, "arg2");
+                ExpectNumber(call->arguments[1].second.get(), "2");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -359,9 +360,11 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto dict = dynamic_cast<const DictLiteral*>(expr);
                 ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->elements.size(), 1);
-                EXPECT_EQ(dict->elements[0].key, "key2");
-                ExpectNumber(dict->elements[0].value.get(), "2");
+                ASSERT_EQ(dict->elements.size(), 2);
+                EXPECT_EQ(dict->elements[0].key, "key1");
+                EXPECT_EQ(dict->elements[0].value.get(), nullptr);
+                EXPECT_EQ(dict->elements[1].key, "key2");
+                ExpectNumber(dict->elements[1].value.get(), "2");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -371,9 +374,10 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto call = dynamic_cast<const FunctionCall*>(expr);
                 ASSERT_NE(call, nullptr);
-                ASSERT_EQ(call->arguments.size(), 1);
-                EXPECT_EQ(call->arguments[0].first, "arg2");
-                ExpectNumber(call->arguments[0].second.get(), "42");
+                ASSERT_EQ(call->arguments.size(), 2);
+                EXPECT_EQ(call->arguments[0].first, "arg1");
+                EXPECT_EQ(call->arguments[1].first, "arg2");
+                ExpectNumber(call->arguments[1].second.get(), "42");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -497,12 +501,23 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "multiline_binary_rejected_inside_dictionary_literal",
             "let a = {key: 1\n"
-            "- 2}\n",
+            "-2}\n",
             { {Err::MissingOperator, 1, 16} },
             VerifyAssignmentValue([](auto expr) {
                 auto dict = dynamic_cast<const DictLiteral*>(expr);
                 ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->elements.size(), 0);
+                ASSERT_EQ(dict->elements.size(), 1);
+                })
+            },
+            ParserErrorsSynchronizationTestCase{
+            "multiline_binary_not_unary_rejected_inside_dictionary_literal",
+            "let a = {key: 1\n"
+            "*2}\n",
+            { {Err::MissingOperator, 1, 16} },
+            VerifyAssignmentValue([](auto expr) {
+                auto dict = dynamic_cast<const DictLiteral*>(expr);
+                ASSERT_NE(dict, nullptr);
+                ASSERT_EQ(dict->elements.size(), 1);
                 })
             },
             ParserErrorsSynchronizationTestCase{

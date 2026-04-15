@@ -37,7 +37,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        SwitchStressTest,
         SwitchParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{

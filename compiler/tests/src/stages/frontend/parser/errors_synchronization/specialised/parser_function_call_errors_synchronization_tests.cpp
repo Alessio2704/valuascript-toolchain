@@ -35,6 +35,9 @@ namespace valuascript::compiler::test {
             ExpectedArgument(const char *n, const char *v) : name(n), expected_number_value(std::string(v)) {
             }
 
+            ExpectedArgument(const char *n, const std::optional<std::string> &v) : name(n), expected_number_value(v) {
+            }
+
             ExpectedArgument(const char *n,
                              std::function<void(const Expression *)> v) : name(n), verifier(std::move(v)) {
             }
@@ -83,7 +86,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        FunctionCallStressTests,
         FunctionCallParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
@@ -123,7 +126,7 @@ namespace valuascript::compiler::test {
             "f(: 1, b: 2)\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInFunctionCall, 1, 3} },
-            ExpectFunctionCall("f", {{"b", "2"}})
+            ExpectFunctionCall("f", {{"<error>", "1"}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_colon_1",
@@ -141,7 +144,7 @@ namespace valuascript::compiler::test {
             {Err::MissingColonAfterArgument, 1, 7},
             {Err::MissingColonAfterArgument, 1, 10}
             },
-            ExpectFunctionCall("f", {})
+            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_colon_3",
@@ -151,7 +154,7 @@ namespace valuascript::compiler::test {
             {Err::MissingColonAfterArgument, 1, 10},
             {Err::MissingColonAfterArgument, 1, 13}
             },
-            ExpectFunctionCall("f", {{"a", "1"}})
+            ExpectFunctionCall("f", {{"a", "1"}, {"b", std::nullopt}, {"c", std::nullopt}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_arg_value",
@@ -193,21 +196,21 @@ namespace valuascript::compiler::test {
             "f(a: 1, +-*/, b: 2)\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInFunctionCall, 1, 9} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", "2"}})
+            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "complex_expression_with_error",
             "f(a: 1 + *, b: 2)\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 10} },
-            ExpectFunctionCall("f", {{"b", "2"}})
+            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "garbage_arg_discards_and_parses_complex_valid_arg",
             "f(a: ***, b: c + d())\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 6} },
-            ExpectFunctionCall("f", {{"b", [](const Expression * e) {
+            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", [](const Expression * e) {
                 auto const binary_exp = dynamic_cast<const BinaryExpression*>(e);
                 ASSERT_EQ(binary_exp->op, TokenType::Plus);
                 auto const left = dynamic_cast<const IdentifierAccess*>(binary_exp->left.get());
@@ -224,7 +227,10 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingOperator, 1, 8}
             },
-            ExpectFunctionCall("f", {})
+            ExpectFunctionCall("f", {{"a", [](const Expression * e) {
+                auto const id_access = dynamic_cast<const NumberLiteral*>(e);
+                ASSERT_EQ(id_access->value, "1");
+                }}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_value_at_end",
@@ -247,14 +253,14 @@ namespace valuascript::compiler::test {
             "f(a: 1,, b: 2)\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInFunctionCall, 1, 8} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", "2"}})
+            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "invalid_token_as_arg_name",
             "f(a: 1, *: 2, b: 3)\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInFunctionCall, 1, 9} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", "3"}})
+            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", "2"}, {"b", "3"}})
             },
             ParserErrorsSynchronizationTestCase{
             "invalid_character_as_arg_name",
@@ -264,7 +270,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidCharacter, 1, 9},
             {Err::MissingArgumentNameInFunctionCall, 1, 10},
             },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", "3"}})
+            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", "2"}, {"b", "3"}})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_as_value",
@@ -281,11 +287,14 @@ namespace valuascript::compiler::test {
             "nested_invalid_expression",
             "f(a: { 1: }, b: 2)\n"
             "let recovery = 1\n",
-            { {Err::ExpectedDictionaryKey, 1, 8} },
+            {
+            {Err::ExpectedDictionaryKey, 1, 8},
+            {Err::InvalidExpression, 1, 11},
+            },
             ExpectFunctionCall("f", {{"a", [](const Expression* e) {
                 auto const dict = dynamic_cast<const DictLiteral*>(e);
                 ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->elements.size(), 0);
+                ASSERT_EQ(dict->elements.size(), 1);
                 }}, {"b", "2"}})
             }
         ),

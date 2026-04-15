@@ -13,7 +13,8 @@ namespace valuascript::compiler::test {
         }
 
         void ExpectStructFields(const StructDefinition *struct_def,
-                                const std::vector<std::pair<std::string, std::string> > &expected_fields) {
+                                const std::vector<std::pair<std::string, std::optional<std::string> > > &
+                                expected_fields) {
             ASSERT_NE(struct_def, nullptr) << "Struct definition was null!";
             ASSERT_EQ(struct_def->fields.size(), expected_fields.size()) << "Recovered field count mismatch!";
 
@@ -21,11 +22,16 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(struct_def->fields[i].name, expected_fields[i].first)
                      << "Field name mismatch at index " << i;
 
-                ASSERT_NE(struct_def->fields[i].type, nullptr)
-                     << "Type annotation missing at index " << i;
+                if (expected_fields[i].second.has_value()) {
+                    ASSERT_NE(struct_def->fields[i].type, nullptr)
+                        << "Type annotation missing at index " << i;
 
-                EXPECT_EQ(struct_def->fields[i].type->name, expected_fields[i].second)
-                     << "Type name mismatch at index " << i;
+                    EXPECT_EQ(struct_def->fields[i].type->name, expected_fields[i].second)
+                         << "Type name mismatch at index " << i;
+                } else {
+                    ASSERT_EQ(struct_def->fields[i].type, nullptr)
+                        << "Type annotation not missing at index " << i;
+                }
             }
         }
 
@@ -36,7 +42,8 @@ namespace valuascript::compiler::test {
             };
         }
 
-        auto ExpectStruct(std::string name, std::vector<std::pair<std::string, std::string> > fields = {}) {
+        auto ExpectStruct(std::string name,
+                          std::vector<std::pair<std::string, std::optional<std::string> > > fields = {}) {
             return [name = std::move(name), fields = std::move(fields)](const Program &ast) {
                 auto s = ExpectRecoveredStruct(ast, name);
                 ExpectStructFields(s, fields);
@@ -52,15 +59,15 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        StructStressTest,
         StructParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_name_struct_empty_ast",
+            "no_name_struct",
             "struct { id: int }\n"
             "let a = 1\n",
             { {Err::ExpectedStructName, 1, 8} },
-            ExpectNoStructs()
+            ExpectStruct("<error>", {{"id", "int"}})
             },
             ParserErrorsSynchronizationTestCase{
             "name_reserved_keyword_full_ast",
@@ -101,7 +108,7 @@ namespace valuascript::compiler::test {
             "struct Test {  : int } \n"
             "let a = 1\n",
             { {Err::ExpectedStructFieldName, 1, 16} },
-            ExpectStruct("Test")
+            ExpectStruct("Test", {{"<error>", "int"}})
             },
             ParserErrorsSynchronizationTestCase{
             "no_commas_all_fields_struct_in_ast",
@@ -132,7 +139,8 @@ namespace valuascript::compiler::test {
             ExpectStruct("Test", {
                 {"host", "string"},
                 {"port", "int"},
-                {"speed", "int"}
+                {"speed", "int"},
+                {"mode", std::nullopt}
                 })
             },
             ParserErrorsSynchronizationTestCase{

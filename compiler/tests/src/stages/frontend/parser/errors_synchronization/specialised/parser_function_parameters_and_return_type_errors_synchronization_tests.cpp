@@ -16,17 +16,23 @@ namespace valuascript::compiler::test {
         }
 
         void ExpectFunctionSignature(const FunctionDefinition *func,
-                                     const std::vector<std::pair<std::string, std::string> > &expected_params,
+                                     const std::vector<std::pair<std::string, std::optional<std::string> > > &
+                                     expected_params,
                                      const std::vector<std::string> &expected_returns) {
             ASSERT_NE(func, nullptr) << "Function definition was null!";
 
             ASSERT_EQ(func->parameters.size(), expected_params.size()) << "Parameter count mismatch!";
             for (size_t i = 0; i < expected_params.size(); ++i) {
                 EXPECT_EQ(func->parameters[i].name, expected_params[i].first) << "Param name mismatch at index " << i;
-                ASSERT_NE(func->parameters[i].type, nullptr);
-                EXPECT_EQ(func->parameters[i].type->name, expected_params[i].second) << "Param type mismatch at index "
-     <<
-                             i;
+                if (expected_params[i].second.has_value()) {
+                    ASSERT_NE(func->parameters[i].type, nullptr);
+                    EXPECT_EQ(func->parameters[i].type->name,
+                              expected_params[i].second) << "Param type mismatch at index "
+         <<
+                                 i;
+                } else {
+                    EXPECT_EQ(func->parameters[i].type.get(), nullptr);
+                }
             }
 
             ASSERT_EQ(func->return_types.size(), expected_returns.size()) << "Return type count mismatch!";
@@ -44,7 +50,7 @@ namespace valuascript::compiler::test {
         }
 
         auto ExpectFunction(std::string name,
-                            std::vector<std::pair<std::string, std::string> > params = {},
+                            std::vector<std::pair<std::string, std::optional<std::string> > > params = {},
                             std::vector<std::string> returns = {"void"}) {
             return [name = std::move(name), params = std::move(params), returns = std::move(returns)](
                 const Program &ast) {
@@ -62,7 +68,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        FunctionParametersAndReturnTypeStressTest,
         FunctionParametersAndReturnTypeParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
@@ -70,7 +76,7 @@ namespace valuascript::compiler::test {
             "func (a: int) -> int {}\n"
             "let a = 1\n",
             {{Err::MissingFunctionName, 1, 6}},
-            ExpectNoFunctions()
+            ExpectFunction("<error>", {{"a", "int"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "reserved_keyword_name_func_full_ast",
@@ -105,7 +111,7 @@ namespace valuascript::compiler::test {
             "func test(a: int) { return 1 }\n"
             "let a = 1\n",
             {{Err::MissingArrowInFunction, 1, 19}},
-            ExpectNoFunctions()
+            ExpectFunction("test", {{"a", "int"}}, {})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_left_brace_func_empty_ast",
@@ -153,7 +159,7 @@ namespace valuascript::compiler::test {
             "func test(a: int, *^, b: string) -> int {}\n"
             "let a = 1\n",
             {{Err::MissingParameterName, 1, 19}},
-            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
+            ExpectFunction("test", {{"a", "int"}, {"<error>", std::nullopt}, {"b", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "multiple_return_types_missing_comma_recovers",
@@ -177,7 +183,9 @@ namespace valuascript::compiler::test {
             [](const Program &ast) {
             auto f = ExpectRecoveredFunction(ast, "test");
             ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 0);
+            ASSERT_EQ(f->parameters.size(), 1);
+            ASSERT_EQ(f->parameters[0].name, "a");
+            ASSERT_EQ(f->parameters[0].type.get(), nullptr);
             ASSERT_EQ(f->return_types.size(), 1);
             ASSERT_EQ(f->return_types[0].get()->name, "int");
             EXPECT_TRUE(f->docstring.has_value());
@@ -214,7 +222,7 @@ namespace valuascript::compiler::test {
             {Err::MissingColonAfterParameter, 1, 15},
             {Err::MissingColonAfterParameter, 1, 18},
             },
-            ExpectFunction("test", {}, {"int"})
+            ExpectFunction("test", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_type_annotation_arguments_1",
@@ -225,7 +233,7 @@ namespace valuascript::compiler::test {
             {Err::MissingTypeAnnotation, 1, 19},
             {Err::MissingTypeAnnotation, 1, 24},
             },
-            ExpectFunction("test", {}, {"int"})
+            ExpectFunction("test", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_type_annotation_arguments_2",
@@ -235,7 +243,7 @@ namespace valuascript::compiler::test {
             {Err::MissingTypeAnnotation, 1, 22},
             {Err::ExpectedCommaSeparatorInParameterList, 1, 34},
             },
-            ExpectFunction("test", {{"a", "int"}, {"c", "string"}, {"d", "decimal"}}, {"int"})
+            ExpectFunction("test", {{"a", "int"}, {"b", std::nullopt}, {"c", "string"}, {"d", "decimal"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "error_inside_return_tuple_recovers",
@@ -328,15 +336,25 @@ namespace valuascript::compiler::test {
             "missing_default_parameter_value_syncs_to_comma",
             "func test(a: int =, b: string) -> int {}\n"
             "let a = 1\n",
-            {{Err::MissingDefaultParameterValue, 1, 18}},
-            ExpectFunction("test", {{"b", "string"}}, {"int"})
+            {
+            {Err::MissingDefaultParameterValue, 1, 18},
+            {Err::NonDefaultParameterAfterDefault, 1, 21},
+            },
+            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_default_parameter_value_syncs_to_paren",
             "func test(a: int =) -> int {}\n"
             "let a = 1\n",
             {{Err::MissingDefaultParameterValue, 1, 18}},
-            ExpectFunction("test", {}, {"int"})
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->parameters.size(), 1);
+            EXPECT_EQ(f->parameters[0].name, "a");
+            auto type = dynamic_cast<TypeAnnotation*>(f->parameters[0].type.get());
+            EXPECT_EQ(type->name, "int");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "non_default_parameter_after_default_reports_error",
@@ -357,8 +375,11 @@ namespace valuascript::compiler::test {
             "invalid_expression_in_default_value_recovers_to_comma",
             "func test(a: int = *, b: string) -> int {}\n"
             "let a = 1\n",
-            {{Err::InvalidExpression, 1, 20}},
-            ExpectFunction("test", {{"b", "string"}}, {"int"})
+            {
+            {Err::InvalidExpression, 1, 20},
+            {Err::NonDefaultParameterAfterDefault, 1, 23},
+            },
+            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "multiple_non_default_parameters_after_default_reports_multiple_errors",

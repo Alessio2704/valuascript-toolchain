@@ -11,7 +11,8 @@ namespace valuascript::compiler {
 
         Program dummy_program;
 
-        if (type == TokenType::EndOfFile) {
+        if (type == TokenType::EndOfFile ||
+            (type == TokenType::RightBrace && ctx == ParseContext::FunctionBody)) {
             if (!modifiers.empty()) {
                 SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
                 cursor_.report_error_no_panic(
@@ -145,12 +146,34 @@ namespace valuascript::compiler {
                                               ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements);
             }
 
-            const Token &target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
+            Token target(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+            try {
+                target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
+            } catch (const ParseSyncException &) {
+                while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma) && !
+                       cursor_.check(TokenType::Assign) && !TokenTraits::is_statement_start(
+                           cursor_.peek(), cursor_.peek(1).type)) {
+                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                   cursor_.peek(1).type))
+                        break;
+                    cursor_.advance();
+                }
+            }
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
 
             if (cursor_.match({TokenType::Colon})) {
-                type_annotation = parse_type_annotation();
+                try {
+                    type_annotation = parse_type_annotation();
+                } catch (const ParseSyncException &) {
+                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Assign)
+                           && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
+                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                       cursor_.peek(1).type))
+                            break;
+                        cursor_.advance();
+                    }
+                }
             }
 
             targets.emplace_back(target.lexeme, std::move(type_annotation));

@@ -378,10 +378,11 @@ namespace valuascript::compiler::test {
             {Err::MissingTypeAnnotation, 1, 8}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
+            EXPECT_EQ(assign->targets[0].second.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{

@@ -23,6 +23,9 @@ namespace valuascript::compiler::test {
             ExpectedArgument(const char *n, const char *v) : name(n), expected_number_value(std::string(v)) {
             }
 
+            ExpectedArgument(const char *n, const std::optional<std::string> &v) : name(n), expected_number_value(v) {
+            }
+
             ExpectedArgument(const char *n,
                              std::function<void(const Expression *)> v) : name(n), verifier(std::move(v)) {
             }
@@ -85,7 +88,7 @@ namespace valuascript::compiler::test {
             "@ let a = 1\n"
             "let recovery = 1\n",
             { {Err::ExpectedModifierName, 1, 3} },
-            ExpectModifierSet({})
+            ExpectModifierSet({{"<error>", {}}})
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_missing_closing_paren",
@@ -118,7 +121,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidCharacter, 1, 13},
             {Err::MissingArgumentNameInModifier, 1, 14},
             },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}}} })
+            ExpectModifierSet({ {"test", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_on_invalid_statement",
@@ -158,7 +161,7 @@ namespace valuascript::compiler::test {
             { {Err::MissingColonAfterArgument, 1, 31} },
             ExpectModifierSet({
                 {"valid", {}},
-                {"broken", {}},
+                {"broken", {{"missing_colon", std::nullopt}}},
                 {"another", {}}
                 })
             },
@@ -167,7 +170,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1 + *, b: 2) let c = 3\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 14} },
-            ExpectModifierSet({ {"test", {{"b", "2"}}} })
+            ExpectModifierSet({ {"test", {{"a", std::nullopt}, {"b", "2"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_arg_name_is_reserved_keyword",
@@ -192,10 +195,12 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
             ASSERT_EQ(step->modifiers[0].arguments[0].first, "config");
             auto const dict_arg = dynamic_cast<DictLiteral*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_EQ(dict_arg->elements.size(), 1);
+            ASSERT_EQ(dict_arg->elements.size(), 2);
             ASSERT_EQ(dict_arg->elements[0].key, "a");
             auto const num_literal = dynamic_cast<NumberLiteral*>(dict_arg->elements[0].value.get());
             ASSERT_EQ(num_literal->value, "1");
+            ASSERT_EQ(dict_arg->elements[1].key, "b");
+            ASSERT_EQ(dict_arg->elements[1].value.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -235,7 +240,7 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             ASSERT_EQ(ast.enum_definitions.size(), 1);
             EXPECT_EQ(ast.enum_definitions[0]->modifiers.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
+            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -247,7 +252,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             ASSERT_EQ(ast.function_definitions[0]->modifiers.size(), 1);
             ASSERT_EQ(ast.function_definitions[0]->modifiers[0].name, "rpc");
-            ASSERT_EQ(ast.function_definitions[0]->parameters.size(), 0);
+            ASSERT_EQ(ast.function_definitions[0]->parameters.size(), 1);
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
             },
@@ -302,7 +307,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1, b, c: 3) let x = 1\n"
             "let recovery = 1\n",
             { {Err::MissingColonAfterArgument, 1, 14} },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"c", "3"}}} })
+            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", std::nullopt}, {"c", "3"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_on_directive",
@@ -425,7 +430,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1,, b: 2) let c = 3\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInModifier, 1, 12} },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}}} })
+            ExpectModifierSet({ {"test", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_trailing_comma_error",
@@ -439,7 +444,7 @@ namespace valuascript::compiler::test {
             "@test(123: 1) let a = 1\n"
             "let recovery = 1\n",
             { {Err::MissingArgumentNameInModifier, 1, 7} },
-            ExpectModifierSet({ {"test", {}} })
+            ExpectModifierSet({ {"test", {{"<error>", "1"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_newline_between_at_and_name",
@@ -451,7 +456,10 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "modifier_eof_after_at",
             "let a = 1\n@",
-            { {Err::ExpectedModifierName, 2, 2} },
+            {
+            {Err::ExpectedModifierName, 2, 2},
+            {Err::ModifiersAttachedToInvalidDeclaration, 2, 1},
+            },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
             }
@@ -596,8 +604,9 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 1);
-            EXPECT_EQ(dict->elements[0].key, "other");
+            ASSERT_EQ(dict->elements.size(), 2);
+            EXPECT_EQ(dict->elements[0].key, "<error>");
+            EXPECT_EQ(dict->elements[1].key, "other");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -611,7 +620,7 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(dict->elements[0].key, "k");
             ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
             EXPECT_EQ(dict->elements[0].modifiers[0].name, "test");
-            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 0);
+            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 1);
             EXPECT_EQ(dict->elements[1].key, "other");
             }
             },
@@ -667,7 +676,7 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_key_multiple_modifiers_one_missing_name_amd_key",
+            "dict_key_multiple_modifiers_one_missing_name_and_key",
             "let obj = { @ok @1 : 1, other: 2 }\nlet recovery = 1\n",
             {
             {Err::ExpectedModifierName, 1, 18},
@@ -676,8 +685,9 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 1);
-            EXPECT_EQ(dict->elements[0].key, "other");
+            ASSERT_EQ(dict->elements.size(), 2);
+            EXPECT_EQ(dict->elements[0].key, "<error>");
+            EXPECT_EQ(dict->elements[1].key, "other");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -707,11 +717,14 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "enum_case_modifier_double_comma",
             "enum E: int { @modifier(a: 1,,) A = 1 }\nlet recovery = 1\n",
-            { {Err::MissingArgumentNameInModifier, 1, 30} },
+            {
+            {Err::MissingArgumentNameInModifier, 1, 30},
+            {Err::TrailingCommaInModifier, 1, 30},
+            },
             [](const Program& ast) {
             auto enum_def = ast.enum_definitions[0].get();
             ASSERT_EQ(enum_def->cases.size(), 1);
-            EXPECT_EQ(enum_def->cases[0].modifiers[0].arguments.size(), 1);
+            EXPECT_EQ(enum_def->cases[0].modifiers[0].arguments.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -795,8 +808,8 @@ namespace valuascript::compiler::test {
 
             ASSERT_EQ(func->parameters.size(), 2);
             EXPECT_EQ(func->parameters[0].name, "a");
-            EXPECT_TRUE(func->parameters[0].modifiers.empty());
-
+            EXPECT_EQ(func->parameters[0].modifiers.size(), 1);
+            EXPECT_EQ(func->parameters[0].modifiers[0].name, "<error>");
             EXPECT_EQ(func->parameters[1].name, "b");
             }
             },
@@ -996,8 +1009,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(s->fields.size(), 2);
             EXPECT_EQ(s->fields[0].name, "id");
             EXPECT_FALSE(s->fields[0].modifiers.empty());
-                EXPECT_EQ(s->fields[0].modifiers[0].name, "meta");
-                EXPECT_TRUE(s->fields[0].modifiers[0].arguments.empty());
+            EXPECT_EQ(s->fields[0].modifiers[0].name, "meta");
+            EXPECT_TRUE(s->fields[0].modifiers[0].arguments.empty());
 
             EXPECT_EQ(s->fields[1].name, "next");
             }

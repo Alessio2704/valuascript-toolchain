@@ -433,23 +433,57 @@ namespace valuascript::compiler {
                 if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
 
                 return is_reserved_keyword(tok) && (next == TokenType::Colon);
-            },
-            [this]() {
+            }, [this]() {
                 auto modifiers = parse_modifiers();
-                Token key_token = consume_identifier(ValuascriptErrorCode::ExpectedDictionaryKey, false);
-                cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterDictionaryKey);
+
+                bool key_failed = false;
+                Token key_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+                try {
+                    key_token = consume_identifier(ValuascriptErrorCode::ExpectedDictionaryKey, false);
+                } catch (const ParseSyncException &) {
+                    key_failed = true;
+                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)
+                           && !cursor_.check(TokenType::RightBrace)) {
+                        cursor_.advance();
+                    }
+                }
+
+                bool has_colon = false;
+                if (cursor_.check(TokenType::Colon)) {
+                    has_colon = true;
+                    cursor_.advance();
+                } else {
+                    if (!key_failed) {
+                        if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::RightBrace)) {
+                            cursor_.consume(TokenType::Colon, ValuascriptErrorCode::ExpectedColonAfterDictionaryKey);
+                        } else {
+                            cursor_.report_error_no_panic(cursor_.peek(),
+                                                          ValuascriptErrorCode::ExpectedColonAfterDictionaryKey);
+                        }
+                    }
+                }
 
                 std::unique_ptr<Expression> val = nullptr;
                 if (cursor_.check(TokenType::Comma) || cursor_.check(TokenType::RightBrace)) {
-                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+                    if (has_colon) {
+                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+                    }
                 } else {
-                    val = parse_expression();
+                    try {
+                        val = parse_expression();
 
-                    if (TokenTraits::is_expression_start(cursor_.peek().type) && cursor_.peek(1).type !=
-                        TokenType::Colon) {
-                        if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                        cursor_.peek(1).type)) {
-                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        if ((TokenTraits::is_expression_start(cursor_.peek().type) ||
+                             TokenTraits::is_binary_operator(cursor_.peek().type)) && cursor_.peek(1).type !=
+                            TokenType::Colon) {
+                            if (!TokenTraits::is_newline_statement_boundary(
+                                cursor_.previous(), cursor_.peek(), cursor_.peek(1).type)) {
+                                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                            }
+                        }
+                    } catch (const ParseSyncException &) {
+                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(
+                                   TokenType::RightBrace)) {
+                            cursor_.advance();
                         }
                     }
                 }
@@ -540,12 +574,30 @@ namespace valuascript::compiler {
         while (true) {
             const Token &tok = cursor_.peek();
             if (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, cursor_.peek(1).type)) {
-                Token id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
+                Token id_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+                try {
+                    id_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase);
+                } catch (const ParseSyncException &) {
+                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)
+                           && !cursor_.check(TokenType::RightBrace)) {
+                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                       cursor_.peek(1).type))
+                            break;
+                        cursor_.advance();
+                    }
+                }
                 identifiers.push_back(id_token.lexeme);
             } else {
                 cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, true);
-                if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)) {
-                    throw ParseSyncException();
+                if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow) && !cursor_.check(
+                        TokenType::RightBrace)) {
+                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)
+                           && !cursor_.check(TokenType::RightBrace)) {
+                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                       cursor_.peek(1).type))
+                            break;
+                        cursor_.advance();
+                    }
                 }
             }
 

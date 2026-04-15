@@ -32,7 +32,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        ParserExhaustiveStressTests,
+        FunctionBodyStressTests,
         FunctionBodyParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
@@ -182,6 +182,16 @@ namespace valuascript::compiler::test {
             "illegal_nested_enum",
             "func test() -> int {\n"
             "    enum State: int { A = 1 }\n"
+            "    return 1\n"
+            "}\n"
+            "let a = 1\n",
+            {{Err::TopLevelDeclarationNotAllowedHere, 2, 5}},
+            ExpectFunctionBodySize("test", 1)
+            },
+            ParserErrorsSynchronizationTestCase{
+            "illegal_nested_broken_enum",
+            "func test() -> int {\n"
+            "    enum State {}\n"
             "    return 1\n"
             "}\n"
             "let a = 1\n",
@@ -361,7 +371,8 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {
-            {Err::ExpectedModifierName, 3, 6}
+            {Err::ExpectedModifierName, 3, 6},
+            {Err::ModifiersAttachedToInvalidDeclaration, 3, 5}
             },
             ExpectFunctionBodySize("test", 1)
             },

@@ -49,8 +49,10 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             { {Err::ExpectedTypeAliasName, 1, 11} },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
+            ASSERT_EQ(ast.type_aliases.size(), 1);
+            ASSERT_EQ(ast.type_aliases.size(), 1);
+            EXPECT_EQ(ast.type_aliases[0]->name, "<error>");
+            ExpectBaseType(ast.type_aliases[0]->target_type.get(), "int", 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -198,12 +200,15 @@ namespace valuascript::compiler::test {
             {Err::TrailingCommaInGenericArgument, 3, 22}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.type_aliases.size(), 2);
+            ASSERT_EQ(ast.type_aliases.size(), 3);
             EXPECT_EQ(ast.type_aliases[0]->name, "A");
             ExpectBaseType(ast.type_aliases[0]->target_type.get(), "vector", 1);
 
-            EXPECT_EQ(ast.type_aliases[1]->name, "C");
-            ExpectBaseType(ast.type_aliases[1]->target_type.get(), "map", 1);
+            EXPECT_EQ(ast.type_aliases[1]->name, "<error>");
+            ExpectBaseType(ast.type_aliases[1]->target_type.get(), "string", 0);
+
+            EXPECT_EQ(ast.type_aliases[2]->name, "C");
+            ExpectBaseType(ast.type_aliases[2]->target_type.get(), "map", 1);
 
             ExpectRecoveredAssignment("d")(ast);
             }

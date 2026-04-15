@@ -26,7 +26,7 @@ namespace valuascript::compiler {
             }
         }
 
-        return cursor_.consume(TokenType::Identifier, fallback_err);
+        return cursor_.consume(TokenType::Identifier, fallback_err, false);
     }
 
     void Parser::verify_statement_end() const {
@@ -68,20 +68,58 @@ namespace valuascript::compiler {
                 bool is_id_like = tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
                                       tok, cursor_.peek(1).type);
                 return is_id_like && cursor_.peek(1).type == TokenType::Colon;
-            },
-            [this, key_err, colon_err, closing_token]() {
-                Token key_token = consume_identifier(key_err, false);
-                cursor_.consume(TokenType::Colon, colon_err);
+            }, [this, key_err, colon_err, closing_token]() {
+                bool key_failed = false;
+                Token key_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+                try {
+                    key_token = consume_identifier(key_err, false);
+                } catch (const ParseSyncException &) {
+                    key_failed = true;
+                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)
+                           && !cursor_.check(closing_token)) {
+                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
+                                                                       cursor_.peek(1).type))
+                            break;
+                        cursor_.advance();
+                    }
+                }
+
+                bool has_colon = false;
+                if (cursor_.check(TokenType::Colon)) {
+                    has_colon = true;
+                    cursor_.advance();
+                } else {
+                    if (!key_failed) {
+                        if (!cursor_.check(TokenType::Comma) && !cursor_.check(closing_token)) {
+                            cursor_.consume(TokenType::Colon, colon_err, true);
+                        } else {
+                            cursor_.report_error_no_panic(cursor_.peek(), colon_err, true);
+                        }
+                    }
+                }
 
                 std::unique_ptr<Expression> val = nullptr;
 
                 if (cursor_.check(TokenType::Comma) || cursor_.check(closing_token)) {
-                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression);
+                    if (has_colon) {
+                        cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::InvalidExpression, true);
+                    }
                 } else {
-                    val = parse_expression();
-                    if (TokenTraits::is_expression_start(cursor_.peek().type) && cursor_.peek(1).type !=
-                        TokenType::Colon) {
-                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                    try {
+                        val = parse_expression();
+                        if ((TokenTraits::is_expression_start(cursor_.peek().type) ||
+                             TokenTraits::is_binary_operator(cursor_.peek().type)) && cursor_.peek(1).type !=
+                            TokenType::Colon) {
+                            cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                        }
+                    } catch (const ParseSyncException &) {
+                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.
+                               check(closing_token)) {
+                            if (TokenTraits::is_newline_statement_boundary(
+                                cursor_.previous(), cursor_.peek(), cursor_.peek(1).type))
+                                break;
+                            cursor_.advance();
+                        }
                     }
                 }
 
