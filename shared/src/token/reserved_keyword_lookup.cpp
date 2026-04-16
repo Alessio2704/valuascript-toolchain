@@ -1,4 +1,4 @@
-#include "token/reserved_keyword_lookup.h"
+#include "reserved_keyword_lookup.h"
 
 namespace valuascript::shared {
     std::optional<TokenType> get_keyword_type(const std::string &lexeme) {

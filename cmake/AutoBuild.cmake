@@ -3,10 +3,7 @@ function(auto_build_component TARGET_NAME)
     cmake_parse_arguments(ARG "" "" "DEPENDS" ${ARGN})
 
     file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
-    file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS
-            "src/*.h" "src/*.hpp"
-            "include/*.h" "include/*.hpp"
-    )
+    file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "src/*.h" "src/*.hpp")
 
     list(FILTER SRC_FILES EXCLUDE REGEX "src/main.cpp$")
 
@@ -36,9 +33,7 @@ function(auto_build_component TARGET_NAME)
     if (HAS_INTERNAL_LIB)
         target_include_directories(${TARGET_NAME}_lib ${SCOPE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/src
-                ${CMAKE_CURRENT_SOURCE_DIR}/include
                 ${CMAKE_SOURCE_DIR}/shared/src
-                ${CMAKE_SOURCE_DIR}/shared/include
         )
 
         if (ARG_DEPENDS)
@@ -63,9 +58,7 @@ function(auto_build_component TARGET_NAME)
             target_link_libraries(${TARGET_NAME} PRIVATE ${ARG_DEPENDS})
             target_include_directories(${TARGET_NAME} PRIVATE
                     ${CMAKE_CURRENT_SOURCE_DIR}/src
-                    ${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_SOURCE_DIR}/shared/src
-                    ${CMAKE_SOURCE_DIR}/shared/include
             )
         endif ()
 
@@ -81,7 +74,7 @@ function(auto_build_component TARGET_NAME)
             add_executable(${TEST_EXE_NAME} ${TEST_FILES})
 
             target_include_directories(${TEST_EXE_NAME} PRIVATE
-                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/src
             )
 
             target_link_libraries(${TEST_EXE_NAME} PRIVATE

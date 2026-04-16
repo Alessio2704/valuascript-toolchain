@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "compiler_stage/compiler_stage.h"
+#include "../../../src/core/compiler_stage.h"
 #include <stdexcept>
 #include <memory>
 

@@ -1,0 +1,14 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <memory>
+#include "frontend/parser/ast.h"
+
+namespace valuascript::compiler {
+    struct ResolvedProjectArtifact {
+        std::string entry_file_path;
+        std::unordered_map<std::string, std::shared_ptr<Program>> modules;
+        std::vector<std::string> topological_order;
+    };
+}

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include "compiler_context/compiler_context.h"
-#include "main_orchestrator/main_orchestrator.h"
-#include "errors/diagnostic_formatter.h"
+#include "core/compiler_context.h"
+#include "core/main_orchestrator.h"
+#include "core/diagnostic_formatter.h"
 
 using namespace valuascript::compiler;
 
