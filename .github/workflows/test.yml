@@ -27,10 +27,6 @@ jobs:
             msvc_arch: x64
             vse_name: vse.exe
             vsc_name: vsc.exe
-          - os: macos-15-intel
-            asset_name_suffix: macos-x64
-            vse_name: vse
-            vsc_name: vsc
           - os: ubuntu-24.04-arm
             asset_name_suffix: linux-arm64
             vse_name: vse
