@@ -438,4 +438,38 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(e.get_code(), ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
         }
     }
+
+    TEST_F(AstBaseTest, ValidatesPercentageInMathExpressions) {
+        // AST Shape: Assignment -> Binary(+) -> Left: Binary(*) [100, 5%], Right: 2%
+
+        auto ast = parse_code("let total = 100 * 5% + 2%");
+
+        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
+        ASSERT_NE(assignment, nullptr);
+
+        // Root should be the + operator
+        auto root_plus = dynamic_cast<BinaryExpression *>(assignment->value.get());
+        ASSERT_NE(root_plus, nullptr);
+        EXPECT_EQ(root_plus->op, TokenType::Plus);
+
+        // Left side of + is the * operator
+        auto left_star = dynamic_cast<BinaryExpression *>(root_plus->left.get());
+        ASSERT_NE(left_star, nullptr);
+        EXPECT_EQ(left_star->op, TokenType::Star);
+
+        // Left of * is 100
+        auto num_100 = dynamic_cast<NumberLiteral *>(left_star->left.get());
+        ASSERT_NE(num_100, nullptr);
+        EXPECT_EQ(num_100->value, "100");
+
+        // Right of * is 5%
+        auto pct_5 = dynamic_cast<PercentageLiteral *>(left_star->right.get());
+        ASSERT_NE(pct_5, nullptr);
+        EXPECT_EQ(pct_5->value, "5%");
+
+        // Right side of + is 2%
+        auto pct_2 = dynamic_cast<PercentageLiteral *>(root_plus->right.get());
+        ASSERT_NE(pct_2, nullptr);
+        EXPECT_EQ(pct_2->value, "2%");
+    }
 }

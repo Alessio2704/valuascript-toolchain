@@ -11,7 +11,11 @@ namespace valuascript::compiler {
     }
 
     const Token &TokenCursor::peek(const int lookahead) const {
-        return tokens_[current_ + lookahead];
+        size_t target = current_ + lookahead;
+        if (target >= tokens_.size()) {
+            return tokens_.back();
+        }
+        return tokens_[target];
     }
 
     const Token &TokenCursor::previous(const int lookback) const {

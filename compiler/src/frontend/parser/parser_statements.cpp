@@ -132,7 +132,6 @@ namespace valuascript::compiler {
 
     std::unique_ptr<Assignment> Parser::parse_assignment(std::vector<Modifier> modifiers) {
         const Token &start_token = cursor_.peek();
-
         cursor_.consume(TokenType::Let, ValuascriptErrorCode::ExpectedLetToken);
 
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
@@ -150,8 +149,8 @@ namespace valuascript::compiler {
             try {
                 target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
             } catch (const ParseSyncException &) {
-                while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma) && !
-                       cursor_.check(TokenType::Assign) && !TokenTraits::is_statement_start(
+                while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma) &&
+                       !cursor_.check(TokenType::Assign) && !TokenTraits::is_statement_start(
                            cursor_.peek(), cursor_.peek(1).type)) {
                     if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
                                                                    cursor_.peek(1).type))
@@ -180,8 +179,11 @@ namespace valuascript::compiler {
 
             if (!cursor_.match({TokenType::Comma})) {
                 if (cursor_.peek().type == TokenType::Identifier || cursor_.peek().type == TokenType::At) {
-                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
-                    continue;
+                    if (cursor_.peek().line == cursor_.previous().line) {
+                        cursor_.report_error_no_panic(cursor_.peek(),
+                                                      ValuascriptErrorCode::ExpectedCommaInMultiAssignment);
+                        continue;
+                    }
                 }
                 break;
             }
@@ -189,13 +191,15 @@ namespace valuascript::compiler {
 
         std::unique_ptr<Expression> value = nullptr;
 
-        if (cursor_.match({TokenType::Assign})) {
-            bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
-                                  (cursor_.peek().line > cursor_.previous().line &&
-                                   cursor_.peek().type == TokenType::Identifier &&
-                                   cursor_.peek(1).type == TokenType::Assign);
+        auto is_at_boundary = [&]() {
+            return cursor_.is_at_end() ||
+                   TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                   (cursor_.peek().line > cursor_.previous().line &&
+                    TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type));
+        };
 
-            if (cursor_.is_at_end() || is_pseudo_stmt) {
+        if (cursor_.match({TokenType::Assign})) {
+            if (is_at_boundary()) {
                 cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
             } else {
                 value = parse_expression();
@@ -203,10 +207,13 @@ namespace valuascript::compiler {
         } else {
             cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::IncompleteAssignment);
 
-            if (cursor_.is_at_end() || TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type)) {
-                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals);
+            if (!is_at_boundary() && TokenTraits::is_expression_start(cursor_.peek().type)) {
+                try {
+                    value = parse_expression();
+                } catch (const ParseSyncException &) {
+                }
             } else {
-                throw ParseSyncException();
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals);
             }
         }
 

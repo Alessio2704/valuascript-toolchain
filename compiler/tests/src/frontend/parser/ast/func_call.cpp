@@ -76,24 +76,6 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(else_branch->op, TokenType::Minus);
     }
 
-    TEST_F(AstBaseTest, ValidatesMultipleAssignmentTargets) {
-        // Proves the AST correctly maps a comma-separated list of identifiers into the assignment targets.
-
-        auto ast = parse_code("let x, y = get_coordinates()");
-        auto assign_node = get_first_assignment(ast);
-        ASSERT_NE(assign_node, nullptr);
-
-        // Check Targets
-        ASSERT_EQ(assign_node->targets.size(), 2);
-        EXPECT_EQ(assign_node->targets[0].first, "x");
-        EXPECT_EQ(assign_node->targets[1].first, "y");
-
-        // Check Value
-        auto call_val = dynamic_cast<FunctionCall *>(assign_node->value.get());
-        ASSERT_NE(call_val, nullptr);
-        EXPECT_EQ(dynamic_cast<IdentifierAccess*>(call_val->target.get())->name, "get_coordinates");
-    }
-
     TEST_F(AstBaseTest, ValidatesComplexChainedPostfixOnRHS) {
         // Evaluates a function call, accesses the 0th index, and calls the result as a function.
 
@@ -297,94 +279,6 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(inner_arg_val->value, "\"bear\"");
     }
 
-    TEST_F(AstBaseTest, ValidatesOptionalTypeAscriptionSingleTarget) {
-        auto ast = parse_code("let model: Result<Model, Error> = get_data()");
-        ASSERT_EQ(ast->execution_steps.size(), 1);
-
-        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        ASSERT_NE(assignment, nullptr);
-        ASSERT_EQ(assignment->targets.size(), 1);
-
-        EXPECT_EQ(assignment->targets[0].first, "model");
-
-        auto type_ann = assignment->targets[0].second.get();
-        ASSERT_NE(type_ann, nullptr) << "Type annotation should not be null";
-        EXPECT_EQ(type_ann->name, "Result");
-        ASSERT_EQ(type_ann->generic_args.size(), 2);
-        EXPECT_EQ(type_ann->generic_args[0]->name, "Model");
-        EXPECT_EQ(type_ann->generic_args[1]->name, "Error");
-    }
-
-    TEST_F(AstBaseTest, ValidatesMixedTypeAscriptionMultipleTargets) {
-        // Proves the parser correctly aligns types to specific variables in a destructuring assignment
-        auto ast = parse_code("let a, b: integer, c = compute()");
-        ASSERT_EQ(ast->execution_steps.size(), 1);
-
-        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        ASSERT_NE(assignment, nullptr);
-        ASSERT_EQ(assignment->targets.size(), 3);
-
-        // Target 0: a (No type)
-        EXPECT_EQ(assignment->targets[0].first, "a");
-        EXPECT_EQ(assignment->targets[0].second, nullptr);
-
-        // Target 1: b: integer (Typed)
-        EXPECT_EQ(assignment->targets[1].first, "b");
-        ASSERT_NE(assignment->targets[1].second, nullptr);
-        EXPECT_EQ(assignment->targets[1].second->name, "integer");
-
-        // Target 2: c (No type)
-        EXPECT_EQ(assignment->targets[2].first, "c");
-        EXPECT_EQ(assignment->targets[2].second, nullptr);
-    }
-
-    TEST_F(AstBaseTest, ValidatesSimplePercentageLiteral) {
-        auto ast = parse_code("let cagr = 4.55%");
-        ASSERT_EQ(ast->execution_steps.size(), 1);
-
-        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        ASSERT_NE(assignment, nullptr);
-
-        auto pct_literal = dynamic_cast<PercentageLiteral *>(assignment->value.get());
-        ASSERT_NE(pct_literal, nullptr) << "Expected value to be a PercentageLiteral";
-
-        EXPECT_EQ(pct_literal->value, "4.55%");
-    }
-
-    TEST_F(AstBaseTest, ValidatesPercentageInMathExpressions) {
-        // AST Shape: Assignment -> Binary(+) -> Left: Binary(*) [100, 5%], Right: 2%
-
-        auto ast = parse_code("let total = 100 * 5% + 2%");
-
-        auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-        ASSERT_NE(assignment, nullptr);
-
-        // Root should be the + operator
-        auto root_plus = dynamic_cast<BinaryExpression *>(assignment->value.get());
-        ASSERT_NE(root_plus, nullptr);
-        EXPECT_EQ(root_plus->op, TokenType::Plus);
-
-        // Left side of + is the * operator
-        auto left_star = dynamic_cast<BinaryExpression *>(root_plus->left.get());
-        ASSERT_NE(left_star, nullptr);
-        EXPECT_EQ(left_star->op, TokenType::Star);
-
-        // Left of * is 100
-        auto num_100 = dynamic_cast<NumberLiteral *>(left_star->left.get());
-        ASSERT_NE(num_100, nullptr);
-        EXPECT_EQ(num_100->value, "100");
-
-        // Right of * is 5%
-        auto pct_5 = dynamic_cast<PercentageLiteral *>(left_star->right.get());
-        ASSERT_NE(pct_5, nullptr);
-        EXPECT_EQ(pct_5->value, "5%");
-
-        // Right side of + is 2%
-        auto pct_2 = dynamic_cast<PercentageLiteral *>(root_plus->right.get());
-        ASSERT_NE(pct_2, nullptr);
-        EXPECT_EQ(pct_2->value, "2%");
-    }
-
     TEST_F(AstBaseTest, ValidatesPercentageInFunctionArgumentsAndGrouping) {
         auto ast = parse_code("let a = calculate_yield(y: (10% + 2.5%) / 2 )");
 
@@ -441,45 +335,5 @@ namespace valuascript::compiler::test {
 
         auto arg_self = dynamic_cast<SelfExpression *>(func_call->arguments[0].second.get());
         ASSERT_NE(arg_self, nullptr) << "'self' must be valid as a standalone function argument";
-    }
-
-    TEST_F(AstBaseTest, ValidatesSelfInSwitchExpressions) {
-        // Proves 'self' can safely be used as both the target of a switch and inside the case results.
-
-        std::string code =
-                "let obj = {\n"
-                "    val: switch (self.state) {\n"
-                "        case Active -> self.on_val\n"
-                "        default -> self.off_val\n"
-                "    }\n"
-                "}";
-
-        auto ast = parse_code(code);
-        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
-
-        ASSERT_NE(dict_val, nullptr);
-        ASSERT_EQ(dict_val->elements.size(), 1);
-
-        auto switch_expr = dynamic_cast<SwitchExpression *>(dict_val->elements[0].value.get());
-        ASSERT_NE(switch_expr, nullptr);
-
-        // Target: self.state
-        auto switch_target = dynamic_cast<DotAccess *>(switch_expr->target.get());
-        ASSERT_NE(switch_target, nullptr);
-        EXPECT_EQ(switch_target->property_name, "state");
-        ASSERT_NE(dynamic_cast<SelfExpression *>(switch_target->target.get()), nullptr);
-
-        // Case Result: self.on_val
-        ASSERT_EQ(switch_expr->cases.size(), 1);
-        auto case_result = dynamic_cast<DotAccess *>(switch_expr->cases[0].second.get());
-        ASSERT_NE(case_result, nullptr);
-        EXPECT_EQ(case_result->property_name, "on_val");
-        ASSERT_NE(dynamic_cast<SelfExpression *>(case_result->target.get()), nullptr);
-
-        // Default Result: self.off_val
-        auto default_result = dynamic_cast<DotAccess *>(switch_expr->default_case.get());
-        ASSERT_NE(default_result, nullptr);
-        EXPECT_EQ(default_result->property_name, "off_val");
-        ASSERT_NE(dynamic_cast<SelfExpression *>(default_result->target.get()), nullptr);
     }
 }

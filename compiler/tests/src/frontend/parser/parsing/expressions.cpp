@@ -42,7 +42,19 @@ namespace valuascript::compiler::test {
             ExpressionHappyParam{"cond_with_math", "if (x + y) > 10 then (x * 2) else (y / 2)"},
 
             ExpressionHappyParam{"call_on_literal", "1()"},
-            ExpressionHappyParam{"access_on_literal", "1[0]"}
+            ExpressionHappyParam{"access_on_literal", "1[0]"},
+
+            ExpressionHappyParam{"conditional_expression", "if true then 10 else 4"},
+            ExpressionHappyParam{"or_expr", "x or y"},
+            ExpressionHappyParam{"and_expr", "x and y"},
+            ExpressionHappyParam{"not_expr", "not x"},
+            ExpressionHappyParam{"eq_expr", "x == y"},
+            ExpressionHappyParam{"neq_expr", "x != y"},
+            ExpressionHappyParam{"gt_expr", "x > y"},
+            ExpressionHappyParam{"lt_expr", "x < y"},
+            ExpressionHappyParam{"gte_expr", "x >= y"},
+            ExpressionHappyParam{"lte_expr", "x <= y"},
+            ExpressionHappyParam{"pow_expr", "x^y"}
         ),
         [](const testing::TestParamInfo<ExpressionHappyParam>& info) {
         return info.param.test_name;
@@ -90,7 +102,23 @@ namespace valuascript::compiler::test {
             ExpressionSadParam{"cond_missing_then", "if a > b 1 else 2", ValuascriptErrorCode::MissingThenToken},
             ExpressionSadParam{"cond_missing_else", "if a > b then 1", ValuascriptErrorCode::MissingElseToken},
             ExpressionSadParam{"cond_missing_else_value", "if a > b then 1 else", ValuascriptErrorCode::
-            InvalidExpression}
+            InvalidExpression},
+
+            ExpressionSadParam{"missing_operator_1", "a + b c", ValuascriptErrorCode::MissingOperator},
+            ExpressionSadParam{"missing_operator_2", "a + b (1 + 2)", ValuascriptErrorCode::
+            MissingOperatorOrArgumentName},
+            ExpressionSadParam{"missing_operator_3", "a + b model.a", ValuascriptErrorCode::MissingOperator},
+            ExpressionSadParam{"missing_operator_4", "a + b vec[0]", ValuascriptErrorCode::MissingOperator},
+            ExpressionSadParam{"missing_operator_5", "a + b {}", ValuascriptErrorCode::MissingOperator},
+            ExpressionSadParam{"missing_operator_6", "a  b[]", ValuascriptErrorCode::MissingOperator},
+            ExpressionSadParam{"missing_operator_6_a", "a - b[]", ValuascriptErrorCode::EmptyBracketAccess},
+            ExpressionSadParam{"missing_operator_7", "a + b (1, 2)", ValuascriptErrorCode::
+            MissingOperatorOrArgumentName},
+            ExpressionSadParam{"chaining_not_allowed_for_comparison_1", "a > b > c", ValuascriptErrorCode::
+            ChainingNotAllowedForComparisonOperations},
+            ExpressionSadParam{"chaining_not_allowed_for_comparison_2", "10 <= 5 != false", ValuascriptErrorCode
+            ::
+            ChainingNotAllowedForComparisonOperations}
         ),
         [](const testing::TestParamInfo<ExpressionSadParam>& info) {
         return info.param.test_name;

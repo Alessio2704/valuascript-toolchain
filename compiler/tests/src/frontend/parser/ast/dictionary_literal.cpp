@@ -340,4 +340,44 @@ namespace valuascript::compiler::test {
             dynamic_cast<SelfExpression *>(dynamic_cast<DotAccess *>(inner_dict->elements[0].value.get())->target.get()
             ), nullptr);
     }
+
+    TEST_F(AstBaseTest, ValidatesSelfInSwitchExpressions) {
+        // Proves 'self' can safely be used as both the target of a switch and inside the case results.
+
+        std::string code =
+                "let obj = {\n"
+                "    val: switch (self.state) {\n"
+                "        case Active -> self.on_val\n"
+                "        default -> self.off_val\n"
+                "    }\n"
+                "}";
+
+        auto ast = parse_code(code);
+        auto dict_val = dynamic_cast<DictLiteral *>(get_assigned_value(ast));
+
+        ASSERT_NE(dict_val, nullptr);
+        ASSERT_EQ(dict_val->elements.size(), 1);
+
+        auto switch_expr = dynamic_cast<SwitchExpression *>(dict_val->elements[0].value.get());
+        ASSERT_NE(switch_expr, nullptr);
+
+        // Target: self.state
+        auto switch_target = dynamic_cast<DotAccess *>(switch_expr->target.get());
+        ASSERT_NE(switch_target, nullptr);
+        EXPECT_EQ(switch_target->property_name, "state");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(switch_target->target.get()), nullptr);
+
+        // Case Result: self.on_val
+        ASSERT_EQ(switch_expr->cases.size(), 1);
+        auto case_result = dynamic_cast<DotAccess *>(switch_expr->cases[0].second.get());
+        ASSERT_NE(case_result, nullptr);
+        EXPECT_EQ(case_result->property_name, "on_val");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(case_result->target.get()), nullptr);
+
+        // Default Result: self.off_val
+        auto default_result = dynamic_cast<DotAccess *>(switch_expr->default_case.get());
+        ASSERT_NE(default_result, nullptr);
+        EXPECT_EQ(default_result->property_name, "off_val");
+        ASSERT_NE(dynamic_cast<SelfExpression *>(default_result->target.get()), nullptr);
+    }
 }

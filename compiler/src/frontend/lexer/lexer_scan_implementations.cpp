@@ -31,7 +31,7 @@ namespace valuascript::compiler {
                     return;
                 }
 
-                if (peek() == '\n') {
+                if (peek() == '\n' || peek() == '\r') {
                     report_error(ValuascriptErrorCode::UnclosedString);
                     add_token(TokenType::String);
                     return;
@@ -51,9 +51,9 @@ namespace valuascript::compiler {
     }
 
     void Lexer::consume_digits() {
-        while (std::isdigit(peek()) || peek() == '_') {
+        while (std::isdigit(static_cast<unsigned char>(peek())) || peek() == '_') {
             if (peek() == '_') {
-                if (!std::isdigit(peek_next())) {
+                if (!std::isdigit(static_cast<unsigned char>(peek_next()))) {
                     advance();
                     report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral);
                     break;
@@ -84,7 +84,7 @@ namespace valuascript::compiler {
         consume_digits();
 
         if (peek() == '.') {
-            if (std::isdigit(peek_next())) {
+            if (std::isdigit(static_cast<unsigned char>(peek_next()))) {
                 advance();
                 consume_digits();
             } else {
@@ -96,7 +96,7 @@ namespace valuascript::compiler {
     }
 
     void Lexer::scan_identifier() {
-        while (std::isalnum(peek()) || peek() == '_') advance();
+        while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
 
         std::string text = source_.substr(start_, current_ - start_);
 
@@ -151,7 +151,7 @@ namespace valuascript::compiler {
                 }
                 break;
             case '.':
-                if (std::isdigit(peek())) {
+                if (std::isdigit(static_cast<unsigned char>(peek()))) {
                     if (is_member_access()) {
                         add_token(TokenType::Dot);
                     } else {
@@ -170,9 +170,8 @@ namespace valuascript::compiler {
                     add_token(TokenType::Slash);
                 }
                 break;
-
-            case ' ':
             case '\r':
+            case ' ':
             case '\t':
                 break;
             case '\n':
@@ -183,9 +182,9 @@ namespace valuascript::compiler {
                 scan_string();
                 break;
             default:
-                if (std::isdigit(c)) {
+                if (std::isdigit(static_cast<unsigned char>(c))) {
                     scan_number();
-                } else if (std::isalpha(c) || c == '_') {
+                } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
                     scan_identifier();
                 } else {
                     report_error(ValuascriptErrorCode::InvalidCharacter, c);

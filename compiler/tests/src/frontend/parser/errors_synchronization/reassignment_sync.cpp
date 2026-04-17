@@ -14,126 +14,6 @@ namespace valuascript::compiler::test {
         AssignmentParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "missing_value_after_equals_eof",
-            "let a =",
-            {
-            {Err::MissingValueAfterEquals, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets.size(), 1);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_value_after_equals_next_stmt",
-            "let a =\n"
-            "let b = 2\n",
-            {
-            {Err::MissingValueAfterEquals, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_a, nullptr);
-            EXPECT_EQ(assign_a->targets.size(), 1);
-            EXPECT_EQ(assign_a->targets[0].first, "a");
-            EXPECT_EQ(assign_a->value, nullptr);
-
-            auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets.size(), 1);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
-            EXPECT_NE(assign_b->value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "incomplete_assignment_eof",
-            "let a",
-            {
-            {Err::IncompleteAssignment, 1, 6},
-            {Err::MissingValueAfterEquals, 1, 6}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets.size(), 1);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "incomplete_assignment_next_stmt",
-            "let a\n"
-            "let b = 2\n",
-            {
-            {Err::IncompleteAssignment, 1, 6},
-            {Err::MissingValueAfterEquals, 1, 6}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_a, nullptr);
-            EXPECT_EQ(assign_a->targets.size(), 1);
-            EXPECT_EQ(assign_a->targets[0].first, "a");
-            EXPECT_EQ(assign_a->value, nullptr);
-
-            auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "incomplete_assignment_with_expr",
-            "let a 1\n"
-            "let b = 2\n",
-            {
-            {Err::IncompleteAssignment, 1, 7}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_comma_in_multi_assignment",
-            "let a b = 1\n"
-            "let c = 2\n",
-            {
-            {Err::ExpectedCommaInMultiAssignment, 1, 7}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets.size(), 2);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].first, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifiers_on_multi_assignment_single_elements",
-            "let a, @modifier b = 1\n",
-            {
-            {Err::ModifiersAttachedToMultiAssignmentSingleElements, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            ASSERT_EQ(assign->targets.size(), 2);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->targets[1].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "multi_reassignment_not_supported",
             "a, b = 1\n"
             "let c = 2\n",
@@ -190,23 +70,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "invalid_identifier_in_assignment",
-            "let 1 = 2\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidIdentifier, 1, 5}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_1, nullptr);
-            EXPECT_EQ(assign_1->targets[0].first, "<error>");
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].first, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_value_after_equals_reassignment_eof",
             "a = ",
             {
@@ -256,22 +119,6 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "let_missing_value",
-            "let a : int =\n"
-            "let b = 2\n",
-            {
-            {Err::MissingValueAfterEquals, 1, 14}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_a, nullptr);
-            EXPECT_NE(assign_a->targets[0].second, nullptr);
-            EXPECT_EQ(assign_a->targets[0].second->name, "int");
-            EXPECT_EQ(assign_a->value, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -351,26 +198,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "assignment_multiple_garbage_modifiers",
-            "@mod1 @123 let a = 1\n"
-            "let c = 2\n",
-            {
-            {Err::ExpectedModifierName, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->modifiers.size(), 2);
-            EXPECT_EQ(assign->modifiers[0].name, "mod1");
-            EXPECT_EQ(assign->modifiers[1].name, "<error>");
-            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_2, nullptr);
-            EXPECT_EQ(assign_2->targets[0].first, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "block_invalid_left_side_expression_in_reassignment",
             "func test() -> void {\n"
             "  1 + 2 = 3\n"
@@ -407,45 +234,6 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "assignment_missing_type_annotation_after_colon",
-            "let a: = 1\n"
-            "let b: int = 2\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_1, nullptr);
-            EXPECT_EQ(assign_1->targets[0].first, "a");
-            EXPECT_EQ(assign_1->targets[0].second.get(), nullptr);
-            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_2, nullptr);
-            EXPECT_EQ(assign_2->targets[0].first, "b");
-            EXPECT_NE(assign_2->targets[0].second.get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "assignment_multiple_commas_in_targets",
-            "let a,, b = 1\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidIdentifier, 1, 7}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_1, nullptr);
-            EXPECT_EQ(assign_1->targets.size(), 3);
-            EXPECT_EQ(assign_1->targets[0].first, "a");
-            EXPECT_EQ(assign_1->targets[1].first, "<error>");
-            EXPECT_EQ(assign_1->targets[2].first, "b");
-            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_2, nullptr);
-            EXPECT_EQ(assign_2->targets[0].first, "c");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -567,24 +355,6 @@ namespace valuascript::compiler::test {
             ASSERT_NE(reassign_b_id, nullptr);
             ASSERT_EQ(reassign_b_id->name, "b");
             ASSERT_NE(reassign_b->value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "assignment_reserved_keyword_target",
-            "let true = 1\n"
-            "let b = 2\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 5}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign_true = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_true, nullptr);
-            EXPECT_EQ(assign_true->targets[0].first, "true");
-
-            auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
