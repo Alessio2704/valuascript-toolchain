@@ -5,11 +5,12 @@ namespace valuascript::compiler::test {
     };
 
     TEST_F(DecimalMissingLeadingZeroTest, PartialAST) {
+        std::vector<ExpectedError> errors;
+        errors.emplace_back(ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10);
+
         ExpectParseErrorsWithRecovery(
             "let a = .5",
-            {
-                {ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10}
-            },
+            errors,
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({}, {{"a"}}, IsNumber(".5"))
@@ -19,11 +20,12 @@ namespace valuascript::compiler::test {
     }
 
     TEST_F(DecimalMissingLeadingZeroTest, PercentageLiteralPartialAST) {
+        std::vector<ExpectedError> errors;
+        errors.emplace_back(ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10);
+
         ExpectParseErrorsWithRecovery(
             "let a = .5%",
-            {
-                {ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10}
-            },
+            errors,
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({}, {{"a"}}, IsPercentage(".5%"))

@@ -34,26 +34,26 @@ namespace valuascript::compiler::test {
 
     struct ParamSpec {
         std::string name;
-        std::vector<ModifierSpec> mods = {};
+        std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         ExprVerifier default_v = nullptr;
     };
 
     struct FieldSpec {
         std::string name;
-        std::vector<ModifierSpec> mods = {};
+        std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
     };
 
     struct EnumCaseSpec {
         std::string name;
-        std::vector<ModifierSpec> mods = {};
+        std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
     };
 
     struct DictItemSpec {
         std::string key;
-        std::vector<ModifierSpec> mods = {};
+        std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
     };
 
@@ -141,7 +141,7 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline void ExpectBinary(AstNode *node, shared::TokenType op, const ExprVerifier &l_v, const ExprVerifier &r_v) {
+    inline void ExpectBinary(AstNode *node, TokenType op, const ExprVerifier &l_v, const ExprVerifier &r_v) {
         if (auto b = ExpectNode<BinaryExpression>(node)) {
             EXPECT_EQ(b->op, op);
             if (l_v) l_v(b->left.get());
@@ -149,7 +149,7 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline void ExpectUnary(AstNode *node, shared::TokenType op, const ExprVerifier &r_v) {
+    inline void ExpectUnary(AstNode *node, TokenType op, const ExprVerifier &r_v) {
         if (auto u = ExpectNode<UnaryExpression>(node)) {
             EXPECT_EQ(u->op, op);
             if (r_v) r_v(u->right.get());
@@ -223,13 +223,13 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline void ExpectDict(AstNode *node, const std::vector<DictItemSpec> &specs) {
+    inline void ExpectDict(AstNode *node, const std::vector<DictItemSpec> &items) {
         if (auto d = ExpectNode<DictLiteral>(node)) {
-            ASSERT_EQ(d->elements.size(), specs.size());
-            for (size_t i = 0; i < specs.size(); i++) {
-                EXPECT_EQ(d->elements[i].key, specs[i].key);
-                ExpectModifiers(d->elements[i].modifiers, specs[i].mods);
-                if (specs[i].value_v) specs[i].value_v(d->elements[i].value.get());
+            ASSERT_EQ(d->elements.size(), items.size());
+            for (size_t i = 0; i < items.size(); i++) {
+                EXPECT_EQ(d->elements[i].key, items[i].key);
+                ExpectModifiers(d->elements[i].modifiers, items[i].modifiers);
+                if (items[i].value_v) items[i].value_v(d->elements[i].value.get());
             }
         }
     }
@@ -253,10 +253,10 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline void ExpectAssignment(Statement *stmt, const std::vector<ModifierSpec> &mods,
+    inline void ExpectAssignment(Statement *stmt, const std::vector<ModifierSpec> &modifiers,
                                  const std::vector<AssignmentTargetSpec> &targets, const ExprVerifier &val_v) {
         if (auto a = ExpectNode<Assignment>(stmt)) {
-            ExpectModifiers(a->modifiers, mods);
+            ExpectModifiers(a->modifiers, modifiers);
             ASSERT_EQ(a->targets.size(), targets.size());
             for (size_t i = 0; i < targets.size(); i++) {
                 EXPECT_EQ(a->targets[i].first, targets[i].name);
@@ -289,20 +289,20 @@ namespace valuascript::compiler::test {
     }
 
     inline void ExpectFunctionDef(FunctionDefinition *f, std::string_view name,
-                                  const std::vector<ModifierSpec> &mods,
+                                  const std::vector<ModifierSpec> &modifiers,
                                   const std::vector<ParamSpec> &params,
                                   const std::vector<TypeVerifier> &returns,
                                   const std::vector<StmtVerifier> &body,
                                   const std::optional<std::string> &docstring) {
         ASSERT_NE(f, nullptr);
         EXPECT_EQ(f->name, name);
-        ExpectModifiers(f->modifiers, mods);
+        ExpectModifiers(f->modifiers, modifiers);
         EXPECT_EQ(f->docstring, docstring);
 
         ASSERT_EQ(f->parameters.size(), params.size());
         for (size_t i = 0; i < params.size(); i++) {
             EXPECT_EQ(f->parameters[i].name, params[i].name);
-            ExpectModifiers(f->parameters[i].modifiers, params[i].mods);
+            ExpectModifiers(f->parameters[i].modifiers, params[i].modifiers);
             if (params[i].type_v) params[i].type_v(f->parameters[i].type.get());
             if (params[i].default_v) params[i].default_v(f->parameters[i].default_value.get());
         }
@@ -318,38 +318,38 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline void ExpectStructDef(StructDefinition *s, std::string_view name, const std::vector<ModifierSpec> &mods,
+    inline void ExpectStructDef(StructDefinition *s, std::string_view name, const std::vector<ModifierSpec> &modifiers,
                                 const std::vector<FieldSpec> &fields) {
         ASSERT_NE(s, nullptr);
         EXPECT_EQ(s->name, name);
-        ExpectModifiers(s->modifiers, mods);
+        ExpectModifiers(s->modifiers, modifiers);
         ASSERT_EQ(s->fields.size(), fields.size());
         for (size_t i = 0; i < fields.size(); i++) {
             EXPECT_EQ(s->fields[i].name, fields[i].name);
-            ExpectModifiers(s->fields[i].modifiers, fields[i].mods);
+            ExpectModifiers(s->fields[i].modifiers, fields[i].modifiers);
             if (fields[i].type_v) fields[i].type_v(s->fields[i].type.get());
         }
     }
 
-    inline void ExpectEnumDef(EnumDefinition *e, std::string_view name, const std::vector<ModifierSpec> &mods,
+    inline void ExpectEnumDef(EnumDefinition *e, std::string_view name, const std::vector<ModifierSpec> &modifiers,
                               const TypeVerifier &und_v, const std::vector<EnumCaseSpec> &cases) {
         ASSERT_NE(e, nullptr);
         EXPECT_EQ(e->name, name);
-        ExpectModifiers(e->modifiers, mods);
+        ExpectModifiers(e->modifiers, modifiers);
         if (und_v) und_v(e->underlying_type.get());
         ASSERT_EQ(e->cases.size(), cases.size());
         for (size_t i = 0; i < cases.size(); i++) {
             EXPECT_EQ(e->cases[i].name, cases[i].name);
-            ExpectModifiers(e->cases[i].modifiers, cases[i].mods);
+            ExpectModifiers(e->cases[i].modifiers, cases[i].modifiers);
             if (cases[i].value_v) cases[i].value_v(e->cases[i].value.get());
         }
     }
 
-    inline void ExpectTypeAlias(TypeAliasDefinition *a, std::string_view name, const std::vector<ModifierSpec> &mods,
+    inline void ExpectTypeAlias(TypeAliasDefinition *a, std::string_view name, const std::vector<ModifierSpec> &modifiers,
                                 const TypeVerifier &target_v) {
         ASSERT_NE(a, nullptr);
         EXPECT_EQ(a->name, name);
-        ExpectModifiers(a->modifiers, mods);
+        ExpectModifiers(a->modifiers, modifiers);
         if (target_v) target_v(a->target_type.get());
     }
 
@@ -403,77 +403,83 @@ namespace valuascript::compiler::test {
         }
     }
 
-    inline ExprVerifier IsNull() { return [](AstNode *n) { ExpectNullNode(n); }; }
-    inline TypeVerifier IsNullType() { return [](TypeAnnotation *n) { ExpectNullNode(n); }; }
+    inline ExprVerifier IsNull() { return [](AstNode *node) { ExpectNullNode(node); }; }
+    inline TypeVerifier IsNullType() { return [](TypeAnnotation *node) { ExpectNullNode(node); }; }
 
-    inline ExprVerifier IsNumber(std::string val) {
-        return [v = std::move(val)](Expression *n) { ExpectNumber(n, v); };
+    inline ExprVerifier IsNumber(std::string value) {
+        return [v = std::move(value)](Expression *node) { ExpectNumber(node, v); };
     }
 
-    inline ExprVerifier IsString(std::string val) {
-        return [v = std::move(val)](Expression *n) { ExpectString(n, v); };
+    inline ExprVerifier IsString(std::string value) {
+        return [v = std::move(value)](Expression *node) { ExpectString(node, v); };
     }
 
-    inline ExprVerifier IsBoolean(bool val) { return [val](Expression *n) { ExpectBoolean(n, val); }; }
+    inline ExprVerifier IsBoolean(bool value) { return [value](Expression *node) { ExpectBoolean(node, value); }; }
 
-    inline ExprVerifier IsPercentage(std::string val) {
-        return [v = std::move(val)](Expression *n) { ExpectPercentage(n, v); };
+    inline ExprVerifier IsPercentage(std::string value) {
+        return [v = std::move(value)](Expression *node) { ExpectPercentage(node, v); };
     }
 
-    inline ExprVerifier IsIdentifier(std::string val) {
-        return [v = std::move(val)](Expression *n) { ExpectIdentifier(n, v); };
+    inline ExprVerifier IsIdentifier(std::string value) {
+        return [v = std::move(value)](Expression *node) { ExpectIdentifier(node, v); };
     }
 
-    inline ExprVerifier IsSelf() { return [](Expression *n) { ExpectSelf(n); }; }
+    inline ExprVerifier IsSelf() { return [](Expression *node) { ExpectSelf(node); }; }
 
-    inline ExprVerifier IsBinary(shared::TokenType op, ExprVerifier l = nullptr, ExprVerifier r = nullptr) {
-        return [op, left = std::move(l), right = std::move(r)](Expression *n) { ExpectBinary(n, op, left, right); };
+    inline ExprVerifier IsBinary(TokenType op, ExprVerifier left = nullptr, ExprVerifier right = nullptr) {
+        return [op, left = std::move(left), right = std::move(right)](Expression *node) {
+            ExpectBinary(node, op, left, right);
+        };
     }
 
-    inline ExprVerifier IsUnary(shared::TokenType op, ExprVerifier r = nullptr) {
-        return [op, right = std::move(r)](Expression *n) { ExpectUnary(n, op, right); };
+    inline ExprVerifier IsUnary(TokenType op, ExprVerifier right = nullptr) {
+        return [op, right = std::move(right)](Expression *node) { ExpectUnary(node, op, right); };
     }
 
     inline ExprVerifier IsGrouping(ExprVerifier inner = nullptr) {
-        return [i = std::move(inner)](Expression *n) { ExpectGrouping(n, i); };
+        return [i = std::move(inner)](Expression *node) { ExpectGrouping(node, i); };
     }
 
-    inline ExprVerifier IsConditional(ExprVerifier c = nullptr, ExprVerifier t = nullptr, ExprVerifier e = nullptr) {
-        return [cond = std::move(c), thn = std::move(t), els = std::move(e)](Expression *n) {
-            ExpectConditional(n, cond, thn, els);
+    inline ExprVerifier IsConditional(ExprVerifier condition = nullptr, ExprVerifier then_expr = nullptr,
+                                      ExprVerifier else_expr = nullptr) {
+        return [cond = std::move(condition), thn = std::move(then_expr), els = std::move(else_expr)](Expression *node) {
+            ExpectConditional(node, cond, thn, els);
         };
     }
 
-    inline ExprVerifier IsCall(ExprVerifier t, std::vector<ArgSpec> args = {}) {
-        return [target = std::move(t), a = std::move(args)](Expression *n) { ExpectCall(n, target, a); };
+    inline ExprVerifier IsCall(ExprVerifier target, std::vector<ArgSpec> args = {}) {
+        return [target = std::move(target), a = std::move(args)](Expression *node) { ExpectCall(node, target, a); };
     }
 
-    inline ExprVerifier IsBracket(ExprVerifier t, ExprVerifier idx) {
-        return [target = std::move(t), index = std::move(idx)](Expression *n) {
-            ExpectBracketAccess(n, target, index);
+    inline ExprVerifier IsBracket(ExprVerifier target, ExprVerifier idx) {
+        return [target = std::move(target), index = std::move(idx)](Expression *node) {
+            ExpectBracketAccess(node, target, index);
         };
     }
 
-    inline ExprVerifier IsDot(ExprVerifier t, std::string prop) {
-        return [target = std::move(t), p = std::move(prop)](Expression *n) { ExpectDotAccess(n, target, p); };
+    inline ExprVerifier IsDot(ExprVerifier target, std::string property) {
+        return [target = std::move(target), p = std::move(property)](Expression *node) {
+            ExpectDotAccess(node, target, p);
+        };
     }
 
-    inline ExprVerifier IsSwitch(ExprVerifier t, std::vector<SwitchCaseSpec> cases, ExprVerifier def = nullptr) {
-        return [target = std::move(t), c = std::move(cases), d = std::move(def)](Expression *n) {
-            ExpectSwitch(n, target, c, d);
+    inline ExprVerifier IsSwitch(ExprVerifier target, std::vector<SwitchCaseSpec> cases,
+                                 ExprVerifier default_expr = nullptr) {
+        return [target = std::move(target), c = std::move(cases), d = std::move(default_expr)](Expression *node) {
+            ExpectSwitch(node, target, c, d);
         };
     }
 
     inline ExprVerifier IsTensor(std::vector<ExprVerifier> elements = {}) {
-        return [e = std::move(elements)](Expression *n) { ExpectTensor(n, e); };
+        return [e = std::move(elements)](Expression *node) { ExpectTensor(node, e); };
     }
 
     inline ExprVerifier IsTuple(std::vector<ExprVerifier> elements = {}) {
-        return [e = std::move(elements)](Expression *n) { ExpectTuple(n, e); };
+        return [e = std::move(elements)](Expression *node) { ExpectTuple(node, e); };
     }
 
-    inline ExprVerifier IsDict(std::vector<DictItemSpec> specs = {}) {
-        return [s = std::move(specs)](Expression *n) { ExpectDict(n, s); };
+    inline ExprVerifier IsDict(std::vector<DictItemSpec> items = {}) {
+        return [i = std::move(items)](Expression *node) { ExpectDict(node, i); };
     }
 
     inline TypeVerifier IsType(std::string name, std::vector<TypeVerifier> generics = {}) {
@@ -484,15 +490,15 @@ namespace valuascript::compiler::test {
         return [e = std::move(elements)](TypeAnnotation *t) { ExpectTupleType(t, e); };
     }
 
-    inline StmtVerifier IsAssignment(std::vector<ModifierSpec> mods, std::vector<AssignmentTargetSpec> targets,
-                                     ExprVerifier val = nullptr) {
-        return [m = std::move(mods), t = std::move(targets), v = std::move(val)](Statement *s) {
+    inline StmtVerifier IsAssignment(std::vector<ModifierSpec> modifiers, std::vector<AssignmentTargetSpec> targets,
+                                     ExprVerifier value = nullptr) {
+        return [m = std::move(modifiers), t = std::move(targets), v = std::move(value)](Statement *s) {
             ExpectAssignment(s, m, t, v);
         };
     }
 
-    inline StmtVerifier IsReassignment(ExprVerifier target = nullptr, ExprVerifier val = nullptr) {
-        return [t = std::move(target), v = std::move(val)](Statement *s) { ExpectReassignment(s, t, v); };
+    inline StmtVerifier IsReassignment(ExprVerifier target = nullptr, ExprVerifier value = nullptr) {
+        return [t = std::move(target), v = std::move(value)](Statement *s) { ExpectReassignment(s, t, v); };
     }
 
     inline StmtVerifier IsReturn(std::vector<ExprVerifier> values = {}) {
@@ -503,34 +509,36 @@ namespace valuascript::compiler::test {
         return [e = std::move(expr)](Statement *s) { ExpectExprStmt(s, e); };
     }
 
-    inline FuncVerifier IsFunctionDef(std::string name, std::vector<ModifierSpec> mods = {},
+    inline FuncVerifier IsFunctionDef(std::string name,
+                                      std::vector<ModifierSpec> modifiers = {},
                                       std::vector<ParamSpec> params = {},
-                                      std::vector<TypeVerifier> returns = {}, std::vector<StmtVerifier> body = {},
+                                      std::vector<TypeVerifier> returns = {},
+                                      std::vector<StmtVerifier> body = {},
                                       std::optional<std::string> docstring = std::nullopt) {
-        return [n = std::move(name), m = std::move(mods), p = std::move(params), r = std::move(returns), b =
+        return [n = std::move(name), m = std::move(modifiers), p = std::move(params), r = std::move(returns), b =
                     std::move(body), d = std::move(docstring)]
         (FunctionDefinition *f) {
             ExpectFunctionDef(f, n, m, p, r, b, d);
         };
     }
 
-    inline StructVerifier IsStructDef(std::string name, std::vector<ModifierSpec> mods = {},
+    inline StructVerifier IsStructDef(std::string name, std::vector<ModifierSpec> modifiers = {},
                                       std::vector<FieldSpec> fields = {}) {
-        return [n = std::move(name), m = std::move(mods), f = std::move(fields)](StructDefinition *s) {
+        return [n = std::move(name), m = std::move(modifiers), f = std::move(fields)](StructDefinition *s) {
             ExpectStructDef(s, n, m, f);
         };
     }
 
-    inline EnumVerifier IsEnumDef(std::string name, std::vector<ModifierSpec> mods = {}, TypeVerifier und = nullptr,
+    inline EnumVerifier IsEnumDef(std::string name, std::vector<ModifierSpec> modifiers = {}, TypeVerifier type = nullptr,
                                   std::vector<EnumCaseSpec> cases = {}) {
-        return [n = std::move(name), m = std::move(mods), u = std::move(und), c = std::move(cases)](EnumDefinition *e) {
+        return [n = std::move(name), m = std::move(modifiers), u = std::move(type), c = std::move(cases)](EnumDefinition *e) {
             ExpectEnumDef(e, n, m, u, c);
         };
     }
 
-    inline AliasVerifier IsTypeAlias(std::string name, std::vector<ModifierSpec> mods = {},
+    inline AliasVerifier IsTypeAlias(std::string name, std::vector<ModifierSpec> modifiers = {},
                                      TypeVerifier target = nullptr) {
-        return [n = std::move(name), m = std::move(mods), t = std::move(target)](TypeAliasDefinition *a) {
+        return [n = std::move(name), m = std::move(modifiers), t = std::move(target)](TypeAliasDefinition *a) {
             ExpectTypeAlias(a, n, m, t);
         };
     }
@@ -539,8 +547,8 @@ namespace valuascript::compiler::test {
         return [p = std::move(path)](ImportStatement *i) { ExpectImport(i, p); };
     }
 
-    inline DirectiveVerifier IsDirective(std::string name, ExprVerifier val = nullptr) {
-        return [n = std::move(name), v = std::move(val)](Directive *d) { ExpectDirective(d, n, v); };
+    inline DirectiveVerifier IsDirective(std::string name, ExprVerifier value = nullptr) {
+        return [n = std::move(name), v = std::move(value)](Directive *d) { ExpectDirective(d, n, v); };
     }
 
     inline ProgramSpec MergeSpecs(ProgramSpec base, ProgramSpec extension) {

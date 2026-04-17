@@ -18,8 +18,8 @@ namespace valuascript::compiler::test {
         }
 
         void ExpectBinary(const Expression *expr, TokenType expected_op,
-                          const std::function<void(const Expression *)>& left_verifier,
-                          const std::function<void(const Expression *)>& right_verifier) {
+                          const std::function<void(const Expression *)> &left_verifier,
+                          const std::function<void(const Expression *)> &right_verifier) {
             auto bin = dynamic_cast<const BinaryExpression *>(expr);
             ASSERT_NE(bin, nullptr) << "Expected BinaryExpression, but got " << (
                                        expr ? typeid(*expr).name() : "nullptr");
@@ -34,18 +34,19 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(bin->right, nullptr);
         }
 
-        void ExpectGrouping(const Expression *expr, const std::function<void(const Expression *)>& inner_verifier) {
+        void ExpectGrouping(const Expression *expr, const std::function<void(const Expression *)> &inner_verifier) {
             auto grp = dynamic_cast<const GroupingExpression *>(expr);
             ASSERT_NE(grp, nullptr) << "Expected GroupingExpression, but got " << (expr
-                                           ? typeid(*expr).name()
-                                           : "nullptr");
+                                       ? typeid(*expr).name()
+                                       : "nullptr");
 
             if (inner_verifier) inner_verifier(grp->expression.get());
             else
                 EXPECT_EQ(grp->expression, nullptr);
         }
 
-        auto VerifyAssignmentValue(const std::function<void(const Expression *)>& value_verifier, size_t expected_steps = 1,
+        auto VerifyAssignmentValue(const std::function<void(const Expression *)> &value_verifier,
+                                   size_t expected_steps = 1,
                                    size_t step_index = 0) {
             return [=](const Program &ast) {
                 ASSERT_EQ(ast.execution_steps.size(), expected_steps) << "Execution step count mismatch";
@@ -89,7 +90,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "binary_missing_left",
-            "let a = * 2\nlet b = 2\n",
+            "let a = * 2\n"
+            "let b = 2\n",
             { {Err::InvalidExpression, 1, 9} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -100,7 +102,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "binary_invalid_right",
-            "let a = 1 + * 2\nlet b = 2\n",
+            "let a = 1 + * 2\n"
+            "let b = 2\n",
             { {Err::InvalidExpression, 1, 13} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -123,7 +126,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "unary_invalid_operand",
-            "let a = - *\nlet b = 2\n",
+            "let a = - *\n"
+            "let b = 2\n",
             { {Err::InvalidExpression, 1, 11} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -139,7 +143,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "binary_chained_comparisons",
-            "let a = 1 < 2 < 3\nlet b = 2\n",
+            "let a = 1 < 2 < 3\n"
+            "let b = 2\n",
             { {Err::ChainingNotAllowedForComparisonOperations, 1, 15} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -206,7 +211,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "invalid_standalone_statement",
-            "1 + 1\nlet b = 2\n",
+            "1 + 1\n"
+            "let b = 2\n",
             { {Err::InvalidStandaloneStatement, 1, 5} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -244,7 +250,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "binary_multiple_operators_in_row",
-            "let a = 1 + - * 2\nlet b = 1\n",
+            "let a = 1 + - * 2\n"
+            "let b = 1\n",
             { {Err::InvalidExpression, 1, 15} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -255,7 +262,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "unary_chain_with_invalid_operator",
-            "let a = - + * 2\nlet b = 2\n",
+            "let a = - + * 2\n"
+            "let b = 2\n",
             { {Err::InvalidExpression, 1, 13} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -286,7 +294,8 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "chained_comparisons_mixed_operators",
-            "let a = 1 < 2 >= 3\nlet b = 2\n",
+            "let a = 1 < 2 >= 3\n"
+            "let b = 2\n",
             { {Err::ChainingNotAllowedForComparisonOperations, 1, 15} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);

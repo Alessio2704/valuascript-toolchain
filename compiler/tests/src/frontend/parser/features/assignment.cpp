@@ -11,7 +11,7 @@ namespace valuascript::compiler::test {
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        AssignmentHappyPaths,
+        AssignmentSuccessPathTests,
         AssignmentSuccessPathTest,
         ::testing::Values(
             ValidParserTestCase{
