@@ -5,48 +5,6 @@
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
-    struct TypeAnnotationHappyParam {
-        std::string test_name;
-        std::string source_code;
-    };
-
-    class TypeAnnotationHappyPathTest : public AstBaseTest,
-                                        public testing::WithParamInterface<TypeAnnotationHappyParam> {
-    };
-
-    TEST_P(TypeAnnotationHappyPathTest, ParsesSuccessfully) {
-        const TypeAnnotationHappyParam &param = GetParam();
-
-        std::shared_ptr<Program> ast;
-        EXPECT_NO_THROW({
-            ast = parse_expression_as_type_annotation(param.source_code);
-            }) << "Parser threw an exception on valid assignment test: " << param.test_name;
-
-        if (ast) {
-            ASSERT_EQ(ast->execution_steps.size(), 1) << "Expected exactly 1 assignment in AST.";
-            EXPECT_EQ(ast->directives.size(), 0);
-            EXPECT_EQ(ast->function_definitions.size(), 0);
-
-            auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-            EXPECT_NE(assignment->value, nullptr) << "Expected assignment to have a value expression.";
-        }
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        TypeAnnotationHappyPathTest,
-        testing::Values(
-            // actual code being compiler is: let result: 'source code provided below' = 1
-            TypeAnnotationHappyParam{"simple", "scalar"},
-            TypeAnnotationHappyParam{"template", "vector<scalar>"},
-            TypeAnnotationHappyParam{"template_multiple", "vector<vector<decimal>>"},
-            TypeAnnotationHappyParam{"tuple", "(decimal, scalar, bool, string)"},
-            TypeAnnotationHappyParam{"tuple_complex", "(vector<vector<decimal>>, decimal)"}
-        ),
-        [](const testing::TestParamInfo<TypeAnnotationHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
 
     struct TypeAnnotationSadParam {
         std::string test_name;

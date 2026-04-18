@@ -54,7 +54,7 @@ namespace valuascript::compiler::test {
                 },
                 {
                     "alias", "@rec_mod typealias RecA = int\n", [](ProgramSpec &s) {
-                        s.aliases.push_back(IsTypeAlias("RecA", {{"rec_mod"}}, IsType("int")));
+                        s.type_aliases.push_back(IsTypeAlias("RecA", {{"rec_mod"}}, IsType("int")));
                     }
                 },
                 {

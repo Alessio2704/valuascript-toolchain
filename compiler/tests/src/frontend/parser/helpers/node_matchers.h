@@ -74,7 +74,7 @@ namespace valuascript::compiler::test {
         std::vector<FuncVerifier> functions = {};
         std::vector<StructVerifier> structs = {};
         std::vector<EnumVerifier> enums = {};
-        std::vector<AliasVerifier> aliases = {};
+        std::vector<AliasVerifier> type_aliases = {};
     };
 
     template<typename T>
@@ -397,9 +397,9 @@ namespace valuascript::compiler::test {
             if (spec.enums[i]) spec.enums[i](p->enum_definitions[i].get());
         }
 
-        ASSERT_EQ(p->type_aliases.size(), spec.aliases.size()) << "Type alias count mismatch";
-        for (size_t i = 0; i < spec.aliases.size(); i++) {
-            if (spec.aliases[i]) spec.aliases[i](p->type_aliases[i].get());
+        ASSERT_EQ(p->type_aliases.size(), spec.type_aliases.size()) << "Type alias count mismatch";
+        for (size_t i = 0; i < spec.type_aliases.size(); i++) {
+            if (spec.type_aliases[i]) spec.type_aliases[i](p->type_aliases[i].get());
         }
     }
 
@@ -559,7 +559,7 @@ namespace valuascript::compiler::test {
         base.functions.insert(base.functions.end(), extension.functions.begin(), extension.functions.end());
         base.structs.insert(base.structs.end(), extension.structs.begin(), extension.structs.end());
         base.enums.insert(base.enums.end(), extension.enums.begin(), extension.enums.end());
-        base.aliases.insert(base.aliases.end(), extension.aliases.begin(), extension.aliases.end());
+        base.type_aliases.insert(base.type_aliases.end(), extension.type_aliases.begin(), extension.type_aliases.end());
         return base;
     }
 }

@@ -1,10 +1,13 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 
-namespace valuascript::compiler::test {
-    class DecimalMissingLeadingZeroTest : public ParserTestBase {
+namespace valuascript::compiler::test
+{
+    class DecimalMissingLeadingZeroTest : public ParserTestBase
+    {
     };
 
-    TEST_F(DecimalMissingLeadingZeroTest, PartialAST) {
+    TEST_F(DecimalMissingLeadingZeroTest, PartialAST)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10);
 
@@ -19,7 +22,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(DecimalMissingLeadingZeroTest, PercentageLiteralPartialAST) {
+    TEST_F(DecimalMissingLeadingZeroTest, PercentageLiteralPartialAST)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 9, 1, 10);
 

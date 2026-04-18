@@ -1,10 +1,13 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 
-namespace valuascript::compiler::test {
-    class AssignmentErrorTest : public ParserTestBase {
+namespace valuascript::compiler::test
+{
+    class AssignmentErrorTest : public ParserTestBase
+    {
     };
 
-    TEST_F(AssignmentErrorTest, MissingVariableName) {
+    TEST_F(AssignmentErrorTest, MissingVariableName)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 5, 1, 6);
 
@@ -19,7 +22,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, InvalidCharacter1) {
+    TEST_F(AssignmentErrorTest, InvalidCharacter1)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidCharacter, 1, 6, 1, 7);
 
@@ -34,7 +38,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, InvalidCharacter2) {
+    TEST_F(AssignmentErrorTest, InvalidCharacter2)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidCharacter, 1, 7, 1, 8);
 
@@ -49,7 +54,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, InvalidVariableNameStart) {
+    TEST_F(AssignmentErrorTest, InvalidVariableNameStart)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 5, 1, 8);
 
@@ -64,7 +70,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, IncompleteAssignmentMissingEquals) {
+    TEST_F(AssignmentErrorTest, IncompleteAssignmentMissingEquals)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 7, 1, 8);
 
@@ -79,7 +86,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, IncompleteMultipleAssignmentMissingEquals) {
+    TEST_F(AssignmentErrorTest, IncompleteMultipleAssignmentMissingEquals)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 10, 1, 11);
 
@@ -94,7 +102,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingValueAfterEquals) {
+    TEST_F(AssignmentErrorTest, MissingValueAfterEquals)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 8, 1, 9);
 
@@ -109,7 +118,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsWithTypeAnnotation) {
+    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsWithTypeAnnotation)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 13, 1, 14);
 
@@ -125,7 +135,8 @@ namespace valuascript::compiler::test {
     }
 
 
-    TEST_F(AssignmentErrorTest, IncompleteAssignmentAtEOF) {
+    TEST_F(AssignmentErrorTest, IncompleteAssignmentAtEOF)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 6, 1, 7);
         errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 6, 1, 7);
@@ -141,7 +152,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MultiAssignmentTrailingComma) {
+    TEST_F(AssignmentErrorTest, MultiAssignmentTrailingComma)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 8, 1, 9);
 
@@ -156,7 +168,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MultiAssignmentMissingComma) {
+    TEST_F(AssignmentErrorTest, MultiAssignmentMissingComma)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ExpectedCommaInMultiAssignment, 1, 7, 1, 8);
 
@@ -171,7 +184,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MultiAssignmentDoubleComma) {
+    TEST_F(AssignmentErrorTest, MultiAssignmentDoubleComma)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 7, 1, 8);
 
@@ -186,7 +200,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, IllegalModifierOnSingleElementOfMultiAssignment) {
+    TEST_F(AssignmentErrorTest, IllegalModifierOnSingleElementOfMultiAssignment)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements, 1, 8, 1, 15);
 
@@ -201,7 +216,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingTypeAfterColon) {
+    TEST_F(AssignmentErrorTest, MissingTypeAfterColon)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::MissingTypeAnnotation, 1, 8, 1, 9);
 
@@ -216,7 +232,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, BrokenNestedTypeAnnotation) {
+    TEST_F(AssignmentErrorTest, BrokenNestedTypeAnnotation)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs, 1, 19, 1, 20);
 
@@ -225,13 +242,18 @@ namespace valuascript::compiler::test {
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a", IsType("vector", {IsType("int")})}}, IsNumber("1"))
+                    IsAssignment({},
+                                 {
+                                     {"a", IsType("vector", {IsType("int")})}
+                                 },
+                                 IsNumber("1"))
                 }
             }
         );
     }
 
-    TEST_F(AssignmentErrorTest, ReservedKeywordAsTarget) {
+    TEST_F(AssignmentErrorTest, ReservedKeywordAsTarget)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ReservedKeywordAsIdentifier, 1, 5, 1, 9);
 
@@ -246,7 +268,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, ReservedKeywordInMultiAssignment) {
+    TEST_F(AssignmentErrorTest, ReservedKeywordInMultiAssignment)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ReservedKeywordAsIdentifier, 1, 8, 1, 10);
 
@@ -261,7 +284,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingModifierNameAfterAt) {
+    TEST_F(AssignmentErrorTest, MissingModifierNameAfterAt)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ExpectedModifierName, 1, 3, 1, 6);
 
@@ -276,7 +300,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MultipleBrokenModifiers) {
+    TEST_F(AssignmentErrorTest, MultipleBrokenModifiers)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::ExpectedModifierName, 1, 8, 1, 11);
 
@@ -291,7 +316,8 @@ namespace valuascript::compiler::test {
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingTypeAfterColonInMultiAssignment) {
+    TEST_F(AssignmentErrorTest, MissingTypeAfterColonInMultiAssignment)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::MissingTypeAnnotation, 1, 20, 1, 21);
 
@@ -300,13 +326,19 @@ namespace valuascript::compiler::test {
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a", IsType("integer")}, {"b", nullptr}}, IsNumber("1"))
+                    IsAssignment({},
+                                 {
+                                     {"a", IsType("integer")},
+                                     {"b", nullptr}
+                                 },
+                                 IsNumber("1"))
                 }
             }
         );
     }
 
-    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsMultiAssignment) {
+    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsMultiAssignment)
+    {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 11, 1, 12);
 
