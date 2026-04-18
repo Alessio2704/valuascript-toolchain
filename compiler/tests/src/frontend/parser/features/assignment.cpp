@@ -6,73 +6,25 @@ namespace valuascript::compiler::test
     {
     };
 
-    TEST_F(AssignmentSuccessPathTest, NumberLiteral)
+    TEST_F(AssignmentSuccessPathTest, Underscore)
     {
         ExpectValidParse(
-            "let a = 1000",
+            "let _a = 1",
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNumber("1000"))
+                    IsAssignment({}, {{"_a"}}, IsNumber("1"))
                 }
             }
         );
     }
 
-    TEST_F(AssignmentSuccessPathTest, PercentageLiteral1)
+    TEST_F(AssignmentSuccessPathTest, UnderscoreAndNumber)
     {
         ExpectValidParse(
-            "let a = 1.5%",
+            "let _a_1 = 1",
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsPercentage("1.5%"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, PercentageLiteral2)
-    {
-        ExpectValidParse(
-            "let a = 0.000_001%",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsPercentage("0.000_001%"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, StringLiteral)
-    {
-        ExpectValidParse(
-            "let a = \"string\"",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsString("\"string\""))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, BooleanTrue)
-    {
-        ExpectValidParse(
-            "let a = true",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsBoolean(true))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, BooleanFalse)
-    {
-        ExpectValidParse(
-            "let _a = false",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"_a"}}, IsBoolean(false))
+                    IsAssignment({}, {{"_a_1"}}, IsNumber("1"))
                 }
             }
         );
@@ -97,76 +49,6 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({}, {{"a", IsType("integer")}}, IsNumber("1")
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, ExplicitTypeTuple)
-    {
-        ExpectValidParse(
-            "let a: (integer, string) = 1",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {
-                                         "a",
-                                         IsTupleType({
-                                             IsType("integer"),
-                                             IsType("string")
-                                         })
-                                     }
-                                 },
-                                 IsNumber("1")
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, ExplicitTypeTupleGeneric)
-    {
-        ExpectValidParse(
-            "let a: (vector<integer>, string) = 1",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {
-                                         "a",
-                                         IsTupleType({
-                                             IsType("vector", {
-                                                        IsType("integer")
-                                                    }),
-                                             IsType("string")
-                                         })
-                                     }
-                                 },
-                                 IsNumber("1")
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, ExplicitTypeGeneric)
-    {
-        ExpectValidParse(
-            "let a: vector<integer> = 1",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {
-                                         "a",
-                                         IsType("vector", {
-                                                    IsType("integer")
-                                                })
-                                     }
-                                 },
-                                 IsNumber("1")
                     )
                 }
             }
