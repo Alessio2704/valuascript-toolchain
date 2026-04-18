@@ -20,155 +20,22 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(TypealiasSuccessPathTest, Generic)
-    {
-        ExpectValidParse(
-            "typealias StringList = vector<string>",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("StringList", {},
-                                IsType("vector", {
-                                           IsType("string")
-                                       }
-                                )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, NestedGeneric)
-    {
-        ExpectValidParse(
-            "typealias Matrix = map<string, vector<decimal>>",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("Matrix", {},
-                                IsType("map", {
-                                           IsType("string"),
-                                           IsType("vector", {
-                                                      IsType("decimal")
-                                                  })
-                                       }
-                                )
-
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, Tuple)
-    {
-        ExpectValidParse(
-            "typealias ConfigTuple = (string, integer, bool)",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("ConfigTuple", {},
-                                IsTupleType({
-                                    IsType("string"),
-                                    IsType("integer"),
-                                    IsType("bool")
-                                }))
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, DeeplyNestedGenerics)
-    {
-        ExpectValidParse(
-            "typealias DeepNesting = Box<Box<Box<scalar>>>",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("DeepNesting", {},
-                                IsType(
-                                    "Box",
-                                    {
-                                        IsType(
-                                            "Box",
-                                            {
-                                                IsType("Box",
-                                                       {
-                                                           IsType("scalar")
-                                                       }
-                                                )
-                                            }
-                                        )
-                                    }
-                                )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, TuplesContainingGenerics)
-    {
-        ExpectValidParse(
-            "typealias ExecutionContext = (map<string, any>, vector<string>)",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("ExecutionContext", {},
-                                IsTupleType({
-                                    IsType("map", {
-                                               IsType("string"),
-                                               IsType("any"),
-                                           }),
-                                    IsType("vector", {
-                                               IsType("string"),
-                                           })
-                                })
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, GenericsContainingTuples)
-    {
-        ExpectValidParse(
-            "typealias Graph = map<string, vector<(integer, integer)>>",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("Graph", {},
-                                IsType("map", {
-                                           IsType("string"),
-                                           IsType("vector", {
-                                                      IsTupleType({
-                                                          IsType("integer"),
-                                                          IsType("integer"),
-                                                      })
-                                                  })
-                                       })
-                    )
-                }
-            }
-        );
-    }
-
     TEST_F(TypealiasSuccessPathTest, MultipleTypeAliases)
     {
         ExpectValidParse(
             "typealias ID = string\n"
-            "typealias Callback = (string, string)\n"
-            "typealias Registry = map<ID, Callback>",
+            "typealias Callback = string\n"
+            "typealias Registry = string",
             ProgramSpec{
                 .type_aliases = {
                     IsTypeAlias("ID", {},
                                 IsType("string")
                     ),
                     IsTypeAlias("Callback", {},
-                                IsTupleType({
-                                    IsType("string"),
-                                    IsType("string")
-                                })
+                                IsType("string")
                     ),
                     IsTypeAlias("Registry", {},
-                                IsType("map", {
-                                           IsType("ID"),
-                                           IsType("Callback")
-                                       })
+                                IsType("string")
                     ),
                 }
             }
@@ -211,14 +78,10 @@ namespace valuascript::compiler::test
             "typealias\n"
             "Data\n "
             "= \n"
-            "vector<scalar>\n",
+            "string\n",
             ProgramSpec{
                 .type_aliases = {
-                    IsTypeAlias("Data", {},
-                                IsType("vector", {
-                                           IsType("scalar")
-                                       })
-                    ),
+                    IsTypeAlias("Data", {}, IsType("string")),
                 }
             }
         );
@@ -227,7 +90,7 @@ namespace valuascript::compiler::test
     TEST_F(TypealiasSuccessPathTest, MultipleModifiersWithStringArg)
     {
         ExpectValidParse(
-            "@export @deprecated(arg: \"use V2\") typealias OldStruct = map<string, any>",
+            "@export @deprecated(arg: \"use V2\") typealias OldStruct = string",
             ProgramSpec{
                 .type_aliases = {
                     IsTypeAlias("OldStruct", {
@@ -238,10 +101,7 @@ namespace valuascript::compiler::test
                                         }
                                     }
                                 },
-                                IsType("map", {
-                                           IsType("string"),
-                                           IsType("any"),
-                                       })
+                                IsType("string")
                     )
                 }
             }

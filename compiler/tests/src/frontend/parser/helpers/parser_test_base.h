@@ -15,6 +15,7 @@
 #include "core/valuascript_exception.h"
 #include "frontend/parser/helpers/node_matchers.h"
 #include "expression_contexts_provider.h"
+#include "type_annotation_contexts_provider.h .h"
 
 namespace valuascript::compiler::test
 {
@@ -131,6 +132,20 @@ namespace valuascript::compiler::test
 
                 SCOPED_TRACE("Testing expression context: " + ctx.name);
 
+                ExpectValidParse(code, spec);
+            }
+        }
+
+        static void ExpectValidTypeAnnotation(const std::string& type_code, const TypeVerifier& type_verifier)
+        {
+            for (const auto& ctx : TypeAnnotationContextsProvider::get_all())
+            {
+                std::string code = TypeAnnotationContextsProvider::inject(ctx.source_template, type_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, type_verifier);
+
+                SCOPED_TRACE("Testing type annotation context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
