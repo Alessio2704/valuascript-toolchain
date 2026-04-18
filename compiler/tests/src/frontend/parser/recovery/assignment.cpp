@@ -112,7 +112,7 @@ namespace valuascript::compiler::test
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a"}}, nullptr)
+                    IsAssignment({}, {{"a"}}, IsNull())
                 }
             }
         );
@@ -128,7 +128,7 @@ namespace valuascript::compiler::test
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a", IsType("int")}}, nullptr)
+                    IsAssignment({}, {{"a", IsType("int")}}, IsNull())
                 }
             }
         );
@@ -146,7 +146,7 @@ namespace valuascript::compiler::test
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a"}}, nullptr)
+                    IsAssignment({}, {{"a"}}, IsNull())
                 }
             }
         );
@@ -226,7 +226,7 @@ namespace valuascript::compiler::test
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"a", nullptr}}, IsNumber("1"))
+                    IsAssignment({}, {{"a", IsNullType()}}, IsNumber("1"))
                 }
             }
         );
@@ -329,7 +329,7 @@ namespace valuascript::compiler::test
                     IsAssignment({},
                                  {
                                      {"a", IsType("integer")},
-                                     {"b", nullptr}
+                                     {"b", IsNullType()}
                                  },
                                  IsNumber("1"))
                 }
@@ -347,7 +347,7 @@ namespace valuascript::compiler::test
             errors,
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({}, {{"x"}, {"y"}}, nullptr)
+                    IsAssignment({}, {{"x"}, {"y"}}, IsNull())
                 }
             }
         );

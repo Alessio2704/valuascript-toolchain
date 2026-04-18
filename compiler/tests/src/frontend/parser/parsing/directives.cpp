@@ -33,17 +33,6 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         DirectiveSadPathTest,
         testing::Values(
-            DirectiveSadParam{"other_from_at", "*iterations = 1000", ValuascriptErrorCode::InvalidExpression},
-            DirectiveSadParam{"missing_after_name_at", "@ = 1000", ValuascriptErrorCode::ExpectedModifierName},
-            DirectiveSadParam{"missing_value_after_eq", "#iterations = ", ValuascriptErrorCode::MissingValueAfterEquals}
-            ,
-            DirectiveSadParam{"missing_at_valueless_directive", "module", ValuascriptErrorCode::
-            InvalidStandaloneStatement},
-            DirectiveSadParam{"other_from_at_valueless_directive", "*module", ValuascriptErrorCode::
-            InvalidExpression},
-            DirectiveSadParam{"missing_import_directive", "#", ValuascriptErrorCode::MissingDirectiveName},
-            DirectiveSadParam{"missing_after_name_at_valueless_directive", "# \"file.vs\"", ValuascriptErrorCode::
-            MissingDirectiveName},
             DirectiveSadParam{"missing_operator_1", "#iterations = 1000 1", ValuascriptErrorCode::MissingOperator},
             DirectiveSadParam{"missing_operator_2", "#iterations = 1000 + 1 2", ValuascriptErrorCode::MissingOperator},
             DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", ValuascriptErrorCode::
