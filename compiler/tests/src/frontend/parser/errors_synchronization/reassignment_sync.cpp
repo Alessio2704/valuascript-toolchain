@@ -115,10 +115,10 @@ namespace valuascript::compiler::test {
             {Err::ChainingNotAllowedForComparisonOperations, 1, 11}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "c");
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto reassign = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(reassign, nullptr);
+            EXPECT_EQ(dynamic_cast<IdentifierAccess*>(reassign->target.get())->name, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{

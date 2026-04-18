@@ -33,7 +33,7 @@ namespace valuascript::compiler {
 
             if (op_precedence == Precedence::Comparison &&
                 TokenTraits::get_operator_precedence(cursor_.peek().type) == Precedence::Comparison) {
-                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
+                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
             }
         }
 

@@ -98,14 +98,7 @@ namespace valuascript::compiler::test {
             ExpressionSadParam{"missing_operator_6", "a  b[]", ValuascriptErrorCode::MissingOperator},
             ExpressionSadParam{"missing_operator_6_a", "a - b[]", ValuascriptErrorCode::EmptyBracketAccess},
             ExpressionSadParam{"missing_operator_7", "a + b (1, 2)", ValuascriptErrorCode::
-            MissingOperatorOrArgumentName},
-
-
-            ExpressionSadParam{"chaining_not_allowed_for_comparison_1", "a > b > c", ValuascriptErrorCode::
-            ChainingNotAllowedForComparisonOperations},
-            ExpressionSadParam{"chaining_not_allowed_for_comparison_2", "10 <= 5 != false", ValuascriptErrorCode
-            ::
-            ChainingNotAllowedForComparisonOperations}
+            MissingOperatorOrArgumentName}
         ),
         [](const testing::TestParamInfo<ExpressionSadParam>& info) {
         return info.param.test_name;

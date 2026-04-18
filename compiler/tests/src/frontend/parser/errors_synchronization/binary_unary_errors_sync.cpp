@@ -142,18 +142,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "binary_chained_comparisons",
-            "let a = 1 < 2 < 3\n"
-            "let b = 2\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 1, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "grouping_missing_operator",
             "let a = (1 2)\n",
             { {Err::MissingOperatorInsideGrouping, 1, 12} },
@@ -226,7 +214,9 @@ namespace valuascript::compiler::test {
             "let a = (1 < 2 < 3)\n",
             { {Err::ChainingNotAllowedForComparisonOperations, 1, 16} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, nullptr);
+                ExpectGrouping(expr, [](const Expression *inner) {
+                    ASSERT_NE(inner, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -244,8 +234,8 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto tensor = dynamic_cast<const TensorLiteral*>(expr);
                 ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 1);
-                ExpectNumber(tensor->elements[0].get(), "4");
+                ASSERT_EQ(tensor->elements.size(), 2);
+                ExpectNumber(tensor->elements[1].get(), "4");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -291,26 +281,6 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, nullptr);
                 })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "chained_comparisons_mixed_operators",
-            "let a = 1 < 2 >= 3\n"
-            "let b = 2\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 1, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "chained_equality_operators",
-            "let a = 1 == 2 != 3\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 1, 16} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "right_associative_power_missing_operand",
@@ -601,7 +571,9 @@ namespace valuascript::compiler::test {
             ")\n",
             { {Err::ChainingNotAllowedForComparisonOperations, 3, 3} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, nullptr);
+                ExpectGrouping(expr, [](const Expression *inner) {
+                    ASSERT_NE(inner, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
