@@ -38,36 +38,85 @@ namespace valuascript::compiler
     std::unique_ptr<Directive> Parser::parse_directive()
     {
         const Token& start_token = cursor_.consume(TokenType::Hash, ValuascriptErrorCode::ExpectedHashToken);
-        const Token& name_token = consume_identifier(ValuascriptErrorCode::MissingDirectiveName);
+
+        Token name_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+
+        if (cursor_.is_at_end() || cursor_.peek().line > cursor_.previous().line ||
+            is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type))
+        {
+            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingDirectiveName, false);
+        }
+        else
+        {
+            try
+            {
+                name_token = consume_identifier(ValuascriptErrorCode::MissingDirectiveName);
+            }
+            catch (const ParseSyncException&)
+            {
+                while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
+                {
+                    if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
+                    cursor_.advance();
+                }
+            }
+        }
+
         std::string directive_name = name_token.lexeme;
 
         std::unique_ptr<Expression> value = nullptr;
 
-        if (cursor_.match({TokenType::Assign}))
+        if (directive_name != "<error>")
         {
-            bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
-            (cursor_.peek().line > cursor_.previous().line &&
-                cursor_.peek().type == TokenType::Identifier &&
-                cursor_.peek(1).type == TokenType::Assign);
-
-            if (cursor_.is_at_end() || is_pseudo_stmt)
+            if (cursor_.match({TokenType::Assign}))
             {
-                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
-            }
-            else
-            {
-                value = parse_expression();
-            }
-        }
-        else if (cursor_.peek().line == cursor_.previous().line && TokenTraits::is_expression_start(
-            cursor_.peek().type))
-        {
-            value = parse_expression();
-        }
+                bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
+                (cursor_.peek().line > cursor_.previous().line &&
+                    cursor_.peek().type == TokenType::Identifier &&
+                    cursor_.peek(1).type == TokenType::Assign);
 
-        if (value)
-        {
-            verify_statement_end();
+                if (cursor_.is_at_end() || is_pseudo_stmt || cursor_.peek().line > cursor_.previous().line ||
+                    is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type))
+                {
+                    cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals, false);
+                }
+                else
+                {
+                    try
+                    {
+                        value = parse_expression();
+                    }
+                    catch (const ParseSyncException&)
+                    {
+                        while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
+                        {
+                            if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
+                            cursor_.advance();
+                        }
+                    }
+                }
+            }
+            else if (cursor_.peek().line == cursor_.previous().line && TokenTraits::is_expression_start(
+                cursor_.peek().type))
+            {
+                try
+                {
+                    value = parse_expression();
+                }
+                catch (const ParseSyncException&)
+                {
+                    while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
+                    {
+                        if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
+                        cursor_.advance();
+                    }
+                }
+            }
+
+            if (value)
+            {
+                verify_statement_end();
+            }
         }
 
         auto dir = std::make_unique<Directive>(directive_name, std::move(value));

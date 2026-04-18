@@ -106,8 +106,8 @@ namespace valuascript::compiler::test {
                 {Err::TopLevelDeclarationNotAllowedHere, 25, 5, 29, 6},
                 {Err::TopLevelDeclarationNotAllowedHere, 31, 5, 31, 20},
                 {Err::TopLevelDeclarationNotAllowedHere, 33, 5, 34, 20},
-                {Err::TopLevelDeclarationNotAllowedHere, 36, 5, 36, 6},
-                {Err::TopLevelDeclarationNotAllowedHere, 38, 5, 38, 11},
+                {Err::TopLevelDeclarationNotAllowedHere, 36, 5, 36, 7},
+                {Err::TopLevelDeclarationNotAllowedHere, 38, 5, 38, 13},
                 {Err::TopLevelDeclarationNotAllowedHere, 40, 5, 40, 13},
 
                 {Err::TopLevelDeclarationNotAllowedHere, 43, 10, 45, 11},
