@@ -14,6 +14,7 @@
 #include "core/compiler_context.h"
 #include "core/valuascript_exception.h"
 #include "frontend/parser/helpers/node_matchers.h"
+#include "expression_contexts_provider.h"
 
 namespace valuascript::compiler::test
 {
@@ -121,11 +122,17 @@ namespace valuascript::compiler::test
 
         static void ExpectValidExpression(const std::string& expr_code, const ExprVerifier& expr_verifier)
         {
-            ExpectValidParse("let result = " + expr_code, ProgramSpec{
-                                 .execution_steps = {
-                                     IsAssignment({}, {{"result"}}, expr_verifier)
-                                 }
-                             });
+            for (const auto& ctx : ExpressionContextsProvider::get_all())
+            {
+                std::string code = ExpressionContextsProvider::inject(ctx.source_template, expr_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, expr_verifier);
+
+                SCOPED_TRACE("Testing expression context: " + ctx.name);
+
+                ExpectValidParse(code, spec);
+            }
         }
 
         static void ExpectParseErrors(const std::string& code, const std::vector<ExpectedError>& expected_errors,
