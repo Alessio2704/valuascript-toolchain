@@ -8,691 +8,709 @@ namespace valuascript::compiler::test
 
     TEST_F(UnaryBinarySuccessPathTest, StandardPrecedence)
     {
-        ExpectValidParse(
-            "let a = 1 + 2 * 3 ^ 4",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Plus,
-                                          IsNumber("1"),
-                                          IsBinary(TokenType::Star,
-                                                   IsNumber("2"),
-                                                   IsBinary(TokenType::Caret,
-                                                            IsNumber("3"),
-                                                            IsNumber("4")
-                                                   )
-                                          )
-                                 )
-                    )
-                }
-            }
-        );
+        ExpectValidExpression("1 + 2 * 3 ^ 4",
+                              IsBinary(TokenType::Plus,
+                                       IsNumber("1"),
+                                       IsBinary(TokenType::Star,
+                                                IsNumber("2"),
+                                                IsBinary(TokenType::Caret,
+                                                         IsNumber("3"),
+                                                         IsNumber("4")
+                                                )
+                                       )
+                              ));
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LeftAssociativitySubtraction)
     {
-        ExpectValidParse(
-            "let a = 10 - 5 - 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Minus,
-                                          IsBinary(TokenType::Minus,
-                                                   IsNumber("10"),
-                                                   IsNumber("5")
-                                          ),
-                                          IsNumber("2")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "10 - 5 - 2",
+            IsBinary(TokenType::Minus,
+                     IsBinary(TokenType::Minus,
+                              IsNumber("10"),
+                              IsNumber("5")
+                     ),
+                     IsNumber("2")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LeftAssociativityDivision)
     {
-        ExpectValidParse(
-            "let a = 20 / 5 / 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Slash,
-                                          IsBinary(TokenType::Slash,
-                                                   IsNumber("20"),
-                                                   IsNumber("5")
-                                          ),
-                                          IsNumber("2")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "20 / 5 / 2",
+            IsBinary(TokenType::Slash,
+                     IsBinary(TokenType::Slash,
+                              IsNumber("20"),
+                              IsNumber("5")
+                     ),
+                     IsNumber("2")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, FactorLeftAssociativityMixed)
+    {
+        ExpectValidExpression(
+            "a * b / c mod d",
+            IsBinary(TokenType::Mod,
+                     IsBinary(TokenType::Slash,
+                              IsBinary(TokenType::Star,
+                                       IsIdentifier("a"),
+                                       IsIdentifier("b")
+                              ),
+                              IsIdentifier("c")
+                     ),
+                     IsIdentifier("d")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, UnaryMinusPrecedence)
     {
-        ExpectValidParse(
-            "let a = -5 * 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsUnary(TokenType::Minus,
-                                                  IsNumber("5")
-                                          ),
-                                          IsNumber("2")
-                                 )
+        ExpectValidExpression(
+            "-5 * 2",
+            IsBinary(TokenType::Star,
+                     IsUnary(TokenType::Minus,
+                             IsNumber("5")
+                     ),
+                     IsNumber("2")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, UnaryPlusBasic)
+    {
+        ExpectValidExpression(
+            "+42",
+            IsUnary(TokenType::Plus,
+                    IsNumber("42")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, UnaryBindsTighterThanPower)
+    {
+        ExpectValidExpression(
+            "-2 ^ 2",
+            IsBinary(TokenType::Caret,
+                     IsUnary(TokenType::Minus,
+                             IsNumber("2")
+                     ),
+                     IsNumber("2")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, MixedRightAssociativityAndUnary)
+    {
+        ExpectValidExpression(
+            "2 ^ -3 ^ 4",
+            IsBinary(TokenType::Caret,
+                     IsNumber("2"),
+                     IsBinary(TokenType::Caret,
+                              IsUnary(TokenType::Minus,
+                                      IsNumber("3")
+                              ),
+                              IsNumber("4")
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, ConsecutiveDifferentUnary)
+    {
+        ExpectValidExpression(
+            "not - + x",
+            IsUnary(TokenType::Not,
+                    IsUnary(TokenType::Minus,
+                            IsUnary(TokenType::Plus,
+                                    IsIdentifier("x")
+                            )
                     )
-                }
-            }
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, ParenthesesOverride)
     {
-        ExpectValidParse(
-            "let a = (1 + 2) * 3",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsGrouping(
-                                              IsBinary(TokenType::Plus,
-                                                       IsNumber("1"),
-                                                       IsNumber("2")
-                                              )
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "(1 + 2) * 3",
+            IsBinary(TokenType::Star,
+                     IsGrouping(
+                         IsBinary(TokenType::Plus,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         )
+                     ),
+                     IsNumber("3")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, DeepParenthesesNesting)
     {
-        ExpectValidParse(
-            "let a = ((1 + 2) * (3 - 4)) / 5",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Slash,
-                                          IsGrouping(
-                                              IsBinary(TokenType::Star,
-                                                       IsGrouping(
-                                                           IsBinary(TokenType::Plus,
-                                                                    IsNumber("1"),
-                                                                    IsNumber("2")
-                                                           )
-                                                       ),
-                                                       IsGrouping(
-                                                           IsBinary(TokenType::Minus,
-                                                                    IsNumber("3"),
-                                                                    IsNumber("4")
-                                                           )
-                                                       )
-                                              )
-                                          ),
-                                          IsNumber("5")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "((1 + 2) * (3 - 4)) / 5",
+            IsBinary(TokenType::Slash,
+                     IsGrouping(
+                         IsBinary(TokenType::Star,
+                                  IsGrouping(
+                                      IsBinary(TokenType::Plus,
+                                               IsNumber("1"),
+                                               IsNumber("2")
+                                      )
+                                  ),
+                                  IsGrouping(
+                                      IsBinary(TokenType::Minus,
+                                               IsNumber("3"),
+                                               IsNumber("4")
+                                      )
+                                  )
+                         )
+                     ),
+                     IsNumber("5")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, GroupingRedundancy)
+    {
+        ExpectValidExpression(
+            "(((x))) + 1",
+            IsBinary(TokenType::Plus,
+                     IsGrouping(
+                         IsGrouping(
+                             IsGrouping(
+                                 IsIdentifier("x")
+                             )
+                         )
+                     ),
+                     IsNumber("1")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, RelationalPrecedence)
     {
-        ExpectValidParse(
-            "let a = 1 + 2 > 3 * 4",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Greater,
-                                          IsBinary(TokenType::Plus,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsBinary(TokenType::Star,
-                                                   IsNumber("3"),
-                                                   IsNumber("4")
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "1 + 2 > 3 * 4",
+            IsBinary(TokenType::Greater,
+                     IsBinary(TokenType::Plus,
+                              IsNumber("1"),
+                              IsNumber("2")
+                     ),
+                     IsBinary(TokenType::Star,
+                              IsNumber("3"),
+                              IsNumber("4")
+                     )
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, EqualityPrecedence)
     {
-        ExpectValidParse(
-            "let a = x == y + 1",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Equals,
-                                          IsIdentifier("x"),
-                                          IsBinary(TokenType::Plus,
-                                                   IsIdentifier("y"),
-                                                   IsNumber("1")
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x == y + 1",
+            IsBinary(TokenType::Equals,
+                     IsIdentifier("x"),
+                     IsBinary(TokenType::Plus,
+                              IsIdentifier("y"),
+                              IsNumber("1")
+                     )
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, ModuloPrecedence)
     {
-        ExpectValidParse(
-            "let a = 10 mod 3 * 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsBinary(TokenType::Mod,
-                                                   IsNumber("10"),
-                                                   IsNumber("3")
-                                          ),
-                                          IsNumber("2")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "10 mod 3 * 2",
+            IsBinary(TokenType::Star,
+                     IsBinary(TokenType::Mod,
+                              IsNumber("10"),
+                              IsNumber("3")
+                     ),
+                     IsNumber("2")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, RightAssociativityPower)
     {
-        ExpectValidParse(
-            "let a = 2 ^ 3 ^ 4",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Caret,
-                                          IsNumber("2"),
-                                          IsBinary(TokenType::Caret,
-                                                   IsNumber("3"),
-                                                   IsNumber("4")
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "2 ^ 3 ^ 4",
+            IsBinary(TokenType::Caret,
+                     IsNumber("2"),
+                     IsBinary(TokenType::Caret,
+                              IsNumber("3"),
+                              IsNumber("4")
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, RightAssociativityPowerMixed)
+    {
+        ExpectValidExpression(
+            "2 ^ 3 ^ 4 * 5 + 6",
+            IsBinary(TokenType::Plus,
+                     IsBinary(TokenType::Star,
+                              IsBinary(TokenType::Caret,
+                                       IsNumber("2"),
+                                       IsBinary(TokenType::Caret,
+                                                IsNumber("3"),
+                                                IsNumber("4")
+                                       )
+                              ),
+                              IsNumber("5")
+                     ),
+                     IsNumber("6")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LogicalAndOrPrecedence)
     {
-        ExpectValidParse(
-            "let a = true or false and true",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Or,
-                                          IsBoolean(true),
-                                          IsBinary(TokenType::And,
-                                                   IsBoolean(false),
-                                                   IsBoolean(true)
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "true or false and true",
+            IsBinary(TokenType::Or,
+                     IsBoolean(true),
+                     IsBinary(TokenType::And,
+                              IsBoolean(false),
+                              IsBoolean(true)
+                     )
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, RelationalBeforeLogical)
     {
-        ExpectValidParse(
-            "let a = x > y and z == w",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::And,
-                                          IsBinary(TokenType::Greater,
-                                                   IsIdentifier("x"),
-                                                   IsIdentifier("y")
-                                          ),
-                                          IsBinary(TokenType::Equals,
-                                                   IsIdentifier("z"),
-                                                   IsIdentifier("w")
-                                          )
-                                 )
+        ExpectValidExpression(
+            "x > y and z == w",
+            IsBinary(TokenType::And,
+                     IsBinary(TokenType::Greater,
+                              IsIdentifier("x"),
+                              IsIdentifier("y")
+                     ),
+                     IsBinary(TokenType::Equals,
+                              IsIdentifier("z"),
+                              IsIdentifier("w")
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, LogicalMixedWithArithmeticAndEquality)
+    {
+        ExpectValidExpression(
+            "a + 1 == b and c * 2 != d or e",
+            IsBinary(TokenType::Or,
+                     IsBinary(TokenType::And,
+                              IsBinary(TokenType::Equals,
+                                       IsBinary(TokenType::Plus,
+                                                IsIdentifier("a"),
+                                                IsNumber("1")
+                                       ),
+                                       IsIdentifier("b")
+                              ),
+                              IsBinary(TokenType::NotEquals,
+                                       IsBinary(TokenType::Star,
+                                                IsIdentifier("c"),
+                                                IsNumber("2")
+                                       ),
+                                       IsIdentifier("d")
+                              )
+                     ),
+                     IsIdentifier("e")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, StringConcatenation)
+    {
+        ExpectValidExpression(
+            "\"hello\" + \" \" + \"world\"",
+            IsBinary(TokenType::Plus,
+                     IsBinary(TokenType::Plus,
+                              IsString("\"hello\""),
+                              IsString("\" \"")
+                     ),
+                     IsString("\"world\"")
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, PrefixPostfixInteraction)
+    {
+        ExpectValidExpression(
+            "not a.b[0]()",
+            IsUnary(TokenType::Not,
+                    IsCall(
+                        IsBracket(
+                            IsDot(IsIdentifier("a"), "b"),
+                            IsNumber("0")
+                        )
                     )
-                }
-            }
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, PostfixAndPrefixPrecedence)
     {
-        ExpectValidParse(
-            "let a = -b() * 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsUnary(TokenType::Minus,
-                                                  IsCall(IsIdentifier("b"))
-                                          ),
-                                          IsNumber("2")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "-b() * 2",
+            IsBinary(TokenType::Star,
+                     IsUnary(TokenType::Minus,
+                             IsCall(IsIdentifier("b"))
+                     ),
+                     IsNumber("2")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, BracketAccessPrecedence)
     {
-        ExpectValidParse(
-            "let a = b[0] * 2",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsBracket(
-                                              IsIdentifier("b"),
-                                              IsNumber("0")
-                                          ),
-                                          IsNumber("2")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "b[0] * 2",
+            IsBinary(TokenType::Star,
+                     IsBracket(
+                         IsIdentifier("b"),
+                         IsNumber("0")
+                     ),
+                     IsNumber("2")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, PercentageInMathExpressions)
     {
-        ExpectValidParse(
-            "let total = 100 * 5% + 2%",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"total"}},
-                                 IsBinary(TokenType::Plus,
-                                          IsBinary(TokenType::Star,
-                                                   IsNumber("100"),
-                                                   IsPercentage("5%")
-                                          ),
-                                          IsPercentage("2%")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "100 * 5% + 2%",
+            IsBinary(TokenType::Plus,
+                     IsBinary(TokenType::Star,
+                              IsNumber("100"),
+                              IsPercentage("5%")
+                     ),
+                     IsPercentage("2%")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, ArithmeticNegation)
     {
-        ExpectValidParse(
-            "let a = -5",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Minus,
-                                         IsNumber("5")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "-5",
+            IsUnary(TokenType::Minus,
+                    IsNumber("5")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LogicalInversion)
     {
-        ExpectValidParse(
-            "let a = not is_active",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Not,
-                                         IsIdentifier("is_active")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "not is_active",
+            IsUnary(TokenType::Not,
+                    IsIdentifier("is_active")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, UnaryPrecedenceOverBinary)
     {
-        ExpectValidParse(
-            "let a = -a * b",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Star,
-                                          IsUnary(TokenType::Minus,
-                                                  IsIdentifier("a")
-                                          ),
-                                          IsIdentifier("b")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "-a * b",
+            IsBinary(TokenType::Star,
+                     IsUnary(TokenType::Minus,
+                             IsIdentifier("a")
+                     ),
+                     IsIdentifier("b")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, NestedUnaryChaining1)
     {
-        ExpectValidParse(
-            "let a = not not flag",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Not,
-                                         IsUnary(TokenType::Not,
-                                                 IsIdentifier("flag")
-                                         )
-                                 )
+        ExpectValidExpression(
+            "not not flag",
+            IsUnary(TokenType::Not,
+                    IsUnary(TokenType::Not,
+                            IsIdentifier("flag")
                     )
-                }
-            }
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, NestedUnaryChaining2)
     {
-        ExpectValidParse(
-            "let a = + + flag",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Plus,
-                                         IsUnary(TokenType::Plus,
-                                                 IsIdentifier("flag")
-                                         )
-                                 )
+        ExpectValidExpression(
+            "+ + flag",
+            IsUnary(TokenType::Plus,
+                    IsUnary(TokenType::Plus,
+                            IsIdentifier("flag")
                     )
-                }
-            }
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, NestedUnaryChaining3)
     {
-        ExpectValidParse(
-            "let a = - - flag",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Minus,
-                                         IsUnary(TokenType::Minus,
-                                                 IsIdentifier("flag")
-                                         )
-                                 )
+        ExpectValidExpression(
+            "- - flag",
+            IsUnary(TokenType::Minus,
+                    IsUnary(TokenType::Minus,
+                            IsIdentifier("flag")
                     )
-                }
-            }
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, DeeplyNestedUnaryAndBinaryMath)
     {
-        ExpectValidParse(
-            "let a = -a * (b + c) - (not d) / e",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Minus,
-                                          IsBinary(TokenType::Star,
-                                                   IsUnary(TokenType::Minus,
-                                                           IsIdentifier("a")
-                                                   ),
-                                                   IsGrouping(
-                                                       IsBinary(TokenType::Plus,
-                                                                IsIdentifier("b"),
-                                                                IsIdentifier("c")
-                                                       )
-                                                   )
-                                          ),
-                                          IsBinary(TokenType::Slash,
-                                                   IsGrouping(
-                                                       IsUnary(TokenType::Not,
-                                                               IsIdentifier("d")
-                                                       )
-                                                   ),
-                                                   IsIdentifier("e")
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "-a * (b + c) - (not d) / e",
+            IsBinary(TokenType::Minus,
+                     IsBinary(TokenType::Star,
+                              IsUnary(TokenType::Minus,
+                                      IsIdentifier("a")
+                              ),
+                              IsGrouping(
+                                  IsBinary(TokenType::Plus,
+                                           IsIdentifier("b"),
+                                           IsIdentifier("c")
+                                  )
+                              )
+                     ),
+                     IsBinary(TokenType::Slash,
+                              IsGrouping(
+                                  IsUnary(TokenType::Not,
+                                          IsIdentifier("d")
+                                  )
+                              ),
+                              IsIdentifier("e")
+                     )
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, DeeplyNestedUnaryAndBinaryMath2)
     {
-        ExpectValidParse(
-            "let a = -a * (b + c) - not d / e",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Minus,
-                                          IsBinary(TokenType::Star,
-                                                   IsUnary(TokenType::Minus,
-                                                           IsIdentifier("a")
-                                                   ),
-                                                   IsGrouping(
-                                                       IsBinary(TokenType::Plus,
-                                                                IsIdentifier("b"),
-                                                                IsIdentifier("c")
-                                                       )
-                                                   )
-                                          ),
-                                          IsBinary(TokenType::Slash,
-                                                   IsUnary(TokenType::Not,
-                                                           IsIdentifier("d")
-                                                   ),
-                                                   IsIdentifier("e")
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "-a * (b + c) - not d / e",
+            IsBinary(TokenType::Minus,
+                     IsBinary(TokenType::Star,
+                              IsUnary(TokenType::Minus,
+                                      IsIdentifier("a")
+                              ),
+                              IsGrouping(
+                                  IsBinary(TokenType::Plus,
+                                           IsIdentifier("b"),
+                                           IsIdentifier("c")
+                                  )
+                              )
+                     ),
+                     IsBinary(TokenType::Slash,
+                              IsUnary(TokenType::Not,
+                                      IsIdentifier("d")
+                              ),
+                              IsIdentifier("e")
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, ComplexMixedPrecedence)
+    {
+        ExpectValidExpression(
+            "-a.b ^ c[0] * d + e == f and not g or h",
+            IsBinary(TokenType::Or,
+                     IsBinary(TokenType::And,
+                              IsBinary(TokenType::Equals,
+                                       IsBinary(TokenType::Plus,
+                                                IsBinary(TokenType::Star,
+                                                         IsBinary(TokenType::Caret,
+                                                                  IsUnary(TokenType::Minus,
+                                                                          IsDot(IsIdentifier("a"), "b")
+                                                                  ),
+                                                                  IsBracket(IsIdentifier("c"), IsNumber("0"))
+                                                         ),
+                                                         IsIdentifier("d")
+                                                ),
+                                                IsIdentifier("e")
+                                       ),
+                                       IsIdentifier("f")
+                              ),
+                              IsUnary(TokenType::Not,
+                                      IsIdentifier("g")
+                              )
+                     ),
+                     IsIdentifier("h")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, OrExpr)
     {
-        ExpectValidParse(
-            "let a = x or y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Or,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x or y",
+            IsBinary(TokenType::Or,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, AndExpr)
     {
-        ExpectValidParse(
-            "let a = x and y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::And,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x and y",
+            IsBinary(TokenType::And,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, NotExpr)
     {
-        ExpectValidParse(
-            "let a = not x",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsUnary(TokenType::Not,
-                                         IsIdentifier("x")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "not x",
+            IsUnary(TokenType::Not,
+                    IsIdentifier("x")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, EqExpr)
     {
-        ExpectValidParse(
-            "let a = x == y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Equals,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x == y",
+            IsBinary(TokenType::Equals,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, NeqExpr)
     {
-        ExpectValidParse(
-            "let a = x != y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::NotEquals,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x != y",
+            IsBinary(TokenType::NotEquals,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, GtExpr)
     {
-        ExpectValidParse(
-            "let a = x > y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Greater,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x > y",
+            IsBinary(TokenType::Greater,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LtExpr)
     {
-        ExpectValidParse(
-            "let a = x < y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Less,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x < y",
+            IsBinary(TokenType::Less,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, GteExpr)
     {
-        ExpectValidParse(
-            "let a = x >= y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::GreaterEqual,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x >= y",
+            IsBinary(TokenType::GreaterEqual,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, LteExpr)
     {
-        ExpectValidParse(
-            "let a = x <= y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::LessEqual,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x <= y",
+            IsBinary(TokenType::LessEqual,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, PowExpr)
     {
-        ExpectValidParse(
-            "let a = x ^ y",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Caret,
-                                          IsIdentifier("x"),
-                                          IsIdentifier("y")
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "x ^ y",
+            IsBinary(TokenType::Caret,
+                     IsIdentifier("x"),
+                     IsIdentifier("y")
+            )
         );
     }
 
     TEST_F(UnaryBinarySuccessPathTest, BoolGrouped)
     {
-        ExpectValidParse(
-            "let a = (a and b) or (c and not d)",
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Or,
-                                          IsGrouping(
-                                              IsBinary(TokenType::And,
-                                                       IsIdentifier("a"),
-                                                       IsIdentifier("b")
-                                              )
-                                          ),
-                                          IsGrouping(
-                                              IsBinary(TokenType::And,
-                                                       IsIdentifier("c"),
-                                                       IsUnary(TokenType::Not,
-                                                               IsIdentifier("d")
-                                                       )
-                                              )
-                                          )
-                                 )
-                    )
-                }
-            }
+        ExpectValidExpression(
+            "(a and b) or (c and not d)",
+            IsBinary(TokenType::Or,
+                     IsGrouping(
+                         IsBinary(TokenType::And,
+                                  IsIdentifier("a"),
+                                  IsIdentifier("b")
+                         )
+                     ),
+                     IsGrouping(
+                         IsBinary(TokenType::And,
+                                  IsIdentifier("c"),
+                                  IsUnary(TokenType::Not,
+                                          IsIdentifier("d")
+                                  )
+                         )
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, ValidatesBooleanPrecedence)
+    {
+        ExpectValidExpression(
+            "x or y and not z",
+            IsBinary(TokenType::Or,
+                     IsIdentifier("x"),
+                     IsBinary(TokenType::And,
+                              IsIdentifier("y"),
+                              IsUnary(TokenType::Not,
+                                      IsIdentifier("z")
+                              )
+                     )
+            )
+        );
+    }
+
+    TEST_F(UnaryBinarySuccessPathTest, ValidatesBooleanGrouping)
+    {
+        ExpectValidExpression(
+            "(x or y) and z",
+            IsBinary(TokenType::And,
+                     IsGrouping(
+                         IsBinary(TokenType::Or,
+                                  IsIdentifier("x"),
+                                  IsIdentifier("y")
+                         )
+                     ),
+                     IsIdentifier("z")
+            )
         );
     }
 }
