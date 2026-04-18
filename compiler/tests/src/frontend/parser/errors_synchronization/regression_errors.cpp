@@ -23,8 +23,7 @@ namespace valuascript::compiler::test {
             {ValuascriptErrorCode::ExpectedModifierName, 1, 3},
             {ValuascriptErrorCode::InvalidIdentifier, 2, 5},
             {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 5},
-            {ValuascriptErrorCode::IncompleteAssignment, 4, 6},
-            {ValuascriptErrorCode::MissingValueAfterEquals, 4, 6},
+            {ValuascriptErrorCode::IncompleteAssignment, 4, 6}
             }
             },
             ParserErrorsSynchronizationTestCase{

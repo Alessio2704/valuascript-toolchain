@@ -139,7 +139,6 @@ namespace valuascript::compiler::test
     {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 6, 1, 7);
-        errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 6, 1, 7);
 
         ExpectParseErrorsWithRecovery(
             "let a",

@@ -1,4 +1,3 @@
-#include <gtest/gtest.h>
 #include "frontend/parser/helpers/parser_test_base.h"
 
 namespace valuascript::compiler::test

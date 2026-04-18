@@ -269,10 +269,6 @@ namespace valuascript::compiler
                 {
                 }
             }
-            else
-            {
-                cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::MissingValueAfterEquals);
-            }
         }
 
         if (value)

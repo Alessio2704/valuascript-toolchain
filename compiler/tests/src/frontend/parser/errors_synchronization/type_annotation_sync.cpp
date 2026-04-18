@@ -272,8 +272,7 @@ namespace valuascript::compiler::test {
             "let a: vector<int, ",
             {
             {Err::UnmatchedBracketAfterGenericArgs, 1, 19},
-            {Err::IncompleteAssignment, 1, 19},
-            {Err::MissingValueAfterEquals, 1, 19}
+            {Err::IncompleteAssignment, 1, 19}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -291,8 +290,7 @@ namespace valuascript::compiler::test {
             "let a: (int, ",
             {
             {Err::UnmatchedParenthesisInTuple, 1, 13},
-            {Err::IncompleteAssignment, 1, 13},
-            {Err::MissingValueAfterEquals, 1, 13}
+            {Err::IncompleteAssignment, 1, 13}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
@@ -312,8 +310,7 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             {
             {Err::UnmatchedBracketAfterGenericArgs, 1, 18},
-            {Err::IncompleteAssignment, 1, 18},
-            {Err::MissingValueAfterEquals, 1, 18}
+            {Err::IncompleteAssignment, 1, 18}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -332,8 +329,7 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             {
             {Err::UnmatchedParenthesisInTuple, 1, 12},
-            {Err::IncompleteAssignment, 1, 12},
-            {Err::MissingValueAfterEquals, 1, 12}
+            {Err::IncompleteAssignment, 1, 12}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
