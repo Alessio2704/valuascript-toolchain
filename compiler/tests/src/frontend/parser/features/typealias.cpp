@@ -42,36 +42,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(TypealiasSuccessPathTest, WithModifiers)
-    {
-        ExpectValidParse(
-            "@export\n"
-            "@meta(version: 2)\n"
-            "@other @inline(opt: true) typealias PublicState = string",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("PublicState",
-                                {
-                                    {"export"},
-                                    {
-                                        "meta", {
-                                            {"version", IsNumber("2")}
-                                        }
-                                    },
-                                    {"other"},
-                                    {
-                                        "inline", {
-                                            {"opt", IsBoolean(true)}
-                                        }
-                                    },
-                                },
-                                IsType("string")
-                    ),
-                }
-            }
-        );
-    }
-
     TEST_F(TypealiasSuccessPathTest, MultilineFormatting)
     {
         ExpectValidParse(
@@ -82,27 +52,6 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .type_aliases = {
                     IsTypeAlias("Data", {}, IsType("string")),
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, MultipleModifiersWithStringArg)
-    {
-        ExpectValidParse(
-            "@export @deprecated(arg: \"use V2\") typealias OldStruct = string",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("OldStruct", {
-                                    {"export"},
-                                    {
-                                        "deprecated", {
-                                            {"arg", IsString("\"use V2\"")}
-                                        }
-                                    }
-                                },
-                                IsType("string")
-                    )
                 }
             }
         );
