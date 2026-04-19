@@ -210,6 +210,47 @@ namespace valuascript::compiler::test
                         s.execution_steps.push_back(
                             IsAssignment({}, {{"ctx_u_group"}}, IsUnary(TokenType::Minus, IsGrouping(v))));
                     }
+                },
+                {
+                    "as_call_target",
+                    "let ctx_as_call = ({expr})()\n", [](ProgramSpec& s, const ExprVerifier& v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_as_call"}}, IsCall(IsGrouping(v), {}))
+                        );
+                    }
+                },
+                {
+                    "as_dot_target",
+                    "let ctx_as_dot = ({expr}).prop\n", [](ProgramSpec& s, const ExprVerifier& v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_as_dot"}}, IsDot(IsGrouping(v), "prop"))
+                        );
+                    }
+                },
+                {
+                    "as_bracket_target",
+                    "let ctx_as_bracket = ({expr})[0]\n", [](ProgramSpec& s, const ExprVerifier& v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_as_bracket"}}, IsBracket(IsGrouping(v), IsNumber("0")))
+                        );
+                    }
+                },
+                {
+                    "as_slice_target",
+                    "let ctx_as_slice = ({expr})[0:10]\n", [](ProgramSpec& s, const ExprVerifier& v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_as_slice"}},
+                                         IsBracket(
+                                             IsGrouping(v),
+                                             IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10"))
+                                         )
+                            )
+                        );
+                    }
                 }
             };
         }
