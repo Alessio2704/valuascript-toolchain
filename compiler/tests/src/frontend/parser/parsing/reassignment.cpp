@@ -4,18 +4,22 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct ReassignmentHappyParam {
+namespace valuascript::compiler::test
+{
+    struct ReassignmentHappyParam
+    {
         std::string test_name;
         std::string source_code;
     };
 
     class ReassignmentHappyPathTest : public AstBaseTest,
-                                      public testing::WithParamInterface<ReassignmentHappyParam> {
+                                      public testing::WithParamInterface<ReassignmentHappyParam>
+    {
     };
 
-    TEST_P(ReassignmentHappyPathTest, ParsesSuccessfully) {
-        const ReassignmentHappyParam &param = GetParam();
+    TEST_P(ReassignmentHappyPathTest, ParsesSuccessfully)
+    {
+        const ReassignmentHappyParam& param = GetParam();
 
         std::shared_ptr<Program> ast;
         EXPECT_NO_THROW({
@@ -30,11 +34,6 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         ReassignmentHappyPathTest,
         testing::Values(
-            ReassignmentHappyParam{"simple_reassignment", "a = 10"},
-            ReassignmentHappyParam{"bracket_reassignment", "tensor[0] = 5.5"},
-            ReassignmentHappyParam{"dot_reassignment", "portfolio.risk = 0.05"},
-            ReassignmentHappyParam{"deep_target_reassignment", "portfolio.assets[0].weight = 25%"},
-            ReassignmentHappyParam{"complex_value_reassignment", "rate = (base + premium) * 1.5"},
             ReassignmentHappyParam{"simple_function_call", "set_seed(s: 42)"},
             ReassignmentHappyParam{"method_call", "sys.init()"},
             ReassignmentHappyParam{"chained_method_call", "builder.set_rate(p: 5%).build()"}
@@ -44,23 +43,29 @@ namespace valuascript::compiler::test {
         }
     );
 
-    struct ReassignmentSadParam {
+    struct ReassignmentSadParam
+    {
         std::string test_name;
         std::string source_code;
         ValuascriptErrorCode expected_error;
     };
 
     class ReassignmentSadPathTest : public AstBaseTest,
-                                    public testing::WithParamInterface<ReassignmentSadParam> {
+                                    public testing::WithParamInterface<ReassignmentSadParam>
+    {
     };
 
-    TEST_P(ReassignmentSadPathTest, ThrowsCorrectSyntaxError) {
-        const ReassignmentSadParam &param = GetParam();
+    TEST_P(ReassignmentSadPathTest, ThrowsCorrectSyntaxError)
+    {
+        const ReassignmentSadParam& param = GetParam();
 
-        try {
+        try
+        {
             parse_code(param.source_code);
             FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)
@@ -72,8 +77,10 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         ReassignmentSadPathTest,
         testing::Values(
-            ReassignmentSadParam{"assign_to_number", "10 = 5", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment},
-            ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment},
+            ReassignmentSadParam{"assign_to_number", "10 = 5", ValuascriptErrorCode::
+            InvalidLeftSideExpressionInReassignment},
+            ReassignmentSadParam{"assign_to_string", "\"val\" = 5", ValuascriptErrorCode::
+            InvalidLeftSideExpressionInReassignment},
             ReassignmentSadParam{"assign_to_function", "get_rate() = 5", ValuascriptErrorCode::
             InvalidLeftSideExpressionInReassignment}
             ,

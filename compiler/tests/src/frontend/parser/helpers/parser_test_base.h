@@ -17,6 +17,7 @@
 #include "frontend/parser/helpers/node_matchers.h"
 #include "expression_contexts_provider.h"
 #include "modifier_contexts_provider.h"
+#include "reassignment_contexts_provider.h"
 #include "return_statement_contexts_provider.h"
 #include "type_annotation_contexts_provider.h"
 
@@ -134,6 +135,20 @@ namespace valuascript::compiler::test
                 ctx.add_to_spec(spec, assign_verifier);
 
                 SCOPED_TRACE("Testing assignment context: " + ctx.name);
+                ExpectValidParse(code, spec);
+            }
+        }
+
+        static void ExpectValidReassignment(const std::string& reassign_code, const StmtVerifier& reassign_verifier)
+        {
+            for (const auto& ctx : ReassignmentContextsProvider::get_all())
+            {
+                std::string code = ReassignmentContextsProvider::inject(ctx.source_template, reassign_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, reassign_verifier);
+
+                SCOPED_TRACE("Testing reassignment context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
