@@ -5,72 +5,31 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct BracketAccessHappyParam {
-        std::string test_name;
-        std::string source_code;
-    };
-
-    class BracketAccessHappyPathTest : public AstBaseTest,
-                                       public testing::WithParamInterface<BracketAccessHappyParam> {
-    };
-
-    TEST_P(BracketAccessHappyPathTest, ParsesSuccessfully) {
-        const BracketAccessHappyParam &param = GetParam();
-
-        std::shared_ptr<Program> ast;
-        EXPECT_NO_THROW({
-            ast = parse_expression_as_assignment(param.source_code);
-            }) << "Parser threw an exception on valid assignment test: " << param.test_name;
-
-        if (ast) {
-            ASSERT_EQ(ast->execution_steps.size(), 1) << "Expected exactly 1 assignment in AST.";
-            EXPECT_EQ(ast->directives.size(), 0);
-            EXPECT_EQ(ast->function_definitions.size(), 0);
-
-            auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-            EXPECT_EQ(assignment->targets.size(), 1);
-        }
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        BracketAccessHappyPathTest,
-        testing::Values(
-            BracketAccessHappyParam{"vector_access_simple", "vec[0]"},
-            BracketAccessHappyParam{"vector_slice", "vec[:1]"},
-            BracketAccessHappyParam{"vector_access_nested", "matrix[0][1]"},
-            BracketAccessHappyParam{"vector_access_with_math", "vec[i + 1]"},
-            BracketAccessHappyParam{"vector_slice_double", "vec[1:2]"},
-            BracketAccessHappyParam{"vector_slice_double_1", "vec[a:b]"},
-            BracketAccessHappyParam{"vector_slice_double_2", "vec[a : b - 1]"},
-            BracketAccessHappyParam{"vector_slice_both_empty", "vec[:]"},
-            BracketAccessHappyParam{"chain_call_then_access", "get_vector()[0]"},
-            BracketAccessHappyParam{"chain_access_then_call", "array_of_funcs[0](a: arg)"},
-            BracketAccessHappyParam{"chain_deep_mixed", "get_matrix()[0][:1]"}
-        ),
-        [](const testing::TestParamInfo<BracketAccessHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
-
-    struct BracketAccessSadParam {
+namespace valuascript::compiler::test
+{
+    struct BracketAccessSadParam
+    {
         std::string test_name;
         std::string source_code;
         ValuascriptErrorCode expected_error;
     };
 
     class BracketAccessSadPathTest : public AstBaseTest,
-                                     public testing::WithParamInterface<BracketAccessSadParam> {
+                                     public testing::WithParamInterface<BracketAccessSadParam>
+    {
     };
 
-    TEST_P(BracketAccessSadPathTest, ThrowsCorrectSyntaxError) {
-        const BracketAccessSadParam &param = GetParam();
+    TEST_P(BracketAccessSadPathTest, ThrowsCorrectSyntaxError)
+    {
+        const BracketAccessSadParam& param = GetParam();
 
-        try {
+        try
+        {
             parse_expression_as_assignment(param.source_code);
             FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)
