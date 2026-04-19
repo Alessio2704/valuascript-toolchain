@@ -8,111 +8,88 @@ namespace valuascript::compiler::test
 
     TEST_F(FunctionDefinitionSuccessPathTest, MinimalFunction)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f() -> void {}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {}, {IsType("void")}, {})
-                }
-            }
+            IsFunctionDef("f", {}, {}, {IsType("void")}, {})
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, MultipleParameters)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func add(a: int, b: int) -> int {}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("add", {}, {
-                                      ParamSpec{"a", {}, IsType("int")},
-                                      ParamSpec{"b", {}, IsType("int")}
-                                  }, {IsType("int")}, {})
-                }
-            }
+            IsFunctionDef("add", {}, {
+                              ParamSpec{"a", {}, IsType("int")},
+                              ParamSpec{"b", {}, IsType("int")}
+                          }, {IsType("int")}, {}
+            )
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, SingleDefaultParameterValue)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f(a: int, b: bool = true) -> void {}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {
-                                      ParamSpec{"a", {}, IsType("int")},
-                                      ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
-                                  }, {IsType("void")}, {})
-                }
-            }
+            IsFunctionDef("f", {}, {
+                              ParamSpec{"a", {}, IsType("int")},
+                              ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
+                          }, {IsType("void")}, {}
+            )
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, DefaultParameterValues)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f(a: int = 1, b: bool = true) -> void {}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {
-                                      ParamSpec{"a", {}, IsType("int"), IsNumber("1")},
-                                      ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
-                                  }, {IsType("void")}, {})
-                }
-            }
+            IsFunctionDef("f", {}, {
+                              ParamSpec{"a", {}, IsType("int"), IsNumber("1")},
+                              ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
+                          }, {IsType("void")}, {}
+            )
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, MultipleReturnTypes)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f() -> int, string {}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {}, {
-                                      IsType("int"),
-                                      IsType("string")
-                                  }, {})
-                }
-            }
+            IsFunctionDef("f", {}, {}, {
+                              IsType("int"),
+                              IsType("string")
+                          }, {}
+            )
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, FunctionWithDocstring)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f() -> void {\n"
             "  \"\"\"This is a docstring\"\"\"\n"
             "}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {}, {IsType("void")}, {}, "\"\"\"This is a docstring\"\"\"")
-                }
-            }
+            IsFunctionDef("f", {}, {}, {IsType("void")}, {}, "\"\"\"This is a docstring\"\"\"")
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, FunctionWithBodyStatements)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func f() -> void {\n"
             "  let x = 1\n"
             "  return x\n"
             "}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {}, {IsType("void")}, {
-                                      IsAssignment({}, {{"x"}}, IsNumber("1")),
-                                      IsReturn({IsIdentifier("x")})
-                                  })
-                }
-            }
+            IsFunctionDef("f", {}, {}, {IsType("void")}, {
+                              IsAssignment({}, {{"x"}}, IsNumber("1")),
+                              IsReturn({IsIdentifier("x")})
+                          }
+            )
         );
     }
 
     TEST_F(FunctionDefinitionSuccessPathTest, MultilineFormatting)
     {
-        ExpectValidParse(
+        ExpectValidFunctionDefinition(
             "func long_function_name(\n"
             "  param_one: int,\n"
             "  param_two: string\n"
@@ -121,17 +98,14 @@ namespace valuascript::compiler::test
             "  decimal \n"
             "{\n"
             "}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("long_function_name", {}, {
-                                      ParamSpec{"param_one", {}, IsType("int")},
-                                      ParamSpec{"param_two", {}, IsType("string")}
-                                  }, {
-                                      IsType("bool"),
-                                      IsType("decimal")
-                                  }, {})
-                }
-            }
+            IsFunctionDef("long_function_name", {}, {
+                              ParamSpec{"param_one", {}, IsType("int")},
+                              ParamSpec{"param_two", {}, IsType("string")}
+                          }, {
+                              IsType("bool"),
+                              IsType("decimal")
+                          }, {}
+            )
         );
     }
 }

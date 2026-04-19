@@ -8,106 +8,82 @@ namespace valuascript::compiler::test
 
     TEST_F(EnumDefinitionSuccessPathTest, EmptyEnum)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum E: int { }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("E", {}, IsType("int"), {})
-                }
-            }
+            IsEnumDef("E", {}, IsType("int"), {})
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, MinimalEnum)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum E: int { A }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("E", {}, IsType("int"), {{"A"}})
-                }
-            }
+            IsEnumDef("E", {}, IsType("int"), {{"A"}})
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, MultipleCases)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum Color: int { Red, Green, Blue }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("Color", {}, IsType("int"), {
-                                  {"Red"}, {"Green"}, {"Blue"}
-                              })
-                }
-            }
+            IsEnumDef("Color", {}, IsType("int"), {
+                          {"Red"}, {"Green"}, {"Blue"}
+                      }
+            )
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, CasesWithExplicitValues)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum Status: int { Active = 1, Inactive = 0, Pending = 2 }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("Status", {}, IsType("int"), {
-                                  {"Active", {}, IsNumber("1")},
-                                  {"Inactive", {}, IsNumber("0")},
-                                  {"Pending", {}, IsNumber("2")}
-                              })
-                }
-            }
+            IsEnumDef("Status", {}, IsType("int"), {
+                          {"Active", {}, IsNumber("1")},
+                          {"Inactive", {}, IsNumber("0")},
+                          {"Pending", {}, IsNumber("2")}
+                      }
+            )
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, MixedValuedAndUnvaluedCases)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum Flag: int { None = 0, First, Second, Last = 10 }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("Flag", {}, IsType("int"), {
-                                  {"None", {}, IsNumber("0")},
-                                  {"First"},
-                                  {"Second"},
-                                  {"Last", {}, IsNumber("10")}
-                              })
-                }
-            }
+            IsEnumDef("Flag", {}, IsType("int"), {
+                          {"None", {}, IsNumber("0")},
+                          {"First"},
+                          {"Second"},
+                          {"Last", {}, IsNumber("10")}
+                      }
+            )
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, TrailingComma)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum E: int { A, B, }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("E", {}, IsType("int"), {{"A"}, {"B"}})
-                }
-            }
+            IsEnumDef("E", {}, IsType("int"), {{"A"}, {"B"}})
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, InterleavingModifiedCases)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum E: int { @primary A, B, @deprecated C = 99 }",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("E", {}, IsType("int"), {
-                                  {"A", {{"primary"}}},
-                                  {"B"},
-                                  {"C", {{"deprecated"}}, IsNumber("99")}
-                              })
-                }
-            }
+            IsEnumDef("E", {}, IsType("int"), {
+                          {"A", {{"primary"}}},
+                          {"B"},
+                          {"C", {{"deprecated"}}, IsNumber("99")}
+                      }
+            )
         );
     }
 
     TEST_F(EnumDefinitionSuccessPathTest, MultilineFormatting)
     {
-        ExpectValidParse(
+        ExpectValidEnumDefinition(
             "enum\n"
             "  State\n"
             "  : \n"
@@ -116,14 +92,11 @@ namespace valuascript::compiler::test
             "  @init Open = \"open\",\n"
             "  Closed = \"closed\"\n"
             "}",
-            ProgramSpec{
-                .enums = {
-                    IsEnumDef("State", {}, IsType("string"), {
-                                  {"Open", {{"init"}}, IsString("\"open\"")},
-                                  {"Closed", {}, IsString("\"closed\"")}
-                              })
-                }
-            }
+            IsEnumDef("State", {}, IsType("string"), {
+                          {"Open", {{"init"}}, IsString("\"open\"")},
+                          {"Closed", {}, IsString("\"closed\"")}
+                      }
+            )
         );
     }
 }

@@ -8,80 +8,64 @@ namespace valuascript::compiler::test
 
     TEST_F(StructDefinitionSuccessPathTest, MinimalStruct)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct S {}",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("S", {}, {})
-                }
-            }
+            IsStructDef("S", {}, {})
         );
     }
 
     TEST_F(StructDefinitionSuccessPathTest, SingleField)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct S { f: int }",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("S", {}, {
-                                    FieldSpec{"f", {}, IsType("int")}
-                                })
-                }
-            }
+            IsStructDef("S", {}, {
+                            FieldSpec{"f", {}, IsType("int")}
+                        }
+            )
         );
     }
 
     TEST_F(StructDefinitionSuccessPathTest, MultipleFields)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct Point { x: float, y: float, z: float }",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("Point", {}, {
-                                    FieldSpec{"x", {}, IsType("float")},
-                                    FieldSpec{"y", {}, IsType("float")},
-                                    FieldSpec{"z", {}, IsType("float")}
-                                })
-                }
-            }
+            IsStructDef("Point", {}, {
+                            FieldSpec{"x", {}, IsType("float")},
+                            FieldSpec{"y", {}, IsType("float")},
+                            FieldSpec{"z", {}, IsType("float")}
+                        }
+            )
         );
     }
 
     TEST_F(StructDefinitionSuccessPathTest, TrailingComma)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct S { f1: int, f2: bool, }",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("S", {}, {
-                                    FieldSpec{"f1", {}, IsType("int")},
-                                    FieldSpec{"f2", {}, IsType("bool")}
-                                })
-                }
-            }
+            IsStructDef("S", {}, {
+                            FieldSpec{"f1", {}, IsType("int")},
+                            FieldSpec{"f2", {}, IsType("bool")}
+                        }
+            )
         );
     }
 
     TEST_F(StructDefinitionSuccessPathTest, InterleavingModifiedFields)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct User { @id id: int, username: string, @optional bio: string }",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("User", {}, {
-                                    FieldSpec{"id", {{"id"}}, IsType("int")},
-                                    FieldSpec{"username", {}, IsType("string")},
-                                    FieldSpec{"bio", {{"optional"}}, IsType("string")}
-                                })
-                }
-            }
+            IsStructDef("User", {}, {
+                            FieldSpec{"id", {{"id"}}, IsType("int")},
+                            FieldSpec{"username", {}, IsType("string")},
+                            FieldSpec{"bio", {{"optional"}}, IsType("string")}
+                        }
+            )
         );
     }
 
     TEST_F(StructDefinitionSuccessPathTest, MultilineFormatting)
     {
-        ExpectValidParse(
+        ExpectValidStructDefinition(
             "struct \n"
             "  Config \n"
             "{\n"
@@ -90,14 +74,11 @@ namespace valuascript::compiler::test
             "  \n"
             "  version: int \n"
             "}",
-            ProgramSpec{
-                .structs = {
-                    IsStructDef("Config", {}, {
-                                    FieldSpec{"secret", {{"internal"}}, IsType("string")},
-                                    FieldSpec{"version", {}, IsType("int")}
-                                })
-                }
-            }
+            IsStructDef("Config", {}, {
+                            FieldSpec{"secret", {{"internal"}}, IsType("string")},
+                            FieldSpec{"version", {}, IsType("int")}
+                        }
+            )
         );
     }
 }

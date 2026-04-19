@@ -8,49 +8,33 @@ namespace valuascript::compiler::test
 
     TEST_F(DirectiveSuccessPathTest, NoEqual1)
     {
-        ExpectValidParse(
+        ExpectValidDirective(
             "#no_equal 1",
-            ProgramSpec{
-                .directives = {
-                    IsDirective("no_equal", IsNumber("1"))
-                }
-            }
+            IsDirective("no_equal", IsNumber("1"))
         );
     }
 
     TEST_F(DirectiveSuccessPathTest, NoValueDirective)
     {
-        ExpectValidParse(
+        ExpectValidDirective(
             "#no_value",
-            ProgramSpec{
-                .directives = {
-                    IsDirective("no_value", IsNull())
-                }
-            }
+            IsDirective("no_value", IsNull())
         );
     }
 
     TEST_F(DirectiveSuccessPathTest, NoValueDirectiveUnderscoreAndNumber)
     {
-        ExpectValidParse(
+        ExpectValidDirective(
             "#no_value_1",
-            ProgramSpec{
-                .directives = {
-                    IsDirective("no_value_1", IsNull())
-                }
-            }
+            IsDirective("no_value_1", IsNull())
         );
     }
 
     TEST_F(DirectiveSuccessPathTest, ValueDirective1)
     {
-        ExpectValidParse(
+        ExpectValidDirective(
             "#value = 1",
-            ProgramSpec{
-                .directives = {
-                    IsDirective("value", IsNumber("1"))
-                }
-            }
+            IsDirective("value", IsNumber("1"))
         );
     }
 }

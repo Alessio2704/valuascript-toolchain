@@ -8,52 +8,22 @@ namespace valuascript::compiler::test
 
     TEST_F(TypealiasSuccessPathTest, Simple)
     {
-        ExpectValidParse(
+        ExpectValidTypeAlias(
             "typealias Identifier = string",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("Identifier", {},
-                                IsType("string")
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(TypealiasSuccessPathTest, MultipleTypeAliases)
-    {
-        ExpectValidParse(
-            "typealias ID = string\n"
-            "typealias Callback = string\n"
-            "typealias Registry = string",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("ID", {},
-                                IsType("string")
-                    ),
-                    IsTypeAlias("Callback", {},
-                                IsType("string")
-                    ),
-                    IsTypeAlias("Registry", {},
-                                IsType("string")
-                    ),
-                }
-            }
+            IsTypeAlias("Identifier", {},
+                        IsType("string")
+            )
         );
     }
 
     TEST_F(TypealiasSuccessPathTest, MultilineFormatting)
     {
-        ExpectValidParse(
+        ExpectValidTypeAlias(
             "typealias\n"
             "Data\n "
             "= \n"
             "string\n",
-            ProgramSpec{
-                .type_aliases = {
-                    IsTypeAlias("Data", {}, IsType("string")),
-                }
-            }
+            IsTypeAlias("Data", {}, IsType("string"))
         );
     }
 }
