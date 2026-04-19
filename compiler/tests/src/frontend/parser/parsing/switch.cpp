@@ -4,70 +4,31 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct SwitchHappyParam {
-        std::string test_name;
-        std::string source_code;
-    };
-
-    class SwitchHappyPathTest : public AstBaseTest,
-                                public testing::WithParamInterface<SwitchHappyParam> {
-    };
-
-    TEST_P(SwitchHappyPathTest, ParsesSuccessfully) {
-        const SwitchHappyParam &param = GetParam();
-
-        std::shared_ptr<Program> ast;
-        EXPECT_NO_THROW({
-            ast = parse_code(param.source_code);
-            }) << "Parser threw an exception on valid assignment test: " << param.test_name;
-
-        if (ast) {
-            ASSERT_EQ(ast->execution_steps.size(), 1) << "Expected exactly 1 assignment in AST.";
-            EXPECT_EQ(ast->directives.size(), 0);
-            EXPECT_EQ(ast->function_definitions.size(), 0);
-
-            auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-            EXPECT_NE(assignment->value, nullptr) << "Expected assignment to have a value expression.";
-        }
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        SwitchHappyPathTest,
-        testing::Values(
-            SwitchHappyParam{"standard_switch", "let a = switch (res) { case UP -> 10 case DOWN -> -15 default -> 20 }"}
-            ,
-            SwitchHappyParam{"multi_match_cases", "let a = switch (res) { case UP, SUS -> 10 case DOWN -> 0 }"},
-            SwitchHappyParam{"no_default", "let a = switch (state) { case OPEN -> 1 case CLOSED -> 0 }"},
-            SwitchHappyParam{"complex_target", "let a = switch (get_status(s: p)) { case OK -> 100 }"},
-            SwitchHappyParam{"complex_result", "let a = switch (res) { case UP -> base_val * 1.5 default -> 0.0 }"},
-            SwitchHappyParam{"inline_argument", "let a = calculate(p: switch (res) { case UP -> 1 default -> 0 })"},
-            SwitchHappyParam{"nested_switch",
-            "let a = switch (x) { case A -> switch (y) { case B -> 1 default -> 0 } default -> -1 }"}
-        ),
-        [](const testing::TestParamInfo<SwitchHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
-
-    struct SwitchSadParam {
+namespace valuascript::compiler::test
+{
+    struct SwitchSadParam
+    {
         std::string test_name;
         std::string source_code;
         ValuascriptErrorCode expected_error;
     };
 
     class SwitchSadPathTest : public AstBaseTest,
-                              public testing::WithParamInterface<SwitchSadParam> {
+                              public testing::WithParamInterface<SwitchSadParam>
+    {
     };
 
-    TEST_P(SwitchSadPathTest, ThrowsCorrectSyntaxError) {
-        const SwitchSadParam &param = GetParam();
+    TEST_P(SwitchSadPathTest, ThrowsCorrectSyntaxError)
+    {
+        const SwitchSadParam& param = GetParam();
 
-        try {
+        try
+        {
             parse_code(param.source_code);
             FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)

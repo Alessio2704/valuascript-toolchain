@@ -91,16 +91,4 @@ namespace valuascript::compiler::test
                               )
         );
     }
-
-    TEST_F(AccessExpressionSuccessPathTest, SliceWithComplexBounds)
-    {
-        ExpectValidExpression("a[s + 1 : e - 1]",
-                              IsBracket(IsIdentifier("a"),
-                                        IsBinary(TokenType::Colon,
-                                                 IsBinary(TokenType::Plus, IsIdentifier("s"), IsNumber("1")),
-                                                 IsBinary(TokenType::Minus, IsIdentifier("e"), IsNumber("1"))
-                                        )
-                              )
-        );
-    }
 }

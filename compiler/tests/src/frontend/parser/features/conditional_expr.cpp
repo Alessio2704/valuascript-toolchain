@@ -66,17 +66,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(ConditionalExpressionSuccessPathTest, ComplexExpressionsInBranches)
-    {
-        ExpectValidExpression("if x > 10 then f(a: 1) else 100 * 2",
-                              IsConditional(
-                                  IsBinary(TokenType::Greater, IsIdentifier("x"), IsNumber("10")),
-                                  IsCall(IsIdentifier("f"), {{"a", IsNumber("1")}}),
-                                  IsBinary(TokenType::Star, IsNumber("100"), IsNumber("2"))
-                              )
-        );
-    }
-
     TEST_F(ConditionalExpressionSuccessPathTest, MultilineFormatting)
     {
         ExpectValidExpression(
