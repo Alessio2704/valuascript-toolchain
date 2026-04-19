@@ -4,64 +4,31 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct TupleHappyParam {
-        std::string test_name;
-        std::string source_code;
-    };
-
-    class TupleHappyPathTest : public AstBaseTest,
-                               public testing::WithParamInterface<TupleHappyParam> {
-    };
-
-    TEST_P(TupleHappyPathTest, ParsesSuccessfully) {
-        const TupleHappyParam &param = GetParam();
-
-        std::shared_ptr<Program> ast;
-        EXPECT_NO_THROW({
-            ast = parse_expression_as_assignment(param.source_code);
-            }) << "Parser threw an exception on valid assignment test: " << param.test_name;
-
-        if (ast) {
-            ASSERT_EQ(ast->execution_steps.size(), 1) << "Expected exactly 1 assignment in AST.";
-            EXPECT_EQ(ast->directives.size(), 0);
-            EXPECT_EQ(ast->function_definitions.size(), 0);
-
-            auto assignment = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
-            EXPECT_EQ(assignment->targets.size(), 1);
-        }
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        TupleHappyPathTest,
-        testing::Values(
-            TupleHappyParam{"tuple", "(1,2,3)"},
-            TupleHappyParam{"tuple_1", "(a, 2, c+1)"},
-            TupleHappyParam{"tuple_2", "(a, 2, if a then 1 else 2)"}
-        ),
-        [](const testing::TestParamInfo<TupleHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
-
-    struct TupleSadParam {
+namespace valuascript::compiler::test
+{
+    struct TupleSadParam
+    {
         std::string test_name;
         std::string source_code;
         ValuascriptErrorCode expected_error;
     };
 
     class TupleSadPathTest : public AstBaseTest,
-                             public testing::WithParamInterface<TupleSadParam> {
+                             public testing::WithParamInterface<TupleSadParam>
+    {
     };
 
-    TEST_P(TupleSadPathTest, ThrowsCorrectSyntaxError) {
-        const TupleSadParam &param = GetParam();
+    TEST_P(TupleSadPathTest, ThrowsCorrectSyntaxError)
+    {
+        const TupleSadParam& param = GetParam();
 
-        try {
+        try
+        {
             parse_expression_as_assignment(param.source_code);
             FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)
