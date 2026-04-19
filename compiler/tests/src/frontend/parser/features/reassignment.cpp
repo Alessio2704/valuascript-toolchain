@@ -1,48 +1,64 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class ReassignmentSuccessPathTest : public ParserTestBase
+    class ReassignmentRegistryRunner : public ParserTestBase,
+                                       public testing::WithParamInterface<RegistryEntry<ReassignmentVerifier>>
     {
     };
 
-    TEST_F(ReassignmentSuccessPathTest, SimpleIdentifierTarget)
+    namespace
     {
-        ExpectValidReassignment("a = 1", IsReassignment(IsIdentifier("a"), IsNumber("1")));
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+
+            reg("SimpleIdentifierTarget",
+                "a = 1",
+                IsReassignment(IsIdentifier("a"), IsNumber("1")));
+
+            reg("DotAccessTarget",
+                "obj.prop = 1",
+                IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1")));
+
+            reg("BracketAccessTarget",
+                "arr[0] = 1",
+                IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1")));
+
+            reg("SelfDotTarget",
+                "self.field = 1",
+                IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1")));
+
+            reg("CallResultDotTarget",
+                "get().val = 1",
+                IsReassignment(IsDot(IsCall(IsIdentifier("get"), {}), "val"), IsNumber("1")));
+
+            reg("MultilineFormatting",
+                "obj \n"
+                "  .prop \n"
+                "  = \n"
+                "  1",
+                IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1")));
+
+            return true;
+        }();
     }
 
-    TEST_F(ReassignmentSuccessPathTest, DotAccessTarget)
+    TEST_P(ReassignmentRegistryRunner, ValidatesInAllContexts)
     {
-        ExpectValidReassignment("obj.prop = 1",
-                                IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1")));
+        const auto& [name, code, verifier] = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + name);
+
+        ExpectValidReassignment(code, verifier);
     }
 
-    TEST_F(ReassignmentSuccessPathTest, BracketAccessTarget)
-    {
-        ExpectValidReassignment("arr[0] = 1",
-                                IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1")));
-    }
-
-    TEST_F(ReassignmentSuccessPathTest, SelfDotTarget)
-    {
-        ExpectValidReassignment("self.field = 1",
-                                IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1")));
-    }
-
-    TEST_F(ReassignmentSuccessPathTest, CallResultDotTarget)
-    {
-        ExpectValidReassignment("get().val = 1",
-                                IsReassignment(IsDot(IsCall(IsIdentifier("get"), {}), "val"), IsNumber("1")));
-    }
-
-    TEST_F(ReassignmentSuccessPathTest, MultilineFormatting)
-    {
-        ExpectValidReassignment(
-            "obj \n"
-            "  .prop \n"
-            "  = \n"
-            "  1",
-            IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1"))
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Reassignment,
+        ReassignmentRegistryRunner,
+        testing::ValuesIn(ConstructRegistry::reassignments()),
+        [](const testing::TestParamInfo<RegistryEntry<ReassignmentVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }

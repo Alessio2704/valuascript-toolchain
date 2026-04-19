@@ -1,40 +1,53 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class DirectiveSuccessPathTest : public ParserTestBase
+    class DirectiveRegistryRunner : public ParserTestBase,
+                                    public testing::WithParamInterface<RegistryEntry<DirectiveVerifier>>
     {
     };
 
-    TEST_F(DirectiveSuccessPathTest, NoEqual1)
+    namespace
     {
-        ExpectValidDirective(
-            "#no_equal 1",
-            IsDirective("no_equal", IsNumber("1"))
-        );
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+
+            reg("NoEqual1",
+                "#no_equal 1",
+                IsDirective("no_equal", IsNumber("1")));
+
+            reg("NoValueDirective",
+                "#no_value",
+                IsDirective("no_value", IsNull()));
+
+            reg("NoValueDirectiveUnderscoreAndNumber",
+                "#no_value_1",
+                IsDirective("no_value_1", IsNull()));
+
+            reg("ValueDirective1",
+                "#value = 1",
+                IsDirective("value", IsNumber("1")));
+
+            return true;
+        }();
     }
 
-    TEST_F(DirectiveSuccessPathTest, NoValueDirective)
+    TEST_P(DirectiveRegistryRunner, ValidatesInAllContexts)
     {
-        ExpectValidDirective(
-            "#no_value",
-            IsDirective("no_value", IsNull())
-        );
+        const auto& [name, code, verifier] = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + name);
+
+        ExpectValidDirective(code, verifier);
     }
 
-    TEST_F(DirectiveSuccessPathTest, NoValueDirectiveUnderscoreAndNumber)
-    {
-        ExpectValidDirective(
-            "#no_value_1",
-            IsDirective("no_value_1", IsNull())
-        );
-    }
-
-    TEST_F(DirectiveSuccessPathTest, ValueDirective1)
-    {
-        ExpectValidDirective(
-            "#value = 1",
-            IsDirective("value", IsNumber("1"))
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Directive,
+        DirectiveRegistryRunner,
+        testing::ValuesIn(ConstructRegistry::directives()),
+        [](const testing::TestParamInfo<RegistryEntry<DirectiveVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }

@@ -1,84 +1,84 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class StructDefinitionSuccessPathTest : public ParserTestBase
+    class StructDefinitionRegistryRunner : public ParserTestBase,
+                                           public testing::WithParamInterface<RegistryEntry<StructVerifier>>
     {
     };
 
-    TEST_F(StructDefinitionSuccessPathTest, MinimalStruct)
+    namespace
     {
-        ExpectValidStructDefinition(
-            "struct S {}",
-            IsStructDef("S", {}, {})
-        );
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+
+            reg("MinimalStruct",
+                "struct S {}",
+                IsStructDef("S", {}, {}));
+
+            reg("SingleField",
+                "struct S { f: int }",
+                IsStructDef("S", {}, {
+                                FieldSpec{"f", {}, IsType("int")}
+                            }));
+
+            reg("MultipleFields",
+                "struct Point { x: float, y: float, z: float }",
+                IsStructDef("Point", {}, {
+                                FieldSpec{"x", {}, IsType("float")},
+                                FieldSpec{"y", {}, IsType("float")},
+                                FieldSpec{"z", {}, IsType("float")}
+                            }));
+
+            reg("TrailingComma",
+                "struct S { f1: int, f2: bool, }",
+                IsStructDef("S", {}, {
+                                FieldSpec{"f1", {}, IsType("int")},
+                                FieldSpec{"f2", {}, IsType("bool")}
+                            }));
+
+            reg("InterleavingModifiedFields",
+                "struct User { @id id: int, username: string, @optional bio: string }",
+                IsStructDef("User", {}, {
+                                FieldSpec{"id", {{"id"}}, IsType("int")},
+                                FieldSpec{"username", {}, IsType("string")},
+                                FieldSpec{"bio", {{"optional"}}, IsType("string")}
+                            }));
+
+            reg("MultilineFormatting",
+                "struct \n"
+                "  Config \n"
+                "{\n"
+                "  @internal \n"
+                "  secret: string, \n"
+                "  \n"
+                "  version: int \n"
+                "}",
+                IsStructDef("Config", {}, {
+                                FieldSpec{"secret", {{"internal"}}, IsType("string")},
+                                FieldSpec{"version", {}, IsType("int")}
+                            }));
+
+            return true;
+        }();
     }
 
-    TEST_F(StructDefinitionSuccessPathTest, SingleField)
+    TEST_P(StructDefinitionRegistryRunner, ValidatesInAllContexts)
     {
-        ExpectValidStructDefinition(
-            "struct S { f: int }",
-            IsStructDef("S", {}, {
-                            FieldSpec{"f", {}, IsType("int")}
-                        }
-            )
-        );
+        const auto& [name, code, verifier] = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + name);
+
+        ExpectValidStructDefinition(code, verifier);
     }
 
-    TEST_F(StructDefinitionSuccessPathTest, MultipleFields)
-    {
-        ExpectValidStructDefinition(
-            "struct Point { x: float, y: float, z: float }",
-            IsStructDef("Point", {}, {
-                            FieldSpec{"x", {}, IsType("float")},
-                            FieldSpec{"y", {}, IsType("float")},
-                            FieldSpec{"z", {}, IsType("float")}
-                        }
-            )
-        );
-    }
-
-    TEST_F(StructDefinitionSuccessPathTest, TrailingComma)
-    {
-        ExpectValidStructDefinition(
-            "struct S { f1: int, f2: bool, }",
-            IsStructDef("S", {}, {
-                            FieldSpec{"f1", {}, IsType("int")},
-                            FieldSpec{"f2", {}, IsType("bool")}
-                        }
-            )
-        );
-    }
-
-    TEST_F(StructDefinitionSuccessPathTest, InterleavingModifiedFields)
-    {
-        ExpectValidStructDefinition(
-            "struct User { @id id: int, username: string, @optional bio: string }",
-            IsStructDef("User", {}, {
-                            FieldSpec{"id", {{"id"}}, IsType("int")},
-                            FieldSpec{"username", {}, IsType("string")},
-                            FieldSpec{"bio", {{"optional"}}, IsType("string")}
-                        }
-            )
-        );
-    }
-
-    TEST_F(StructDefinitionSuccessPathTest, MultilineFormatting)
-    {
-        ExpectValidStructDefinition(
-            "struct \n"
-            "  Config \n"
-            "{\n"
-            "  @internal \n"
-            "  secret: string, \n"
-            "  \n"
-            "  version: int \n"
-            "}",
-            IsStructDef("Config", {}, {
-                            FieldSpec{"secret", {{"internal"}}, IsType("string")},
-                            FieldSpec{"version", {}, IsType("int")}
-                        }
-            )
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        StructDefinition,
+        StructDefinitionRegistryRunner,
+        testing::ValuesIn(ConstructRegistry::structs()),
+        [](const testing::TestParamInfo<RegistryEntry<StructVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }

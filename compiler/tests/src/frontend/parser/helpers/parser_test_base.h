@@ -28,6 +28,8 @@
 #include "type_alias_contexts_provider.h"
 #include "type_annotation_contexts_provider.h"
 
+#include "utils/parametrised_test_name_helper.h"
+
 namespace valuascript::compiler::test
 {
     struct ExpectedError
@@ -69,30 +71,6 @@ namespace valuascript::compiler::test
 
     class ParserTestBase : public testing::Test
     {
-    private:
-        static void ExpectValidParse(const std::string& code, const ProgramSpec& spec)
-        {
-            SCOPED_TRACE(format_source_with_lines(code));
-
-            CompilerContext context;
-            context.settings.fail_fast = false;
-
-            std::shared_ptr<Program> ast;
-            ASSERT_NO_THROW({
-                ast = run_parser(code, context);
-                }) << "Parser crashed unexpectedly on valid code.";
-
-            const auto& errors = context.diagnostics.get_errors();
-            if (!errors.empty())
-            {
-                ADD_FAILURE() << "Expected no errors, but got " << errors.size() << ". First error: " << errors[0].
-                    what();
-            }
-
-            ASSERT_NE(ast, nullptr) << "Parser returned null AST.";
-            ExpectProgram(ast.get(), spec);
-        }
-
     protected:
         static std::string format_source_with_lines(const std::string& code)
         {
@@ -122,10 +100,32 @@ namespace valuascript::compiler::test
             auto lexer_artifacts = initial_artifacts;
             lexer_artifacts.push_back(lexer.run(context, initial_artifacts));
 
-            CompilerStageArtifact ast_artifact;
-            ast_artifact = parser.run(context, lexer_artifacts);
+            CompilerStageArtifact ast_artifact = parser.run(context, lexer_artifacts);
 
             return std::any_cast<std::shared_ptr<Program>>(ast_artifact.data);
+        }
+
+        static void ExpectValidParse(const std::string& code, const ProgramSpec& spec)
+        {
+            SCOPED_TRACE(format_source_with_lines(code));
+
+            CompilerContext context;
+            context.settings.fail_fast = false;
+
+            std::shared_ptr<Program> ast;
+            ASSERT_NO_THROW({
+                ast = run_parser(code, context);
+                }) << "Parser crashed unexpectedly on valid code.";
+
+            const auto& errors = context.diagnostics.get_errors();
+            if (!errors.empty())
+            {
+                ADD_FAILURE() << "Expected no errors, but got " << errors.size() << ". First error: " << errors[0].
+                    what();
+            }
+
+            ASSERT_NE(ast, nullptr) << "Parser returned null AST.";
+            ExpectProgram(ast.get(), spec);
         }
 
         static void run_valid_parser_test(const ValidParserTestCase& test_case)
@@ -133,42 +133,43 @@ namespace valuascript::compiler::test
             ExpectValidParse(test_case.source_code, test_case.expected_ast);
         }
 
-        static void ExpectValidAssignment(const std::string& assign_code, const StmtVerifier& assign_verifier)
+        static void ExpectValidAssignment(const std::string& code_snippet, const AssignmentVerifier& verifier)
         {
             for (const auto& ctx : AssignmentContextsProvider::get_all())
             {
-                std::string code = AssignmentContextsProvider::inject(ctx.source_template, assign_code);
+                std::string code = AssignmentContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, assign_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing assignment context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
 
-        static void ExpectValidReassignment(const std::string& reassign_code, const StmtVerifier& reassign_verifier)
+        static void ExpectValidReassignment(const std::string& code_snippet, const ReassignmentVerifier& verifier)
         {
             for (const auto& ctx : ReassignmentContextsProvider::get_all())
             {
-                std::string code = ReassignmentContextsProvider::inject(ctx.source_template, reassign_code);
+                std::string code = ReassignmentContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, reassign_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing reassignment context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
 
-        static void ExpectValidExpressionStatement(const std::string& stmt_code, const StmtVerifier& stmt_verifier)
+        static void ExpectValidExpressionStatement(const std::string& code_snippet,
+                                                   const ExprStmtVerifier& verifier)
         {
             for (const auto& ctx : ExpressionStatementContextsProvider::get_all())
             {
-                std::string code = ExpressionStatementContextsProvider::inject(ctx.source_template, stmt_code);
+                std::string code = ExpressionStatementContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, stmt_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing expression statement context: " + ctx.name);
                 ExpectValidParse(code, spec);
@@ -249,14 +250,14 @@ namespace valuascript::compiler::test
             }
         }
 
-        static void ExpectValidExpression(const std::string& expr_code, const ExprVerifier& expr_verifier)
+        static void ExpectValidExpression(const std::string& code_snippet, const ExprVerifier& verifier)
         {
             for (const auto& ctx : ExpressionContextsProvider::get_all())
             {
-                std::string code = ExpressionContextsProvider::inject(ctx.source_template, expr_code);
+                std::string code = ExpressionContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, expr_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing expression context: " + ctx.name);
 
@@ -264,42 +265,42 @@ namespace valuascript::compiler::test
             }
         }
 
-        static void ExpectValidTypeAnnotation(const std::string& type_code, const TypeVerifier& type_verifier)
+        static void ExpectValidTypeAnnotation(const std::string& code_snippet, const TypeVerifier& verifier)
         {
             for (const auto& ctx : TypeAnnotationContextsProvider::get_all())
             {
-                std::string code = TypeAnnotationContextsProvider::inject(ctx.source_template, type_code);
+                std::string code = TypeAnnotationContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, type_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing type annotation context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
 
-        static void ExpectValidModifiers(const std::string& mods_code, const std::vector<ModifierSpec>& expected_mods)
+        static void ExpectValidModifiers(const std::string& code_snippet, const std::vector<ModifierSpec>& verifier)
         {
             for (const auto& ctx : ModifierContextsProvider::get_all())
             {
-                std::string code = ModifierContextsProvider::inject(ctx.source_template, mods_code + " ");
+                std::string code = ModifierContextsProvider::inject(ctx.source_template, code_snippet + " ");
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, expected_mods);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing modifier context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
 
-        static void ExpectValidReturn(const std::string& ret_code, const StmtVerifier& ret_verifier)
+        static void ExpectValidReturn(const std::string& code_snippet, const ReturnVerifier& verifier)
         {
             for (const auto& ctx : ReturnStatementContextsProvider::get_all())
             {
-                std::string code = ReturnStatementContextsProvider::inject(ctx.source_template, ret_code);
+                std::string code = ReturnStatementContextsProvider::inject(ctx.source_template, code_snippet);
 
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, ret_verifier);
+                ctx.add_to_spec(spec, verifier);
 
                 SCOPED_TRACE("Testing return context: " + ctx.name);
                 ExpectValidParse(code, spec);

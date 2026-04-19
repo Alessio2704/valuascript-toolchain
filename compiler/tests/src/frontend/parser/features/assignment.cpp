@@ -1,59 +1,69 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class AssignmentSuccessPathTest : public ParserTestBase
+    class AssignmentRegistryRunner : public ParserTestBase,
+                                     public testing::WithParamInterface<RegistryEntry<AssignmentVerifier>>
     {
     };
 
-    TEST_F(AssignmentSuccessPathTest, SimpleAssignment)
+    namespace
     {
-        ExpectValidAssignment("let a = 1", IsAssignment({}, {{"a"}}, IsNumber("1")));
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+
+            reg("Simple", "let a = 1", IsAssignment({}, {{"a"}}, IsNumber("1")));
+
+            reg("UnderscoreAndNumbers", "let _a_1 = 1", IsAssignment({}, {{"_a_1"}}, IsNumber("1")));
+
+            reg("KeywordInsideIdentifier", "let ifthenelse = 1", IsAssignment({}, {{"ifthenelse"}}, IsNumber("1")));
+
+            reg("ExplicitType", "let a: int = 1", IsAssignment({}, {{"a", IsType("int")}}, IsNumber("1")));
+
+            reg("MultiBasic2Vars", "let a, b = 1", IsAssignment({}, {{"a"}, {"b"}}, IsNumber("1")));
+
+            reg("MultiBasic5Vars", "let a, b, c, d, e = 1",
+                IsAssignment({}, {{"a"}, {"b"}, {"c"}, {"d"}, {"e"}}, IsNumber("1")));
+
+            reg("MultiTypeAtStart", "let a: string, b = 1",
+                IsAssignment({}, {{"a", IsType("string")}, {"b"}}, IsNumber("1")));
+
+            reg("MultiTypeInMiddle", "let a, b: string, c = 1",
+                IsAssignment({}, {{"a"}, {"b", IsType("string")}, {"c"}}, IsNumber("1")));
+
+            reg("MultiTypeAtEnd", "let a, b: bool = 1",
+                IsAssignment({}, {{"a"}, {"b", IsType("bool")}}, IsNumber("1")));
+
+            reg("MultiTypeEverywhere", "let a: int, b: int = 1",
+                IsAssignment({}, {{"a", IsType("int")}, {"b", IsType("int")}}, IsNumber("1")));
+
+            reg("Multiline",
+                "let \n"
+                "  a, \n"
+                "  b: int \n"
+                "= 1",
+                IsAssignment({}, {{"a"}, {"b", IsType("int")}}, IsNumber("1")));
+
+            return true;
+        }();
     }
 
-    TEST_F(AssignmentSuccessPathTest, IdentifierVariations)
+    TEST_P(AssignmentRegistryRunner, ValidatesInAllContexts)
     {
-        ExpectValidAssignment("let _a_1 = 1", IsAssignment({}, {{"_a_1"}}, IsNumber("1")));
-        ExpectValidAssignment("let ifthenelse = 1", IsAssignment({}, {{"ifthenelse"}}, IsNumber("1")));
+        const auto& [name, code, verifier] = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + name);
+
+        ExpectValidAssignment(code, verifier);
     }
 
-    TEST_F(AssignmentSuccessPathTest, ExplicitType)
-    {
-        ExpectValidAssignment("let a: int = 1",
-                              IsAssignment({}, {{"a", IsType("int")}}, IsNumber("1"))
-        );
-    }
-
-    TEST_F(AssignmentSuccessPathTest, MultiAssignmentBasic)
-    {
-        ExpectValidAssignment("let a, b = 1", IsAssignment({}, {{"a"}, {"b"}}, IsNumber("1")));
-        ExpectValidAssignment("let a, b, c, d, e = 1",
-                              IsAssignment({}, {{"a"}, {"b"}, {"c"}, {"d"}, {"e"}}, IsNumber("1")));
-    }
-
-    TEST_F(AssignmentSuccessPathTest, MultiAssignmentWithTypeAnnotations)
-    {
-        ExpectValidAssignment("let a: string, b = 1",
-                              IsAssignment({}, {{"a", IsType("string")}, {"b"}}, IsNumber("1")));
-
-        ExpectValidAssignment("let a, b: string, c = 1",
-                              IsAssignment({}, {{"a"}, {"b", IsType("string")}, {"c"}}, IsNumber("1")));
-
-        ExpectValidAssignment("let a, b: bool = 1",
-                              IsAssignment({}, {{"a"}, {"b", IsType("bool")}}, IsNumber("1")));
-
-        ExpectValidAssignment("let a: int, b: int = 1",
-                              IsAssignment({}, {{"a", IsType("int")}, {"b", IsType("int")}}, IsNumber("1")));
-    }
-
-    TEST_F(AssignmentSuccessPathTest, MultilineFormatting)
-    {
-        ExpectValidAssignment(
-            "let \n"
-            "  a, \n"
-            "  b: int \n"
-            "= 1",
-            IsAssignment({}, {{"a"}, {"b", IsType("int")}}, IsNumber("1"))
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Assignment,
+        AssignmentRegistryRunner,
+        testing::ValuesIn(ConstructRegistry::assignments()),
+        [](const testing::TestParamInfo<RegistryEntry<AssignmentVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }

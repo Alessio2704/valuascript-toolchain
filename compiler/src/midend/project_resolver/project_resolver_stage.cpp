@@ -6,23 +6,28 @@
 #include "core/error_formatter.h"
 #include "frontend/parser/ast.h"
 
-namespace valuascript::compiler {
+namespace valuascript::compiler
+{
     ProjectResolverStage::ProjectResolverStage()
         : CompilerStage(
             "ProjectProjectResolverStage",
             CompilerStageArtifactCode::ResolvedProject,
             {CompilerStageArtifactCode::FilePath}
-        ) {
+        )
+    {
     }
 
-    std::string ProjectResolverStage::normalize_path(const std::string &base_file, const std::string &import_path) {
+    std::string ProjectResolverStage::normalize_path(const std::string& base_file, const std::string& import_path)
+    {
         std::filesystem::path base_dir = std::filesystem::path(base_file).parent_path();
         return std::filesystem::weakly_canonical(base_dir / import_path).string();
     }
 
-    void ProjectResolverStage::resolve_recursive(CompilerContext &context,
-                                                 const std::string &current_file, ResolvedProjectArtifact &project) {
-        if (resolving_.contains(current_file)) {
+    void ProjectResolverStage::resolve_recursive(CompilerContext& context,
+                                                 const std::string& current_file, ResolvedProjectArtifact& project)
+    {
+        if (resolving_.contains(current_file))
+        {
             ValuaScriptException ex(
                 ValuascriptErrorCategory::Import,
                 ValuascriptErrorCode::CircularImportDetected,
@@ -34,7 +39,8 @@ namespace valuascript::compiler {
             return;
         }
 
-        if (resolved_.contains(current_file)) {
+        if (resolved_.contains(current_file))
+        {
             return;
         }
 
@@ -42,20 +48,23 @@ namespace valuascript::compiler {
 
         CompilerStageArtifact ast_artifact = frontend_.run_from_file(context, current_file);
 
-        auto ast = extract_artifact_data<std::shared_ptr<Program> >(
+        auto ast = extract_artifact_data<std::shared_ptr<Program>>(
             {ast_artifact}, CompilerStageArtifactCode::Ast
         );
 
-        for (const auto &import_stmt: ast->import_statements) {
+        for (const auto& import_stmt : ast->import_statements)
+        {
             std::string clean_path = import_stmt->path;
 
-            if (clean_path.size() >= 2 && clean_path.front() == '"' && clean_path.back() == '"') {
+            if (clean_path.size() >= 2 && clean_path.front() == '"' && clean_path.back() == '"')
+            {
                 clean_path = clean_path.substr(1, clean_path.size() - 2);
             }
 
             std::string next_file = normalize_path(current_file, clean_path);
 
-            if (!std::filesystem::exists(next_file)) {
+            if (!std::filesystem::exists(next_file))
+            {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
                     ValuascriptErrorCode::ImportFileNotFound,
@@ -77,8 +86,9 @@ namespace valuascript::compiler {
         resolved_.insert(current_file);
     }
 
-    CompilerStageArtifact ProjectResolverStage::run(CompilerContext &context,
-                                                    const std::vector<CompilerStageArtifact> &artifacts) {
+    CompilerStageArtifact ProjectResolverStage::run(CompilerContext& context,
+                                                    const std::vector<CompilerStageArtifact>& artifacts)
+    {
         auto raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );

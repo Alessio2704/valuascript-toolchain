@@ -1,94 +1,80 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class AccessExpressionSuccessPathTest : public ParserTestBase
+    namespace
     {
-    };
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
 
-    TEST_F(AccessExpressionSuccessPathTest, SimpleDotAccess)
-    {
-        ExpectValidExpression("obj.property", IsDot(IsIdentifier("obj"), "property"));
-    }
+            reg("SimpleDotAccess",
+                "obj.property",
+                IsDot(IsIdentifier("obj"), "property"));
 
-    TEST_F(AccessExpressionSuccessPathTest, SimpleDotAccessWithSpace)
-    {
-        ExpectValidExpression("obj      .         property", IsDot(IsIdentifier("obj"), "property"));
-    }
+            reg("SimpleDotAccessWithSpace",
+                "obj      .         property",
+                IsDot(IsIdentifier("obj"), "property"));
 
-    TEST_F(AccessExpressionSuccessPathTest, ChainedDotAccess)
-    {
-        ExpectValidExpression("a.b.c",
-                              IsDot(
-                                  IsDot(IsIdentifier("a"), "b"),
-                                  "c"
-                              )
-        );
-    }
+            reg("ChainedDotAccess",
+                "a.b.c",
+                IsDot(
+                    IsDot(IsIdentifier("a"), "b"),
+                    "c"
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, SimpleBracketIndex)
-    {
-        ExpectValidExpression("arr[0]", IsBracket(IsIdentifier("arr"), IsNumber("0")));
-    }
+            reg("SimpleBracketIndex",
+                "arr[0]",
+                IsBracket(IsIdentifier("arr"), IsNumber("0")));
 
-    TEST_F(AccessExpressionSuccessPathTest, SimpleBracketIndexWithSpace)
-    {
-        ExpectValidExpression("arr      [0]", IsBracket(IsIdentifier("arr"), IsNumber("0")));
-    }
+            reg("SimpleBracketIndexWithSpace",
+                "arr      [0]",
+                IsBracket(IsIdentifier("arr"), IsNumber("0")));
 
-    TEST_F(AccessExpressionSuccessPathTest, ChainedBracketAccess)
-    {
-        ExpectValidExpression("matrix[0][1]",
-                              IsBracket(
-                                  IsBracket(IsIdentifier("matrix"), IsNumber("0")),
-                                  IsNumber("1")
-                              )
-        );
-    }
+            reg("ChainedBracketAccess",
+                "matrix[0][1]",
+                IsBracket(
+                    IsBracket(IsIdentifier("matrix"), IsNumber("0")),
+                    IsNumber("1")
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, NestedBracketAccess)
-    {
-        ExpectValidExpression("arr[ids[0]]",
-                              IsBracket(
-                                  IsIdentifier("arr"),
-                                  IsBracket(IsIdentifier("ids"), IsNumber("0"))
-                              )
-        );
-    }
+            reg("NestedBracketAccess",
+                "arr[ids[0]]",
+                IsBracket(
+                    IsIdentifier("arr"),
+                    IsBracket(IsIdentifier("ids"), IsNumber("0"))
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, FullSlice)
-    {
-        ExpectValidExpression("a[0:10]",
-                              IsBracket(IsIdentifier("a"),
-                                        IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10"))
-                              )
-        );
-    }
+            reg("FullSlice",
+                "a[0:10]",
+                IsBracket(
+                    IsIdentifier("a"),
+                    IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10"))
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, SliceImplicitStart)
-    {
-        ExpectValidExpression("a[:10]",
-                              IsBracket(IsIdentifier("a"),
-                                        IsBinary(TokenType::Colon, IsNull(), IsNumber("10"))
-                              )
-        );
-    }
+            reg("SliceImplicitStart",
+                "a[:10]",
+                IsBracket(
+                    IsIdentifier("a"),
+                    IsBinary(TokenType::Colon, IsNull(), IsNumber("10"))
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, SliceImplicitEnd)
-    {
-        ExpectValidExpression("a[0:]",
-                              IsBracket(IsIdentifier("a"),
-                                        IsBinary(TokenType::Colon, IsNumber("0"), IsNull())
-                              )
-        );
-    }
+            reg("SliceImplicitEnd",
+                "a[0:]",
+                IsBracket(
+                    IsIdentifier("a"),
+                    IsBinary(TokenType::Colon, IsNumber("0"), IsNull())
+                ));
 
-    TEST_F(AccessExpressionSuccessPathTest, SliceFullImplicit)
-    {
-        ExpectValidExpression("a[:]",
-                              IsBracket(IsIdentifier("a"),
-                                        IsBinary(TokenType::Colon, IsNull(), IsNull())
-                              )
-        );
+            reg("SliceFullImplicit",
+                "a[:]",
+                IsBracket(
+                    IsIdentifier("a"),
+                    IsBinary(TokenType::Colon, IsNull(), IsNull())
+                ));
+
+            return true;
+        }();
     }
 }

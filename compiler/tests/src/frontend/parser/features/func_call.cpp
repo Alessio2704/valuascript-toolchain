@@ -1,59 +1,53 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class FunctionCallExpressionSuccessPathTest : public ParserTestBase
+    namespace
     {
-    };
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, NoArguments)
-    {
-        ExpectValidExpression("f()", IsCall(IsIdentifier("f"), {}));
-    }
+            reg("NoArguments",
+                "f()",
+                IsCall(IsIdentifier("f"), {}));
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, SingleLabeledArgument)
-    {
-        ExpectValidExpression("f(x: 1)", IsCall(IsIdentifier("f"), {
-                                                    {"x", IsNumber("1")}
-                                                }));
-    }
+            reg("SingleLabeledArgument",
+                "f(x: 1)",
+                IsCall(IsIdentifier("f"), {
+                           {"x", IsNumber("1")}
+                       }));
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, MultipleLabeledArguments)
-    {
-        ExpectValidExpression("f(x: 1, y: true, z: \"hi\")", IsCall(IsIdentifier("f"), {
-                                                                        {"x", IsNumber("1")},
-                                                                        {"y", IsBoolean(true)},
-                                                                        {"z", IsString("\"hi\"")}
-                                                                    }));
-    }
+            reg("MultipleLabeledArguments",
+                "f(x: 1, y: true, z: \"hi\")",
+                IsCall(IsIdentifier("f"), {
+                           {"x", IsNumber("1")},
+                           {"y", IsBoolean(true)},
+                           {"z", IsString("\"hi\"")}
+                       }));
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, NestedFunctionCallsAsArguments)
-    {
-        ExpectValidExpression("f(x: g(y: 1))",
-                              IsCall(IsIdentifier("f"), {
-                                         {
-                                             "x", IsCall(IsIdentifier("g"), {
-                                                             {"y", IsNumber("1")}
-                                                         })
-                                         }
-                                     })
-        );
-    }
+            reg("NestedFunctionCallsAsArguments",
+                "f(x: g(y: 1))",
+                IsCall(IsIdentifier("f"), {
+                           {
+                               "x", IsCall(IsIdentifier("g"), {
+                                               {"y", IsNumber("1")}
+                                           })
+                           }
+                       }));
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, CallReturningFunctionCalledImmediately)
-    {
-        ExpectValidExpression("get_handler()()",
-                              IsCall(IsCall(IsIdentifier("get_handler"), {}), {})
-        );
-    }
+            reg("CallReturningFunctionCalledImmediately",
+                "get_handler()()",
+                IsCall(IsCall(IsIdentifier("get_handler"), {}), {}));
 
+            reg("CallWithGroupingTarget",
+                "(f)(x: 1)",
+                IsCall(IsGrouping(IsIdentifier("f")), {
+                           {"x", IsNumber("1")}
+                       }));
 
-    TEST_F(FunctionCallExpressionSuccessPathTest, CallWithGroupingTarget)
-    {
-        ExpectValidExpression("(f)(x: 1)",
-                              IsCall(IsGrouping(IsIdentifier("f")), {
-                                         {"x", IsNumber("1")}
-                                     })
-        );
+            return true;
+        }();
     }
 }

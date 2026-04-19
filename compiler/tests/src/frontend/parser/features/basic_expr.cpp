@@ -1,125 +1,44 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class BasicLiteralExprSuccessPathTest : public ParserTestBase
+    namespace
     {
-    };
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
 
-    TEST_F(BasicLiteralExprSuccessPathTest, IntegerLiteral)
-    {
-        ExpectValidExpression("42", IsNumber("42"));
-    }
+            reg("IntegerLiteral", "42", IsNumber("42"));
+            reg("IntegerWithSeparators", "1_000_000", IsNumber("1_000_000"));
+            reg("DecimalLiteral", "3.14159", IsNumber("3.14159"));
+            reg("DecimalWithSeparators", "1_234.56_78", IsNumber("1_234.56_78"));
+            reg("ZeroLiteral", "0", IsNumber("0"));
+            reg("DecimalStartingWithZero", "0.001", IsNumber("0.001"));
 
-    TEST_F(BasicLiteralExprSuccessPathTest, IntegerWithSeparators)
-    {
-        ExpectValidExpression("1_000_000", IsNumber("1_000_000"));
-    }
+            reg("BooleanTrue", "true", IsBoolean(true));
+            reg("BooleanFalse", "false", IsBoolean(false));
 
-    TEST_F(BasicLiteralExprSuccessPathTest, DecimalLiteral)
-    {
-        ExpectValidExpression("3.14159", IsNumber("3.14159"));
-    }
+            reg("SimpleString", "\"hello\"", IsString("\"hello\""));
+            reg("StringWithSpaces", "\"hello world\"", IsString("\"hello world\""));
+            reg("EmptyString", "\"\"", IsString("\"\""));
+            reg("StringWithSpecialCharacters", "\"@#$%^&*()_+{}|:<>?\"", IsString("\"@#$%^&*()_+{}|:<>?\""));
 
-    TEST_F(BasicLiteralExprSuccessPathTest, DecimalWithSeparators)
-    {
-        ExpectValidExpression("1_234.56_78", IsNumber("1_234.56_78"));
-    }
+            reg("IntegerPercentage", "1%", IsPercentage("1%"));
+            reg("DecimalPercentage", "2.5%", IsPercentage("2.5%"));
+            reg("PercentageWithSeparators", "1_000.5%", IsPercentage("1_000.5%"));
+            reg("PercentageWithComplexSeparators", "1_000.5_000_1%", IsPercentage("1_000.5_000_1%"));
 
-    TEST_F(BasicLiteralExprSuccessPathTest, ZeroLiteral)
-    {
-        ExpectValidExpression("0", IsNumber("0"));
-    }
+            reg("StandardIdentifier", "my_variable_name", IsIdentifier("my_variable_name"));
+            reg("CamelCaseIdentifier", "myVariableName", IsIdentifier("myVariableName"));
+            reg("PascalCaseIdentifier", "MyVariableName", IsIdentifier("MyVariableName"));
+            reg("IdentifierWithNumbers", "var42_item7", IsIdentifier("var42_item7"));
+            reg("SingleUnderscoreIdentifier", "_", IsIdentifier("_"));
+            reg("DoubleUnderscoreIdentifier", "__internal_id__", IsIdentifier("__internal_id__"));
 
-    TEST_F(BasicLiteralExprSuccessPathTest, DecimalStartingWithZero)
-    {
-        ExpectValidExpression("0.001", IsNumber("0.001"));
-    }
+            reg("SelfExpression", "self", IsSelf());
 
-
-    TEST_F(BasicLiteralExprSuccessPathTest, BooleanTrue)
-    {
-        ExpectValidExpression("true", IsBoolean(true));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, BooleanFalse)
-    {
-        ExpectValidExpression("false", IsBoolean(false));
-    }
-
-
-    TEST_F(BasicLiteralExprSuccessPathTest, SimpleString)
-    {
-        ExpectValidExpression("\"hello\"", IsString("\"hello\""));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, StringWithSpaces)
-    {
-        ExpectValidExpression("\"hello world\"", IsString("\"hello world\""));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, EmptyString)
-    {
-        ExpectValidExpression("\"\"", IsString("\"\""));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, StringWithSpecialCharacters)
-    {
-        ExpectValidExpression("\"@#$%^&*()_+{}|:<>?\"", IsString("\"@#$%^&*()_+{}|:<>?\""));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, IntegerPercentage)
-    {
-        ExpectValidExpression("1%", IsPercentage("1%"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, DecimalPercentage)
-    {
-        ExpectValidExpression("2.5%", IsPercentage("2.5%"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, PercentageWithSeparators)
-    {
-        ExpectValidExpression("1_000.5%", IsPercentage("1_000.5%"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, PercentageWithComplexSeparators)
-    {
-        ExpectValidExpression("1_000.5_000_1%", IsPercentage("1_000.5_000_1%"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, StandardIdentifier)
-    {
-        ExpectValidExpression("my_variable_name", IsIdentifier("my_variable_name"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, CamelCaseIdentifier)
-    {
-        ExpectValidExpression("myVariableName", IsIdentifier("myVariableName"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, PascalCaseIdentifier)
-    {
-        ExpectValidExpression("MyVariableName", IsIdentifier("MyVariableName"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, IdentifierWithNumbers)
-    {
-        ExpectValidExpression("var42_item7", IsIdentifier("var42_item7"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, SingleUnderscoreIdentifier)
-    {
-        ExpectValidExpression("_", IsIdentifier("_"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, DoubleUnderscoreIdentifier)
-    {
-        ExpectValidExpression("__internal_id__", IsIdentifier("__internal_id__"));
-    }
-
-    TEST_F(BasicLiteralExprSuccessPathTest, SelfExpression)
-    {
-        ExpectValidExpression("self", IsSelf());
+            return true;
+        }();
     }
 }

@@ -1,37 +1,62 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
 {
-    class ReturnStatementSuccessPathTest : public ParserTestBase
+    class ReturnStatementRegistryRunner : public ParserTestBase,
+                                          public testing::WithParamInterface<RegistryEntry<ReturnVerifier>>
     {
     };
 
-    TEST_F(ReturnStatementSuccessPathTest, ReturnSingleValue)
+    namespace
     {
-        ExpectValidReturn("return 1", IsReturn({IsNumber("1")}));
+        static const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+
+            reg("ReturnSingleValue",
+                "return 1",
+                IsReturn({IsNumber("1")}));
+
+            reg("ReturnMultipleValues",
+                "return 1, true, \"success\"",
+                IsReturn({
+                    IsNumber("1"),
+                    IsBoolean(true),
+                    IsString("\"success\"")
+                }));
+
+            reg("ReturnWithIdentifier",
+                "return result",
+                IsReturn({IsIdentifier("result")}));
+
+            reg("MultilineFormatting",
+                "return \n"
+                "  1, \n"
+                "  2",
+                IsReturn({
+                    IsNumber("1"),
+                    IsNumber("2")
+                }));
+
+            return true;
+        }();
     }
 
-    TEST_F(ReturnStatementSuccessPathTest, ReturnMultipleValues)
+    TEST_P(ReturnStatementRegistryRunner, ValidatesInAllContexts)
     {
-        ExpectValidReturn("return 1, true, \"success\"", IsReturn({
-                              IsNumber("1"),
-                              IsBoolean(true),
-                              IsString("\"success\"")
-                          }));
+        const auto& [name, code, verifier] = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + name);
+
+        ExpectValidReturn(code, verifier);
     }
 
-    TEST_F(ReturnStatementSuccessPathTest, ReturnWithIdentifier)
-    {
-        ExpectValidReturn("return result", IsReturn({IsIdentifier("result")}));
-    }
-
-    TEST_F(ReturnStatementSuccessPathTest, MultilineFormatting)
-    {
-        ExpectValidReturn(
-            "return \n"
-            "  1, \n"
-            "  2",
-            IsReturn({IsNumber("1"), IsNumber("2")})
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        ReturnStatement,
+        ReturnStatementRegistryRunner,
+        testing::ValuesIn(ConstructRegistry::returns()),
+        [](const testing::TestParamInfo<RegistryEntry<ReturnVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }
