@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iomanip>
 
+#include "assignment_contexts_provider.h"
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
@@ -120,6 +121,20 @@ namespace valuascript::compiler::test
         static void run_valid_parser_test(const ValidParserTestCase& test_case)
         {
             ExpectValidParse(test_case.source_code, test_case.expected_ast);
+        }
+
+        static void ExpectValidAssignment(const std::string& assign_code, const StmtVerifier& assign_verifier)
+        {
+            for (const auto& ctx : AssignmentContextsProvider::get_all())
+            {
+                std::string code = AssignmentContextsProvider::inject(ctx.source_template, assign_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, assign_verifier);
+
+                SCOPED_TRACE("Testing assignment context: " + ctx.name);
+                ExpectValidParse(code, spec);
+            }
         }
 
         static void ExpectValidExpression(const std::string& expr_code, const ExprVerifier& expr_verifier)
