@@ -89,6 +89,22 @@ namespace valuascript::compiler::test
         );
     }
 
+    TEST_F(EnumDefinitionSuccessPathTest, InterleavingModifiedCases)
+    {
+        ExpectValidParse(
+            "enum E: int { @primary A, B, @deprecated C = 99 }",
+            ProgramSpec{
+                .enums = {
+                    IsEnumDef("E", {}, IsType("int"), {
+                                  {"A", {{"primary"}}},
+                                  {"B"},
+                                  {"C", {{"deprecated"}}, IsNumber("99")}
+                              })
+                }
+            }
+        );
+    }
+
     TEST_F(EnumDefinitionSuccessPathTest, MultilineFormatting)
     {
         ExpectValidParse(
