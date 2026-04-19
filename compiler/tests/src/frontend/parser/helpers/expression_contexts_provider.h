@@ -175,6 +175,41 @@ namespace valuascript::compiler::test
                         s.execution_steps.push_back(
                             IsAssignment({}, {{"ctx_call"}}, IsCall(IsIdentifier("f"), {{"arg", v}})));
                     }
+                },
+                {
+                    "binary_lhs",
+                    "let ctx_bin_lhs = ({expr}) + 100\n", [](ProgramSpec& s, ExprVerifier v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_bin_lhs"}},
+                                         IsBinary(TokenType::Plus, IsGrouping(v), IsNumber("100")))
+                        );
+                    }
+                },
+                {
+                    "binary_rhs",
+                    "let ctx_bin_rhs = 100 + ({expr})\n", [](ProgramSpec& s, ExprVerifier v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_bin_rhs"}},
+                                         IsBinary(TokenType::Plus, IsNumber("100"), IsGrouping(v)))
+                        );
+                    }
+                },
+                {
+                    "grouping",
+                    "let ctx_group = ({expr})\n", [](ProgramSpec& s, ExprVerifier v)
+                    {
+                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_group"}}, IsGrouping(v)));
+                    }
+                },
+                {
+                    "unary_grouping",
+                    "let ctx_u_group = -({expr})\n", [](ProgramSpec& s, ExprVerifier v)
+                    {
+                        s.execution_steps.push_back(
+                            IsAssignment({}, {{"ctx_u_group"}}, IsUnary(TokenType::Minus, IsGrouping(v))));
+                    }
                 }
             };
         }
