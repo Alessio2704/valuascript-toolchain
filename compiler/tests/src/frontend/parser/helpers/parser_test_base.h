@@ -17,6 +17,7 @@
 #include "frontend/parser/helpers/node_matchers.h"
 #include "expression_contexts_provider.h"
 #include "modifier_contexts_provider.h"
+#include "return_statement_contexts_provider.h"
 #include "type_annotation_contexts_provider.h"
 
 namespace valuascript::compiler::test
@@ -176,6 +177,20 @@ namespace valuascript::compiler::test
                 ctx.add_to_spec(spec, expected_mods);
 
                 SCOPED_TRACE("Testing modifier context: " + ctx.name);
+                ExpectValidParse(code, spec);
+            }
+        }
+
+        static void ExpectValidReturn(const std::string& ret_code, const StmtVerifier& ret_verifier)
+        {
+            for (const auto& ctx : ReturnStatementContextsProvider::get_all())
+            {
+                std::string code = ReturnStatementContextsProvider::inject(ctx.source_template, ret_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, ret_verifier);
+
+                SCOPED_TRACE("Testing return context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }

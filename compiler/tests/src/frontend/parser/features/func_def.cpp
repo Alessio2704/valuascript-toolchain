@@ -78,25 +78,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(FunctionDefinitionSuccessPathTest, MultipleReturnValues)
-    {
-        ExpectValidParse(
-            "func f() -> int { return 1, 2}",
-            ProgramSpec{
-                .functions = {
-                    IsFunctionDef("f", {}, {}, {
-                                      IsType("int"),
-                                  }, {
-                                      IsReturn({
-                                          IsNumber("1"),
-                                          IsNumber("2"),
-                                      })
-                                  })
-                }
-            }
-        );
-    }
-
     TEST_F(FunctionDefinitionSuccessPathTest, FunctionWithDocstring)
     {
         ExpectValidParse(
@@ -139,7 +120,6 @@ namespace valuascript::compiler::test
             "  bool, \n"
             "  decimal \n"
             "{\n"
-            "  return true, 1.0\n"
             "}",
             ProgramSpec{
                 .functions = {
@@ -149,9 +129,7 @@ namespace valuascript::compiler::test
                                   }, {
                                       IsType("bool"),
                                       IsType("decimal")
-                                  }, {
-                                      IsReturn({IsBoolean(true), IsNumber("1.0")})
-                                  })
+                                  }, {})
                 }
             }
         );
