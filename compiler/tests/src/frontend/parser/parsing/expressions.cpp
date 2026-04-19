@@ -4,64 +4,31 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct ExpressionHappyParam {
-        std::string test_name;
-        std::string expression_code;
-    };
-
-    class ExpressionHappyPathTest : public AstBaseTest,
-                                    public testing::WithParamInterface<ExpressionHappyParam> {
-    };
-
-    TEST_P(ExpressionHappyPathTest, ParsesSuccessfully) {
-        const ExpressionHappyParam &param = GetParam();
-
-        EXPECT_NO_THROW({
-            parse_expression_as_assignment(param.expression_code);
-            }) << "Parser threw an exception on valid expression test: " << param.test_name;
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        ExpressionHappyPathTest,
-        testing::Values(
-
-            ExpressionHappyParam{"chain_function_returning_function", "factory_func()(a: arg)"},
-
-            ExpressionHappyParam{"bool_grouped", "(a and b) or (c and not d)"},
-
-            ExpressionHappyParam{"cond_simple", "if a > b then a else b"},
-            ExpressionHappyParam{"cond_nested", "if a then 1 else if b then 2 else 3"},
-            ExpressionHappyParam{"cond_with_math", "if (x + y) > 10 then (x * 2) else (y / 2)"},
-
-            ExpressionHappyParam{"call_on_literal", "1()"},
-            ExpressionHappyParam{"access_on_literal", "1[0]"},
-
-            ExpressionHappyParam{"conditional_expression", "if true then 10 else 4"}
-        ),
-        [](const testing::TestParamInfo<ExpressionHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
-
-    struct ExpressionSadParam {
+namespace valuascript::compiler::test
+{
+    struct ExpressionSadParam
+    {
         std::string test_name;
         std::string expression_code;
         ValuascriptErrorCode expected_error;
     };
 
     class ExpressionSadPathTest : public AstBaseTest,
-                                  public testing::WithParamInterface<ExpressionSadParam> {
+                                  public testing::WithParamInterface<ExpressionSadParam>
+    {
     };
 
-    TEST_P(ExpressionSadPathTest, ThrowsCorrectSyntaxError) {
-        const ExpressionSadParam &param = GetParam();
+    TEST_P(ExpressionSadPathTest, ThrowsCorrectSyntaxError)
+    {
+        const ExpressionSadParam& param = GetParam();
 
-        try {
+        try
+        {
             parse_expression_as_assignment(param.expression_code);
             FAIL() << "Parser should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)

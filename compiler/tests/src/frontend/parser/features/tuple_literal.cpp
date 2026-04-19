@@ -65,6 +65,14 @@ namespace valuascript::compiler::test
                               }));
     }
 
+    TEST_F(TupleLiteralExpressionSuccessPathTest, ExpressionsAsElements)
+    {
+        ExpectValidExpression("(1 + 2, f(x: 1))", IsTuple({
+                                  IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")),
+                                  IsCall(IsIdentifier("f"), {{"x", IsNumber("1")}})
+                              }));
+    }
+
     TEST_F(TupleLiteralExpressionSuccessPathTest, MultilineFormatting)
     {
         ExpectValidExpression(

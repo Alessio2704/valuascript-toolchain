@@ -69,6 +69,14 @@ namespace valuascript::compiler::test
                               }));
     }
 
+    TEST_F(TensorLiteralExpressionSuccessPathTest, ExpressionsAsElements)
+    {
+        ExpectValidExpression("[1 + 2, f(x: 1)]", IsTensor({
+                                  IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")),
+                                  IsCall(IsIdentifier("f"), {{"x", IsNumber("1")}})
+                              }));
+    }
+
     TEST_F(TensorLiteralExpressionSuccessPathTest, MultilineFormatting)
     {
         ExpectValidExpression(
