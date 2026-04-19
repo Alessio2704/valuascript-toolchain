@@ -6,43 +6,6 @@ using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test
 {
-    struct ReassignmentHappyParam
-    {
-        std::string test_name;
-        std::string source_code;
-    };
-
-    class ReassignmentHappyPathTest : public AstBaseTest,
-                                      public testing::WithParamInterface<ReassignmentHappyParam>
-    {
-    };
-
-    TEST_P(ReassignmentHappyPathTest, ParsesSuccessfully)
-    {
-        const ReassignmentHappyParam& param = GetParam();
-
-        std::shared_ptr<Program> ast;
-        EXPECT_NO_THROW({
-            ast = parse_code(param.source_code);
-            }) << "Parser threw an exception on valid assignment test: " << param.test_name;
-
-        ASSERT_NE(ast, nullptr);
-        EXPECT_GT(ast->execution_steps.size(), 0) << "Expected at least one execution step.";
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ParserStageTest,
-        ReassignmentHappyPathTest,
-        testing::Values(
-            ReassignmentHappyParam{"simple_function_call", "set_seed(s: 42)"},
-            ReassignmentHappyParam{"method_call", "sys.init()"},
-            ReassignmentHappyParam{"chained_method_call", "builder.set_rate(p: 5%).build()"}
-        ),
-        [](const testing::TestParamInfo<ReassignmentHappyParam>& info) {
-        return info.param.test_name;
-        }
-    );
-
     struct ReassignmentSadParam
     {
         std::string test_name;

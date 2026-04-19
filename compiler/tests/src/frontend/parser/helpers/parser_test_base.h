@@ -16,6 +16,7 @@
 #include "core/valuascript_exception.h"
 #include "frontend/parser/helpers/node_matchers.h"
 #include "expression_contexts_provider.h"
+#include "expression_statement_contexts_provider.h"
 #include "modifier_contexts_provider.h"
 #include "reassignment_contexts_provider.h"
 #include "return_statement_contexts_provider.h"
@@ -149,6 +150,20 @@ namespace valuascript::compiler::test
                 ctx.add_to_spec(spec, reassign_verifier);
 
                 SCOPED_TRACE("Testing reassignment context: " + ctx.name);
+                ExpectValidParse(code, spec);
+            }
+        }
+
+        static void ExpectValidExpressionStatement(const std::string& stmt_code, const StmtVerifier& stmt_verifier)
+        {
+            for (const auto& ctx : ExpressionStatementContextsProvider::get_all())
+            {
+                std::string code = ExpressionStatementContextsProvider::inject(ctx.source_template, stmt_code);
+
+                ProgramSpec spec;
+                ctx.add_to_spec(spec, stmt_verifier);
+
+                SCOPED_TRACE("Testing expression statement context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
         }
