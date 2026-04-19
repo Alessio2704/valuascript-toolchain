@@ -16,7 +16,7 @@
 #include "frontend/parser/helpers/node_matchers.h"
 #include "expression_contexts_provider.h"
 #include "modifier_contexts_provider.h"
-#include "type_annotation_contexts_provider.h .h"
+#include "type_annotation_contexts_provider.h"
 
 namespace valuascript::compiler::test
 {

@@ -13,6 +13,13 @@ namespace valuascript::compiler::test
                              });
     }
 
+    TEST_F(ModifierSuccessPathTest, SingleModifierWithEmptyParens)
+    {
+        ExpectValidModifiers("@simple()", {
+                                 {"simple"}
+                             });
+    }
+
     TEST_F(ModifierSuccessPathTest, MultipleModifiers)
     {
         ExpectValidModifiers("@first @second", {

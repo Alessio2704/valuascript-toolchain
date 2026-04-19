@@ -1,7 +1,9 @@
 #include "frontend/parser/helpers/ast_base_test.h"
 
-namespace valuascript::compiler::test {
-    TEST_F(AstBaseTest, ValidatesStructDefinitionAndProgramSegregation) {
+namespace valuascript::compiler::test
+{
+    TEST_F(AstBaseTest, ValidatesStructDefinitionAndProgramSegregation)
+    {
         auto ast = parse_code("struct Assumption { cagr: Decimal, yrs: Integer, name: String }");
 
         // 1. Verify Segregation
@@ -25,17 +27,18 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(struct_def->fields[2].type->name, "String");
     }
 
-    TEST_F(AstBaseTest, ValidatesStructWithDeeplyNestedComplexTypes) {
+    TEST_F(AstBaseTest, ValidatesStructWithDeeplyNestedComplexTypes)
+    {
         // Proves that StructDefinition fields perfectly leverage the recursive type parser,
         // seamlessly handling generics, tuples, and nested combinations.
 
         std::string code =
-                "struct ComplexModel {\n"
-                "    rates: Vector<scalar>,\n"
-                "    bounds: (integer, integer),\n"
-                "    nested_generic: Result<Vector<scalar>, Error>,\n"
-                "    matrix_tuple: (Matrix<scalar>, (integer, integer))\n"
-                "}";
+            "struct ComplexModel {\n"
+            "    rates: Vector<scalar>,\n"
+            "    bounds: (integer, integer),\n"
+            "    nested_generic: Result<Vector<scalar>, Error>,\n"
+            "    matrix_tuple: (Matrix<scalar>, (integer, integer))\n"
+            "}";
 
         auto ast = parse_code(code);
 
@@ -58,7 +61,7 @@ namespace valuascript::compiler::test {
         // FIELD 1: bounds: (integer, integer)
         // ==========================================
         EXPECT_EQ(struct_def->fields[1].name, "bounds");
-        auto field1_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[1].type.get());
+        auto field1_tuple = dynamic_cast<TupleTypeAnnotation*>(struct_def->fields[1].type.get());
         ASSERT_NE(field1_tuple, nullptr) << "Field 'bounds' must be a TupleTypeAnnotation";
         ASSERT_EQ(field1_tuple->element_types.size(), 2);
         EXPECT_EQ(field1_tuple->element_types[0]->name, "integer");
@@ -87,7 +90,7 @@ namespace valuascript::compiler::test {
         // FIELD 3: matrix_tuple: (Matrix<scalar>, (integer, integer))
         // ==========================================
         EXPECT_EQ(struct_def->fields[3].name, "matrix_tuple");
-        auto field3_tuple = dynamic_cast<TupleTypeAnnotation *>(struct_def->fields[3].type.get());
+        auto field3_tuple = dynamic_cast<TupleTypeAnnotation*>(struct_def->fields[3].type.get());
         ASSERT_NE(field3_tuple, nullptr) << "Field 'matrix_tuple' must be a TupleTypeAnnotation";
         ASSERT_EQ(field3_tuple->element_types.size(), 2);
 
@@ -98,10 +101,49 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(elem0->generic_args[0]->name, "scalar");
 
         // Element 1: Nested Tuple (integer, integer)
-        auto elem1_nested_tuple = dynamic_cast<TupleTypeAnnotation *>(field3_tuple->element_types[1].get());
+        auto elem1_nested_tuple = dynamic_cast<TupleTypeAnnotation*>(field3_tuple->element_types[1].get());
         ASSERT_NE(elem1_nested_tuple, nullptr) << "Second element of matrix_tuple must be a nested TupleTypeAnnotation";
         ASSERT_EQ(elem1_nested_tuple->element_types.size(), 2);
         EXPECT_EQ(elem1_nested_tuple->element_types[0]->name, "integer");
         EXPECT_EQ(elem1_nested_tuple->element_types[1]->name, "integer");
+    }
+
+    TEST_F(AstBaseTest, ValidatesStackedModifiersOnStructAndFields)
+    {
+        auto ast = parse_code(
+            "@export @packed "
+            "struct User { "
+            "  @id id: int, "
+            "  @json(name: \"username\") @unique name: string "
+            "}"
+        );
+
+        ASSERT_EQ(ast->struct_definitions.size(), 1);
+        auto node = ast->struct_definitions[0].get();
+
+        // 1. Verify Struct-Level Modifiers
+        ASSERT_EQ(node->modifiers.size(), 2);
+        EXPECT_EQ(node->modifiers[0].name, "export");
+        EXPECT_EQ(node->modifiers[1].name, "packed");
+
+        // 2. Verify Field-Level Modifiers
+        ASSERT_EQ(node->fields.size(), 2);
+
+        // Field: id
+        EXPECT_EQ(node->fields[0].name, "id");
+        ASSERT_EQ(node->fields[0].modifiers.size(), 1);
+        EXPECT_EQ(node->fields[0].modifiers[0].name, "id");
+
+        // Field: name
+        EXPECT_EQ(node->fields[1].name, "name");
+        ASSERT_EQ(node->fields[1].modifiers.size(), 2);
+        EXPECT_EQ(node->fields[1].modifiers[0].name, "json");
+        EXPECT_EQ(node->fields[1].modifiers[1].name, "unique");
+
+        // Check argument on @json
+        const auto& json_mod = node->fields[1].modifiers[0];
+        ASSERT_EQ(json_mod.arguments.size(), 1);
+        EXPECT_EQ(json_mod.arguments[0].first, "name");
+        EXPECT_EQ(dynamic_cast<StringLiteral*>(json_mod.arguments[0].second.get())->value, "\"username\"");
     }
 }
