@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
 
         static std::vector<StructDefinitionContext> get_all()
         {
-            return {{"top_level", "{struct}\n", [](ProgramSpec& s, StructVerifier v) { s.structs.push_back(v); }}};
+            return {{"top_level", "{struct}\n", [](ProgramSpec& s, const StructVerifier& v) { s.structs.push_back(v); }}};
         }
     };
 }

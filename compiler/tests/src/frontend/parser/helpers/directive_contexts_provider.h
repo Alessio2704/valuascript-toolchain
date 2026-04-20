@@ -27,7 +27,12 @@ namespace valuascript::compiler::test
         static std::vector<DirectiveContext> get_all()
         {
             return {
-                {"top_level", "{directive}\n", [](ProgramSpec& s, DirectiveVerifier v) { s.directives.push_back(v); }}
+                {
+                    "top_level", "{directive}\n", [](ProgramSpec& s, const DirectiveVerifier& v)
+                    {
+                        s.directives.push_back(v);
+                    }
+                }
             };
         }
     };

@@ -365,7 +365,8 @@ namespace valuascript::compiler::test
         }
 
         template <typename T>
-        void register_pool(const std::vector<RegistryEntry<T>>& pool, std::function<void(ProgramSpec&, const T&)> adder)
+        void register_pool(const std::vector<RegistryEntry<T>>& pool,
+                           const std::function<void(ProgramSpec&, const T&)>& adder)
         {
             if (pool.empty()) return;
             generators_.push_back([this, &pool, adder]() -> std::pair<std::string, SpecAdder>
@@ -491,51 +492,51 @@ namespace valuascript::compiler::test
 
             register_pool<FuncVerifier>(ConstructRegistry::functions(), [](ProgramSpec& s, const FuncVerifier& v)
             {
-                s.functions.push_back(v);
+                s.functions.emplace_back(v);
             });
 
             register_pool<StructVerifier>(ConstructRegistry::structs(), [](ProgramSpec& s, const StructVerifier& v)
             {
-                s.structs.push_back(v);
+                s.structs.emplace_back(v);
             });
 
             register_pool<EnumVerifier>(ConstructRegistry::enums(), [](ProgramSpec& s, const EnumVerifier& v)
             {
-                s.enums.push_back(v);
+                s.enums.emplace_back(v);
             });
 
             register_pool<AliasVerifier>(ConstructRegistry::aliases(), [](ProgramSpec& s, const AliasVerifier& v)
             {
-                s.type_aliases.push_back(v);
+                s.type_aliases.emplace_back(v);
             });
 
             register_pool<AssignmentVerifier>(ConstructRegistry::assignments(),
                                               [](ProgramSpec& s, const AssignmentVerifier& v)
                                               {
-                                                  s.execution_steps.push_back(v);
+                                                  s.execution_steps.emplace_back(v);
                                               });
 
             register_pool<ReassignmentVerifier>(ConstructRegistry::reassignments(),
                                                 [](ProgramSpec& s, const ReassignmentVerifier& v)
                                                 {
-                                                    s.execution_steps.push_back(v);
+                                                    s.execution_steps.emplace_back(v);
                                                 });
 
             register_pool<DirectiveVerifier>(ConstructRegistry::directives(),
                                              [](ProgramSpec& s, const DirectiveVerifier& v)
                                              {
-                                                 s.directives.push_back(v);
+                                                 s.directives.emplace_back(v);
                                              });
 
             register_pool<ImportVerifier>(ConstructRegistry::imports(), [](ProgramSpec& s, const ImportVerifier& v)
             {
-                s.imports.push_back(v);
+                s.imports.emplace_back(v);
             });
 
             register_pool<ExprStmtVerifier>(ConstructRegistry::expr_stmts(),
                                             [](ProgramSpec& s, const ExprStmtVerifier& v)
                                             {
-                                                s.execution_steps.push_back(v);
+                                                s.execution_steps.emplace_back(v);
                                             });
         }
 

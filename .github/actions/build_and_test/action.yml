@@ -43,6 +43,8 @@ runs:
 
     - name: Run C++ Engine Tests
       shell: bash
+      env:
+        FUZZ_ITERATIONS: 10000
       run: |
         cd build
         CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)

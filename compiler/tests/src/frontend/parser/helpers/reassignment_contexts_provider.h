@@ -34,16 +34,16 @@ namespace valuascript::compiler::test
             return {
                 {
                     "top_level",
-                    "{reassignment}\n", [](ProgramSpec& s, StmtVerifier v)
+                    "{reassignment}\n", [](ProgramSpec& s, const StmtVerifier& v)
                     {
-                        s.execution_steps.push_back(v);
+                        s.execution_steps.emplace_back(v);
                     }
                 },
                 {
                     "function_body",
-                    "func ctx_wrapper() -> void {\n  {reassignment}\n}\n", [](ProgramSpec& s, StmtVerifier v)
+                    "func ctx_wrapper() -> void {\n  {reassignment}\n}\n", [](ProgramSpec& s, const StmtVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {v}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {v}));
                     }
                 }
             };

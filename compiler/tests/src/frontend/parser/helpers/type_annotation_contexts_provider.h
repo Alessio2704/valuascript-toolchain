@@ -36,50 +36,50 @@ namespace valuascript::compiler::test
                     "assignment_target",
                     "let ctx_assign: {type} = 1\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_assign", v}}, IsNumber("1")));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_assign", v}}, IsNumber("1")));
                     }
                 },
                 {
                     "typealias_target",
                     "typealias ctx_alias = {type}\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.type_aliases.push_back(IsTypeAlias("ctx_alias", {}, v));
+                        s.type_aliases.emplace_back(IsTypeAlias("ctx_alias", {}, v));
                     }
                 },
                 {
                     "function_parameter",
                     "func ctx_func_param(p: {type}) -> void {}\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func_param", {}, {ParamSpec{"p", {}, v}},
-                                                            {IsType("void")}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_func_param", {}, {ParamSpec{"p", {}, v}},
+                                                               {IsType("void")}));
                     }
                 },
                 {
                     "function_return",
                     "func ctx_func_ret() -> {type} {}\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func_ret", {}, {}, {v}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_func_ret", {}, {}, {v}));
                     }
                 },
                 {
                     "function_multi_return",
                     "func ctx_func_multi_ret() -> {type}, int {}\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func_multi_ret", {}, {}, {v, IsType("int")}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_func_multi_ret", {}, {}, {v, IsType("int")}));
                     }
                 },
                 {
                     "struct_field",
                     "struct ctx_struct { f: {type} }\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.structs.push_back(IsStructDef("ctx_struct", {}, {FieldSpec{"f", {}, v}}));
+                        s.structs.emplace_back(IsStructDef("ctx_struct", {}, {FieldSpec{"f", {}, v}}));
                     }
                 },
                 {
                     "enum_underlying_type",
                     "enum ctx_enum: {type} { A }\n", [](ProgramSpec& s, const TypeVerifier& v)
                     {
-                        s.enums.push_back(IsEnumDef("ctx_enum", {}, v, {{"A"}}));
+                        s.enums.emplace_back(IsEnumDef("ctx_enum", {}, v, {{"A"}}));
                     }
                 }
             };

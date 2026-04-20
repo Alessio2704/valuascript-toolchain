@@ -32,18 +32,18 @@ namespace valuascript::compiler::test
         static std::vector<RegistryEntry<ModifierVerifier>>& modifiers();
         static std::vector<RegistryEntry<TypeVerifier>>& type_annotations();
 
-        static void add(std::string n, std::string c, ImportVerifier v) { imports().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, DirectiveVerifier v) { directives().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, FuncVerifier v) { functions().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, StructVerifier v) { structs().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, EnumVerifier v) { enums().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, AliasVerifier v) { aliases().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, AssignmentVerifier v) { assignments().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, ReassignmentVerifier v) { reassignments().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, ReturnVerifier v) { returns().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, ExprStmtVerifier v) { expr_stmts().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, ExprVerifier v) { expressions().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, ModifierVerifier v) { modifiers().push_back({n, c, v}); }
-        static void add(std::string n, std::string c, TypeVerifier v) { type_annotations().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ImportVerifier& v) { imports().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v) { directives().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const FuncVerifier& v) { functions().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const StructVerifier& v) { structs().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const EnumVerifier& v) { enums().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const AliasVerifier& v) { aliases().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const AssignmentVerifier& v) { assignments().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ReassignmentVerifier& v) { reassignments().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ReturnVerifier& v) { returns().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ExprStmtVerifier& v) { expr_stmts().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ExprVerifier& v) { expressions().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const ModifierVerifier& v) { modifiers().push_back({n, c, v}); }
+        static void add(const std::string& n, const std::string& c, const TypeVerifier& v) { type_annotations().push_back({n, c, v}); }
     };
 }

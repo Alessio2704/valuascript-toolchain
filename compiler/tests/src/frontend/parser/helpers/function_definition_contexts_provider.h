@@ -26,7 +26,14 @@ namespace valuascript::compiler::test
 
         static std::vector<FunctionDefinitionContext> get_all()
         {
-            return {{"top_level", "{func}\n", [](ProgramSpec& s, FuncVerifier v) { s.functions.push_back(v); }}};
+            return {
+                {
+                    "top_level", "{func}\n", [](ProgramSpec& s, const FuncVerifier& v)
+                    {
+                        s.functions.emplace_back(v);
+                    }
+                }
+            };
         }
     };
 }

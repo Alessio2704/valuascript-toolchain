@@ -36,43 +36,44 @@ namespace valuascript::compiler::test
                     "single_assignment",
                     "let ctx_single = {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_single"}}, v));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_single"}}, v));
                     }
                 },
                 {
                     "multi_assignment",
                     "let ctx_m1, ctx_m2 = {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_m1"}, {"ctx_m2"}}, v));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_m1"}, {"ctx_m2"}}, v));
                     }
                 },
                 {
                     "func_def_default",
                     "func ctx_func(arg: int = {expr}) -> void {}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func", {}, {ParamSpec{"arg", {}, IsType("int"), v}},
-                                                            {IsType("void")}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_func", {}, {ParamSpec{"arg", {}, IsType("int"), v}},
+                                                               {IsType("void")}));
                     }
                 },
                 {
                     "func_def_return",
                     "func ctx_func_ret() -> int {\n    return {expr}\n}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func_ret", {}, {}, {IsType("int")}, {IsReturn({v})}));
+                        s.functions.emplace_back(
+                            IsFunctionDef("ctx_func_ret", {}, {}, {IsType("int")}, {IsReturn({v})}));
                     }
                 },
                 {
                     "directive_no_eq",
                     "#ctx_dir_no_eq {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.directives.push_back(IsDirective("ctx_dir_no_eq", v));
+                        s.directives.emplace_back(IsDirective("ctx_dir_no_eq", v));
                     }
                 },
                 {
                     "directive_eq",
                     "#ctx_dir_eq = {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.directives.push_back(IsDirective("ctx_dir_eq", v));
+                        s.directives.emplace_back(IsDirective("ctx_dir_eq", v));
                     }
                 },
                 {
@@ -80,7 +81,7 @@ namespace valuascript::compiler::test
                     "let ctx_sw_cond = switch ({expr}) { default -> 1 }\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
                         s.execution_steps.
-                          push_back(IsAssignment({}, {{"ctx_sw_cond"}}, IsSwitch(v, {}, IsNumber("1"))));
+                          emplace_back(IsAssignment({}, {{"ctx_sw_cond"}}, IsSwitch(v, {}, IsNumber("1"))));
                     }
                 },
                 {
@@ -88,23 +89,23 @@ namespace valuascript::compiler::test
                     "let ctx_sw_case = switch (1) { case A -> {expr} default -> 1 }\n",
                     [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_sw_case"}},
-                                                                 IsSwitch(IsNumber("1"), {SwitchCaseSpec{{"A"}, v}},
-                                                                          IsNumber("1"))));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_sw_case"}},
+                                                                    IsSwitch(IsNumber("1"), {SwitchCaseSpec{{"A"}, v}},
+                                                                             IsNumber("1"))));
                     }
                 },
                 {
                     "enum_case",
                     "enum CtxEnum: int { A = {expr} }\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.enums.push_back(IsEnumDef("CtxEnum", {}, IsType("int"), {{"A", {}, v}}));
+                        s.enums.emplace_back(IsEnumDef("CtxEnum", {}, IsType("int"), {{"A", {}, v}}));
                     }
                 },
                 {
                     "modifier_arg",
                     "@ctx_mod(arg: {expr})\nlet ctx_mod_var = 1\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({{"ctx_mod", {{"arg", v}}}}, {{"ctx_mod_var"}}, IsNumber("1")));
                     }
                 },
@@ -112,7 +113,7 @@ namespace valuascript::compiler::test
                     "if_cond",
                     "let ctx_if_cond = if {expr} then 1 else 2\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_if_cond"}}, IsConditional(v, IsNumber("1"), IsNumber("2"))));
                     }
                 },
@@ -120,7 +121,7 @@ namespace valuascript::compiler::test
                     "if_then",
                     "let ctx_if_then = if 1 then {expr} else 2\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_if_then"}}, IsConditional(IsNumber("1"), v, IsNumber("2"))));
                     }
                 },
@@ -128,7 +129,7 @@ namespace valuascript::compiler::test
                     "if_else",
                     "let ctx_if_else = if 1 then 2 else {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_if_else"}}, IsConditional(IsNumber("1"), IsNumber("2"), v)));
                     }
                 },
@@ -136,35 +137,36 @@ namespace valuascript::compiler::test
                     "reassignment",
                     "ctx_reassign = {expr}\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsReassignment(IsIdentifier("ctx_reassign"), v));
+                        s.execution_steps.emplace_back(IsReassignment(IsIdentifier("ctx_reassign"), v));
                     }
                 },
                 {
                     "tuple_element",
                     "let ctx_tuple = ({expr}, 1)\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_tuple"}}, IsTuple({v, IsNumber("1")})));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_tuple"}}, IsTuple({v, IsNumber("1")})));
                     }
                 },
                 {
                     "tensor_element",
                     "let ctx_tensor = [{expr}, 1]\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_tensor"}}, IsTensor({v, IsNumber("1")})));
+                        s.execution_steps.
+                          emplace_back(IsAssignment({}, {{"ctx_tensor"}}, IsTensor({v, IsNumber("1")})));
                     }
                 },
                 {
                     "dict_value",
                     "let ctx_dict = { k: {expr} }\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_dict"}}, IsDict({{"k", {}, v}})));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_dict"}}, IsDict({{"k", {}, v}})));
                     }
                 },
                 {
                     "bracket_access_index",
                     "let ctx_bracket = arr[{expr}]\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_bracket"}}, IsBracket(IsIdentifier("arr"), v)));
                     }
                 },
@@ -172,7 +174,7 @@ namespace valuascript::compiler::test
                     "function_call_arg",
                     "let ctx_call = f(arg: {expr})\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_call"}}, IsCall(IsIdentifier("f"), {{"arg", v}})));
                     }
                 },
@@ -180,7 +182,7 @@ namespace valuascript::compiler::test
                     "binary_lhs",
                     "let ctx_bin_lhs = ({expr}) + 100\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_bin_lhs"}},
                                          IsBinary(TokenType::Plus, IsGrouping(v), IsNumber("100")))
                         );
@@ -190,7 +192,7 @@ namespace valuascript::compiler::test
                     "binary_rhs",
                     "let ctx_bin_rhs = 100 + ({expr})\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_bin_rhs"}},
                                          IsBinary(TokenType::Plus, IsNumber("100"), IsGrouping(v)))
                         );
@@ -200,14 +202,14 @@ namespace valuascript::compiler::test
                     "grouping",
                     "let ctx_group = ({expr})\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(IsAssignment({}, {{"ctx_group"}}, IsGrouping(v)));
+                        s.execution_steps.emplace_back(IsAssignment({}, {{"ctx_group"}}, IsGrouping(v)));
                     }
                 },
                 {
                     "unary_grouping",
                     "let ctx_u_group = -({expr})\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_u_group"}}, IsUnary(TokenType::Minus, IsGrouping(v))));
                     }
                 },
@@ -215,7 +217,7 @@ namespace valuascript::compiler::test
                     "as_call_target",
                     "let ctx_as_call = ({expr})()\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_as_call"}}, IsCall(IsGrouping(v), {}))
                         );
                     }
@@ -224,7 +226,7 @@ namespace valuascript::compiler::test
                     "as_dot_target",
                     "let ctx_as_dot = ({expr}).prop\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_as_dot"}}, IsDot(IsGrouping(v), "prop"))
                         );
                     }
@@ -233,7 +235,7 @@ namespace valuascript::compiler::test
                     "as_bracket_target",
                     "let ctx_as_bracket = ({expr})[0]\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_as_bracket"}}, IsBracket(IsGrouping(v), IsNumber("0")))
                         );
                     }
@@ -242,7 +244,7 @@ namespace valuascript::compiler::test
                     "as_slice_target",
                     "let ctx_as_slice = ({expr})[0:10]\n", [](ProgramSpec& s, const ExprVerifier& v)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_as_slice"}},
                                          IsBracket(
                                              IsGrouping(v),

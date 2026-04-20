@@ -33,9 +33,9 @@ namespace valuascript::compiler::test
             return {
                 {
                     "top_level",
-                    "{typealias}\n", [](ProgramSpec& s, AliasVerifier v)
+                    "{typealias}\n", [](ProgramSpec& s, const AliasVerifier& v)
                     {
-                        s.type_aliases.push_back(v);
+                        s.type_aliases.emplace_back(v);
                     }
                 }
             };

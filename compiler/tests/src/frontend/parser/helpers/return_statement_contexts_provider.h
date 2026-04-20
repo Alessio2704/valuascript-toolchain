@@ -34,9 +34,9 @@ namespace valuascript::compiler::test
             return {
                 {
                     "function_body",
-                    "func ctx_wrapper() -> void {\n  {return}\n}\n", [](ProgramSpec& s, StmtVerifier v)
+                    "func ctx_wrapper() -> void {\n  {return}\n}\n", [](ProgramSpec& s, const StmtVerifier& v)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {v}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {v}));
                     }
                 }
             };

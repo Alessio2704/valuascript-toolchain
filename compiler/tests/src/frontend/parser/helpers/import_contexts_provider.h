@@ -26,7 +26,14 @@ namespace valuascript::compiler::test
 
         static std::vector<ImportContext> get_all()
         {
-            return {{"top_level", "{import}\n", [](ProgramSpec& s, ImportVerifier v) { s.imports.push_back(v); }}};
+            return {
+                {
+                    "top_level", "{import}\n", [](ProgramSpec& s, const ImportVerifier& v)
+                    {
+                        s.imports.emplace_back(v);
+                    }
+                }
+            };
         }
     };
 }

@@ -36,21 +36,21 @@ namespace valuascript::compiler::test
                     "assignment",
                     "{mods} let ctx_assign = 1\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.execution_steps.push_back(IsAssignment(m, {{"ctx_assign"}}, IsNumber("1")));
+                        s.execution_steps.emplace_back(IsAssignment(m, {{"ctx_assign"}}, IsNumber("1")));
                     }
                 },
                 {
                     "function_definition",
                     "{mods} func ctx_func() -> void {}\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_func", m, {}, {IsType("void")}));
+                        s.functions.emplace_back(IsFunctionDef("ctx_func", m, {}, {IsType("void")}));
                     }
                 },
                 {
                     "function_parameter",
                     "func ctx_param({mods} p: int) -> void {}\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.functions.push_back(IsFunctionDef("ctx_param", {}, {ParamSpec{"p", m, IsType("int")}},
+                        s.functions.emplace_back(IsFunctionDef("ctx_param", {}, {ParamSpec{"p", m, IsType("int")}},
                                                             {IsType("void")}));
                     }
                 },
@@ -58,21 +58,21 @@ namespace valuascript::compiler::test
                     "struct_definition",
                     "{mods} struct ctx_struct {}\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.structs.push_back(IsStructDef("ctx_struct", m, {}));
+                        s.structs.emplace_back(IsStructDef("ctx_struct", m, {}));
                     }
                 },
                 {
                     "struct_field",
                     "struct ctx_s_field { {mods} f: int }\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.structs.push_back(IsStructDef("ctx_s_field", {}, {FieldSpec{"f", m, IsType("int")}}));
+                        s.structs.emplace_back(IsStructDef("ctx_s_field", {}, {FieldSpec{"f", m, IsType("int")}}));
                     }
                 },
                 {
                     "enum_definition",
                     "{mods} enum ctx_enum: int { A = 1 }\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.enums.push_back(IsEnumDef("ctx_enum", m, IsType("int"),
+                        s.enums.emplace_back(IsEnumDef("ctx_enum", m, IsType("int"),
                                                     {EnumCaseSpec{"A", {}, IsNumber("1")}}));
                     }
                 },
@@ -80,7 +80,7 @@ namespace valuascript::compiler::test
                     "enum_case",
                     "enum ctx_e_case: int { {mods} A = 1 }\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.enums.push_back(IsEnumDef("ctx_e_case", {}, IsType("int"),
+                        s.enums.emplace_back(IsEnumDef("ctx_e_case", {}, IsType("int"),
                                                     {EnumCaseSpec{"A", m, IsNumber("1")}}));
                     }
                 },
@@ -88,14 +88,14 @@ namespace valuascript::compiler::test
                     "typealias_definition",
                     "{mods} typealias ctx_alias = int\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.type_aliases.push_back(IsTypeAlias("ctx_alias", m, IsType("int")));
+                        s.type_aliases.emplace_back(IsTypeAlias("ctx_alias", m, IsType("int")));
                     }
                 },
                 {
                     "dict_item",
                     "let ctx_dict = { {mods} k: 1 }\n", [](ProgramSpec& s, const std::vector<ModifierSpec>& m)
                     {
-                        s.execution_steps.push_back(
+                        s.execution_steps.emplace_back(
                             IsAssignment({}, {{"ctx_dict"}}, IsDict({DictItemSpec{"k", m, IsNumber("1")}})));
                     }
                 }

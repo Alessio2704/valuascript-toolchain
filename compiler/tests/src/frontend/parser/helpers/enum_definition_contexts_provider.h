@@ -26,7 +26,14 @@ namespace valuascript::compiler::test
 
         static std::vector<EnumDefinitionContext> get_all()
         {
-            return {{"top_level", "{enum}\n", [](ProgramSpec& s, EnumVerifier v) { s.enums.push_back(v); }}};
+            return {
+                {
+                    "top_level", "{enum}\n", [](ProgramSpec& s, const EnumVerifier& v)
+                    {
+                        s.enums.emplace_back(v);
+                    }
+                }
+            };
         }
     };
 }

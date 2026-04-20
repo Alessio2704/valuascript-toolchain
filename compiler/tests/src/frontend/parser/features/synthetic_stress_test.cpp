@@ -12,7 +12,13 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticStressTest, CombinatorialFuzzing)
     {
-        for (size_t seed = 0; seed < 1000; ++seed)
+        size_t iterations = 1000;
+
+        if (const char* env_p = std::getenv("FUZZ_ITERATIONS")) {
+            iterations = std::stoul(env_p);
+        }
+
+        for (size_t seed = 0; seed < iterations; ++seed)
         {
             SyntheticGenerator gen(seed);
             auto [code, spec] = gen.generate_program(100);
