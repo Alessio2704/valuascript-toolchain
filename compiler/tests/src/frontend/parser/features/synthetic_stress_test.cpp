@@ -23,7 +23,7 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticStressTest, LargeScaleStability)
     {
         SyntheticGenerator gen(999);
-        auto [code, spec] = gen.generate_program(100);
+        auto [code, spec] = gen.generate_program(10000);
 
         ExpectValidParse(code, spec);
     }
