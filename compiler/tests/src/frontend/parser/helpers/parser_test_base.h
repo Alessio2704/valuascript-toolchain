@@ -8,25 +8,13 @@
 #include <algorithm>
 #include <iomanip>
 
-#include "assignment_contexts_provider.h"
-#include "directive_contexts_provider.h"
-#include "enum_definition_contexts_provider.h"
+#include "context_registry.h"
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
 #include "core/compiler_context.h"
 #include "core/valuascript_exception.h"
 #include "frontend/parser/helpers/node_matchers.h"
-#include "expression_contexts_provider.h"
-#include "expression_statement_contexts_provider.h"
-#include "function_definition_contexts_provider.h"
-#include "import_contexts_provider.h"
-#include "modifier_contexts_provider.h"
-#include "reassignment_contexts_provider.h"
-#include "return_statement_contexts_provider.h"
-#include "struct_definition_contexts_provider.h"
-#include "type_alias_contexts_provider.h"
-#include "type_annotation_contexts_provider.h"
 
 #include "utils/parametrised_test_name_helper.h"
 
@@ -133,178 +121,93 @@ namespace valuascript::compiler::test
             ExpectValidParse(test_case.source_code, test_case.expected_ast);
         }
 
-        static void ExpectValidAssignment(const std::string& code_snippet, const AssignmentVerifier& verifier)
+        template <typename Verifier>
+        static void ExpectValidUnified(InjectableType type, const std::string& snippet, const Verifier& verifier,
+                                       const std::string& context_group_name)
         {
-            for (const auto& ctx : AssignmentContextsProvider::get_all())
+            auto contexts = ContextRegistry::get_all_for(type);
+
+            if (contexts.empty())
             {
-                std::string code = AssignmentContextsProvider::inject(ctx.source_template, code_snippet);
+                ADD_FAILURE() << "No contexts found for InjectableType: " << static_cast<int>(type);
+                return;
+            }
 
+            for (const auto& ctx : contexts)
+            {
+                std::string code = ctx.prefix + snippet + ctx.suffix;
                 ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
 
-                SCOPED_TRACE("Testing assignment context: " + ctx.name);
+                ctx.wrap_in_spec(spec, UniversalVerifier(verifier));
+
+                SCOPED_TRACE("Testing " + context_group_name + " in context: " + ctx.name);
                 ExpectValidParse(code, spec);
             }
+        }
+
+        static void ExpectValidAssignment(const std::string& code_snippet, const AssignmentVerifier& verifier)
+        {
+            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Assignment");
         }
 
         static void ExpectValidReassignment(const std::string& code_snippet, const ReassignmentVerifier& verifier)
         {
-            for (const auto& ctx : ReassignmentContextsProvider::get_all())
-            {
-                std::string code = ReassignmentContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing reassignment context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Reassignment");
         }
 
-        static void ExpectValidExpressionStatement(const std::string& code_snippet,
-                                                   const ExprStmtVerifier& verifier)
+        static void ExpectValidExpressionStatement(const std::string& code_snippet, const ExprStmtVerifier& verifier)
         {
-            for (const auto& ctx : ExpressionStatementContextsProvider::get_all())
-            {
-                std::string code = ExpressionStatementContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing expression statement context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Expression Statement");
         }
 
         static void ExpectValidImport(const std::string& code_snippet, const ImportVerifier& verifier)
         {
-            for (const auto& ctx : ImportContextsProvider::get_all())
-            {
-                std::string code = ImportContextsProvider::inject(ctx.source_template, code_snippet);
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-                SCOPED_TRACE("Testing import context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Import, code_snippet, verifier, "Import");
         }
 
         static void ExpectValidDirective(const std::string& code_snippet, const DirectiveVerifier& verifier)
         {
-            for (const auto& ctx : DirectiveContextsProvider::get_all())
-            {
-                std::string code = DirectiveContextsProvider::inject(ctx.source_template, code_snippet);
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-                SCOPED_TRACE("Testing directive context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Directive, code_snippet, verifier, "Directive");
         }
 
         static void ExpectValidFunctionDefinition(const std::string& code_snippet, const FuncVerifier& verifier)
         {
-            for (const auto& ctx : FunctionDefinitionContextsProvider::get_all())
-            {
-                std::string code = FunctionDefinitionContextsProvider::inject(ctx.source_template, code_snippet);
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-                SCOPED_TRACE("Testing function context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Function, code_snippet, verifier, "Function");
         }
 
         static void ExpectValidStructDefinition(const std::string& code_snippet, const StructVerifier& verifier)
         {
-            for (const auto& ctx : StructDefinitionContextsProvider::get_all())
-            {
-                std::string code = StructDefinitionContextsProvider::inject(ctx.source_template, code_snippet);
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-                SCOPED_TRACE("Testing struct context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Struct, code_snippet, verifier, "Struct");
         }
 
         static void ExpectValidEnumDefinition(const std::string& code_snippet, const EnumVerifier& verifier)
         {
-            for (const auto& ctx : EnumDefinitionContextsProvider::get_all())
-            {
-                std::string code = EnumDefinitionContextsProvider::inject(ctx.source_template, code_snippet);
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-                SCOPED_TRACE("Testing enum context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Enum, code_snippet, verifier, "Enum");
         }
 
         static void ExpectValidTypeAlias(const std::string& code_snippet, const AliasVerifier& verifier)
         {
-            for (const auto& ctx : TypeAliasContextsProvider::get_all())
-            {
-                std::string code = TypeAliasContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing typealias context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::TypeAlias, code_snippet, verifier, "Type Alias");
         }
 
         static void ExpectValidExpression(const std::string& code_snippet, const ExprVerifier& verifier)
         {
-            for (const auto& ctx : ExpressionContextsProvider::get_all())
-            {
-                std::string code = ExpressionContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing expression context: " + ctx.name);
-
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Expression, code_snippet, verifier, "Expression");
         }
 
         static void ExpectValidTypeAnnotation(const std::string& code_snippet, const TypeVerifier& verifier)
         {
-            for (const auto& ctx : TypeAnnotationContextsProvider::get_all())
-            {
-                std::string code = TypeAnnotationContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing type annotation context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::TypeAnnotation, code_snippet, verifier, "Type Annotation");
         }
 
-        static void ExpectValidModifiers(const std::string& code_snippet, const std::vector<ModifierSpec>& verifier)
+        static void ExpectValidModifiers(const std::string& code_snippet, const ModifierVerifier& verifier)
         {
-            for (const auto& ctx : ModifierContextsProvider::get_all())
-            {
-                std::string code = ModifierContextsProvider::inject(ctx.source_template, code_snippet + " ");
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing modifier context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Modifier, code_snippet, verifier, "Modifier");
         }
 
         static void ExpectValidReturn(const std::string& code_snippet, const ReturnVerifier& verifier)
         {
-            for (const auto& ctx : ReturnStatementContextsProvider::get_all())
-            {
-                std::string code = ReturnStatementContextsProvider::inject(ctx.source_template, code_snippet);
-
-                ProgramSpec spec;
-                ctx.add_to_spec(spec, verifier);
-
-                SCOPED_TRACE("Testing return context: " + ctx.name);
-                ExpectValidParse(code, spec);
-            }
+            ExpectValidUnified(InjectableType::Return, code_snippet, verifier, "Return");
         }
 
         static void ExpectParseErrors(const std::string& code, const std::vector<ExpectedError>& expected_errors,
