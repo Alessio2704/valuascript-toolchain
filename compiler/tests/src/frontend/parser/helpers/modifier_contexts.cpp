@@ -5,13 +5,12 @@ namespace valuascript::compiler::test
 {
     std::vector<Context> ContextRegistry::get_modifier_contexts()
     {
-        using namespace SpecAdder;
         return {
             {
                 "assignment", NestingLevel::BlockLevel, {InjectableType::Modifier}, " ", " let ctx_assign = 1\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment(get_v<ModifierVerifier>(v), {{"ctx_assign"}}, IsNumber("1")));
+                    SpecAdder::add(s, IsAssignment(SpecAdder::get_v<ModifierVerifier>(v), {{"ctx_assign"}}, IsNumber("1")));
                 }
             },
 
@@ -20,7 +19,7 @@ namespace valuascript::compiler::test
                 " func ctx_func() -> void {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func", get_v<ModifierVerifier>(v), {}, {IsType("void")}));
+                    SpecAdder::add(s, IsFunctionDef("ctx_func", SpecAdder::get_v<ModifierVerifier>(v), {}, {IsType("void")}));
                 }
             },
 
@@ -29,7 +28,7 @@ namespace valuascript::compiler::test
                 " p: int) -> void {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_param", {}, {ParamSpec{"p", get_v<ModifierVerifier>(v), IsType("int")}},
+                    SpecAdder::add(s, IsFunctionDef("ctx_param", {}, {ParamSpec{"p", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")}},
                                          {IsType("void")}));
                 }
             },
@@ -38,7 +37,7 @@ namespace valuascript::compiler::test
                 "struct_definition", NestingLevel::TopLevel, {InjectableType::Modifier}, " ", " struct ctx_struct {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsStructDef("ctx_struct", get_v<ModifierVerifier>(v), {}));
+                    SpecAdder::add(s, IsStructDef("ctx_struct", SpecAdder::get_v<ModifierVerifier>(v), {}));
                 }
             },
 
@@ -47,7 +46,7 @@ namespace valuascript::compiler::test
                 " f: int }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsStructDef("ctx_s_field", {}, {FieldSpec{"f", get_v<ModifierVerifier>(v), IsType("int")}}));
+                    SpecAdder::add(s, IsStructDef("ctx_s_field", {}, {FieldSpec{"f", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")}}));
                 }
             },
 
@@ -56,7 +55,7 @@ namespace valuascript::compiler::test
                 " enum ctx_enum: int { A = 1 }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsEnumDef("ctx_enum", get_v<ModifierVerifier>(v), IsType("int"),
+                    SpecAdder::add(s, IsEnumDef("ctx_enum", SpecAdder::get_v<ModifierVerifier>(v), IsType("int"),
                                      {{"A", {}, IsNumber("1")}}));
                 }
             },
@@ -66,8 +65,8 @@ namespace valuascript::compiler::test
                 " A = 1 }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsEnumDef("ctx_e_case", {}, IsType("int"),
-                                     {{"A", get_v<ModifierVerifier>(v), IsNumber("1")}}));
+                    SpecAdder::add(s, IsEnumDef("ctx_e_case", {}, IsType("int"),
+                                     {{"A", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}}));
                 }
             },
 
@@ -76,7 +75,7 @@ namespace valuascript::compiler::test
                 " typealias ctx_alias = int\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsTypeAlias("ctx_alias", get_v<ModifierVerifier>(v), IsType("int")));
+                    SpecAdder::add(s, IsTypeAlias("ctx_alias", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")));
                 }
             },
 
@@ -84,8 +83,8 @@ namespace valuascript::compiler::test
                 "dict_item", NestingLevel::BlockLevel, {InjectableType::Modifier}, "let ctx_dict = { ", " k: 1 }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({
-                                            DictItemSpec{"k", get_v<ModifierVerifier>(v), IsNumber("1")}
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({
+                                            DictItemSpec{"k", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
                                         })));
                 }
             }

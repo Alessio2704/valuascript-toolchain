@@ -1,6 +1,7 @@
 #pragma once
-#include "language_registry.h"
 #include <algorithm>
+
+#include "frontend/parser/generator/language_registry.h"
 
 namespace valuascript::compiler::test {
     struct RecoveryBlock {

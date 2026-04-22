@@ -5,12 +5,11 @@ namespace valuascript::compiler::test
 {
     std::vector<Context> ContextRegistry::get_expression_contexts()
     {
-        using namespace SpecAdder;
         auto add_as_assign = [](ProgramSpec& s,
                                 const UniversalVerifier& v,
                                 const std::vector<AssignmentTargetSpec>& targets)
         {
-            add(s, IsAssignment({}, targets, get_v<ExprVerifier>(v)));
+            SpecAdder::add(s, IsAssignment({}, targets, SpecAdder::get_v<ExprVerifier>(v)));
         };
 
         return {
@@ -33,8 +32,13 @@ namespace valuascript::compiler::test
                 ") -> void {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func", {}, {ParamSpec{"arg", {}, IsType("int"), get_v<ExprVerifier>(v)}},
-                                         {IsType("void")}));
+                    SpecAdder::add(s, IsFunctionDef("ctx_func", {},
+                                                    {
+                                                        ParamSpec{
+                                                            "arg", {}, IsType("int"), SpecAdder::get_v<ExprVerifier>(v)
+                                                        }
+                                                    },
+                                                    {IsType("void")}));
                 }
             },
 
@@ -43,8 +47,8 @@ namespace valuascript::compiler::test
                 "func ctx_func_ret() -> int {\n  return ", "\n}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func_ret", {}, {}, {IsType("int")},
-                                         {IsReturn({get_v<ExprVerifier>(v)})}));
+                    SpecAdder::add(s, IsFunctionDef("ctx_func_ret", {}, {}, {IsType("int")},
+                                                    {IsReturn({SpecAdder::get_v<ExprVerifier>(v)})}));
                 }
             },
 
@@ -52,7 +56,7 @@ namespace valuascript::compiler::test
                 "directive_no_eq", NestingLevel::TopLevel, {InjectableType::Expression}, "#ctx_dir_no_eq ", "\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsDirective("ctx_dir_no_eq", get_v<ExprVerifier>(v)));
+                    SpecAdder::add(s, IsDirective("ctx_dir_no_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
 
@@ -60,7 +64,7 @@ namespace valuascript::compiler::test
                 "directive_eq", NestingLevel::TopLevel, {InjectableType::Expression}, "#ctx_dir_eq = ", "\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsDirective("ctx_dir_eq", get_v<ExprVerifier>(v)));
+                    SpecAdder::add(s, IsDirective("ctx_dir_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
 
@@ -69,7 +73,8 @@ namespace valuascript::compiler::test
                 ") { default -> 1 }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_sw_cond"}}, IsSwitch(get_v<ExprVerifier>(v), {}, IsNumber("1"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_sw_cond"}},
+                                                   IsSwitch(SpecAdder::get_v<ExprVerifier>(v), {}, IsNumber("1"))));
                 }
             },
 
@@ -78,9 +83,11 @@ namespace valuascript::compiler::test
                 "let ctx_sw_case = switch (1) { case A -> ", " default -> 1 }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_sw_case"}},
-                                        IsSwitch(IsNumber("1"), {SwitchCaseSpec{{"A"}, get_v<ExprVerifier>(v)}},
-                                                 IsNumber("1"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_sw_case"}},
+                                                   IsSwitch(IsNumber("1"), {
+                                                                SwitchCaseSpec{{"A"}, SpecAdder::get_v<ExprVerifier>(v)}
+                                                            },
+                                                            IsNumber("1"))));
                 }
             },
 
@@ -88,7 +95,9 @@ namespace valuascript::compiler::test
                 "enum_case", NestingLevel::TopLevel, {InjectableType::Expression}, "enum CtxEnum: int { A = ", " }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsEnumDef("CtxEnum", {}, IsType("int"), {{"A", {}, get_v<ExprVerifier>(v)}}));
+                    SpecAdder::add(s, IsEnumDef("CtxEnum", {}, IsType("int"), {
+                                                    {"A", {}, SpecAdder::get_v<ExprVerifier>(v)}
+                                                }));
                 }
             },
 
@@ -97,8 +106,9 @@ namespace valuascript::compiler::test
                 ")\nlet ctx_mod_var = 1\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({{"ctx_mod", {{"arg", get_v<ExprVerifier>(v)}}}}, {{"ctx_mod_var"}},
-                                        IsNumber("1")));
+                    SpecAdder::add(s, IsAssignment({{"ctx_mod", {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}}},
+                                                   {{"ctx_mod_var"}},
+                                                   IsNumber("1")));
                 }
             },
 
@@ -107,8 +117,9 @@ namespace valuascript::compiler::test
                 " then 1 else 2\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_if_cond"}},
-                                        IsConditional(get_v<ExprVerifier>(v), IsNumber("1"), IsNumber("2"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_cond"}},
+                                                   IsConditional(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1"),
+                                                                 IsNumber("2"))));
                 }
             },
 
@@ -117,8 +128,9 @@ namespace valuascript::compiler::test
                 " else 2\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_if_then"}},
-                                        IsConditional(IsNumber("1"), get_v<ExprVerifier>(v), IsNumber("2"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_then"}},
+                                                   IsConditional(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v),
+                                                                 IsNumber("2"))));
                 }
             },
 
@@ -127,8 +139,9 @@ namespace valuascript::compiler::test
                 "let ctx_if_else = if 1 then 2 else ", "\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_if_else"}},
-                                        IsConditional(IsNumber("1"), IsNumber("2"), get_v<ExprVerifier>(v))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_else"}},
+                                                   IsConditional(IsNumber("1"), IsNumber("2"),
+                                                                 SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
 
@@ -136,7 +149,7 @@ namespace valuascript::compiler::test
                 "reassignment", NestingLevel::BlockLevel, {InjectableType::Expression}, "ctx_reassign = ", "\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsReassignment(IsIdentifier("ctx_reassign"), get_v<ExprVerifier>(v)));
+                    SpecAdder::add(s, IsReassignment(IsIdentifier("ctx_reassign"), SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
 
@@ -144,7 +157,8 @@ namespace valuascript::compiler::test
                 "tuple_element", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_tuple = (", ", 1)\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_tuple"}}, IsTuple({get_v<ExprVerifier>(v), IsNumber("1")})));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_tuple"}},
+                                                   IsTuple({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")})));
                 }
             },
 
@@ -153,7 +167,8 @@ namespace valuascript::compiler::test
                 ", 1]\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_tensor"}}, IsTensor({get_v<ExprVerifier>(v), IsNumber("1")})));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_tensor"}},
+                                                   IsTensor({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")})));
                 }
             },
 
@@ -161,7 +176,9 @@ namespace valuascript::compiler::test
                 "dict_value", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_dict = { k: ", " }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({{"k", {}, get_v<ExprVerifier>(v)}})));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({
+                                                       {"k", {}, SpecAdder::get_v<ExprVerifier>(v)}
+                                                   })));
                 }
             },
 
@@ -170,7 +187,8 @@ namespace valuascript::compiler::test
                 "let ctx_bracket = arr[", "]\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_bracket"}}, IsBracket(IsIdentifier("arr"), get_v<ExprVerifier>(v))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bracket"}},
+                                                   IsBracket(IsIdentifier("arr"), SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
 
@@ -179,8 +197,10 @@ namespace valuascript::compiler::test
                 ")\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_call"}},
-                                        IsCall(IsIdentifier("f"), {{"arg", get_v<ExprVerifier>(v)}})));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_call"}},
+                                                   IsCall(IsIdentifier("f"), {
+                                                              {"arg", SpecAdder::get_v<ExprVerifier>(v)}
+                                                          })));
                 }
             },
 
@@ -189,9 +209,10 @@ namespace valuascript::compiler::test
                 ") + 100\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_bin_lhs"}},
-                                        IsBinary(TokenType::Plus, IsGrouping(get_v<ExprVerifier>(v)),
-                                                 IsNumber("100"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bin_lhs"}},
+                                                   IsBinary(TokenType::Plus,
+                                                            IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
+                                                            IsNumber("100"))));
                 }
             },
 
@@ -200,9 +221,9 @@ namespace valuascript::compiler::test
                 ")\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_bin_rhs"}},
-                                        IsBinary(TokenType::Plus, IsNumber("100"),
-                                                 IsGrouping(get_v<ExprVerifier>(v)))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bin_rhs"}},
+                                                   IsBinary(TokenType::Plus, IsNumber("100"),
+                                                            IsGrouping(SpecAdder::get_v<ExprVerifier>(v)))));
                 }
             },
 
@@ -210,7 +231,7 @@ namespace valuascript::compiler::test
                 "grouping", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_group = (", ")\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_group"}}, IsGrouping(get_v<ExprVerifier>(v))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_group"}}, IsGrouping(SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
 
@@ -218,8 +239,9 @@ namespace valuascript::compiler::test
                 "unary_grouping", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_u_group = -(", ")\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_u_group"}},
-                                        IsUnary(TokenType::Minus, IsGrouping(get_v<ExprVerifier>(v)))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_u_group"}},
+                                                   IsUnary(TokenType::Minus,
+                                                           IsGrouping(SpecAdder::get_v<ExprVerifier>(v)))));
                 }
             },
 
@@ -228,7 +250,8 @@ namespace valuascript::compiler::test
                 ")()\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_as_call"}}, IsCall(IsGrouping(get_v<ExprVerifier>(v)), {})));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_call"}},
+                                                   IsCall(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), {})));
                 }
             },
 
@@ -237,7 +260,8 @@ namespace valuascript::compiler::test
                 ").prop\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_as_dot"}}, IsDot(IsGrouping(get_v<ExprVerifier>(v)), "prop")));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_dot"}},
+                                                   IsDot(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), "prop")));
                 }
             },
 
@@ -246,8 +270,9 @@ namespace valuascript::compiler::test
                 ")[0]\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_as_bracket"}},
-                                        IsBracket(IsGrouping(get_v<ExprVerifier>(v)), IsNumber("0"))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_bracket"}},
+                                                   IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
+                                                             IsNumber("0"))));
                 }
             },
 
@@ -256,9 +281,10 @@ namespace valuascript::compiler::test
                 ")[0:10]\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_as_slice"}},
-                                        IsBracket(IsGrouping(get_v<ExprVerifier>(v)),
-                                                  IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10")))));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_slice"}},
+                                                   IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
+                                                             IsBinary(TokenType::Colon, IsNumber("0"),
+                                                                      IsNumber("10")))));
                 }
             }
         };

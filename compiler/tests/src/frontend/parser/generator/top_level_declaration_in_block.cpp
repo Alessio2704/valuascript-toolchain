@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/helpers/parser_errors_synchronization_base.h"
-#include "frontend/parser/helpers/language_constructs_provider.h"
-#include "frontend/parser/helpers/invalid_top_level_declaration_in_block.h"
+#include "../errors_synchronization/parser_errors_synchronization_base.h"
+#include "language_constructs_provider.h"
+#include "invalid_top_level_declaration_in_block.h"
 
 namespace valuascript::compiler::test {
     namespace {

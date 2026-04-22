@@ -5,14 +5,13 @@ namespace valuascript::compiler::test
 {
     std::vector<Context> ContextRegistry::get_type_contexts()
     {
-        using namespace SpecAdder;
         return {
             {
                 "assignment_target", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation}, "let ctx_assign: ",
                 " = 1\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_assign", get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
             {
@@ -20,7 +19,7 @@ namespace valuascript::compiler::test
                 ", ctx_m2 = 1\n",
                 [&](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_m1", get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
                 }
             },
             {
@@ -29,7 +28,7 @@ namespace valuascript::compiler::test
                 " = 1\n",
                 [&](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                    SpecAdder::add(s, IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
             {
@@ -37,7 +36,7 @@ namespace valuascript::compiler::test
                 "\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsTypeAlias("ctx_alias", {}, get_v<TypeVerifier>(v)));
+                    SpecAdder::add(s, IsTypeAlias("ctx_alias", {}, SpecAdder::get_v<TypeVerifier>(v)));
                 }
             },
 
@@ -46,7 +45,7 @@ namespace valuascript::compiler::test
                 "func ctx_func_param(p: ", ") -> void {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func_param", {}, {ParamSpec{"p", {}, get_v<TypeVerifier>(v)}},
+                    SpecAdder::add(s, IsFunctionDef("ctx_func_param", {}, {ParamSpec{"p", {}, SpecAdder::get_v<TypeVerifier>(v)}},
                                          {IsType("void")}));
                 }
             },
@@ -56,7 +55,7 @@ namespace valuascript::compiler::test
                 " {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func_ret", {}, {}, {get_v<TypeVerifier>(v)}));
+                    SpecAdder::add(s, IsFunctionDef("ctx_func_ret", {}, {}, {SpecAdder::get_v<TypeVerifier>(v)}));
                 }
             },
 
@@ -65,7 +64,7 @@ namespace valuascript::compiler::test
                 "func ctx_func_multi_ret() -> ", ", int {}\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsFunctionDef("ctx_func_multi_ret", {}, {}, {get_v<TypeVerifier>(v), IsType("int")}));
+                    SpecAdder::add(s, IsFunctionDef("ctx_func_multi_ret", {}, {}, {SpecAdder::get_v<TypeVerifier>(v), IsType("int")}));
                 }
             },
 
@@ -74,7 +73,7 @@ namespace valuascript::compiler::test
                 " }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsStructDef("ctx_struct", {}, {FieldSpec{"f", {}, get_v<TypeVerifier>(v)}}));
+                    SpecAdder::add(s, IsStructDef("ctx_struct", {}, {FieldSpec{"f", {}, SpecAdder::get_v<TypeVerifier>(v)}}));
                 }
             },
 
@@ -83,7 +82,7 @@ namespace valuascript::compiler::test
                 " { A }\n",
                 [](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add(s, IsEnumDef("ctx_enum", {}, get_v<TypeVerifier>(v), {{"A"}}));
+                    SpecAdder::add(s, IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), {{"A"}}));
                 }
             }
         };

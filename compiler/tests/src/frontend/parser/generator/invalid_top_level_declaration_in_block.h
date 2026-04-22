@@ -1,6 +1,6 @@
 #pragma once
 
-#include "parser_errors_synchronization_base.h"
+#include "../errors_synchronization/parser_errors_synchronization_base.h"
 #include "language_constructs_provider.h"
 
 namespace valuascript::compiler::test {

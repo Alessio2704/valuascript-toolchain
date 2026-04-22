@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/helpers/parser_errors_synchronization_base.h"
+#include "../errors_synchronization/parser_errors_synchronization_base.h"
 
 namespace valuascript::compiler::test {
     class SanityCheckAnchorTest : public ParserErrorsSynchronizationBase {

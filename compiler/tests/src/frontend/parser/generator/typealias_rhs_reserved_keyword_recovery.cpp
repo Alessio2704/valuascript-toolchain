@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/helpers/parser_errors_synchronization_base.h"
+#include "../errors_synchronization/parser_errors_synchronization_base.h"
 #include "token/reserved_keyword_lookup.h"
 #include "frontend/parser/ast.h"
 #include <algorithm>
-#include "frontend/parser/helpers/language_constructs_provider.h"
+#include "language_constructs_provider.h"
 
 using namespace valuascript::shared;
 

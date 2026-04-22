@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "frontend/parser/helpers/parser_errors_synchronization_base.h"
-#include "frontend/parser/helpers/language_constructs_provider.h"
+#include "../errors_synchronization/parser_errors_synchronization_base.h"
+#include "language_constructs_provider.h"
 
 using namespace valuascript::shared;
 

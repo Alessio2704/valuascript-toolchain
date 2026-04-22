@@ -116,11 +116,6 @@ namespace valuascript::compiler::test
             ExpectProgram(ast.get(), spec);
         }
 
-        static void run_valid_parser_test(const ValidParserTestCase& test_case)
-        {
-            ExpectValidParse(test_case.source_code, test_case.expected_ast);
-        }
-
         template <typename Verifier>
         static void ExpectValidUnified(InjectableType type, const std::string& snippet, const Verifier& verifier,
                                        const std::string& context_group_name)
@@ -280,11 +275,6 @@ namespace valuascript::compiler::test
             ProgramSpec full_spec = MergeSpecs(std::move(broken_part_spec), std::move(recovery.spec));
 
             ExpectParseErrors(full_code, expected_errors, full_spec);
-        }
-
-        static void run_error_parser_test(const ErrorParserTestCase& test_case)
-        {
-            ExpectParseErrors(test_case.source_code, test_case.expected_errors, test_case.expected_ast);
         }
     };
 }
