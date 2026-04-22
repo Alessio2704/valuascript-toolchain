@@ -3,7 +3,7 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> get_modifier_contexts()
+    std::vector<Context> ContextRegistry::get_modifier_contexts()
     {
         using namespace SpecAdder;
         return {

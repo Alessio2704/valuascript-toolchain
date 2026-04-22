@@ -11,8 +11,7 @@ namespace valuascript::compiler::test
     enum class NestingLevel
     {
         TopLevel,
-        BlockLevel,
-        ExpressionLevel
+        BlockLevel
     };
 
     enum class InjectableType

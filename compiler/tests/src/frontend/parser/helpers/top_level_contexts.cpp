@@ -3,7 +3,7 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> get_top_level_contexts()
+    std::vector<Context> ContextRegistry::get_top_level_contexts()
     {
         return {
             {

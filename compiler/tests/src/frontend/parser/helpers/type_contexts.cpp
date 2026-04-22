@@ -3,7 +3,7 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> get_type_contexts()
+    std::vector<Context> ContextRegistry::get_type_contexts()
     {
         using namespace SpecAdder;
         return {
@@ -15,7 +15,23 @@ namespace valuascript::compiler::test
                     add(s, IsAssignment({}, {{"ctx_assign", get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
-
+            {
+                "multi_assignment_target_1", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation}, "let ctx_m1: ",
+                ", ctx_m2 = 1\n",
+                [&](ProgramSpec& s, const UniversalVerifier& v)
+                {
+                    add(s, IsAssignment({}, {{"ctx_m1", get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
+                }
+            },
+            {
+                "multi_assignment_target_2", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation},
+                "let ctx_m1, ctx_m2: ",
+                " = 1\n",
+                [&](ProgramSpec& s, const UniversalVerifier& v)
+                {
+                    add(s, IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                }
+            },
             {
                 "typealias_target", NestingLevel::TopLevel, {InjectableType::TypeAnnotation}, "typealias ctx_alias = ",
                 "\n",

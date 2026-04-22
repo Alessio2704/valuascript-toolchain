@@ -5,9 +5,9 @@ namespace valuascript::compiler::test
 {
     namespace
     {
-        static const bool _ = []()
+        const bool _ = []()
         {
-            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
 
             reg("IntegerLiteral", "42", IsNumber("42"));
             reg("IntegerWithSeparators", "1_000_000", IsNumber("1_000_000"));

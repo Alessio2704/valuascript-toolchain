@@ -4,11 +4,11 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> get_block_contexts()
+    std::vector<Context> ContextRegistry::get_block_contexts()
     {
         return {
             {
-                "function_body_wrapper", NestingLevel::BlockLevel,
+                "function_body_wrapper", NestingLevel::TopLevel,
                 {InjectableType::Statement, InjectableType::Return},
                 "func ctx_wrapper() -> void {\n  ", "\n}\n",
                 [](ProgramSpec& s, UniversalVerifier v)

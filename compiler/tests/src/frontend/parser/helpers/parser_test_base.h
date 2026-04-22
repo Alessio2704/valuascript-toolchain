@@ -90,7 +90,7 @@ namespace valuascript::compiler::test
 
             CompilerStageArtifact ast_artifact = parser.run(context, lexer_artifacts);
 
-            return std::any_cast<std::shared_ptr<Program>>(ast_artifact.data);
+            return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
         }
 
         static void ExpectValidParse(const std::string& code, const ProgramSpec& spec)

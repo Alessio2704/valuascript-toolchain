@@ -10,9 +10,9 @@ namespace valuascript::compiler::test
 
     namespace
     {
-        static const bool _ = []()
+        const bool _ = []()
         {
-            auto reg = [](auto n, auto c, auto v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
 
             reg("Simple", "let a = 1", IsAssignment({}, {{"a"}}, IsNumber("1")));
 

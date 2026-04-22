@@ -9,7 +9,6 @@ namespace valuascript::compiler::test::SpecAdder
     inline void add(ProgramSpec& s, const EnumVerifier& v) { s.enums.emplace_back(v); }
     inline void add(ProgramSpec& s, const AliasVerifier& v) { s.type_aliases.emplace_back(v); }
     inline void add(ProgramSpec& s, const StmtVerifier& v) { s.execution_steps.emplace_back(v); }
-    inline void add(ProgramSpec& s, const ReturnVerifier& v) { s.execution_steps.emplace_back(v); }
     inline void add(ProgramSpec& s, const ExprStmtVerifier& v) { s.execution_steps.emplace_back(v); }
 
     inline void add(ProgramSpec&, const ExprVerifier&)
@@ -21,6 +20,10 @@ namespace valuascript::compiler::test::SpecAdder
     }
 
     inline void add(ProgramSpec&, const TypeVerifier&)
+    {
+    }
+
+    inline void add(ProgramSpec&, const ReturnVerifier&)
     {
     }
 

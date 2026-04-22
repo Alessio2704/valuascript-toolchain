@@ -3,11 +3,11 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> get_expression_contexts()
+    std::vector<Context> ContextRegistry::get_expression_contexts()
     {
         using namespace SpecAdder;
-        auto add_as_assign = [](ProgramSpec& s, const UniversalVerifier& v,
-                                const std::string& name,
+        auto add_as_assign = [](ProgramSpec& s,
+                                const UniversalVerifier& v,
                                 const std::vector<AssignmentTargetSpec>& targets)
         {
             add(s, IsAssignment({}, targets, get_v<ExprVerifier>(v)));
@@ -16,7 +16,7 @@ namespace valuascript::compiler::test
         return {
             {
                 "single_assignment", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_single = ", "\n",
-                [&](ProgramSpec& s, const UniversalVerifier& v) { add_as_assign(s, v, "ctx_single", {{"ctx_single"}}); }
+                [&](ProgramSpec& s, const UniversalVerifier& v) { add_as_assign(s, v, {{"ctx_single"}}); }
             },
 
             {
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 "\n",
                 [&](ProgramSpec& s, const UniversalVerifier& v)
                 {
-                    add_as_assign(s, v, "ctx_m1", {{"ctx_m1"}, {"ctx_m2"}});
+                    add_as_assign(s, v, {{"ctx_m1"}, {"ctx_m2"}});
                 }
             },
 
