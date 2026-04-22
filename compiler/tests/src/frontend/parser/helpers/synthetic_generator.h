@@ -498,6 +498,79 @@ namespace valuascript::compiler::test
             return logic_synth_statement();
         }
 
+        std::pair<std::string, SpecAdderFn> apply_nesting_pyramid(
+            const Context& inner_ctx,
+            const std::string& atom_code,
+            const UniversalVerifier& atom_verifier)
+        {
+            std::string snippet = inner_ctx.prefix + atom_code + inner_ctx.suffix;
+
+            bool should_wrap = (inner_ctx.level == NestingLevel::BlockLevel) && roll_prob(0.5);
+
+            if (!should_wrap)
+            {
+                return {
+                    snippet,
+                    [inner_ctx, atom_verifier](ProgramSpec& s)
+                    {
+                        inner_ctx.wrap_in_spec(s, atom_verifier);
+                    }
+                };
+            }
+            auto wrappers = ContextRegistry::get_block_contexts();
+
+            auto wrapper_ctx = pick_random(wrappers);
+
+            std::string wrapped_code = wrapper_ctx.prefix + snippet + wrapper_ctx.suffix;
+
+            return {
+                wrapped_code,
+                [wrapper_ctx, inner_ctx, atom_verifier](ProgramSpec& s)
+                {
+                    ProgramSpec temp_spec;
+                    inner_ctx.wrap_in_spec(temp_spec, atom_verifier);
+
+                    assert(!temp_spec.execution_steps.empty());
+                    auto statement_verifier = temp_spec.execution_steps[0];
+
+                    wrapper_ctx.wrap_in_spec(s, UniversalVerifier(statement_verifier));
+                }
+            };
+        }
+
+        template <typename VerifierType, typename RegistryPoolType>
+        void register_pyramid_member(
+            TopLevelConstruct construct,
+            InjectableType type,
+            double registry_chance,
+            const std::vector<RegistryEntry<RegistryPoolType>>& pool,
+            const std::function<std::pair<std::string, VerifierType>()>& synth_fn)
+        {
+            generators_[static_cast<int>(construct)] = [=, &pool, this]()
+            {
+                auto contexts = ContextRegistry::get_all_for(type);
+                auto ctx = pick_random(contexts);
+
+                std::string code;
+                VerifierType verifier;
+
+                if (!pool.empty() && roll_prob(registry_chance))
+                {
+                    auto& item = pick_random(pool);
+                    code = item.code;
+                    verifier = item.verifier;
+                }
+                else
+                {
+                    auto [s_code, s_v] = synth_fn();
+                    code = s_code;
+                    verifier = s_v;
+                }
+
+                return apply_nesting_pyramid(ctx, code, UniversalVerifier(verifier));
+            };
+        }
+
         void setup_generators()
         {
             generators_[static_cast<int>(TopLevelConstruct::None)] = []() -> std::pair<std::string, SpecAdderFn>
@@ -509,111 +582,40 @@ namespace valuascript::compiler::test
                 };
             };
 
-            generators_[static_cast<int>(TopLevelConstruct::Expression)] = [this
-                ]() -> std::pair<std::string, SpecAdderFn>
-                {
-                    auto ctx = pick_random(ContextRegistry::get_all_for(InjectableType::Expression));
-                    std::string code;
-                    ExprVerifier verifier;
-                    if (roll_prob(config_.registry.expressions))
-                    {
-                        auto& itm = pick_random(ConstructRegistry::expressions());
-                        code = itm.code;
-                        verifier = itm.verifier;
-                    }
-                    else
-                    {
-                        auto [s_code, s_ver] = synth_expression();
-                        code = s_code;
-                        verifier = s_ver;
-                    }
-                    return {
-                        ctx.prefix + code + ctx.suffix,
-                        [ctx, verifier](ProgramSpec& s) { ctx.wrap_in_spec(s, UniversalVerifier(verifier)); }
-                    };
-                };
+            register_pyramid_member<ExprVerifier, ExprVerifier>(
+                TopLevelConstruct::Expression, InjectableType::Expression,
+                config_.registry.expressions, ConstructRegistry::expressions(),
+                [this] { return synth_expression(); });
 
-            generators_[static_cast<int>(TopLevelConstruct::TypeAnnotation)] = [this
-                ]() -> std::pair<std::string, SpecAdderFn>
-                {
-                    auto ctx = pick_random(ContextRegistry::get_all_for(InjectableType::TypeAnnotation));
-                    std::string code;
-                    TypeVerifier verifier;
-                    if (roll_prob(config_.registry.types))
-                    {
-                        auto& itm = pick_random(ConstructRegistry::type_annotations());
-                        code = itm.code;
-                        verifier = itm.verifier;
-                    }
-                    else
-                    {
-                        auto [s_code, s_ver] = synth_type();
-                        code = s_code;
-                        verifier = s_ver;
-                    }
-                    return {
-                        ctx.prefix + code + ctx.suffix,
-                        [ctx, verifier](ProgramSpec& s) { ctx.wrap_in_spec(s, UniversalVerifier(verifier)); }
-                    };
-                };
+            register_pyramid_member<TypeVerifier, TypeVerifier>(
+                TopLevelConstruct::TypeAnnotation, InjectableType::TypeAnnotation,
+                config_.registry.types, ConstructRegistry::type_annotations(),
+                [this] { return synth_type(); });
 
-            generators_[static_cast<int>(TopLevelConstruct::Statement)] = [this
-                ]() -> std::pair<std::string, SpecAdderFn>
-                {
-                    auto ctx = pick_random(ContextRegistry::get_all_for(InjectableType::Statement));
-                    std::string code;
-                    StmtVerifier verifier;
-                    if (roll_prob(config_.registry.statements))
-                    {
-                        auto [h_code, h_ver] = harvest_statement();
-                        code = h_code;
-                        verifier = h_ver;
-                    }
-                    else
-                    {
-                        auto [s_code, s_ver] = logic_synth_statement();
-                        code = s_code;
-                        verifier = s_ver;
-                    }
-                    return {
-                        ctx.prefix + code + ctx.suffix,
-                        [ctx, verifier](ProgramSpec& s) { ctx.wrap_in_spec(s, UniversalVerifier(verifier)); }
-                    };
-                };
+            register_pyramid_member<StmtVerifier, AssignmentVerifier>(
+                TopLevelConstruct::Statement, InjectableType::Statement,
+                config_.registry.statements, ConstructRegistry::assignments(),
+                [this] { return synth_statement(); });
 
-            generators_[static_cast<int>(TopLevelConstruct::ReturnStmt)] = [this
-                ]() -> std::pair<std::string, SpecAdderFn>
-                {
-                    auto ctx = pick_random(ContextRegistry::get_all_for(InjectableType::Return));
-                    auto [e_c, e_v] = synth_expression();
-                    return {
-                        ctx.prefix + "return " + e_c + ctx.suffix,
-                        [ctx, e_v](ProgramSpec& s) { ctx.wrap_in_spec(s, ReturnVerifier(IsReturn({e_v}))); }
-                    };
-                };
+            register_pyramid_member<ModifierVerifier, ModifierVerifier>(
+                TopLevelConstruct::Modifier, InjectableType::Modifier,
+                config_.registry.modifiers, ConstructRegistry::modifiers(),
+                [this] { return synth_modifiers(rand_range(config_.sizes.standalone_modifiers_count)); });
 
-            generators_[static_cast<int>(TopLevelConstruct::Modifier)] = [this]() -> std::pair<std::string, SpecAdderFn>
-            {
-                auto ctx = pick_random(ContextRegistry::get_all_for(InjectableType::Modifier));
-                std::string code;
-                ModifierVerifier verifier;
-                if (roll_prob(config_.registry.modifiers))
+            register_pyramid_member<ReturnVerifier, ReturnVerifier>(
+                TopLevelConstruct::ReturnStmt,
+                InjectableType::Return,
+                config_.registry.returns,
+                ConstructRegistry::returns(),
+                [this]
                 {
-                    auto& itm = pick_random(ConstructRegistry::modifiers());
-                    code = itm.code;
-                    verifier = itm.verifier;
+                    auto [e_code, e_verifier] = synth_expression();
+                    return std::make_pair(
+                        "return " + e_code,
+                        ReturnVerifier(IsReturn({e_verifier}))
+                    );
                 }
-                else
-                {
-                    auto [s_code, s_ver] = synth_modifiers(rand_range(config_.sizes.standalone_modifiers_count));
-                    code = s_code;
-                    verifier = s_ver;
-                }
-                return {
-                    ctx.prefix + code + ctx.suffix,
-                    [ctx, verifier](ProgramSpec& s) { ctx.wrap_in_spec(s, UniversalVerifier(verifier)); }
-                };
-            };
+            );
 
             register_hybrid_generator<FuncVerifier, FuncVerifier>(
                 TopLevelConstruct::FunctionDef, InjectableType::Function, config_.registry.functions,

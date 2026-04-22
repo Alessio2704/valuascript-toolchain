@@ -28,6 +28,7 @@ namespace valuascript::compiler::test
             double modifiers = 0.5;
             double types = 0.5;
             double expressions = 0.5;
+            double returns = 0.5;
             double statements = 0.5;
             double functions = 0.5;
             double structs = 0.5;
@@ -122,8 +123,9 @@ namespace valuascript::compiler::test
                 expressions << "\n";
             out << " *   Stmts: " << registry.statements << " | Funcs: " << registry.functions << " | Structs: " <<
                 registry.structs << "\n";
-            out << " *   Enums: " << registry.enums << " | Aliases: " << registry.type_aliases << " | Imports: " <<
-                registry.imports << " | Dirs: " << registry.directives << "\n\n";
+            out << " *   Enums: " << registry.enums << " | Aliases: " << registry.type_aliases
+                << " | Returns: " << registry.returns
+                << " | Imports: " << registry.imports << " | Dirs: " << registry.directives << "\n\n";
 
             out << " * [FEATURE PROBABILITIES (Coin flips)]\n";
             out << " *   Enum Vals: " << features.enum_case_has_value << " | Explicit Let Type: " << features.

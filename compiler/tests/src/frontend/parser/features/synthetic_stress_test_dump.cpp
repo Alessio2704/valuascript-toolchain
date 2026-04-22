@@ -43,6 +43,7 @@ namespace valuascript::compiler::test
 
         cfg.registry.modifiers = 0.0;
         cfg.registry.types = 0.0;
+        cfg.registry.returns = 1.0;
         cfg.registry.expressions = 0.0;
         cfg.registry.statements = 0.0;
         cfg.registry.functions = 0.0;
