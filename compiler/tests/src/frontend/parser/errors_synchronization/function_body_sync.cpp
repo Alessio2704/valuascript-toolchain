@@ -483,7 +483,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let c = 1\n",
             {
-            {Err::InvalidExpression, 3, 11}
+            {Err::MissingValueAfterEquals, 3, 12}
             }
             }
         ),

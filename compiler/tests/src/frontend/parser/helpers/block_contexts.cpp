@@ -14,6 +14,9 @@ namespace valuascript::compiler::test
                 [](ProgramSpec& s, UniversalVerifier v)
                 {
                     std::visit(overloaded{
+                                   [&](NullVerifier&)
+                                   {
+                                   },
                                    [&](StmtVerifier& sv)
                                    {
                                        SpecAdder::add(s, IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {sv}));

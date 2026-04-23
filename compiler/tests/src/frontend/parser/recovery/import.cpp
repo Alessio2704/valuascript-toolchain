@@ -1,118 +1,65 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/error_registry.h"
+#include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
 {
-    class ImportErrorTest : public ParserTestBase
+    class ImportErrorRegistryRunner : public ParserTestBase,
+                                      public testing::WithParamInterface<ErrorRegistryEntry<ImportVerifier>>
     {
     };
 
-    TEST_F(ImportErrorTest, MissingImportKeyword)
+    namespace
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 1, 13);
+        const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
 
-        ExpectParseErrorsWithRecovery(
-            "file_path.vs",
-            errors,
-            ProgramSpec{
-                .imports = {}
-            }
-        );
+            reg("MissingImportKeyword", "file_path.vs",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 1, 13}}, IsNull());
+
+            reg("MissingImportStringPath", "import ",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 7, 1, 8}},
+                IsImport("<error>"));
+
+            reg("ImportWithDocStringPath", R"(import """file_path.vs""")",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 26}},
+                IsImport("<error>"));
+
+            reg("ImportInvalidStringPath1", "import 1",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9}},
+                IsImport("<error>"));
+
+            reg("ImportInvalidStringPath2", "import identifier",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 18}},
+                IsImport("<error>"));
+
+            reg("ImportInvalidStringPath3", "import if a then b else c",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 10}},
+                IsImport("<error>"));
+
+            reg("ImportInvalidStringPath4", "import a()",
+                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9}},
+                IsImport("<error>"));
+
+            return true;
+        }();
     }
 
-    TEST_F(ImportErrorTest, MissingImportStringPath)
+    TEST_P(ImportErrorRegistryRunner, ValidatesInAllContexts)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 7, 1, 8);
+        const auto& [name, code, errors, verifier] = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectParseErrorsWithRecovery(
-            "import ",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
+        ExpectImportErrors(code, errors, verifier);
     }
 
-    TEST_F(ImportErrorTest, ImportWithDocStringPath)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 26);
-
-        ExpectParseErrorsWithRecovery(
-            R"(import """file_path.vs""")",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
-    }
-
-    TEST_F(ImportErrorTest, ImportInvalidStringPath1)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "import 1",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
-    }
-
-    TEST_F(ImportErrorTest, ImportInvalidStringPath2)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 18);
-
-        ExpectParseErrorsWithRecovery(
-            "import identifier",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
-    }
-
-    TEST_F(ImportErrorTest, ImportInvalidStringPath3)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 10);
-
-        ExpectParseErrorsWithRecovery(
-            "import if a then b else c",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
-    }
-
-    TEST_F(ImportErrorTest, ImportInvalidStringPath4)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "import a()",
-            errors,
-            ProgramSpec{
-                .imports = {
-                    IsImport("<error>")
-                }
-            }
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Import,
+        ImportErrorRegistryRunner,
+        testing::ValuesIn(ErrorRegistry::imports()),
+        [](const testing::TestParamInfo<ErrorRegistryEntry<ImportVerifier>>& info) {
+        return info.param.test_name;
+        }
+    );
 }

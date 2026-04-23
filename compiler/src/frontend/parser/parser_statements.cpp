@@ -241,7 +241,8 @@ namespace valuascript::compiler
             return cursor_.is_at_end() ||
                 TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type) ||
                 (cursor_.peek().line > cursor_.previous().line &&
-                    TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type));
+                    TokenTraits::is_expression_statement_start(cursor_.peek(), cursor_.peek(1).type)) ||
+                is_active_closer(cursor_.peek().type);
         };
 
         if (cursor_.match({TokenType::Assign}))
@@ -257,7 +258,13 @@ namespace valuascript::compiler
         }
         else
         {
-            cursor_.report_error_no_panic(cursor_.peek(), ValuascriptErrorCode::IncompleteAssignment);
+            const Token& report_at = (cursor_.peek().line > cursor_.previous().line && is_at_boundary()) ||
+                                     is_active_closer(cursor_.peek().type)
+                                         ? cursor_.previous()
+                                         : cursor_.peek();
+
+
+            cursor_.report_error_no_panic(report_at, ValuascriptErrorCode::IncompleteAssignment);
 
             if (!is_at_boundary() && TokenTraits::is_expression_start(cursor_.peek().type))
             {

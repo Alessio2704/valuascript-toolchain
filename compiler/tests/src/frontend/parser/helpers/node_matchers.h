@@ -153,6 +153,12 @@ namespace valuascript::compiler::test
         EXPECT_EQ(node, nullptr) << "Expected node to be null, but it was populated.";
     }
 
+    struct NullVerifier
+    {
+        void operator()(AstNode* node) const { ExpectNullNode(node); }
+        void operator()(TypeAnnotation* node) const { ExpectNullNode(node); }
+    };
+
     inline void ExpectIdentifier(AstNode* node, std::string_view name)
     {
         if (auto id = ExpectNode<IdentifierAccess>(node))
@@ -541,8 +547,8 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline ExprVerifier IsNull() { return [](AstNode* node) { ExpectNullNode(node); }; }
-    inline TypeVerifier IsNullType() { return [](TypeAnnotation* node) { ExpectNullNode(node); }; }
+    inline NullVerifier IsNull() { return NullVerifier{}; }
+    inline NullVerifier IsNullType() { return NullVerifier{}; }
 
     inline ExprVerifier IsNumber(std::string value)
     {

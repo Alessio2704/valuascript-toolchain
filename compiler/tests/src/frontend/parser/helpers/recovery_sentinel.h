@@ -1,34 +1,129 @@
 #pragma once
-#include <algorithm>
 
-#include "frontend/parser/generator/language_registry.h"
+#include <string>
+#include <vector>
+#include <random>
+#include <functional>
+#include "construct_registry.h"
+#include "spec_adder.h"
 
-namespace valuascript::compiler::test {
-    struct RecoveryBlock {
+namespace valuascript::compiler::test
+{
+    struct RecoveryBlock
+    {
         std::string source;
-        ProgramSpec spec;
+        std::function<void(ProgramSpec&)> add_to_spec;
     };
 
-    class RecoverySentinel {
+    class RecoverySentinel
+    {
+    private:
+        template <typename T, typename AdderFunc>
+        static void add_if_not_empty(std::vector<RecoveryBlock>& blocks, const std::vector<RegistryEntry<T>>& registry,
+                                     AdderFunc adder)
+        {
+            for (const auto& entry : registry)
+            {
+                blocks.push_back({
+                    entry.code,
+                    [adder, verifier = entry.verifier](ProgramSpec& spec)
+                    {
+                        adder(spec, verifier);
+                    }
+                });
+            }
+        }
+
+        static std::vector<RecoveryBlock> build_block_pool()
+        {
+            std::vector<RecoveryBlock> pool;
+            add_if_not_empty(pool, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::returns(), [](ProgramSpec& s, const ReturnVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            return pool;
+        }
+
+        static std::vector<RecoveryBlock> build_top_level_pool()
+        {
+            std::vector<RecoveryBlock> pool;
+            add_if_not_empty(pool, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+
+            add_if_not_empty(pool, ConstructRegistry::imports(), [](ProgramSpec& s, const ImportVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::functions(), [](ProgramSpec& s, const FuncVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::enums(), [](ProgramSpec& s, const EnumVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::aliases(), [](ProgramSpec& s, const AliasVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::directives(), [](ProgramSpec& s, const DirectiveVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::structs(), [](ProgramSpec& s, const StructVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            return pool;
+        }
+
     public:
-        static RecoveryBlock generate(size_t rotation_index) {
-            auto constructs = LanguageRegistry::all();
+        static RecoveryBlock generate_block_sentinel(size_t seed)
+        {
+            static std::vector<RecoveryBlock> pool = build_block_pool();
+            if (pool.empty()) return {
+                "", [](ProgramSpec&)
+                {
+                }
+            };
+            std::mt19937 rng(seed);
+            std::uniform_int_distribution<size_t> dist(0, pool.size() - 1);
+            return pool[dist(rng)];
+        }
 
-            if (!constructs.empty()) {
-                std::rotate(constructs.begin(),
-                            constructs.begin() + (rotation_index % constructs.size()),
-                            constructs.end());
-            }
-
-            std::string full_source = "\n// --- RECOVERY SENTINEL ---\n";
-            ProgramSpec full_spec;
-
-            for (const auto &c: constructs) {
-                full_source += c.source;
-                c.add_to_spec(full_spec);
-            }
-
-            return {std::move(full_source), std::move(full_spec)};
+        static RecoveryBlock generate_top_level_sentinel(size_t seed)
+        {
+            static std::vector<RecoveryBlock> pool = build_top_level_pool();
+            if (pool.empty()) return {
+                "", [](ProgramSpec&)
+                {
+                }
+            };
+            std::mt19937 rng(seed);
+            std::uniform_int_distribution<size_t> dist(0, pool.size() - 1);
+            return pool[dist(rng)];
         }
     };
 }

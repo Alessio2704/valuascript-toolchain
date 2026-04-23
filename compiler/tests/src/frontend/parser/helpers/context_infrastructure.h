@@ -8,28 +8,16 @@
 
 namespace valuascript::compiler::test
 {
-    enum class NestingLevel
-    {
-        TopLevel,
-        BlockLevel
-    };
+    enum class NestingLevel { TopLevel, BlockLevel };
 
     enum class InjectableType
     {
-        Import,
-        Directive,
-        Function,
-        Struct,
-        Enum,
-        TypeAlias,
-        Statement,
-        Return,
-        Expression,
-        Modifier,
-        TypeAnnotation
+        Import, Directive, Function, Struct, Enum, TypeAlias,
+        Statement, Return, Expression, Modifier, TypeAnnotation
     };
 
     using UniversalVerifier = std::variant<
+        NullVerifier,
         ImportVerifier,
         DirectiveVerifier,
         FuncVerifier,

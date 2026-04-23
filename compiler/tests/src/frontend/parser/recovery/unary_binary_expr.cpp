@@ -1,152 +1,90 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/error_registry.h"
+#include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
 {
-    class UnaryBinaryErrorTest : public ParserTestBase
+    namespace
     {
-    };
+        const bool _ = []()
+        {
+            auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
 
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperations1)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 15, 1, 16);
+            reg("ChainingNotAllowedForComparisonOperations1", "1 < 2 < 3",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                },
+                IsBinary(TokenType::Less,
+                         IsBinary(TokenType::Less,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         ),
+                         IsNumber("3")
+                ));
 
-        ExpectParseErrorsWithRecovery(
-            "let a = 1 < 2 < 3",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Less,
-                                          IsBinary(TokenType::Less,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
-        );
-    }
+            reg("ChainingNotAllowedForComparisonOperations2", "1 > 2 > 3",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                },
+                IsBinary(TokenType::Greater,
+                         IsBinary(TokenType::Greater,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         ),
+                         IsNumber("3")
+                ));
 
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperations2)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 15, 1, 16);
+            reg("ChainingNotAllowedForComparisonOperations3", "1 != 2 != 3 ",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                },
+                IsBinary(TokenType::NotEquals,
+                         IsBinary(TokenType::NotEquals,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         ),
+                         IsNumber("3")
+                ));
 
-        ExpectParseErrorsWithRecovery(
-            "let a = 1 > 2 > 3",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Greater,
-                                          IsBinary(TokenType::Greater,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
-        );
-    }
+            reg("ChainingNotAllowedForComparisonOperations4", "x == y == z",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                },
+                IsBinary(TokenType::Equals,
+                         IsBinary(TokenType::Equals,
+                                  IsIdentifier("x"),
+                                  IsIdentifier("y")
+                         ),
+                         IsIdentifier("z")
+                )
+            );
 
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperations3)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 16, 1, 18);
+            reg("ChainingNotAllowedForComparisonOperationsMixedOperators1", "1 < 2 > 3",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                },
+                IsBinary(TokenType::Greater,
+                         IsBinary(TokenType::Less,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         ),
+                         IsNumber("3")
+                )
+            );
 
-        ExpectParseErrorsWithRecovery(
-            "let a = 1 != 2 != 3",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::NotEquals,
-                                          IsBinary(TokenType::NotEquals,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
-        );
-    }
+            reg("ChainingNotAllowedForComparisonOperationsMixedOperators2", "1 == 2 != 3",
+                std::vector<ExpectedError>{
+                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                },
+                IsBinary(TokenType::NotEquals,
+                         IsBinary(TokenType::Equals,
+                                  IsNumber("1"),
+                                  IsNumber("2")
+                         ),
+                         IsNumber("3")
+                ));
 
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperations4)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 16, 1, 18);
-
-        ExpectParseErrorsWithRecovery(
-            "let a = x == y == z",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Equals,
-                                          IsBinary(TokenType::Equals,
-                                                   IsIdentifier("x"),
-                                                   IsIdentifier("y")
-                                          ),
-                                          IsIdentifier("z")
-                                 )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperationsMixedOperators1)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 15, 1, 16);
-
-        ExpectParseErrorsWithRecovery(
-            "let a = 1 < 2 > 3",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::Greater,
-                                          IsBinary(TokenType::Less,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(UnaryBinaryErrorTest, ChainingNotAllowedForComparisonOperationsMixedOperators2)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 16, 1, 18);
-
-        ExpectParseErrorsWithRecovery(
-            "let a = 1 == 2 != 3",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}},
-                                 IsBinary(TokenType::NotEquals,
-                                          IsBinary(TokenType::Equals,
-                                                   IsNumber("1"),
-                                                   IsNumber("2")
-                                          ),
-                                          IsNumber("3")
-                                 )
-                    )
-                }
-            }
-        );
+            return true;
+        }();
     }
 }

@@ -9,39 +9,18 @@
 #include <iomanip>
 
 #include "context_registry.h"
+#include "error_registry.h"
+#include "error_shifter.h"
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
 #include "core/compiler_context.h"
-#include "core/valuascript_exception.h"
 #include "frontend/parser/helpers/node_matchers.h"
 
 #include "utils/parametrised_test_name_helper.h"
 
 namespace valuascript::compiler::test
 {
-    struct ExpectedError
-    {
-        ValuascriptErrorCode code;
-        size_t line_start;
-        size_t column_start;
-        size_t line_end;
-        size_t column_end;
-
-        ExpectedError(ValuascriptErrorCode code,
-                      size_t line_start,
-                      size_t column_start,
-                      size_t line_end = 0,
-                      size_t column_end = 0)
-            : code(code),
-              line_start(line_start),
-              column_start(column_start),
-              line_end(line_end),
-              column_end(column_end)
-        {
-        }
-    };
-
     struct ValidParserTestCase
     {
         std::string test_name;
@@ -140,6 +119,170 @@ namespace valuascript::compiler::test
             }
         }
 
+        static void ExpectParseErrors(const std::string& code, const std::vector<ExpectedError>& expected_errors,
+                                      const std::optional<ProgramSpec>& spec = std::nullopt)
+        {
+            SCOPED_TRACE(format_source_with_lines(code));
+
+            CompilerContext context;
+            context.settings.fail_fast = false;
+
+            std::shared_ptr<Program> ast;
+            ASSERT_NO_THROW({
+                ast = run_parser(code, context);
+                }) << "Parser crashed unexpectedly on error recovery.";
+
+            const auto& actual_errors = context.diagnostics.get_errors();
+            ASSERT_EQ(actual_errors.size(), expected_errors.size())
+                << "Mismatch in the number of collected errors.\n"
+                << "Expected " << expected_errors.size() << ", but got " << actual_errors.size();
+
+            size_t errors_to_check = std::min(actual_errors.size(), expected_errors.size());
+            for (size_t i = 0; i < errors_to_check; ++i)
+            {
+                const auto& actual = actual_errors[i];
+                const auto& expected = expected_errors[i];
+
+                EXPECT_EQ(actual.get_code(), expected.code)
+                    << "Error[" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
+                    << "\nActual Code: " << static_cast<int>(actual.get_code())
+                    << "\nActual Message: " << actual.what();
+
+                EXPECT_EQ(actual.get_span().line_start, expected.line_start)
+                    << "Error[" << i << "] Line mismatch for error: " << actual.what();
+
+                EXPECT_EQ(actual.get_span().column_start, expected.column_start)
+                    << "Error[" << i << "] Column mismatch for error: " << actual.what();
+
+                if (expected.line_end != 0)
+                {
+                    EXPECT_EQ(actual.get_span().line_end, expected.line_end)
+                        << "Error [" << i << "] End line mismatch for error: " << actual.what();
+                }
+
+                if (expected.column_end != 0)
+                {
+                    EXPECT_EQ(actual.get_span().column_end, expected.column_end)
+                        << "Error[" << i << "] End column mismatch for error: " << actual.what();
+                }
+            }
+
+            if (spec.has_value())
+            {
+                ASSERT_NE(ast, nullptr) << "Parser returned null AST but a partial AST was expected.";
+                ExpectProgram(ast.get(), spec.value());
+            }
+        }
+
+        template <typename Verifier>
+        static void ExpectParseErrorsUnified(InjectableType type,
+                                             const std::string& snippet,
+                                             const std::vector<ExpectedError>& expected_errors,
+                                             const Verifier& verifier,
+                                             const std::string& context_group_name)
+        {
+            auto contexts = ContextRegistry::get_all_for(type);
+
+            if (contexts.empty())
+            {
+                ADD_FAILURE() << "No contexts found for InjectableType: " << static_cast<int>(type);
+                return;
+            }
+
+            auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+            std::string full_test_name = test_info
+                                             ? std::string(test_info->test_suite_name()) + "." + test_info->name()
+                                             : "fallback_test_name";
+            size_t base_seed = std::hash<std::string>{}(full_test_name);
+
+            size_t ctx_index = 0;
+            for (const auto& ctx : contexts)
+            {
+                size_t current_seed = base_seed + ctx_index;
+                ctx_index += 2;
+
+                RecoveryBlock pre_sentinel;
+                RecoveryBlock post_sentinel;
+                ProgramSpec full_spec;
+                std::string full_code;
+                std::string prefix_for_shifting;
+
+                std::string middle_part = ctx.prefix + snippet + ctx.suffix;
+                while (!middle_part.empty() && middle_part.back() == '\n') middle_part.pop_back();
+
+                if (ctx.level == NestingLevel::BlockLevel)
+                {
+                    pre_sentinel = RecoverySentinel::generate_block_sentinel(current_seed);
+                    post_sentinel = RecoverySentinel::generate_block_sentinel(current_seed + 1);
+
+                    std::string wrapper_pre = "func ctx_wrapper() -> void {\n";
+                    std::string wrapper_post = "\n}\n";
+
+                    full_code = wrapper_pre + pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source
+                        + wrapper_post;
+                    prefix_for_shifting = wrapper_pre + pre_sentinel.source + "\n\n" + ctx.prefix;
+
+                    ProgramSpec temp_spec;
+                    if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(temp_spec);
+                    ctx.wrap_in_spec(temp_spec, UniversalVerifier(verifier));
+                    if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(temp_spec);
+
+                    full_spec.functions.emplace_back(
+                        IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, temp_spec.execution_steps));
+                }
+                else
+                {
+                    pre_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed);
+                    post_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed + 1);
+
+                    full_code = pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source + "\n";
+                    prefix_for_shifting = pre_sentinel.source + "\n\n" + ctx.prefix;
+
+                    if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
+                    ctx.wrap_in_spec(full_spec, UniversalVerifier(verifier));
+                    if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
+                }
+
+                auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, expected_errors);
+
+                SCOPED_TRACE("Testing " + context_group_name + " Error Recovery in context: " + ctx.name);
+                ExpectParseErrors(full_code, shifted_errors, full_spec);
+            }
+        }
+
+        static void ExpectParseErrorsWithRecovery(const std::string& code,
+                                                  const std::vector<ExpectedError>& expected_errors,
+                                                  ProgramSpec broken_part_spec)
+        {
+            auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+            std::string full_test_name = test_info
+                                             ? std::string(test_info->test_suite_name()) + "." + test_info->name()
+                                             : "fallback_test_name";
+
+            size_t base_seed = std::hash<std::string>{}(full_test_name);
+
+            RecoveryBlock pre_sentinel = RecoverySentinel::generate_top_level_sentinel(base_seed);
+            RecoveryBlock post_sentinel = RecoverySentinel::generate_top_level_sentinel(base_seed + 1);
+
+            std::string clean_code = code;
+            while (!clean_code.empty() && clean_code.back() == '\n')
+            {
+                clean_code.pop_back();
+            }
+
+            std::string full_code = pre_sentinel.source + "\n\n" + clean_code + "\n\n" + post_sentinel.source + "\n";
+
+            std::string prefix_for_shifting = pre_sentinel.source + "\n\n";
+            auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, expected_errors);
+
+            ProgramSpec full_spec;
+            if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
+            full_spec = MergeSpecs(std::move(full_spec), std::move(broken_part_spec));
+            if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
+
+            ExpectParseErrors(full_code, shifted_errors, full_spec);
+        }
+
         static void ExpectValidAssignment(const std::string& code_snippet, const AssignmentVerifier& verifier)
         {
             ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Assignment");
@@ -205,76 +348,95 @@ namespace valuascript::compiler::test
             ExpectValidUnified(InjectableType::Return, code_snippet, verifier, "Return");
         }
 
-        static void ExpectParseErrors(const std::string& code, const std::vector<ExpectedError>& expected_errors,
-                                      const std::optional<ProgramSpec>& spec = std::nullopt)
+        static void ExpectAssignmentErrors(const std::string& snippet,
+                                           const std::vector<ExpectedError>& expected_errors,
+                                           const AssignmentVerifier& verifier)
         {
-            SCOPED_TRACE(format_source_with_lines(code));
-
-            CompilerContext context;
-            context.settings.fail_fast = false;
-
-            std::shared_ptr<Program> ast;
-            ASSERT_NO_THROW({
-                ast = run_parser(code, context);
-                }) << "Parser crashed unexpectedly on error recovery.";
-
-            const auto& actual_errors = context.diagnostics.get_errors();
-            ASSERT_EQ(actual_errors.size(), expected_errors.size())
-                << "Mismatch in the number of collected errors.\n"
-                << "Expected " << expected_errors.size() << ", but got " << actual_errors.size();
-
-            size_t errors_to_check = std::min(actual_errors.size(), expected_errors.size());
-            for (size_t i = 0; i < errors_to_check; ++i)
-            {
-                const auto& actual = actual_errors[i];
-                const auto& expected = expected_errors[i];
-
-                EXPECT_EQ(actual.get_code(), expected.code)
-                    << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
-                    << "\nActual Code: " << static_cast<int>(actual.get_code())
-                    << "\nActual Message: " << actual.what();
-
-                EXPECT_EQ(actual.get_span().line_start, expected.line_start)
-                    << "Error[" << i << "] Line mismatch for error: " << actual.what();
-
-                EXPECT_EQ(actual.get_span().column_start, expected.column_start)
-                    << "Error[" << i << "] Column mismatch for error: " << actual.what();
-
-                if (expected.line_end != 0)
-                {
-                    EXPECT_EQ(actual.get_span().line_end, expected.line_end)
-                        << "Error [" << i << "] End line mismatch for error: " << actual.what();
-                }
-
-                if (expected.column_end != 0)
-                {
-                    EXPECT_EQ(actual.get_span().column_end, expected.column_end)
-                        << "Error[" << i << "] End column mismatch for error: " << actual.what();
-                }
-            }
-
-            if (spec.has_value())
-            {
-                ASSERT_NE(ast, nullptr) << "Parser returned null AST but a partial AST was expected.";
-                ExpectProgram(ast.get(), spec.value());
-            }
+            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+                                     "Assignment");
         }
 
-        static void ExpectParseErrorsWithRecovery(const std::string& code,
-                                                  const std::vector<ExpectedError>& expected_errors,
-                                                  ProgramSpec broken_part_spec)
+        static void ExpectReassignmentErrors(const std::string& snippet,
+                                             const std::vector<ExpectedError>& expected_errors,
+                                             const ReassignmentVerifier& verifier)
         {
-            auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-            std::string full_test_name = std::string(test_info->test_suite_name()) + "." + test_info->name();
+            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+                                     "Reassignment");
+        }
 
-            size_t rotation_index = std::hash<std::string>{}(full_test_name);
+        static void ExpectExpressionStatementErrors(const std::string& snippet,
+                                                    const std::vector<ExpectedError>& expected_errors,
+                                                    const ExprStmtVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+                                     "Expression Statement");
+        }
 
-            auto recovery = RecoverySentinel::generate(rotation_index);
+        static void ExpectImportErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
+                                       const ImportVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Import, snippet, expected_errors, verifier, "Import");
+        }
 
-            std::string full_code = code + recovery.source;
-            ProgramSpec full_spec = MergeSpecs(std::move(broken_part_spec), std::move(recovery.spec));
+        static void ExpectDirectiveErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
+                                          const DirectiveVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Directive, snippet, expected_errors, verifier, "Directive");
+        }
 
-            ExpectParseErrors(full_code, expected_errors, full_spec);
+        static void ExpectFunctionDefinitionErrors(const std::string& snippet,
+                                                   const std::vector<ExpectedError>& expected_errors,
+                                                   const FuncVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Function, snippet, expected_errors, verifier,
+                                     "Function Definition");
+        }
+
+        static void ExpectStructDefinitionErrors(const std::string& snippet,
+                                                 const std::vector<ExpectedError>& expected_errors,
+                                                 const StructVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Struct, snippet, expected_errors, verifier, "Struct Definition");
+        }
+
+        static void ExpectEnumDefinitionErrors(const std::string& snippet,
+                                               const std::vector<ExpectedError>& expected_errors,
+                                               const EnumVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Enum, snippet, expected_errors, verifier, "Enum Definition");
+        }
+
+        static void ExpectTypeAliasErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
+                                          const AliasVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::TypeAlias, snippet, expected_errors, verifier, "Type Alias");
+        }
+
+        static void ExpectExpressionErrors(const std::string& snippet,
+                                           const std::vector<ExpectedError>& expected_errors,
+                                           const ExprVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Expression, snippet, expected_errors, verifier, "Expression");
+        }
+
+        static void ExpectTypeAnnotationErrors(const std::string& snippet,
+                                               const std::vector<ExpectedError>& expected_errors,
+                                               const TypeVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::TypeAnnotation, snippet, expected_errors, verifier,
+                                     "Type Annotation");
+        }
+
+        static void ExpectModifierErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
+                                         const ModifierVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Modifier, snippet, expected_errors, verifier, "Modifier");
+        }
+
+        static void ExpectReturnErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
+                                       const ReturnVerifier& verifier)
+        {
+            ExpectParseErrorsUnified(InjectableType::Return, snippet, expected_errors, verifier, "Return");
         }
     };
 }

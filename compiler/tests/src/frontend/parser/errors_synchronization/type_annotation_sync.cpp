@@ -306,11 +306,10 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "generic_run_on_into_next_statement",
-            "let a: vector<int\n"
+            "let a: vector<int = 1\n"
             "let b = 2\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 18},
-            {Err::IncompleteAssignment, 1, 18}
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 19},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -325,11 +324,10 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_type_run_on_into_next_statement",
-            "let a: (int\n"
+            "let a: (int = 1\n"
             "let b = 2\n",
             {
-            {Err::UnmatchedParenthesisInTuple, 1, 12},
-            {Err::IncompleteAssignment, 1, 12}
+            {Err::UnmatchedParenthesisInTuple, 1, 13},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
