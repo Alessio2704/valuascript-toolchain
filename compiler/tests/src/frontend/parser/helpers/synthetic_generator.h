@@ -11,6 +11,7 @@
 
 #include "construct_registry.h"
 #include "context_registry.h"
+#include "spec_adder.h"
 #include "synthetic_generator_config.h"
 
 namespace valuascript::compiler::test
@@ -72,16 +73,13 @@ namespace valuascript::compiler::test
 
         template <typename TargetVerifier, typename RegistryPoolVerifier>
         void register_hybrid_generator(TopLevelConstruct construct,
-                                       InjectableType type,
                                        double registry_chance,
                                        const std::vector<RegistryEntry<RegistryPoolVerifier>>& pool,
                                        const std::function<std::pair<std::string, TargetVerifier>()>& synth_fn)
         {
-            generators_[static_cast<int>(construct)] = [this, type, registry_chance, &pool, synth_fn
+            generators_[static_cast<int>(construct)] = [this, registry_chance, &pool, synth_fn
                 ]() -> std::pair<std::string, SpecAdderFn>
                 {
-                    auto contexts = ContextRegistry::get_all_for(type);
-                    auto ctx = pick_random(contexts);
                     std::string code;
                     UniversalVerifier v;
 
@@ -97,7 +95,13 @@ namespace valuascript::compiler::test
                         code = s_code;
                         v = UniversalVerifier(s_v);
                     }
-                    return {ctx.prefix + code + ctx.suffix, [ctx, v](ProgramSpec& s) { ctx.wrap_in_spec(s, v); }};
+
+                    return {
+                        code, [v](ProgramSpec& s)
+                        {
+                            std::visit([&](auto&& ver) { SpecAdder::add(s, ver); }, v);
+                        }
+                    };
                 };
         }
 
@@ -110,7 +114,7 @@ namespace valuascript::compiler::test
         {
             generators_[static_cast<int>(construct)] = [=, &pool, this]()
             {
-                auto contexts = ContextRegistry::get_all_for(type);
+                auto contexts = ContextRegistry::get_container_contexts_for(type);
                 auto ctx = pick_random(contexts);
 
                 std::string code;

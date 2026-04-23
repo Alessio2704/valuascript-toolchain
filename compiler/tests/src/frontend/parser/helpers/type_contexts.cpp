@@ -7,82 +7,76 @@ namespace valuascript::compiler::test
     {
         return {
             {
-                "assignment_target", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation}, "let ctx_assign: ",
-                " = 1\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "assignment_target", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                "let ctx_assign: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                    return UniversalVerifier(IsAssignment({}, {{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}},
+                                                          IsNumber("1")));
                 }
             },
             {
-                "multi_assignment_target_1", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation}, "let ctx_m1: ",
-                ", ctx_m2 = 1\n",
-                [&](ProgramSpec& s, const UniversalVerifier& v)
+                "multi_assignment_target_1", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                "let ctx_m1: ", ", ctx_m2 = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
+                    return UniversalVerifier(
+                        IsAssignment({}, {{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
                 }
             },
             {
-                "multi_assignment_target_2", NestingLevel::BlockLevel, {InjectableType::TypeAnnotation},
-                "let ctx_m1, ctx_m2: ",
-                " = 1\n",
-                [&](ProgramSpec& s, const UniversalVerifier& v)
+                "multi_assignment_target_2", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                "let ctx_m1, ctx_m2: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                    return UniversalVerifier(
+                        IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
             {
-                "typealias_target", NestingLevel::TopLevel, {InjectableType::TypeAnnotation}, "typealias ctx_alias = ",
-                "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "typealias_target", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "typealias ctx_alias = ", "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsTypeAlias("ctx_alias", {}, SpecAdder::get_v<TypeVerifier>(v)));
+                    return UniversalVerifier(IsTypeAlias("ctx_alias", {}, SpecAdder::get_v<TypeVerifier>(v)));
                 }
             },
-
             {
-                "function_parameter", NestingLevel::TopLevel, {InjectableType::TypeAnnotation},
-                "func ctx_func_param(p: ", ") -> void {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "function_parameter", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "func ctx_func_param(p: ", ") -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func_param", {}, {ParamSpec{"p", {}, SpecAdder::get_v<TypeVerifier>(v)}},
-                                         {IsType("void")}));
+                    return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
+                                                           {ParamSpec{"p", {}, SpecAdder::get_v<TypeVerifier>(v)}},
+                                                           {IsType("void")}));
                 }
             },
-
             {
-                "function_return", NestingLevel::TopLevel, {InjectableType::TypeAnnotation}, "func ctx_func_ret() -> ",
-                " {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "function_return", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "func ctx_func_ret() -> ", " {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func_ret", {}, {}, {SpecAdder::get_v<TypeVerifier>(v)}));
+                    return UniversalVerifier(IsFunctionDef("ctx_func_ret", {}, {}, {
+                                                               SpecAdder::get_v<TypeVerifier>(v)
+                                                           }));
                 }
             },
-
             {
-                "function_multi_return", NestingLevel::TopLevel, {InjectableType::TypeAnnotation},
-                "func ctx_func_multi_ret() -> ", ", int {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "function_multi_return", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "func ctx_func_multi_ret() -> ", ", int {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func_multi_ret", {}, {}, {SpecAdder::get_v<TypeVerifier>(v), IsType("int")}));
+                    return UniversalVerifier(IsFunctionDef("ctx_func_multi_ret", {}, {},
+                                                           {SpecAdder::get_v<TypeVerifier>(v), IsType("int")}));
                 }
             },
-
             {
-                "struct_field", NestingLevel::TopLevel, {InjectableType::TypeAnnotation}, "struct ctx_struct { f: ",
-                " }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "struct_field", {InjectableType::TypeAnnotation}, InjectableType::TopLevel, "struct ctx_struct { f: ",
+                " }\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsStructDef("ctx_struct", {}, {FieldSpec{"f", {}, SpecAdder::get_v<TypeVerifier>(v)}}));
+                    return UniversalVerifier(IsStructDef("ctx_struct", {}, {
+                                                             FieldSpec{"f", {}, SpecAdder::get_v<TypeVerifier>(v)}
+                                                         }));
                 }
             },
-
             {
-                "enum_underlying_type", NestingLevel::TopLevel, {InjectableType::TypeAnnotation}, "enum ctx_enum: ",
-                " { A }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "enum_underlying_type", {InjectableType::TypeAnnotation}, InjectableType::TopLevel, "enum ctx_enum: ",
+                " { A }\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), {{"A"}}));
+                    return UniversalVerifier(IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), {{"A"}}));
                 }
             }
         };

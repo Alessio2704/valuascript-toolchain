@@ -432,35 +432,32 @@ namespace valuascript::compiler::test
         const UniversalVerifier& atom_verifier)
     {
         std::string snippet = inner_ctx.prefix + atom_code + inner_ctx.suffix;
+        UniversalVerifier transformed_verifier = inner_ctx.transform_verifier(atom_verifier);
 
-        bool should_wrap = (inner_ctx.level == NestingLevel::BlockLevel) && roll_prob(0.5);
+        bool should_wrap = inner_ctx.output_type == InjectableType::WeakStatement ||
+            (inner_ctx.output_type == InjectableType::StrongStatement && roll_prob(0.5));
 
         if (!should_wrap)
         {
             return {
                 snippet,
-                [inner_ctx, atom_verifier](ProgramSpec& s)
+                [transformed_verifier](ProgramSpec& s)
                 {
-                    inner_ctx.wrap_in_spec(s, atom_verifier);
+                    std::visit([&](auto&& v) { SpecAdder::add(s, v); }, transformed_verifier);
                 }
             };
         }
-        auto wrappers = ContextRegistry::get_block_contexts();
 
+        auto wrappers = ContextRegistry::get_block_contexts();
         auto wrapper_ctx = pick_random(wrappers);
 
         std::string wrapped_code = wrapper_ctx.prefix + snippet + wrapper_ctx.suffix;
+        UniversalVerifier final_verifier = wrapper_ctx.transform_verifier(transformed_verifier);
 
         return {
-            wrapped_code, [wrapper_ctx, inner_ctx, atom_verifier](ProgramSpec& s)
+            wrapped_code, [final_verifier](ProgramSpec& s)
             {
-                ProgramSpec temp_spec;
-                inner_ctx.wrap_in_spec(temp_spec, atom_verifier);
-
-                assert(!temp_spec.execution_steps.empty());
-                auto statement_verifier = temp_spec.execution_steps[0];
-
-                wrapper_ctx.wrap_in_spec(s, UniversalVerifier(statement_verifier));
+                std::visit([&](auto&& v) { SpecAdder::add(s, v); }, final_verifier);
             }
         };
     }
@@ -487,7 +484,7 @@ namespace valuascript::compiler::test
             [this] { return synth_type(); });
 
         register_pyramid_member<StmtVerifier, AssignmentVerifier>(
-            TopLevelConstruct::Statement, InjectableType::Statement,
+            TopLevelConstruct::Statement, InjectableType::StrongStatement,
             config_.registry.statements, ConstructRegistry::assignments(),
             [this] { return synth_statement(); });
 
@@ -498,47 +495,44 @@ namespace valuascript::compiler::test
 
         register_pyramid_member<ReturnVerifier, ReturnVerifier>(
             TopLevelConstruct::ReturnStmt,
-            InjectableType::Return,
+            InjectableType::WeakStatement,
             config_.registry.returns,
-            ConstructRegistry::returns(),
-            [this]
+            ConstructRegistry::returns(), [this]
             {
                 auto [e_code, e_verifier] = synth_expression();
                 return std::make_pair(
-                    "return " + e_code,
+                    "return " + e_code + "\n",
                     ReturnVerifier(IsReturn({e_verifier}))
                 );
             }
         );
 
         register_hybrid_generator<FuncVerifier, FuncVerifier>(
-            TopLevelConstruct::FunctionDef, InjectableType::Function, config_.registry.functions,
+            TopLevelConstruct::FunctionDef, config_.registry.functions,
             ConstructRegistry::functions(),
             [this] { return logic_synth_function(); });
 
         register_hybrid_generator<StructVerifier, StructVerifier>(
-            TopLevelConstruct::StructDef, InjectableType::Struct, config_.registry.structs,
-            ConstructRegistry::structs(),
-            [this] { return logic_synth_struct(); });
+            TopLevelConstruct::StructDef, config_.registry.structs,
+            ConstructRegistry::structs(), [this] { return logic_synth_struct(); });
 
         register_hybrid_generator<EnumVerifier, EnumVerifier>(
-            TopLevelConstruct::EnumDef, InjectableType::Enum, config_.registry.enums, ConstructRegistry::enums(),
+            TopLevelConstruct::EnumDef, config_.registry.enums, ConstructRegistry::enums(),
             [this] { return logic_synth_enum(); });
 
         register_hybrid_generator<AliasVerifier, AliasVerifier>(
-            TopLevelConstruct::TypeAlias, InjectableType::TypeAlias, config_.registry.type_aliases,
+            TopLevelConstruct::TypeAlias, config_.registry.type_aliases,
             ConstructRegistry::aliases(),
             [this] { return logic_synth_type_alias(); });
 
         register_hybrid_generator<ImportVerifier, ImportVerifier>(
-            TopLevelConstruct::ImportStmt, InjectableType::Import, config_.registry.imports,
+            TopLevelConstruct::ImportStmt, config_.registry.imports,
             ConstructRegistry::imports(),
             [this] { return logic_synth_import(); });
 
         register_hybrid_generator<DirectiveVerifier, DirectiveVerifier>(
-            TopLevelConstruct::Directive, InjectableType::Directive, config_.registry.directives,
-            ConstructRegistry::directives(),
-            [this] { return logic_synth_directive(); });
+            TopLevelConstruct::Directive, config_.registry.directives,
+            ConstructRegistry::directives(), [this] { return logic_synth_directive(); });
     }
 
     std::pair<std::string, ProgramSpec> SyntheticGenerator::generate_program(int piece_count)
