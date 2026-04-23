@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/synthetic_generator.h"
 

@@ -5,286 +5,215 @@ namespace valuascript::compiler::test
 {
     std::vector<Context> ContextRegistry::get_expression_contexts()
     {
-        auto add_as_assign = [](ProgramSpec& s,
-                                const UniversalVerifier& v,
-                                const std::vector<AssignmentTargetSpec>& targets)
-        {
-            SpecAdder::add(s, IsAssignment({}, targets, SpecAdder::get_v<ExprVerifier>(v)));
-        };
-
         return {
             {
-                "single_assignment", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_single = ", "\n",
-                [&](ProgramSpec& s, const UniversalVerifier& v) { add_as_assign(s, v, {{"ctx_single"}}); }
-            },
-
-            {
-                "multi_assignment", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_m1, ctx_m2 = ",
-                "\n",
-                [&](ProgramSpec& s, const UniversalVerifier& v)
+                "single_assignment", {InjectableType::Expression}, InjectableType::StrongStatement, "let ctx_single = ",
+                "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    add_as_assign(s, v, {{"ctx_m1"}, {"ctx_m2"}});
+                    return UniversalVerifier(IsAssignment({}, {{"ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "func_def_default", NestingLevel::TopLevel, {InjectableType::Expression}, "func ctx_func(arg: int = ",
-                ") -> void {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "multi_assignment", {InjectableType::Expression}, InjectableType::StrongStatement,
+                "let ctx_m1, ctx_m2 = ", "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func", {},
-                                                    {
-                                                        ParamSpec{
-                                                            "arg", {}, IsType("int"), SpecAdder::get_v<ExprVerifier>(v)
-                                                        }
-                                                    },
-                                                    {IsType("void")}));
+                    return UniversalVerifier(IsAssignment({}, {{"ctx_m1"}, {"ctx_m2"}},
+                                                          SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "func_def_return", NestingLevel::TopLevel, {InjectableType::Expression},
-                "func ctx_func_ret() -> int {\n  return ", "\n}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "reassignment", {InjectableType::Expression}, InjectableType::StrongStatement, "ctx_reassign = ", "\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func_ret", {}, {}, {IsType("int")},
-                                                    {IsReturn({SpecAdder::get_v<ExprVerifier>(v)})}));
+                    return UniversalVerifier(
+                        IsReassignment(IsIdentifier("ctx_reassign"), SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "directive_no_eq", NestingLevel::TopLevel, {InjectableType::Expression}, "#ctx_dir_no_eq ", "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "return_stmt", {InjectableType::Expression}, InjectableType::WeakStatement, "return ", "\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsDirective("ctx_dir_no_eq", SpecAdder::get_v<ExprVerifier>(v)));
+                    return UniversalVerifier(IsReturn({SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
-
             {
-                "directive_eq", NestingLevel::TopLevel, {InjectableType::Expression}, "#ctx_dir_eq = ", "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "func_def_default", {InjectableType::Expression}, InjectableType::TopLevel, "func ctx_func(arg: int = ",
+                ") -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsDirective("ctx_dir_eq", SpecAdder::get_v<ExprVerifier>(v)));
+                    return UniversalVerifier(IsFunctionDef("ctx_func", {},
+                                                           {
+                                                               ParamSpec{
+                                                                   "arg", {}, IsType("int"),
+                                                                   SpecAdder::get_v<ExprVerifier>(v)
+                                                               }
+                                                           }, {IsType("void")}));
                 }
             },
-
             {
-                "switch_cond", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_sw_cond = switch (",
-                ") { default -> 1 }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "directive_no_eq", {InjectableType::Expression}, InjectableType::TopLevel, "#ctx_dir_no_eq ", "\n", [
+                ](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_sw_cond"}},
-                                                   IsSwitch(SpecAdder::get_v<ExprVerifier>(v), {}, IsNumber("1"))));
+                    return UniversalVerifier(IsDirective("ctx_dir_no_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "switch_case", NestingLevel::BlockLevel, {InjectableType::Expression},
-                "let ctx_sw_case = switch (1) { case A -> ", " default -> 1 }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "directive_eq", {InjectableType::Expression}, InjectableType::TopLevel, "#ctx_dir_eq = ", "\n", [
+                ](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_sw_case"}},
-                                                   IsSwitch(IsNumber("1"), {
-                                                                SwitchCaseSpec{{"A"}, SpecAdder::get_v<ExprVerifier>(v)}
-                                                            },
-                                                            IsNumber("1"))));
+                    return UniversalVerifier(IsDirective("ctx_dir_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "enum_case", NestingLevel::TopLevel, {InjectableType::Expression}, "enum CtxEnum: int { A = ", " }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "enum_case", {InjectableType::Expression}, InjectableType::TopLevel, "enum CtxEnum: int { A = ", " }\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsEnumDef("CtxEnum", {}, IsType("int"), {
-                                                    {"A", {}, SpecAdder::get_v<ExprVerifier>(v)}
-                                                }));
+                    return UniversalVerifier(IsEnumDef("CtxEnum", {}, IsType("int"),
+                                                       {{"A", {}, SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
-
             {
-                "modifier_arg", NestingLevel::BlockLevel, {InjectableType::Expression}, "@ctx_mod(arg: ",
-                ")\nlet ctx_mod_var = 1\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "modifier_arg", {InjectableType::Expression}, InjectableType::Modifier, "@ctx_mod(arg: ", ") ", [
+                ](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({{"ctx_mod", {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}}},
-                                                   {{"ctx_mod_var"}},
-                                                   IsNumber("1")));
+                    return UniversalVerifier(std::vector<ModifierSpec>{
+                        {"ctx_mod", {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}}
+                    });
                 }
             },
-
             {
-                "if_cond", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_if_cond = if ",
-                " then 1 else 2\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "tuple_element", {InjectableType::Expression}, InjectableType::Expression, "(", ", 1)",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_cond"}},
-                                                   IsConditional(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1"),
-                                                                 IsNumber("2"))));
+                    return UniversalVerifier(IsTuple({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")}));
                 }
             },
-
             {
-                "if_then", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_if_then = if 1 then ",
-                " else 2\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "tensor_element", {InjectableType::Expression}, InjectableType::Expression, "[", ", 1]",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_then"}},
-                                                   IsConditional(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v),
-                                                                 IsNumber("2"))));
+                    return UniversalVerifier(IsTensor({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")}));
                 }
             },
-
             {
-                "if_else", NestingLevel::BlockLevel, {InjectableType::Expression},
-                "let ctx_if_else = if 1 then 2 else ", "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "dict_value", {InjectableType::Expression}, InjectableType::Expression, "{ k: ", " }",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_if_else"}},
-                                                   IsConditional(IsNumber("1"), IsNumber("2"),
-                                                                 SpecAdder::get_v<ExprVerifier>(v))));
+                    return UniversalVerifier(IsDict({{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
-
             {
-                "reassignment", NestingLevel::BlockLevel, {InjectableType::Expression}, "ctx_reassign = ", "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "bracket_access_index", {InjectableType::Expression}, InjectableType::Expression, "arr[", "]",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsReassignment(IsIdentifier("ctx_reassign"), SpecAdder::get_v<ExprVerifier>(v)));
+                    return UniversalVerifier(IsBracket(IsIdentifier("arr"), SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "tuple_element", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_tuple = (", ", 1)\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "function_call_arg", {InjectableType::Expression}, InjectableType::Expression, "f(arg: ", ")",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_tuple"}},
-                                                   IsTuple({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")})));
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
-
             {
-                "tensor_element", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_tensor = [",
-                ", 1]\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "binary_lhs", {InjectableType::Expression}, InjectableType::Expression, "(", ") + 100",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_tensor"}},
-                                                   IsTensor({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")})));
+                    return UniversalVerifier(IsBinary(TokenType::Plus, IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
+                                                      IsNumber("100")));
                 }
             },
-
             {
-                "dict_value", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_dict = { k: ", " }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "binary_rhs", {InjectableType::Expression}, InjectableType::Expression, "100 + (", ")",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({
-                                                       {"k", {}, SpecAdder::get_v<ExprVerifier>(v)}
-                                                   })));
+                    return UniversalVerifier(IsBinary(TokenType::Plus, IsNumber("100"),
+                                                      IsGrouping(SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
-
             {
-                "bracket_access_index", NestingLevel::BlockLevel, {InjectableType::Expression},
-                "let ctx_bracket = arr[", "]\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "grouping", {InjectableType::Expression}, InjectableType::Expression, "(", ")",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bracket"}},
-                                                   IsBracket(IsIdentifier("arr"), SpecAdder::get_v<ExprVerifier>(v))));
+                    return UniversalVerifier(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
-
             {
-                "function_call_arg", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_call = f(arg: ",
-                ")\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "unary_grouping", {InjectableType::Expression}, InjectableType::Expression, "-(", ")",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_call"}},
-                                                   IsCall(IsIdentifier("f"), {
-                                                              {"arg", SpecAdder::get_v<ExprVerifier>(v)}
-                                                          })));
+                    return UniversalVerifier(IsUnary(TokenType::Minus, IsGrouping(SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
-
             {
-                "binary_lhs", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_bin_lhs = (",
-                ") + 100\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "as_call_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")()",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bin_lhs"}},
-                                                   IsBinary(TokenType::Plus,
-                                                            IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
-                                                            IsNumber("100"))));
+                    return UniversalVerifier(IsCall(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), {}));
                 }
             },
-
             {
-                "binary_rhs", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_bin_rhs = 100 + (",
-                ")\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "as_dot_target", {InjectableType::Expression}, InjectableType::Expression, "(", ").prop",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_bin_rhs"}},
-                                                   IsBinary(TokenType::Plus, IsNumber("100"),
-                                                            IsGrouping(SpecAdder::get_v<ExprVerifier>(v)))));
+                    return UniversalVerifier(IsDot(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), "prop"));
                 }
             },
-
             {
-                "grouping", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_group = (", ")\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "as_bracket_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")[0]",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_group"}}, IsGrouping(SpecAdder::get_v<ExprVerifier>(v))));
+                    return UniversalVerifier(IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), IsNumber("0")));
                 }
             },
-
             {
-                "unary_grouping", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_u_group = -(", ")\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "as_slice_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")[0:10]",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_u_group"}},
-                                                   IsUnary(TokenType::Minus,
-                                                           IsGrouping(SpecAdder::get_v<ExprVerifier>(v)))));
+                    return UniversalVerifier(IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
+                                                       IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10"))));
                 }
             },
-
             {
-                "as_call_target", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_as_call = (",
-                ")()\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "switch_cond", {InjectableType::Expression}, InjectableType::Expression, "switch (",
+                ") { default -> 1 }",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_call"}},
-                                                   IsCall(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), {})));
+                    return UniversalVerifier(IsSwitch(SpecAdder::get_v<ExprVerifier>(v), {}, IsNumber("1")));
                 }
             },
-
             {
-                "as_dot_target", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_as_dot = (",
-                ").prop\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "switch_case", {InjectableType::Expression}, InjectableType::Expression, "switch (1) { case A -> ",
+                " default -> 1 }",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_dot"}},
-                                                   IsDot(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), "prop")));
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
+                                                      {SwitchCaseSpec{{"A"}, SpecAdder::get_v<ExprVerifier>(v)}},
+                                                      IsNumber("1")));
                 }
             },
-
             {
-                "as_bracket_target", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_as_bracket = (",
-                ")[0]\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "if_cond", {InjectableType::Expression}, InjectableType::Expression, "if ", " then 1 else 2",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_bracket"}},
-                                                   IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
-                                                             IsNumber("0"))));
+                    return UniversalVerifier(IsConditional(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1"),
+                                                           IsNumber("2")));
                 }
             },
-
             {
-                "as_slice_target", NestingLevel::BlockLevel, {InjectableType::Expression}, "let ctx_as_slice = (",
-                ")[0:10]\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                "if_then", {InjectableType::Expression}, InjectableType::Expression, "if 1 then ", " else 2",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_as_slice"}},
-                                                   IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
-                                                             IsBinary(TokenType::Colon, IsNumber("0"),
-                                                                      IsNumber("10")))));
+                    return UniversalVerifier(IsConditional(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v),
+                                                           IsNumber("2")));
+                }
+            },
+            {
+                "if_else", {InjectableType::Expression}, InjectableType::Expression, "if 1 then 2 else ", "",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsConditional(IsNumber("1"), IsNumber("2"),
+                                                           SpecAdder::get_v<ExprVerifier>(v)));
                 }
             }
         };

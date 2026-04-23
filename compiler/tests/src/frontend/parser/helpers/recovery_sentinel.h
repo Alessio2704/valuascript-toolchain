@@ -103,27 +103,35 @@ namespace valuascript::compiler::test
         static RecoveryBlock generate_block_sentinel(size_t seed)
         {
             static std::vector<RecoveryBlock> pool = build_block_pool();
-            if (pool.empty()) return {
-                "", [](ProgramSpec&)
-                {
-                }
-            };
-            std::mt19937 rng(seed);
-            std::uniform_int_distribution<size_t> dist(0, pool.size() - 1);
-            return pool[dist(rng)];
+
+            if (pool.empty())
+                return {
+                    "", [](ProgramSpec&)
+                    {
+                    }
+                };
+
+            std::mt19937 rng(static_cast<unsigned int>(seed));
+            std::uniform_int_distribution<uint64_t> dist(0, static_cast<uint64_t>(pool.size()) - 1);
+
+            return pool[static_cast<size_t>(dist(rng))];
         }
 
         static RecoveryBlock generate_top_level_sentinel(size_t seed)
         {
             static std::vector<RecoveryBlock> pool = build_top_level_pool();
-            if (pool.empty()) return {
-                "", [](ProgramSpec&)
-                {
-                }
-            };
-            std::mt19937 rng(seed);
-            std::uniform_int_distribution<size_t> dist(0, pool.size() - 1);
-            return pool[dist(rng)];
+
+            if (pool.empty())
+                return {
+                    "", [](ProgramSpec&)
+                    {
+                    }
+                };
+
+            std::mt19937 rng(static_cast<unsigned int>(seed));
+            std::uniform_int_distribution<uint64_t> dist(0, static_cast<uint64_t>(pool.size()) - 1);
+
+            return pool[static_cast<size_t>(dist(rng))];
         }
     };
 }

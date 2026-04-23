@@ -8,12 +8,12 @@
 
 namespace valuascript::compiler::test
 {
-    enum class NestingLevel { TopLevel, BlockLevel };
-
     enum class InjectableType
     {
         Import, Directive, Function, Struct, Enum, TypeAlias,
-        Statement, Return, Expression, Modifier, TypeAnnotation
+        Expression, Modifier, TypeAnnotation,
+        WeakStatement, StrongStatement,
+        TopLevel
     };
 
     using UniversalVerifier = std::variant<
@@ -44,10 +44,10 @@ namespace valuascript::compiler::test
     struct Context
     {
         std::string name;
-        NestingLevel level;
-        std::vector<InjectableType> allowed_atoms;
+        std::vector<InjectableType> input_types;
+        InjectableType output_type;
         std::string prefix;
         std::string suffix;
-        std::function<void(ProgramSpec&, UniversalVerifier)> wrap_in_spec;
+        std::function<UniversalVerifier(const UniversalVerifier&)> transform_verifier;
     };
 }

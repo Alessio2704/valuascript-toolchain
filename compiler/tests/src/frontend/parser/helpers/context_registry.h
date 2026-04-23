@@ -7,14 +7,14 @@ namespace valuascript::compiler::test
     {
     public:
         static std::vector<Context> get_all_for(InjectableType type);
-
+        static std::vector<Context> get_container_contexts_for(InjectableType type);
         static std::vector<Context> get_block_contexts();
 
     private:
         static std::vector<Context> aggregate_all();
-        static std::vector<Context> get_top_level_contexts();
         static std::vector<Context> get_expression_contexts();
         static std::vector<Context> get_type_contexts();
         static std::vector<Context> get_modifier_contexts();
+        static std::vector<Context> get_block_contexts_impl();
     };
 }

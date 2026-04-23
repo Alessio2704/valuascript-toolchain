@@ -36,6 +36,16 @@ namespace valuascript::compiler::test
         std::optional<ProgramSpec> expected_ast = std::nullopt;
     };
 
+    struct ProcessingItem
+    {
+        InjectableType type;
+        std::string code;
+        UniversalVerifier verifier;
+        std::string path_name;
+        std::string cumulative_prefix;
+        int depth;
+    };
+
     class ParserTestBase : public testing::Test
     {
     protected:
@@ -72,6 +82,65 @@ namespace valuascript::compiler::test
             return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
         }
 
+        static std::vector<ProcessingItem> expand_to_top_level(InjectableType start_type, const std::string& snippet,
+                                                               const UniversalVerifier& verifier,
+                                                               const std::string& base_name)
+        {
+            std::vector<ProcessingItem> queue = {{start_type, snippet, verifier, base_name, "", 0}};
+            std::vector<ProcessingItem> top_levels;
+
+            while (!queue.empty())
+            {
+                auto item = queue.front();
+                queue.erase(queue.begin());
+
+                if (item.type == InjectableType::TopLevel ||
+                    item.type == InjectableType::Import ||
+                    item.type == InjectableType::Directive ||
+                    item.type == InjectableType::Function ||
+                    item.type == InjectableType::Struct ||
+                    item.type == InjectableType::Enum ||
+                    item.type == InjectableType::TypeAlias)
+                {
+                    top_levels.push_back(item);
+                    continue;
+                }
+
+                if (item.type == InjectableType::StrongStatement)
+                {
+                    top_levels.push_back({
+                        InjectableType::TopLevel,
+                        item.code,
+                        item.verifier,
+                        item.path_name + " -> TopLevelPromotion",
+                        item.cumulative_prefix,
+                        item.depth + 1
+                    });
+                }
+
+                if (item.depth >= 5) continue;
+
+                auto contexts = ContextRegistry::get_all_for(item.type);
+                for (const auto& ctx : contexts)
+                {
+                    bool is_recursive = (item.type == ctx.output_type);
+                    if (is_recursive && item.path_name.find("Recurse") != std::string::npos) continue;
+
+                    std::string step_name = is_recursive ? "Recurse(" + ctx.name + ")" : ctx.name;
+
+                    queue.push_back({
+                        ctx.output_type,
+                        ctx.prefix + item.code + ctx.suffix,
+                        ctx.transform_verifier(item.verifier),
+                        item.path_name + " -> " + step_name,
+                        ctx.prefix + item.cumulative_prefix,
+                        item.depth + 1
+                    });
+                }
+            }
+            return top_levels;
+        }
+
         static void ExpectValidParse(const std::string& code, const ProgramSpec& spec)
         {
             SCOPED_TRACE(format_source_with_lines(code));
@@ -99,23 +168,22 @@ namespace valuascript::compiler::test
         static void ExpectValidUnified(InjectableType type, const std::string& snippet, const Verifier& verifier,
                                        const std::string& context_group_name)
         {
-            auto contexts = ContextRegistry::get_all_for(type);
+            auto top_levels = expand_to_top_level(type, snippet, UniversalVerifier(verifier), context_group_name);
 
-            if (contexts.empty())
+            if (top_levels.empty())
             {
-                ADD_FAILURE() << "No contexts found for InjectableType: " << static_cast<int>(type);
+                ADD_FAILURE() << "No valid top-level expansions generated for InjectableType: " << static_cast<int>(
+                    type);
                 return;
             }
 
-            for (const auto& ctx : contexts)
+            for (const auto& item : top_levels)
             {
-                std::string code = ctx.prefix + snippet + ctx.suffix;
                 ProgramSpec spec;
+                std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
 
-                ctx.wrap_in_spec(spec, UniversalVerifier(verifier));
-
-                SCOPED_TRACE("Testing " + context_group_name + " in context: " + ctx.name);
-                ExpectValidParse(code, spec);
+                SCOPED_TRACE("Testing " + context_group_name + " in context: " + item.path_name);
+                ExpectValidParse(item.code, spec);
             }
         }
 
@@ -181,11 +249,12 @@ namespace valuascript::compiler::test
                                              const Verifier& verifier,
                                              const std::string& context_group_name)
         {
-            auto contexts = ContextRegistry::get_all_for(type);
+            auto top_levels = expand_to_top_level(type, snippet, UniversalVerifier(verifier), context_group_name);
 
-            if (contexts.empty())
+            if (top_levels.empty())
             {
-                ADD_FAILURE() << "No contexts found for InjectableType: " << static_cast<int>(type);
+                ADD_FAILURE() << "No valid top-level expansions generated for InjectableType: " << static_cast<int>(
+                    type);
                 return;
             }
 
@@ -196,56 +265,29 @@ namespace valuascript::compiler::test
             size_t base_seed = std::hash<std::string>{}(full_test_name);
 
             size_t ctx_index = 0;
-            for (const auto& ctx : contexts)
+            for (const auto& item : top_levels)
             {
                 size_t current_seed = base_seed + ctx_index;
                 ctx_index += 2;
 
-                RecoveryBlock pre_sentinel;
-                RecoveryBlock post_sentinel;
-                ProgramSpec full_spec;
-                std::string full_code;
-                std::string prefix_for_shifting;
+                RecoveryBlock pre_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed);
+                RecoveryBlock post_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed + 1);
 
-                std::string middle_part = ctx.prefix + snippet + ctx.suffix;
+                std::string middle_part = item.code;
                 while (!middle_part.empty() && middle_part.back() == '\n') middle_part.pop_back();
 
-                if (ctx.level == NestingLevel::BlockLevel)
-                {
-                    pre_sentinel = RecoverySentinel::generate_block_sentinel(current_seed);
-                    post_sentinel = RecoverySentinel::generate_block_sentinel(current_seed + 1);
+                std::string full_code = pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source +
+                    "\n";
+                std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
 
-                    std::string wrapper_pre = "func ctx_wrapper() -> void {\n";
-                    std::string wrapper_post = "\n}\n";
-
-                    full_code = wrapper_pre + pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source
-                        + wrapper_post;
-                    prefix_for_shifting = wrapper_pre + pre_sentinel.source + "\n\n" + ctx.prefix;
-
-                    ProgramSpec temp_spec;
-                    if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(temp_spec);
-                    ctx.wrap_in_spec(temp_spec, UniversalVerifier(verifier));
-                    if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(temp_spec);
-
-                    full_spec.functions.emplace_back(
-                        IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, temp_spec.execution_steps));
-                }
-                else
-                {
-                    pre_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed);
-                    post_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed + 1);
-
-                    full_code = pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source + "\n";
-                    prefix_for_shifting = pre_sentinel.source + "\n\n" + ctx.prefix;
-
-                    if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
-                    ctx.wrap_in_spec(full_spec, UniversalVerifier(verifier));
-                    if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
-                }
+                ProgramSpec full_spec;
+                if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
+                std::visit([&](auto&& ver) { SpecAdder::add(full_spec, ver); }, item.verifier);
+                if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
 
                 auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, expected_errors);
 
-                SCOPED_TRACE("Testing " + context_group_name + " Error Recovery in context: " + ctx.name);
+                SCOPED_TRACE("Testing " + context_group_name + " Error Recovery in path: " + item.path_name);
                 ExpectParseErrors(full_code, shifted_errors, full_spec);
             }
         }
@@ -285,17 +327,18 @@ namespace valuascript::compiler::test
 
         static void ExpectValidAssignment(const std::string& code_snippet, const AssignmentVerifier& verifier)
         {
-            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Assignment");
+            ExpectValidUnified(InjectableType::StrongStatement, code_snippet, StmtVerifier(verifier), "Assignment");
         }
 
         static void ExpectValidReassignment(const std::string& code_snippet, const ReassignmentVerifier& verifier)
         {
-            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Reassignment");
+            ExpectValidUnified(InjectableType::StrongStatement, code_snippet, StmtVerifier(verifier), "Reassignment");
         }
 
         static void ExpectValidExpressionStatement(const std::string& code_snippet, const ExprStmtVerifier& verifier)
         {
-            ExpectValidUnified(InjectableType::Statement, code_snippet, StmtVerifier(verifier), "Expression Statement");
+            ExpectValidUnified(InjectableType::StrongStatement, code_snippet, StmtVerifier(verifier),
+                               "Expression Statement");
         }
 
         static void ExpectValidImport(const std::string& code_snippet, const ImportVerifier& verifier)
@@ -345,14 +388,14 @@ namespace valuascript::compiler::test
 
         static void ExpectValidReturn(const std::string& code_snippet, const ReturnVerifier& verifier)
         {
-            ExpectValidUnified(InjectableType::Return, code_snippet, verifier, "Return");
+            ExpectValidUnified(InjectableType::WeakStatement, code_snippet, verifier, "Return");
         }
 
         static void ExpectAssignmentErrors(const std::string& snippet,
                                            const std::vector<ExpectedError>& expected_errors,
                                            const AssignmentVerifier& verifier)
         {
-            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+            ExpectParseErrorsUnified(InjectableType::StrongStatement, snippet, expected_errors, StmtVerifier(verifier),
                                      "Assignment");
         }
 
@@ -360,7 +403,7 @@ namespace valuascript::compiler::test
                                              const std::vector<ExpectedError>& expected_errors,
                                              const ReassignmentVerifier& verifier)
         {
-            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+            ExpectParseErrorsUnified(InjectableType::StrongStatement, snippet, expected_errors, StmtVerifier(verifier),
                                      "Reassignment");
         }
 
@@ -368,7 +411,7 @@ namespace valuascript::compiler::test
                                                     const std::vector<ExpectedError>& expected_errors,
                                                     const ExprStmtVerifier& verifier)
         {
-            ExpectParseErrorsUnified(InjectableType::Statement, snippet, expected_errors, StmtVerifier(verifier),
+            ExpectParseErrorsUnified(InjectableType::StrongStatement, snippet, expected_errors, StmtVerifier(verifier),
                                      "Expression Statement");
         }
 
@@ -436,7 +479,7 @@ namespace valuascript::compiler::test
         static void ExpectReturnErrors(const std::string& snippet, const std::vector<ExpectedError>& expected_errors,
                                        const ReturnVerifier& verifier)
         {
-            ExpectParseErrorsUnified(InjectableType::Return, snippet, expected_errors, verifier, "Return");
+            ExpectParseErrorsUnified(InjectableType::WeakStatement, snippet, expected_errors, verifier, "Return");
         }
     };
 }
