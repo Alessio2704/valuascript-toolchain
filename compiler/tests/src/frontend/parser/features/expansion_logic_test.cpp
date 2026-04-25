@@ -1,0 +1,227 @@
+#include "frontend/parser/helpers/parser_test_base.h"
+#include "utils/parametrised_test_name_helper.h"
+#include <set>
+
+namespace valuascript::compiler::test
+{
+    struct IntegritySample
+    {
+        InjectableType start_type;
+        std::string snippet;
+        UniversalVerifier verifier;
+        std::string test_name;
+    };
+
+    static std::vector<IntegritySample> GetIntegritySamples()
+    {
+        return {
+            {
+                InjectableType::Expression, "1", ExprVerifier([](Expression*)
+                {
+                }),
+                "Expression"
+            },
+            {
+                InjectableType::TypeAnnotation, "int", TypeVerifier([](TypeAnnotation*)
+                {
+                }),
+                "TypeAnnotation"
+            },
+            {InjectableType::Modifier, "@meta", ModifierVerifier({{"meta"}}), "Modifier"},
+            {
+                InjectableType::StrongStatement, "let x = 1", StmtVerifier([](Statement*)
+                {
+                }),
+                "StrongStatement"
+            },
+            {
+                InjectableType::WeakStatement, "return 1", StmtVerifier([](Statement*)
+                {
+                }),
+                "WeakStatement"
+            }
+        };
+    }
+
+    class ContextExpansionFrameworkIntegrityTest : public ParserTestBase,
+                                                   public testing::WithParamInterface<IntegritySample>
+    {
+    protected:
+        static bool IsTerminal(InjectableType type)
+        {
+            switch (type)
+            {
+            case InjectableType::TopLevel:
+            case InjectableType::Import:
+            case InjectableType::Directive:
+            case InjectableType::Function:
+            case InjectableType::Struct:
+            case InjectableType::Enum:
+            case InjectableType::TypeAlias:
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        static size_t CountTransitions(const std::string& path)
+        {
+            size_t count = 0;
+            size_t pos = path.find(" -> ");
+            while (pos != std::string::npos)
+            {
+                count++;
+                pos = path.find(" -> ", pos + 4);
+            }
+            return count;
+        }
+    };
+
+    TEST_F(ContextExpansionFrameworkIntegrityTest, RegistryTypeCoverage)
+    {
+        std::vector<InjectableType> intermediates = {
+            InjectableType::Expression, InjectableType::TypeAnnotation,
+            InjectableType::Modifier, InjectableType::StrongStatement,
+            InjectableType::WeakStatement
+        };
+
+        auto samples = GetIntegritySamples();
+        for (auto type : intermediates)
+        {
+            bool covered = std::any_of(samples.begin(), samples.end(),
+                                       [&](auto& s) { return s.start_type == type; });
+
+            EXPECT_TRUE(covered) << "Logic Gap: Registry defines contexts for type "
+                                 << static_cast<int>(type) << " but suite has no sample.";
+        }
+    }
+
+    TEST_P(ContextExpansionFrameworkIntegrityTest, VerifyExpansionLogic)
+    {
+        const auto& [start_type, snippet, verifier, test_name] = GetParam();
+        auto results = expand_to_top_level(start_type, snippet, verifier, test_name);
+
+        ASSERT_FALSE(results.empty()) << "Expansion logic produced zero terminal programs.";
+
+        std::set<std::string> used_contexts;
+        bool elevation_occurred = false;
+        int max_observed_depth = 0;
+
+        for (const auto& item : results)
+        {
+            EXPECT_TRUE(IsTerminal(item.type))
+                << "Logic Error: Intermediate type " << static_cast<int>(item.type)
+                << " leaked into final results via path: " << item.path_name;
+
+
+            EXPECT_EQ(CountTransitions(item.path_name), static_cast<size_t>(item.depth))
+                << "Logic Error: Depth tracking mismatch in path: " << item.path_name;
+
+            EXPECT_LE(item.depth, 6);
+
+            if (item.depth > max_observed_depth) max_observed_depth = item.depth;
+
+            if (item.path_name.find("TopLevelPromotion") != std::string::npos)
+            {
+                elevation_occurred = true;
+                EXPECT_EQ(item.type, InjectableType::TopLevel)
+                    << "Logic Error: Elevation occurred but output type is not TopLevel.";
+            }
+        }
+
+        if (!IsTerminal(start_type))
+        {
+            EXPECT_GE(max_observed_depth, 1) << "Logic Error: Snippet was never wrapped.";
+        }
+
+        if (start_type == InjectableType::StrongStatement || start_type == InjectableType::Expression)
+        {
+            EXPECT_TRUE(elevation_occurred) << "Logic Error: Elevation branch (Promotion) was never taken.";
+        }
+
+        auto available_contexts = ContextRegistry::get_all_for(start_type);
+        for (const auto& ctx : available_contexts)
+        {
+            bool context_used = std::any_of(results.begin(), results.end(), [&](const auto& res)
+            {
+                return res.path_name.find(ctx.name) != std::string::npos;
+            });
+            EXPECT_TRUE(context_used) << "Logic Gap: Context '" << ctx.name
+                                      << "' is valid for " << test_name << " but was never exercised.";
+        }
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        ContextExpansionFrameworkIntegrityTest,
+        ContextExpansionFrameworkIntegrityTest,
+        testing::ValuesIn(GetIntegritySamples()),
+        [](const testing::TestParamInfo<IntegritySample>& info) { return info.param.test_name; }
+    );
+
+    class RecoveryExpansionIntegrityTest : public ParserTestBase,
+                                           public testing::WithParamInterface<IntegritySample>
+    {
+    };
+
+    TEST_P(RecoveryExpansionIntegrityTest, VerifySentinelInjectionInAllContexts)
+    {
+        const auto& [start_type, snippet, verifier, test_name] = GetParam();
+
+        size_t test_seed = 0x1337;
+
+        auto scenarios = generate_recovery_scenarios(
+            start_type,
+            snippet,
+            {},
+            verifier,
+            test_name,
+            test_seed
+        );
+
+        ASSERT_FALSE(scenarios.empty());
+
+        for (const auto& sc : scenarios)
+        {
+            SCOPED_TRACE("Checking Scenario: " + sc.path_name);
+
+            CompilerContext context;
+            auto ast = run_parser(sc.full_code, context);
+            ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << sc.full_code;
+
+            size_t total_top_level_items =
+                ast->import_statements.size() +
+                ast->directives.size() +
+                ast->function_definitions.size() +
+                ast->struct_definitions.size() +
+                ast->enum_definitions.size() +
+                ast->type_aliases.size() +
+                ast->execution_steps.size();
+
+            EXPECT_EQ(total_top_level_items, 3)
+                << "Top-level sentinel injection missing in path: " << sc.path_name;
+
+            if (sc.path_name.find("wrapper") != std::string::npos)
+            {
+                bool wrapper_found = false;
+                for (const auto& f : ast->function_definitions)
+                {
+                    if (f->name == "ctx_wrapper")
+                    {
+                        wrapper_found = true;
+                        EXPECT_EQ(f->body.size(), 3)
+                            << "Block-level sentinels missing inside ctx_wrapper for path: " << sc.path_name
+                            << "\nBody size was: " << f->body.size();
+                    }
+                }
+                EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
+            }
+        }
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        RecoveryIntegrity,
+        RecoveryExpansionIntegrityTest,
+        testing::ValuesIn(GetIntegritySamples()),
+        [](const testing::TestParamInfo<IntegritySample>& info) { return info.param.test_name; }
+    );
+}

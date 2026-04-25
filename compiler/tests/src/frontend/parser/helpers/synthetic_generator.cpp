@@ -1,4 +1,5 @@
 #include "synthetic_generator.h"
+#include "recovery_sentinel.h"
 #include <sstream>
 #include <algorithm>
 
@@ -452,7 +453,17 @@ namespace valuascript::compiler::test
         auto wrapper_ctx = pick_random(wrappers);
 
         std::string wrapped_code = wrapper_ctx.prefix + snippet + wrapper_ctx.suffix;
-        UniversalVerifier final_verifier = wrapper_ctx.transform_verifier(transformed_verifier);
+        UniversalVerifier final_verifier;
+
+        if (wrapper_ctx.is_block_context)
+        {
+            std::vector<RecoveryBlock> empty_blocks;
+            final_verifier = wrapper_ctx.transform_verifier_block(transformed_verifier, empty_blocks, empty_blocks);
+        }
+        else
+        {
+            final_verifier = wrapper_ctx.transform_verifier(transformed_verifier);
+        }
 
         return {
             wrapped_code, [final_verifier](ProgramSpec& s)

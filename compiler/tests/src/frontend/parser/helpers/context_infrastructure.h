@@ -8,6 +8,8 @@
 
 namespace valuascript::compiler::test
 {
+    struct RecoveryBlock;
+
     enum class InjectableType
     {
         Import, Directive, Function, Struct, Enum, TypeAlias,
@@ -49,5 +51,10 @@ namespace valuascript::compiler::test
         std::string prefix;
         std::string suffix;
         std::function<UniversalVerifier(const UniversalVerifier&)> transform_verifier;
+
+        bool is_block_context = false;
+        std::function<UniversalVerifier(const UniversalVerifier&,
+                                        const std::vector<RecoveryBlock>&,
+                                        const std::vector<RecoveryBlock>&)> transform_verifier_block = nullptr;
     };
 }

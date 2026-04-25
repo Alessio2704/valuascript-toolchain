@@ -21,21 +21,6 @@
 
 namespace valuascript::compiler::test
 {
-    struct ValidParserTestCase
-    {
-        std::string test_name;
-        std::string source_code;
-        ProgramSpec expected_ast;
-    };
-
-    struct ErrorParserTestCase
-    {
-        std::string test_name;
-        std::string source_code;
-        std::vector<ExpectedError> expected_errors;
-        std::optional<ProgramSpec> expected_ast = std::nullopt;
-    };
-
     struct ProcessingItem
     {
         InjectableType type;
@@ -43,6 +28,15 @@ namespace valuascript::compiler::test
         UniversalVerifier verifier;
         std::string path_name;
         std::string cumulative_prefix;
+        int depth;
+    };
+
+    struct RecoveryScenario
+    {
+        std::string path_name;
+        std::string full_code;
+        ProgramSpec spec;
+        std::vector<ExpectedError> shifted_errors;
         int depth;
     };
 
@@ -84,7 +78,8 @@ namespace valuascript::compiler::test
 
         static std::vector<ProcessingItem> expand_to_top_level(InjectableType start_type, const std::string& snippet,
                                                                const UniversalVerifier& verifier,
-                                                               const std::string& base_name)
+                                                               const std::string& base_name,
+                                                               bool inject_sentinels = false)
         {
             std::vector<ProcessingItem> queue = {{start_type, snippet, verifier, base_name, "", 0}};
             std::vector<ProcessingItem> top_levels;
@@ -128,17 +123,91 @@ namespace valuascript::compiler::test
 
                     std::string step_name = is_recursive ? "Recurse(" + ctx.name + ")" : ctx.name;
 
-                    queue.push_back({
-                        ctx.output_type,
-                        ctx.prefix + item.code + ctx.suffix,
-                        ctx.transform_verifier(item.verifier),
-                        item.path_name + " -> " + step_name,
-                        ctx.prefix + item.cumulative_prefix,
-                        item.depth + 1
-                    });
+                    if (ctx.is_block_context)
+                    {
+                        std::vector<RecoveryBlock> pre;
+                        std::vector<RecoveryBlock> post;
+                        std::string inner_code = item.code;
+                        std::string inner_prefix = item.cumulative_prefix;
+
+                        if (inject_sentinels)
+                        {
+                            size_t seed = std::hash<std::string>{}(item.path_name + ctx.name);
+                            pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
+                            post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
+
+                            inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
+                            inner_prefix = pre[0].source + "\n  " + inner_prefix;
+                        }
+
+                        queue.push_back({
+                            ctx.output_type,
+                            ctx.prefix + inner_code + ctx.suffix,
+                            ctx.transform_verifier_block(item.verifier, pre, post),
+                            item.path_name + " -> " + step_name,
+                            ctx.prefix + inner_prefix,
+                            item.depth + 1
+                        });
+                    }
+                    else
+                    {
+                        queue.push_back({
+                            ctx.output_type,
+                            ctx.prefix + item.code + ctx.suffix,
+                            ctx.transform_verifier(item.verifier),
+                            item.path_name + " -> " + step_name,
+                            ctx.prefix + item.cumulative_prefix,
+                            item.depth + 1
+                        });
+                    }
                 }
             }
             return top_levels;
+        }
+
+        static std::vector<RecoveryScenario> generate_recovery_scenarios(
+            InjectableType type,
+            const std::string& snippet,
+            const std::vector<ExpectedError>& expected_errors,
+            const UniversalVerifier& verifier,
+            const std::string& label,
+            size_t base_seed)
+        {
+            auto top_levels = expand_to_top_level(type, snippet, verifier, label, true);
+            std::vector<RecoveryScenario> scenarios;
+
+            size_t ctx_index = 0;
+            for (const auto& item : top_levels)
+            {
+                size_t current_seed = base_seed + ctx_index;
+                ctx_index += 2;
+
+                RecoveryBlock pre_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed);
+                RecoveryBlock post_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed + 1);
+
+                std::string middle_part = item.code;
+                while (!middle_part.empty() && middle_part.back() == '\n') middle_part.pop_back();
+
+                std::string full_code = pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source +
+                    "\n";
+                std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
+
+                ProgramSpec full_spec;
+                if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
+                std::visit([&](auto&& ver) { SpecAdder::add(full_spec, ver); }, item.verifier);
+                if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
+
+                auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, expected_errors);
+
+                scenarios.push_back({
+                    item.path_name,
+                    full_code,
+                    std::move(full_spec),
+                    std::move(shifted_errors),
+                    item.depth
+                });
+            }
+            return scenarios;
         }
 
         static void ExpectValidParse(const std::string& code, const ProgramSpec& spec)
@@ -168,7 +237,8 @@ namespace valuascript::compiler::test
         static void ExpectValidUnified(InjectableType type, const std::string& snippet, const Verifier& verifier,
                                        const std::string& context_group_name)
         {
-            auto top_levels = expand_to_top_level(type, snippet, UniversalVerifier(verifier), context_group_name);
+            auto top_levels = expand_to_top_level(type, snippet, UniversalVerifier(verifier), context_group_name,
+                                                  false);
 
             if (top_levels.empty())
             {
@@ -249,46 +319,19 @@ namespace valuascript::compiler::test
                                              const Verifier& verifier,
                                              const std::string& context_group_name)
         {
-            auto top_levels = expand_to_top_level(type, snippet, UniversalVerifier(verifier), context_group_name);
-
-            if (top_levels.empty())
-            {
-                ADD_FAILURE() << "No valid top-level expansions generated for InjectableType: " << static_cast<int>(
-                    type);
-                return;
-            }
-
             auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
             std::string full_test_name = test_info
                                              ? std::string(test_info->test_suite_name()) + "." + test_info->name()
                                              : "fallback_test_name";
             size_t base_seed = std::hash<std::string>{}(full_test_name);
 
-            size_t ctx_index = 0;
-            for (const auto& item : top_levels)
+            auto scenarios = generate_recovery_scenarios(
+                type, snippet, expected_errors, UniversalVerifier(verifier), context_group_name, base_seed);
+
+            for (const auto& sc : scenarios)
             {
-                size_t current_seed = base_seed + ctx_index;
-                ctx_index += 2;
-
-                RecoveryBlock pre_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed);
-                RecoveryBlock post_sentinel = RecoverySentinel::generate_top_level_sentinel(current_seed + 1);
-
-                std::string middle_part = item.code;
-                while (!middle_part.empty() && middle_part.back() == '\n') middle_part.pop_back();
-
-                std::string full_code = pre_sentinel.source + "\n\n" + middle_part + "\n\n" + post_sentinel.source +
-                    "\n";
-                std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
-
-                ProgramSpec full_spec;
-                if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
-                std::visit([&](auto&& ver) { SpecAdder::add(full_spec, ver); }, item.verifier);
-                if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
-
-                auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, expected_errors);
-
-                SCOPED_TRACE("Testing " + context_group_name + " Error Recovery in path: " + item.path_name);
-                ExpectParseErrors(full_code, shifted_errors, full_spec);
+                SCOPED_TRACE("Testing " + context_group_name + " Error Recovery in path: " + sc.path_name);
+                ExpectParseErrors(sc.full_code, sc.shifted_errors, sc.spec);
             }
         }
 

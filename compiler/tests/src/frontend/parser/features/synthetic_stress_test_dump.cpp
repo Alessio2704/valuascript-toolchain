@@ -1,7 +1,7 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/synthetic_generator.h"
+#include "frontend/parser/helpers/dump_writer.h"
 #include <fstream>
-#include <filesystem>
 #include <iostream>
 
 namespace valuascript::compiler::test
@@ -24,16 +24,14 @@ namespace valuascript::compiler::test
             SyntheticGenerator gen(seed);
             auto [code, spec] = gen.generate_program(1000);
 
-            std::filesystem::path file_path = dump_dir / ("program_seed_" + std::to_string(seed) + ".vs");
-            std::ofstream out(file_path);
+            DumpWriter writer("program_seed_" + std::to_string(seed) + ".vs");
 
-            ASSERT_TRUE(out.is_open()) << "Failed to open file for writing: " << file_path;
+            ASSERT_TRUE(writer.out().is_open()) << "Failed to open file for writing: " << writer.path_string();
 
-            out << "// ==========================================\n";
-            out << "// Synthetic Program Dump (Seed: " << seed << ")\n";
-            out << "// ==========================================\n\n";
-            out << code;
-            out.close();
+            writer.out() << "// ==========================================\n";
+            writer.out() << "// Synthetic Program Dump (Seed: " << seed << ")\n";
+            writer.out() << "// ==========================================\n\n";
+            writer.out() << code;
         }
     }
 
