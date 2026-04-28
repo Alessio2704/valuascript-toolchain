@@ -14,20 +14,10 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            while (!cursor_.is_at_end() && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
-            {
-                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                               cursor_.peek(1).type))
-                {
-                    break;
-                }
-                if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                    cursor_.peek().type))
-                {
-                    break;
-                }
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::Comma},
+                .stop_at_statement_boundary_respecting_dangling_op = true
+            });
         }
 
         auto stmt = std::make_unique<ImportStatement>(path.lexeme);
@@ -54,11 +44,9 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
-                {
-                    if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
-                    cursor_.advance();
-                }
+                synchronize_with({
+                    .stop_at_any_newline = true
+                });
             }
         }
 
@@ -88,11 +76,9 @@ namespace valuascript::compiler
                     }
                     catch (const ParseSyncException&)
                     {
-                        while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
-                        {
-                            if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_at_any_newline = true
+                        });
                     }
                 }
             }
@@ -105,11 +91,9 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end() && cursor_.peek().line == cursor_.previous().line)
-                    {
-                        if (is_active_closer(cursor_.peek().type) || is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_at_any_newline = true
+                    });
                 }
             }
 
@@ -141,24 +125,18 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::LeftParen) && !cursor_.check(TokenType::At)
-                        && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
-                    {
-                        TokenType t = cursor_.peek().type;
-                        if (t == TokenType::Identifier || TokenTraits::acts_like_identifier(
-                                cursor_.peek(), cursor_.peek(1).type) ||
-                            t == TokenType::Colon || t == TokenType::Comma || t == TokenType::Assign ||
-                            TokenTraits::is_grouping_closer(t) || TokenTraits::is_grouping_opener(t))
+                    synchronize_with({
+                        .stop_tokens = {TokenType::LeftParen, TokenType::At},
+                        .stop_at_statement_boundary_respecting_dangling_op = true,
+                        .custom_stop_predicate = [](const Token& tok, TokenType next)
                         {
-                            break;
+                            TokenType t = tok.type;
+                            return t == TokenType::Identifier ||
+                                TokenTraits::acts_like_identifier(tok, next) ||
+                                t == TokenType::Colon || t == TokenType::Comma || t == TokenType::Assign ||
+                                TokenTraits::is_grouping_closer(t) || TokenTraits::is_grouping_opener(t);
                         }
-
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        if (is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    });
                 }
 
                 std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
@@ -209,16 +187,23 @@ namespace valuascript::compiler
                     throw;
                 }
 
+                synchronize_with({
+                    .stop_tokens = {TokenType::At},
+                    .stop_at_statement_boundary_respecting_dangling_op = true,
+                    .stop_at_currently_tracked_closers = true,
+                    .skip_nested_groupings_during_recovery = true,
+                    .custom_stop_predicate = [](const Token& tok, TokenType /*next*/)
+                    {
+                        return TokenTraits::is_grouping_closer(tok.type);
+                    }
+                });
+
                 if (cursor_.is_at_end() ||
                     TokenTraits::is_grouping_closer(cursor_.peek().type) ||
-                    TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
+                    (cursor_.peek().type != TokenType::At && TokenTraits::is_statement_start(
+                        cursor_.peek(), cursor_.peek(1).type)))
                 {
                     break;
-                }
-
-                if (cursor_.peek().type != TokenType::At)
-                {
-                    cursor_.advance();
                 }
             }
         }
@@ -237,17 +222,10 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            while (!cursor_.is_at_end() && !cursor_.check(TokenType::LeftBrace) && !TokenTraits::is_statement_start(
-                cursor_.peek(), cursor_.peek(1).type))
-            {
-                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                               cursor_.peek(1).type))
-                    break;
-                if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                    cursor_.peek().type))
-                    break;
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::LeftBrace, TokenType::Comma},
+                .stop_at_statement_boundary_respecting_dangling_op = true
+            });
         }
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
@@ -295,15 +273,10 @@ namespace valuascript::compiler
                 catch (const ParseSyncException&)
                 {
                     field_failed = true;
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)
-                        && !cursor_.check(TokenType::RightBrace))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        if (is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Colon, TokenType::Comma, TokenType::RightBrace},
+                        .stop_at_statement_boundary_respecting_dangling_op = true
+                    });
                 }
 
                 std::unique_ptr<TypeAnnotation> type = nullptr;
@@ -316,15 +289,10 @@ namespace valuascript::compiler
                     }
                     catch (const ParseSyncException&)
                     {
-                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(
-                            TokenType::RightBrace))
-                        {
-                            if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                           cursor_.peek(1).type))
-                                break;
-                            if (is_in_sync_set(cursor_.peek().type)) break;
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_tokens = {TokenType::Comma, TokenType::RightBrace},
+                            .stop_at_statement_boundary_respecting_dangling_op = true
+                        });
                     }
                 }
                 else
@@ -376,17 +344,10 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::LeftBrace) && !
-                TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
-            {
-                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                               cursor_.peek(1).type))
-                    break;
-                if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                    cursor_.peek().type))
-                    break;
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::Colon, TokenType::LeftBrace, TokenType::Comma},
+                .stop_at_statement_boundary_respecting_dangling_op = true
+            });
         }
 
         std::unique_ptr<TypeAnnotation> underlying_type = nullptr;
@@ -399,17 +360,10 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                while (!cursor_.is_at_end() && !cursor_.check(TokenType::LeftBrace) && !TokenTraits::is_statement_start(
-                    cursor_.peek(), cursor_.peek(1).type))
-                {
-                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                   cursor_.peek(1).type))
-                        break;
-                    if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                        cursor_.peek().type))
-                        break;
-                    cursor_.advance();
-                }
+                synchronize_with({
+                    .stop_tokens = {TokenType::LeftBrace, TokenType::Comma},
+                    .stop_at_statement_boundary_respecting_dangling_op = true
+                });
             }
         }
         else if (cursor_.check(TokenType::LeftBrace))
@@ -464,15 +418,10 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Assign) && !cursor_.check(TokenType::Comma)
-                        && !cursor_.check(TokenType::RightBrace))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        if (is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Assign, TokenType::Comma, TokenType::RightBrace},
+                        .stop_at_statement_boundary_respecting_dangling_op = true
+                    });
                 }
 
                 std::unique_ptr<Expression> raw_value = nullptr;
@@ -495,15 +444,10 @@ namespace valuascript::compiler
                     }
                     catch (const ParseSyncException&)
                     {
-                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(
-                            TokenType::RightBrace))
-                        {
-                            if (TokenTraits::is_newline_statement_boundary(
-                                cursor_.previous(), cursor_.peek(), cursor_.peek(1).type))
-                                break;
-                            if (is_in_sync_set(cursor_.peek().type)) break;
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_tokens = {TokenType::Comma, TokenType::RightBrace},
+                            .stop_at_statement_boundary_respecting_dangling_op = true
+                        });
                     }
                 }
                 return EnumCase{std::move(case_modifiers), case_name.lexeme, std::move(raw_value)};
@@ -538,17 +482,10 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            while (!cursor_.is_at_end() && !cursor_.check(TokenType::LeftParen) && !cursor_.check(TokenType::LeftBrace)
-                && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
-            {
-                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                               cursor_.peek(1).type))
-                    break;
-                if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                    cursor_.peek().type))
-                    break;
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma},
+                .stop_at_statement_boundary_respecting_dangling_op = true
+            });
         }
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
@@ -589,16 +526,12 @@ namespace valuascript::compiler
                     catch (const ParseSyncException&)
                     {
                         param_failed = true;
-                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.
-                            check(TokenType::Assign) && !cursor_.check(TokenType::Comma) && !cursor_.check(
-                                TokenType::RightParen))
-                        {
-                            if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                           cursor_.peek(1).type))
-                                break;
-                            if (is_in_sync_set(cursor_.peek().type)) break;
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_tokens = {
+                                TokenType::Colon, TokenType::Assign, TokenType::Comma, TokenType::RightParen
+                            },
+                            .stop_at_statement_boundary_respecting_dangling_op = true
+                        });
                     }
 
                     std::unique_ptr<TypeAnnotation> type = nullptr;
@@ -611,15 +544,10 @@ namespace valuascript::compiler
                         }
                         catch (const ParseSyncException&)
                         {
-                            while (!cursor_.is_at_end() && !cursor_.check(TokenType::Assign) && !cursor_.
-                                check(TokenType::Comma) && !cursor_.check(TokenType::RightParen))
-                            {
-                                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                               cursor_.peek(1).type))
-                                    break;
-                                if (is_in_sync_set(cursor_.peek().type)) break;
-                                cursor_.advance();
-                            }
+                            synchronize_with({
+                                .stop_tokens = {TokenType::Assign, TokenType::Comma, TokenType::RightParen},
+                                .stop_at_statement_boundary_respecting_dangling_op = true
+                            });
                         }
                     }
                     else
@@ -655,15 +583,10 @@ namespace valuascript::compiler
                             }
                             catch (const ParseSyncException&)
                             {
-                                while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(
-                                    TokenType::RightParen))
-                                {
-                                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                        cursor_.peek(1).type))
-                                        break;
-                                    if (is_in_sync_set(cursor_.peek().type)) break;
-                                    cursor_.advance();
-                                }
+                                synchronize_with({
+                                    .stop_tokens = {TokenType::Comma, TokenType::RightParen},
+                                    .stop_at_statement_boundary_respecting_dangling_op = true
+                                });
                             }
                         }
                         seen_default_param = true;
@@ -705,15 +628,10 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                while (!cursor_.is_at_end() && !cursor_.check(TokenType::LeftBrace) && !TokenTraits::is_statement_start(
-                    cursor_.peek(), cursor_.peek(1).type))
-                {
-                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                   cursor_.peek(1).type))
-                        break;
-                    if (is_in_sync_set(cursor_.peek().type)) break;
-                    cursor_.advance();
-                }
+                synchronize_with({
+                    .stop_tokens = {TokenType::LeftBrace},
+                    .stop_at_statement_boundary_respecting_dangling_op = true
+                });
             }
         }
         else if (cursor_.check(TokenType::LeftBrace))
@@ -748,7 +666,13 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                synchronize_block_statement();
+                synchronize_with({
+                    .stop_tokens = {TokenType::RightBrace, TokenType::Return},
+                    .force_stop_at_statement_boundary_ignoring_dangling_op = true,
+                    .stop_at_currently_tracked_closers = false,
+                    .stop_at_currently_tracked_sync_tokens = false,
+                    .skip_nested_groupings_during_recovery = false
+                });
             }
         }
 
@@ -862,17 +786,10 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            while (!cursor_.is_at_end() && !cursor_.check(TokenType::Assign) && !TokenTraits::is_statement_start(
-                cursor_.peek(), cursor_.peek(1).type))
-            {
-                if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                               cursor_.peek(1).type))
-                    break;
-                if (is_active_closer(cursor_.peek().type) || cursor_.check(TokenType::Comma) || is_in_sync_set(
-                    cursor_.peek().type))
-                    break;
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::Assign, TokenType::Comma},
+                .stop_at_statement_boundary_respecting_dangling_op = true
+            });
         }
 
         if (cursor_.check(TokenType::Assign))

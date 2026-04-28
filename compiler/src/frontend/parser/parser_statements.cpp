@@ -182,16 +182,10 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma) &&
-                    !cursor_.check(TokenType::Assign) && !TokenTraits::is_statement_start(
-                        cursor_.peek(), cursor_.peek(1).type))
-                {
-                    if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                   cursor_.peek(1).type))
-                        break;
-                    if (is_in_sync_set(cursor_.peek().type)) break;
-                    cursor_.advance();
-                }
+                synchronize_with({
+                    .stop_tokens = {TokenType::Colon, TokenType::Comma, TokenType::Assign},
+                    .stop_at_statement_boundary_respecting_dangling_op = true
+                });
             }
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
@@ -204,15 +198,10 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Assign)
-                        && !TokenTraits::is_statement_start(cursor_.peek(), cursor_.peek(1).type))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        if (is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Comma, TokenType::Assign},
+                        .stop_at_statement_boundary_respecting_dangling_op = true
+                    });
                 }
             }
 

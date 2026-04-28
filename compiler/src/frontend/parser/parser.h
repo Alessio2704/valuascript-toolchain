@@ -9,6 +9,20 @@
 
 namespace valuascript::compiler
 {
+    struct RecoveryConfig
+    {
+        std::vector<TokenType> stop_tokens = {};
+        bool stop_at_statement_boundary_respecting_dangling_op = false;
+        bool force_stop_at_statement_boundary_ignoring_dangling_op = false;
+        bool stop_at_any_newline = false;
+        bool stop_at_currently_tracked_closers = true;
+        bool stop_at_currently_tracked_sync_tokens = true;
+        bool skip_nested_groupings_during_recovery = true;
+        bool ignore_standalone_modifiers_as_boundaries = false;
+        bool stop_early_if_unbalanced_blocks_detected = false;
+        std::function<bool(const Token& tok, TokenType next)> custom_stop_predicate = nullptr;
+    };
+
     class Parser
     {
     private:
@@ -152,17 +166,11 @@ namespace valuascript::compiler
 
         void recover(const SyncPredicate& stop_condition);
 
-        void synchronize();
-
-        void synchronize_block_statement();
+        void synchronize_with(const RecoveryConfig& config);
 
         void synchronize_to_closer(TokenType closing_token);
 
         void synchronize_and_consume_closer(TokenType expected_closer);
-
-        void synchronize_to_switch_boundary();
-
-        void synchronize_to_conditional_boundary();
 
         std::vector<std::unique_ptr<Expression>> parse_expression_list(
             TokenType closing_token,
@@ -291,22 +299,16 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end())
-                    {
-                        const Token& tok = cursor_.peek();
-                        const TokenType next = cursor_.peek(1).type;
-
-                        if (tok.type == TokenType::Comma || tok.type == closing_token) break;
-
-                        if (tok.type != TokenType::At && TokenTraits::is_newline_statement_boundary(
-                            cursor_.previous(), tok, next))
-                            break;
-                        if (is_at_parent_boundary && is_at_parent_boundary(0)) break;
-
-                        if (is_in_sync_set(tok.type)) break;
-
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Comma, closing_token},
+                        .stop_at_statement_boundary_respecting_dangling_op = true,
+                        .ignore_standalone_modifiers_as_boundaries = true,
+                        .custom_stop_predicate = [&](const Token&, TokenType)
+                        {
+                            if (is_at_parent_boundary && is_at_parent_boundary(0)) return true;
+                            return false;
+                        }
+                    });
 
                     if (cursor_.check(TokenType::Comma))
                     {

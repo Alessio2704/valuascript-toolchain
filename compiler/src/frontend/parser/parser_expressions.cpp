@@ -397,18 +397,11 @@ namespace valuascript::compiler
         catch (const ParseSyncException&)
         {
             first_expr_failed = true;
-
-            int internal_depth = 0;
-            while (!cursor_.is_at_end())
-            {
-                const Token& tok = cursor_.peek();
-                if (internal_depth == 0 && (tok.type == TokenType::Comma || tok.type == TokenType::RightParen)) break;
-                if (TokenTraits::is_grouping_opener(tok.type)) internal_depth++;
-                else if (TokenTraits::is_grouping_closer(tok.type)) internal_depth--;
-
-                cursor_.advance();
-                if (internal_depth < 0) break;
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::Comma, TokenType::RightParen},
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false
+            });
         }
 
         if (cursor_.match({TokenType::Comma}))
@@ -541,11 +534,10 @@ namespace valuascript::compiler
                 catch (const ParseSyncException&)
                 {
                     key_failed = true;
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)
-                        && !cursor_.check(TokenType::RightBrace))
-                    {
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Colon, TokenType::Comma, TokenType::RightBrace},
+                        .stop_at_statement_boundary_respecting_dangling_op = false
+                    });
                 }
 
                 bool has_colon = false;
@@ -597,11 +589,10 @@ namespace valuascript::compiler
                     }
                     catch (const ParseSyncException&)
                     {
-                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(
-                            TokenType::RightBrace))
-                        {
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_tokens = {TokenType::Comma, TokenType::RightBrace},
+                            .stop_at_statement_boundary_respecting_dangling_op = false
+                        });
                     }
                 }
 
@@ -638,7 +629,15 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            synchronize_to_conditional_boundary();
+            synchronize_with({
+                .stop_tokens = {
+                    TokenType::Then, TokenType::Else,
+                    TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+                },
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false,
+                .stop_early_if_unbalanced_blocks_detected = true
+            });
         }
 
         std::unique_ptr<Expression> then_branch = nullptr;
@@ -653,7 +652,15 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            synchronize_to_conditional_boundary();
+            synchronize_with({
+                .stop_tokens = {
+                    TokenType::Then, TokenType::Else,
+                    TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+                },
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false,
+                .stop_early_if_unbalanced_blocks_detected = true
+            });
         }
 
         std::unique_ptr<Expression> else_branch = nullptr;
@@ -718,14 +725,12 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)
-                        && !cursor_.check(TokenType::RightBrace))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace},
+                        .stop_at_statement_boundary_respecting_dangling_op = true,
+                        .stop_at_currently_tracked_closers = false,
+                        .stop_at_currently_tracked_sync_tokens = false
+                    });
                 }
                 identifiers.push_back(id_token.lexeme);
             }
@@ -735,14 +740,12 @@ namespace valuascript::compiler
                 if (!cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow) && !cursor_.check(
                     TokenType::RightBrace))
                 {
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.check(TokenType::Arrow)
-                        && !cursor_.check(TokenType::RightBrace))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace},
+                        .stop_at_statement_boundary_respecting_dangling_op = true,
+                        .stop_at_currently_tracked_closers = false,
+                        .stop_at_currently_tracked_sync_tokens = false
+                    });
                 }
             }
 
@@ -763,7 +766,12 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            synchronize_to_switch_boundary();
+            synchronize_with({
+                .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false,
+                .stop_early_if_unbalanced_blocks_detected = true
+            });
         }
 
         return {std::move(identifiers), std::move(result)};
@@ -778,7 +786,12 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            synchronize_to_switch_boundary();
+            synchronize_with({
+                .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false,
+                .stop_early_if_unbalanced_blocks_detected = true
+            });
         }
         return result;
     }
@@ -826,15 +839,11 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            int depth = 0;
-            while (!cursor_.is_at_end())
-            {
-                TokenType type = cursor_.peek().type;
-                if (depth == 0 && (type == TokenType::RightParen || type == TokenType::LeftBrace)) break;
-                if (TokenTraits::is_grouping_opener(type)) depth++;
-                else if (TokenTraits::is_grouping_closer(type)) depth--;
-                cursor_.advance();
-            }
+            synchronize_with({
+                .stop_tokens = {TokenType::RightParen, TokenType::LeftBrace},
+                .stop_at_currently_tracked_closers = false,
+                .stop_at_currently_tracked_sync_tokens = false
+            });
 
             if (cursor_.check(TokenType::RightParen))
             {
@@ -899,7 +908,12 @@ namespace valuascript::compiler
             }
             catch (const ParseSyncException&)
             {
-                synchronize_to_switch_boundary();
+                synchronize_with({
+                    .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+                    .stop_at_currently_tracked_closers = false,
+                    .stop_at_currently_tracked_sync_tokens = false,
+                    .stop_early_if_unbalanced_blocks_detected = true
+                });
             }
         }
     }

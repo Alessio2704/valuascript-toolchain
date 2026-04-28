@@ -91,15 +91,10 @@ namespace valuascript::compiler
                 catch (const ParseSyncException&)
                 {
                     key_failed = true;
-                    while (!cursor_.is_at_end() && !cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma)
-                        && !cursor_.check(closing_token))
-                    {
-                        if (TokenTraits::is_newline_statement_boundary(cursor_.previous(), cursor_.peek(),
-                                                                       cursor_.peek(1).type))
-                            break;
-                        if (is_in_sync_set(cursor_.peek().type)) break;
-                        cursor_.advance();
-                    }
+                    synchronize_with({
+                        .stop_tokens = {TokenType::Colon, TokenType::Comma, closing_token},
+                        .stop_at_statement_boundary_respecting_dangling_op = true
+                    });
                 }
 
                 bool has_colon = false;
@@ -146,15 +141,10 @@ namespace valuascript::compiler
                     }
                     catch (const ParseSyncException&)
                     {
-                        while (!cursor_.is_at_end() && !cursor_.check(TokenType::Comma) && !cursor_.
-                            check(closing_token))
-                        {
-                            if (TokenTraits::is_newline_statement_boundary(
-                                cursor_.previous(), cursor_.peek(), cursor_.peek(1).type))
-                                break;
-                            if (is_in_sync_set(cursor_.peek().type)) break;
-                            cursor_.advance();
-                        }
+                        synchronize_with({
+                            .stop_tokens = {TokenType::Comma, closing_token},
+                            .stop_at_statement_boundary_respecting_dangling_op = true
+                        });
                     }
                 }
 
