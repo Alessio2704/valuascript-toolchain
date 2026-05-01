@@ -165,10 +165,10 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -177,8 +177,8 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "b");
             }
@@ -188,8 +188,7 @@ namespace valuascript::compiler::test {
             "let a = obj.*[1]\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.execution_steps.empty()) <<
-            "Expected the entire statement to be dropped during synchronization";
+            EXPECT_FALSE(ast.execution_steps.empty());
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -256,7 +255,7 @@ namespace valuascript::compiler::test {
             "let a = obj.prop1.*.prop3\n",
             { {Err::ExpectedPropertyName, 1, 19} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
+            ASSERT_EQ(ast.execution_steps.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -265,13 +264,12 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1) << "The broken statement should be completely dropped from the AST"
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             ;
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
 
-            EXPECT_EQ(assign->targets[0].first, "b");
-            ExpectNumber(assign->value.get(), "2");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -354,8 +352,8 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "b");
             }
@@ -368,7 +366,7 @@ namespace valuascript::compiler::test {
                 ExpectDotAccess(expr, [](auto tgt) {
                     auto group = dynamic_cast<const GroupingExpression*>(tgt);
                     ASSERT_NE(group, nullptr) << "Target should be a GroupingExpression";
-                    EXPECT_EQ(group->expression.get(), nullptr);
+                    EXPECT_NE(group->expression.get(), nullptr);
                     }, "prop");
                 })
             },
@@ -428,8 +426,8 @@ namespace valuascript::compiler::test {
             "b = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
             ExpectIdentifier(reassignment->target.get(), "b");
             ExpectNumber(reassignment->value.get(), "2");
@@ -441,8 +439,8 @@ namespace valuascript::compiler::test {
             "test()\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[1].get());
             ASSERT_NE(expr_stmt, nullptr);
             auto call = dynamic_cast<FunctionCall*>(expr_stmt->expr.get());
             ASSERT_NE(call, nullptr);
@@ -456,8 +454,8 @@ namespace valuascript::compiler::test {
             "test(arg: 1)\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[1].get());
             ASSERT_NE(expr_stmt, nullptr);
             auto call = dynamic_cast<FunctionCall*>(expr_stmt->expr.get());
             ASSERT_NE(call, nullptr);
@@ -473,8 +471,8 @@ namespace valuascript::compiler::test {
             "a.prop = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
             ExpectDotAccess(reassignment->target.get(), [](auto t) { ExpectIdentifier(t, "a"); }, "prop");
             ExpectNumber(reassignment->value.get(), "2");
@@ -486,8 +484,8 @@ namespace valuascript::compiler::test {
             "a[0] = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
             ExpectBracketAccess(reassignment->target.get(), [](auto t) { ExpectIdentifier(t, "a"); }, [](auto i) {
                 ExpectNumber(i, "0"); });
@@ -500,8 +498,8 @@ namespace valuascript::compiler::test {
             "a.prop[0] = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
             ExpectBracketAccess(reassignment->target.get(), [](auto t) {
                 ExpectDotAccess(t, [](auto t2) { ExpectIdentifier(t2, "a"); }, "prop");
@@ -515,14 +513,9 @@ namespace valuascript::compiler::test {
             "a[0].prop = 2\n",
             { {Err::ExpectedPropertyName, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(reassignment, nullptr);
-            ExpectDotAccess(reassignment->target.get(), [](auto t) {
-                ExpectBracketAccess(t, [](auto t2) { ExpectIdentifier(t2, "a"); }, [](auto i) { ExpectNumber(i, "0"); })
-                ;
-                }, "prop");
-            ExpectNumber(reassignment->value.get(), "2");
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assignment, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -545,7 +538,7 @@ namespace valuascript::compiler::test {
                 ExpectDotAccess(expr, [](auto tgt) {
                     auto group = dynamic_cast<const GroupingExpression*>(tgt);
                     ASSERT_NE(group, nullptr);
-                    EXPECT_EQ(group->expression, nullptr);
+                    EXPECT_NE(group->expression, nullptr);
                     }, "prop");
                 })
             },

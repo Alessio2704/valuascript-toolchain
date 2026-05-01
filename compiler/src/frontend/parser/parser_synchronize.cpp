@@ -50,6 +50,15 @@ namespace valuascript::compiler
             const Token& tok = cursor_.peek();
             const TokenType next = cursor_.peek(1).type;
 
+            if (type == TokenType::Return && is_active_closer(TokenType::RightBrace))
+            {
+                if (config.force_stop_at_statement_boundary_ignoring_dangling_op ||
+                    config.stop_at_statement_boundary_respecting_dangling_op)
+                {
+                    return true;
+                }
+            }
+
             if (config.force_stop_at_statement_boundary_ignoring_dangling_op)
             {
                 if (TokenTraits::is_statement_start(tok, next) ||

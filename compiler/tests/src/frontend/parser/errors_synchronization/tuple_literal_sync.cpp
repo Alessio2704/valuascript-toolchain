@@ -128,14 +128,14 @@ namespace valuascript::compiler::test {
             "let a = (1 + *, 2)\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 14} },
-            ExpectTuple(1),
+            ExpectTuple(2),
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_second_value_is_broken_expression",
             "let a = (1, 2 + *)\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 17} },
-            ExpectTuple(1)
+            ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_single_element_with_comma",
@@ -243,7 +243,7 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 1, 13},
             {Err::InvalidExpression, 1, 17}
             },
-            ExpectTuple(2)
+            ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_eof_after_comma",

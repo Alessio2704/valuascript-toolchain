@@ -131,9 +131,12 @@ namespace valuascript::compiler
                         cursor_.report_error_no_panic(
                             span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
                     }
-                    auto expr_stmt = parse_expression_statement();
-                    if (program) program->execution_steps.push_back(std::move(expr_stmt));
-                    else block.push_back(std::move(expr_stmt));
+
+                    if (auto expr_stmt = parse_expression_statement())
+                    {
+                        if (program) program->execution_steps.push_back(std::move(expr_stmt));
+                        else block.push_back(std::move(expr_stmt));
+                    }
                     break;
                 }
             }
@@ -291,7 +294,11 @@ namespace valuascript::compiler
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
-                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment);
+                if (is_expression_complete(expr.get()))
+                {
+                    cursor_.report_error(cursor_.previous(),
+                                         ValuascriptErrorCode::InvalidLeftSideExpressionInReassignment);
+                }
             }
 
             std::unique_ptr<Expression> value = nullptr;
@@ -320,7 +327,12 @@ namespace valuascript::compiler
 
         if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
         {
-            cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidStandaloneStatement);
+            if (is_expression_complete(expr.get()))
+            {
+                cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::InvalidStandaloneStatement);
+            }
+
+            return nullptr;
         }
 
         verify_statement_end();
@@ -338,7 +350,20 @@ namespace valuascript::compiler
 
         do
         {
-            return_values.push_back(parse_expression());
+            try
+            {
+                return_values.push_back(parse_expression());
+            }
+            catch (const ParseSyncException&)
+            {
+                return_values.push_back(nullptr);
+
+                synchronize_with({
+                    .stop_tokens = {TokenType::Comma},
+                    .stop_at_statement_boundary_respecting_dangling_op = true,
+                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
+                });
+            }
         }
         while (cursor_.match({TokenType::Comma}));
 

@@ -230,4 +230,103 @@ namespace valuascript::compiler
             offset++;
         }
     }
+
+    bool Parser::is_expression_complete(const Expression* expr)
+    {
+        if (!expr) return false;
+
+        if (auto* b = dynamic_cast<const BinaryExpression*>(expr))
+        {
+            return is_expression_complete(b->left.get()) &&
+                is_expression_complete(b->right.get());
+        }
+
+        if (auto* u = dynamic_cast<const UnaryExpression*>(expr))
+        {
+            return is_expression_complete(u->right.get());
+        }
+
+        if (auto* g = dynamic_cast<const GroupingExpression*>(expr))
+        {
+            return is_expression_complete(g->expression.get());
+        }
+
+        if (auto* c = dynamic_cast<const ConditionalExpression*>(expr))
+        {
+            return is_expression_complete(c->condition.get()) &&
+                is_expression_complete(c->then_branch.get()) &&
+                is_expression_complete(c->else_branch.get());
+        }
+
+        if (auto* f = dynamic_cast<const FunctionCall*>(expr))
+        {
+            if (!is_expression_complete(f->target.get())) return false;
+            for (const auto& [name, val] : f->arguments)
+            {
+                if (!is_expression_complete(val.get())) return false;
+            }
+            return true;
+        }
+
+        if (auto* d = dynamic_cast<const DictLiteral*>(expr))
+        {
+            for (const auto& item : d->elements)
+            {
+                if (!is_expression_complete(item.value.get())) return false;
+            }
+            return true;
+        }
+
+        if (auto* t = dynamic_cast<const TensorLiteral*>(expr))
+        {
+            for (const auto& elem : t->elements)
+            {
+                if (!is_expression_complete(elem.get())) return false;
+            }
+            return true;
+        }
+
+        if (auto* tup = dynamic_cast<const TupleLiteral*>(expr))
+        {
+            for (const auto& elem : tup->elements)
+            {
+                if (!is_expression_complete(elem.get())) return false;
+            }
+            return true;
+        }
+
+        if (auto* br = dynamic_cast<const BracketAccess*>(expr))
+        {
+            return is_expression_complete(br->target.get()) &&
+                is_expression_complete(br->index.get());
+        }
+
+        if (auto* dot = dynamic_cast<const DotAccess*>(expr))
+        {
+            return is_expression_complete(dot->target.get());
+        }
+
+        if (auto* sw = dynamic_cast<const SwitchExpression*>(expr))
+        {
+            if (!is_expression_complete(sw->target.get())) return false;
+            for (const auto& [ids, result] : sw->cases)
+            {
+                if (!is_expression_complete(result.get())) return false;
+            }
+            if (sw->default_case && !is_expression_complete(sw->default_case.get())) return false;
+            return true;
+        }
+
+        if (dynamic_cast<const NumberLiteral*>(expr) ||
+            dynamic_cast<const PercentageLiteral*>(expr) ||
+            dynamic_cast<const StringLiteral*>(expr) ||
+            dynamic_cast<const BooleanLiteral*>(expr) ||
+            dynamic_cast<const IdentifierAccess*>(expr) ||
+            dynamic_cast<const SelfExpression*>(expr))
+        {
+            return true;
+        }
+
+        return true;
+    }
 }

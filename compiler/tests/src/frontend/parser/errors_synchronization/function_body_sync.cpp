@@ -1,22 +1,27 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        const FunctionDefinition *ExpectRecoveredFunction(const Program &ast, const std::string &expected_name) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        const FunctionDefinition* ExpectRecoveredFunction(const Program& ast, const std::string& expected_name)
+        {
             EXPECT_EQ(ast.execution_steps.size(), 1) << "Expected 'let a = 1' to survive at the top level.";
 
             if (ast.function_definitions.empty()) return nullptr;
 
             auto it = std::find_if(ast.function_definitions.begin(), ast.function_definitions.end(),
-                                   [&](const auto &f) { return f->name == expected_name; });
+                                   [&](const auto& f) { return f->name == expected_name; });
 
             if (it == ast.function_definitions.end()) return nullptr;
             return it->get();
         }
 
-        auto ExpectFunctionBodySize(std::string name, size_t expected_body_statements) {
-            return [name = std::move(name), expected_body_statements](const Program &ast) {
+        auto ExpectFunctionBodySize(std::string name, size_t expected_body_statements)
+        {
+            return [name = std::move(name), expected_body_statements](const Program& ast)
+            {
                 auto f = ExpectRecoveredFunction(ast, name);
                 ASSERT_NE(f, nullptr) << "Function not found!";
                 EXPECT_EQ(f->body.size(), expected_body_statements) << "Function body statement count mismatch!";
@@ -24,10 +29,12 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class FunctionBodyParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class FunctionBodyParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(FunctionBodyParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(FunctionBodyParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -43,7 +50,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {{Err::InvalidExpression, 2, 17}},
-            ExpectFunctionBodySize("test", 1)
+            ExpectFunctionBodySize("test", 2)
             },
             ParserErrorsSynchronizationTestCase{
             "broken_statement_right_before_closing_brace",
@@ -52,7 +59,7 @@ namespace valuascript::compiler::test {
             "}\n"
             "let a = 1\n",
             {{Err::InvalidExpression, 2, 16}},
-            ExpectFunctionBodySize("test", 0)
+            ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
             "missing_closing_brace_escapes_to_top_level",
@@ -144,7 +151,7 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "multiple_broken_statements_in_body",
+            "multiple_broken_statements_in_body_1",
             "func test() -> int {\n"
             "    let x = \n"
             "    let y = 1 + *\n"
@@ -154,9 +161,52 @@ namespace valuascript::compiler::test {
             {
             {Err::MissingValueAfterEquals, 2, 12},
             {Err::InvalidExpression, 3, 17},
-            {Err::InvalidExpression, 4, 5}
+            {Err::InvalidExpression, 4, 5},
             },
-            ExpectFunctionBodySize("test", 1)
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->body.size(), 3);
+
+            auto a_1 = dynamic_cast<Assignment*>(f->body[0].get());
+            ASSERT_NE(a_1, nullptr);
+            auto a_2 = dynamic_cast<Assignment*>(f->body[1].get());
+            ASSERT_NE(a_2, nullptr);
+
+            auto ret = dynamic_cast<ReturnStatement*>(f->body.back().get());
+            ASSERT_NE(ret, nullptr);
+            ASSERT_EQ(ret->values.size(), 1);
+            ASSERT_EQ(ret->values.front().get(), nullptr);
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "multiple_broken_statements_in_body_2",
+            "func test() -> int {\n"
+            "    let x = \n"
+            "    let y = 1 + *\n"
+            "    return .\n"
+            "}\n"
+            "let a = 1\n",
+            {
+            {Err::MissingValueAfterEquals, 2, 12},
+            {Err::InvalidExpression, 3, 17},
+            {Err::InvalidExpression, 4, 12},
+            },
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->body.size(), 3);
+
+            auto a_1 = dynamic_cast<Assignment*>(f->body[0].get());
+            ASSERT_NE(a_1, nullptr);
+            auto a_2 = dynamic_cast<Assignment*>(f->body[1].get());
+            ASSERT_NE(a_2, nullptr);
+
+            auto ret = dynamic_cast<ReturnStatement*>(f->body.back().get());
+            ASSERT_NE(ret, nullptr);
+            ASSERT_EQ(ret->values.size(), 1);
+            ASSERT_EQ(ret->values.front().get(), nullptr);
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "illegal_nested_func",
@@ -279,7 +329,7 @@ namespace valuascript::compiler::test {
             {
             {Err::InvalidExpression, 2, 15},
             },
-            ExpectFunctionBodySize("test", 1)
+            ExpectFunctionBodySize("test", 2)
             },
             ParserErrorsSynchronizationTestCase{
             "multi_reassignment_not_supported_aborts_statement",
@@ -437,7 +487,7 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "interleaved_valid_and_invalid_statements",
+            "interleaved_valid_and_invalid_statements_1",
             "func test() -> int {\n"
             "    let a = 1\n"
             "    1 + * \n"
@@ -448,6 +498,45 @@ namespace valuascript::compiler::test {
             "let d = 1\n",
             {
             {Err::InvalidExpression, 3, 9},
+            {Err::InvalidExpression, 5, 12}
+            },
+            [](const Program &ast) {
+            auto f = ExpectRecoveredFunction(ast, "test");
+            ASSERT_NE(f, nullptr);
+            ASSERT_EQ(f->body.size(), 4);
+
+            auto assign1 = dynamic_cast<Assignment*>(f->body[0].get());
+            auto assign2 = dynamic_cast<Assignment*>(f->body[1].get());
+            auto func_call_expr = dynamic_cast<ExpressionStatement*>(f->body[2].get());
+            auto assign3 = dynamic_cast<Assignment*>(f->body[3].get());
+
+            ASSERT_NE(assign1, nullptr);
+            EXPECT_EQ(assign1->targets[0].first, "a");
+            ASSERT_NE(assign2, nullptr);
+            EXPECT_EQ(assign2->targets[0].first, "b");
+            ASSERT_NE(func_call_expr, nullptr);
+            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
+            ASSERT_NE(func_call, nullptr);
+            EXPECT_EQ(func_call->arguments.size(), 1);
+            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+            ASSERT_NE(func_call_id, nullptr);
+            EXPECT_EQ(func_call_id->name, "foo");
+            ASSERT_NE(assign3, nullptr);
+            EXPECT_EQ(assign3->targets[0].first, "c");
+            }
+            },
+            ParserErrorsSynchronizationTestCase{
+            "interleaved_valid_and_invalid_statements_2",
+            "func test() -> int {\n"
+            "    let a = 1\n"
+            "    1 + 1 \n"
+            "    let b = 2\n"
+            "    foo(x: )\n"
+            "    let c = 3\n"
+            "}\n"
+            "let d = 1\n",
+            {
+            {Err::InvalidStandaloneStatement, 3, 9},
             {Err::InvalidExpression, 5, 12}
             },
             [](const Program &ast) {

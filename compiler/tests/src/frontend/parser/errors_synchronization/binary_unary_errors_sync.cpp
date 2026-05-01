@@ -2,27 +2,32 @@
 #include "parser_errors_synchronization_base.h"
 #include "frontend/parser/ast.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        void ExpectIdentifier(const Expression *expr, const std::string &name) {
-            auto id = dynamic_cast<const IdentifierAccess *>(expr);
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        void ExpectIdentifier(const Expression* expr, const std::string& name)
+        {
+            auto id = dynamic_cast<const IdentifierAccess*>(expr);
             ASSERT_NE(id, nullptr) << "Expected IdentifierAccess, but got " << (
-                                      expr ? typeid(*expr).name() : "nullptr");
+                expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(id->name, name);
         }
 
-        void ExpectNumber(const Expression *expr, const std::string &value) {
-            auto num = dynamic_cast<const NumberLiteral *>(expr);
+        void ExpectNumber(const Expression* expr, const std::string& value)
+        {
+            auto num = dynamic_cast<const NumberLiteral*>(expr);
             ASSERT_NE(num, nullptr) << "Expected NumberLiteral, but got " << (expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(num->value, value);
         }
 
-        void ExpectBinary(const Expression *expr, TokenType expected_op,
-                          const std::function<void(const Expression *)> &left_verifier,
-                          const std::function<void(const Expression *)> &right_verifier) {
-            auto bin = dynamic_cast<const BinaryExpression *>(expr);
+        void ExpectBinary(const Expression* expr, TokenType expected_op,
+                          const std::function<void(const Expression*)>& left_verifier,
+                          const std::function<void(const Expression*)>& right_verifier)
+        {
+            auto bin = dynamic_cast<const BinaryExpression*>(expr);
             ASSERT_NE(bin, nullptr) << "Expected BinaryExpression, but got " << (
-                                       expr ? typeid(*expr).name() : "nullptr");
+                expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(bin->op, expected_op);
 
             if (left_verifier) left_verifier(bin->left.get());
@@ -34,33 +39,38 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(bin->right, nullptr);
         }
 
-        void ExpectGrouping(const Expression *expr, const std::function<void(const Expression *)> &inner_verifier) {
-            auto grp = dynamic_cast<const GroupingExpression *>(expr);
+        void ExpectGrouping(const Expression* expr, const std::function<void(const Expression*)>& inner_verifier)
+        {
+            auto grp = dynamic_cast<const GroupingExpression*>(expr);
             ASSERT_NE(grp, nullptr) << "Expected GroupingExpression, but got " << (expr
-                                       ? typeid(*expr).name()
-                                       : "nullptr");
+                    ? typeid(*expr).name()
+                    : "nullptr");
 
             if (inner_verifier) inner_verifier(grp->expression.get());
             else
                 EXPECT_EQ(grp->expression, nullptr);
         }
 
-        auto VerifyAssignmentValue(const std::function<void(const Expression *)> &value_verifier,
+        auto VerifyAssignmentValue(const std::function<void(const Expression*)>& value_verifier,
                                    size_t expected_steps = 1,
-                                   size_t step_index = 0) {
-            return [=](const Program &ast) {
+                                   size_t step_index = 0)
+        {
+            return [=](const Program& ast)
+            {
                 ASSERT_EQ(ast.execution_steps.size(), expected_steps) << "Execution step count mismatch";
-                auto assign = dynamic_cast<Assignment *>(ast.execution_steps[step_index].get());
+                auto assign = dynamic_cast<Assignment*>(ast.execution_steps[step_index].get());
                 ASSERT_NE(assign, nullptr) << "Expected step " << step_index << " to be an Assignment";
                 value_verifier(assign->value.get());
             };
         }
     }
 
-    class BinaryAndUnaryErrorsParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class BinaryAndUnaryErrorsParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(BinaryAndUnaryErrorsParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(BinaryAndUnaryErrorsParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -73,7 +83,7 @@ namespace valuascript::compiler::test {
             "let a = 1 +",
             { {Err::InvalidExpression, 1, 12} },
             [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 0) << "Statement should be dropped";
+            EXPECT_EQ(ast.execution_steps.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -82,10 +92,10 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 11} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -101,15 +111,20 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "binary_invalid_right",
+            "binary_invalid_right_1",
             "let a = 1 + * 2\n"
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
+            auto bin = dynamic_cast<BinaryExpression*>(assign->value.get());
+            ASSERT_NE(bin, nullptr);
+            ASSERT_EQ(bin->op, TokenType::Plus);
+            ASSERT_NE(bin->left, nullptr);
+            ASSERT_EQ(bin->right, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -118,10 +133,14 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 9} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
+
+            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            ASSERT_NE(assign_2, nullptr);
+            EXPECT_EQ(assign_2->targets[0].first, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -130,7 +149,7 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 11} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -138,7 +157,7 @@ namespace valuascript::compiler::test {
             "let a = - *\n",
             { {Err::InvalidExpression, 1, 11} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
+            ASSERT_EQ(ast.execution_steps.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -156,8 +175,8 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto tensor = dynamic_cast<const TensorLiteral*>(expr);
                 ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 1);
-                ExpectNumber(tensor->elements[0].get(), "2");
+                ASSERT_EQ(tensor->elements.size(), 2);
+                ExpectNumber(tensor->elements[1].get(), "2");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -216,7 +235,7 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](const Expression *inner) {
                     ASSERT_NE(inner, nullptr);
-                });
+                    });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -224,7 +243,10 @@ namespace valuascript::compiler::test {
             "let a = (-)\n",
             { {Err::InvalidExpression, 1, 11} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, nullptr);
+                ExpectGrouping(expr, [](auto e)
+                {
+                    EXPECT_NE(e, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -244,10 +266,10 @@ namespace valuascript::compiler::test {
             "let b = 1\n",
             { {Err::InvalidExpression, 1, 15} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -256,10 +278,10 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -268,10 +290,10 @@ namespace valuascript::compiler::test {
             "let b = 2\n",
             { {Err::InvalidExpression, 1, 9} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
+            ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].first, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -279,7 +301,10 @@ namespace valuascript::compiler::test {
             "let a = (1 + )\n",
             { {Err::InvalidExpression, 1, 14} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, nullptr);
+                ExpectGrouping(expr, [](auto e)
+                {
+                    EXPECT_NE(e, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -287,7 +312,7 @@ namespace valuascript::compiler::test {
             "let a = 2 ^ ^ 3\n",
             { {Err::InvalidExpression, 1, 13} },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
+            ASSERT_EQ(ast.execution_steps.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -310,8 +335,8 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto tensor = dynamic_cast<const TensorLiteral*>(expr);
                 ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 1);
-                ExpectBinary(tensor->elements[0].get(), TokenType::Minus,
+                ASSERT_EQ(tensor->elements.size(), 2);
+                ExpectBinary(tensor->elements[1].get(), TokenType::Minus,
                     [](auto left) { ExpectNumber(left, "3"); },
                     [](auto right) { ExpectNumber(right, "4"); });
                 })
@@ -323,11 +348,11 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 auto tuple = dynamic_cast<const TupleLiteral*>(expr);
                 ASSERT_NE(tuple, nullptr);
-                ASSERT_EQ(tuple->elements.size(), 2);
+                ASSERT_EQ(tuple->elements.size(), 3);
                 ExpectBinary(tuple->elements[0].get(), TokenType::Plus,
                     [](auto left) { ExpectNumber(left, "1"); },
                     [](auto right) { ExpectNumber(right, "2"); });
-                ExpectBinary(tuple->elements[1].get(), TokenType::Minus,
+                ExpectBinary(tuple->elements[2].get(), TokenType::Minus,
                     [](auto left) { ExpectNumber(left, "4"); },
                     [](auto right) { ExpectNumber(right, "1"); });
                 })
@@ -341,7 +366,7 @@ namespace valuascript::compiler::test {
                 ASSERT_NE(dict, nullptr);
                 ASSERT_EQ(dict->elements.size(), 2);
                 EXPECT_EQ(dict->elements[0].key, "key1");
-                EXPECT_EQ(dict->elements[0].value.get(), nullptr);
+                EXPECT_NE(dict->elements[0].value.get(), nullptr);
                 EXPECT_EQ(dict->elements[1].key, "key2");
                 ExpectNumber(dict->elements[1].value.get(), "2");
                 })
@@ -364,7 +389,10 @@ namespace valuascript::compiler::test {
             "let a = (+)\n",
             { {Err::InvalidExpression, 1, 11} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, nullptr);
+                ExpectGrouping(expr, [](auto e)
+                {
+                    EXPECT_NE(e, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -373,7 +401,10 @@ namespace valuascript::compiler::test {
             { {Err::InvalidExpression, 1, 15} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](auto inner1) {
-                    ExpectGrouping(inner1, nullptr);
+                    ExpectGrouping(inner1, [](auto e)
+                    {
+                        EXPECT_NE(e, nullptr);
+                    });
                     });
                 })
             },
@@ -385,7 +416,10 @@ namespace valuascript::compiler::test {
                 auto unary = dynamic_cast<const UnaryExpression*>(expr);
                 ASSERT_NE(unary, nullptr);
                 EXPECT_EQ(unary->op, TokenType::Not);
-                ExpectGrouping(unary->right.get(), nullptr);
+                ExpectGrouping(unary->right.get(), [](auto e)
+                {
+                    EXPECT_NE(e, nullptr);
+                });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -573,7 +607,7 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](const Expression *inner) {
                     ASSERT_NE(inner, nullptr);
-                });
+                    });
                 })
             },
             ParserErrorsSynchronizationTestCase{

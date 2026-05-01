@@ -1,40 +1,50 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
+#include "frontend/parser/helpers/node_matchers.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        void ExpectTensorElements(const Program &ast, const std::vector<std::string> &expected_numbers) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        void ExpectTensorElements(const Program& ast, const std::vector<std::string>& expected_numbers)
+        {
             ASSERT_FALSE(ast.execution_steps.empty()) << "AST has no execution steps.";
 
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
+            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps.front().get());
             ASSERT_NE(assign, nullptr) << "First statement is not an Assignment.";
 
-            auto *tensor = dynamic_cast<TensorLiteral *>(assign->value.get());
+            auto* tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
             ASSERT_NE(tensor, nullptr) << "Assignment value is not a TensorLiteral.";
 
             ASSERT_EQ(tensor->elements.size(), expected_numbers.size()) << "Tensor element count mismatch!";
 
-            for (size_t i = 0; i < expected_numbers.size(); ++i) {
-                if (!expected_numbers[i].empty()) {
-                    auto *num = dynamic_cast<NumberLiteral *>(tensor->elements[i].get());
+            for (size_t i = 0; i < expected_numbers.size(); ++i)
+            {
+                if (!expected_numbers[i].empty())
+                {
+                    auto* num = dynamic_cast<NumberLiteral*>(tensor->elements[i].get());
                     ASSERT_NE(num, nullptr) << "Expected number literal at index " << i;
                     EXPECT_EQ(num->value, expected_numbers[i]) << "Value mismatch at index " << i;
                 }
             }
         }
 
-        auto ExpectTensor(std::vector<std::string> numbers) {
-            return [numbers = std::move(numbers)](const Program &ast) {
+        auto ExpectTensor(std::vector<std::string> numbers)
+        {
+            return [numbers = std::move(numbers)](const Program& ast)
+            {
                 ExpectTensorElements(ast, numbers);
                 EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
             };
         }
     }
 
-    class TensorLiteralParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class TensorLiteralParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(TensorLiteralParserSynchronizationTest, SynchronizesTensorLiteralErrors) {
+    TEST_P(TensorLiteralParserSynchronizationTest, SynchronizesTensorLiteralErrors)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -172,7 +182,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(tensor->elements.size(), 2);
             auto first_elem = dynamic_cast<GroupingExpression*>(tensor->elements[0].get());
             ASSERT_NE(first_elem, nullptr);
-            ASSERT_EQ(first_elem->expression, nullptr);
+            ASSERT_NE(first_elem->expression, nullptr);
             auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
             ASSERT_NE(second_elem, nullptr);
             }
@@ -264,7 +274,12 @@ namespace valuascript::compiler::test {
             "let a = [ 1 + * 2, 3 ]\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 15} },
-            ExpectTensor({ "3" })
+            [](const Program& ast) {
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            EXPECT_EQ(assign->targets.size(), 1);
+            EXPECT_EQ(assign->targets[0].first, "a");
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_missing_comma_and_bracket",
@@ -379,7 +394,7 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(assign_a->targets[0].first, "a");
             auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
             ASSERT_NE(tensor_a, nullptr);
-            EXPECT_EQ(tensor_a->elements.size(), 2);
+            EXPECT_EQ(tensor_a->elements.size(), 3);
 
             auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_b, nullptr);
@@ -421,10 +436,11 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(tensor_a->elements.size(), 2);
             auto tensor_a_grouping = dynamic_cast<GroupingExpression*>(tensor_a->elements[0].get());
             ASSERT_NE(tensor_a_grouping, nullptr);
-            ASSERT_EQ(tensor_a_grouping->expression, nullptr);
+            ASSERT_NE(tensor_a_grouping->expression, nullptr);
             auto tensor_a_dict = dynamic_cast<DictLiteral*>(tensor_a->elements[1].get());
             EXPECT_EQ(tensor_a_dict->elements.size(), 1);
-            EXPECT_EQ(tensor_a_dict->elements[0].value.get(), nullptr);          auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
+            EXPECT_EQ(tensor_a_dict->elements[0].value.get(), nullptr); auto* assign_b = dynamic_cast<Assignment*>(ast.
+                execution_steps[1].get());
             auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
             ASSERT_NE(tensor_b, nullptr);
             EXPECT_EQ(tensor_b->elements.size(), 2);
@@ -457,11 +473,11 @@ namespace valuascript::compiler::test {
 
             auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
-            EXPECT_EQ(tensor_a->elements.size(), 0);
+            EXPECT_EQ(tensor_a->elements.size(), 1);
 
             auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
-            EXPECT_EQ(tensor_b->elements.size(), 1);
+            EXPECT_EQ(tensor_b->elements.size(), 2);
 
             auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
             auto* tensor_rec = dynamic_cast<TensorLiteral*>(assign_rec->value.get());

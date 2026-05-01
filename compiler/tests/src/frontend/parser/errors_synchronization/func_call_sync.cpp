@@ -1,87 +1,107 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        const FunctionCall *ExpectRecoveredFunctionCall(const Program &ast, const std::string &expected_target) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        const FunctionCall* ExpectRecoveredFunctionCall(const Program& ast, const std::string& expected_target)
+        {
             EXPECT_EQ(ast.execution_steps.size(), 2) << "Expected 'f(...)' and 'let recovery = 1' to survive.";
             if (ast.execution_steps.empty()) return nullptr;
 
-            auto *expr_stmt = dynamic_cast<ExpressionStatement *>(ast.execution_steps.front().get());
+            auto* expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps.front().get());
             EXPECT_NE(expr_stmt, nullptr) << "First execution step is not an ExpressionStatement";
             if (!expr_stmt) return nullptr;
 
-            auto *func_call = dynamic_cast<FunctionCall *>(expr_stmt->expr.get());
+            auto* func_call = dynamic_cast<FunctionCall*>(expr_stmt->expr.get());
             EXPECT_NE(func_call, nullptr) << "Expression is not a FunctionCall";
             if (!func_call) return nullptr;
 
-            auto *target_id = dynamic_cast<IdentifierAccess *>(func_call->target.get());
+            auto* target_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
             EXPECT_NE(target_id, nullptr) << "Target is not an IdentifierAccess";
-            if (target_id) {
+            if (target_id)
+            {
                 EXPECT_EQ(target_id->name, expected_target);
             }
 
             return func_call;
         }
 
-        struct ExpectedArgument {
+        struct ExpectedArgument
+        {
             std::string name;
             std::optional<std::string> expected_number_value;
-            std::function<void(const Expression *)> verifier;
+            std::function<void(const Expression*)> verifier;
 
-            ExpectedArgument(const char *n) : name(n), expected_number_value(std::nullopt) {
+            ExpectedArgument(const char* n) : name(n), expected_number_value(std::nullopt)
+            {
             }
 
-            ExpectedArgument(const char *n, const char *v) : name(n), expected_number_value(std::string(v)) {
+            ExpectedArgument(const char* n, const char* v) : name(n), expected_number_value(std::string(v))
+            {
             }
 
-            ExpectedArgument(const char *n, const std::optional<std::string> &v) : name(n), expected_number_value(v) {
+            ExpectedArgument(const char* n, const std::optional<std::string>& v) : name(n), expected_number_value(v)
+            {
             }
 
-            ExpectedArgument(const char *n,
-                             std::function<void(const Expression *)> v) : name(n), verifier(std::move(v)) {
+            ExpectedArgument(const char* n,
+                             std::function<void(const Expression*)> v) : name(n), verifier(std::move(v))
+            {
             }
         };
 
-        void ExpectFunctionCallArgs(const FunctionCall *func_call,
-                                    const std::vector<ExpectedArgument> &expected_args) {
+        void ExpectFunctionCallArgs(const FunctionCall* func_call,
+                                    const std::vector<ExpectedArgument>& expected_args)
+        {
             ASSERT_NE(func_call, nullptr) << "Function call was null!";
             ASSERT_EQ(func_call->arguments.size(), expected_args.size()) << "Recovered argument count mismatch!";
 
-            for (size_t i = 0; i < expected_args.size(); ++i) {
+            for (size_t i = 0; i < expected_args.size(); ++i)
+            {
                 EXPECT_EQ(func_call->arguments[i].first, expected_args[i].name)
                      << "Argument name mismatch at index " << i;
 
-                if (expected_args[i].verifier) {
+                if (expected_args[i].verifier)
+                {
                     expected_args[i].verifier(func_call->arguments[i].second.get());
-                } else if (expected_args[i].expected_number_value.has_value()) {
+                }
+                else if (expected_args[i].expected_number_value.has_value())
+                {
                     ASSERT_NE(func_call->arguments[i].second, nullptr)
                          << "Expected an assigned value for argument '" << expected_args[i].name << "' but got nullptr";
-                    auto *num_lit = dynamic_cast<NumberLiteral *>(func_call->arguments[i].second.get());
+                    auto* num_lit = dynamic_cast<NumberLiteral*>(func_call->arguments[i].second.get());
                     ASSERT_NE(num_lit, nullptr)
                          << "Expected a NumberLiteral for argument '" << expected_args[i].name << "'";
 
                     EXPECT_EQ(num_lit->value, expected_args[i].expected_number_value.value())
                          << "Assigned value mismatch for argument '" << expected_args[i].name << "'";
-                } else {
+                }
+                else
+                {
                     EXPECT_EQ(func_call->arguments[i].second, nullptr)
                          << "Expected NO assigned value for argument '" << expected_args[i].name << "' but found one";
                 }
             }
         }
 
-        auto ExpectFunctionCall(std::string target_name, std::vector<ExpectedArgument> args = {}) {
-            return [target_name = std::move(target_name), args = std::move(args)](const Program &ast) {
+        auto ExpectFunctionCall(std::string target_name, std::vector<ExpectedArgument> args = {})
+        {
+            return [target_name = std::move(target_name), args = std::move(args)](const Program& ast)
+            {
                 auto call = ExpectRecoveredFunctionCall(ast, target_name);
                 ExpectFunctionCallArgs(call, args);
             };
         }
     }
 
-    class FunctionCallParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class FunctionCallParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(FunctionCallParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(FunctionCallParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -203,7 +223,11 @@ namespace valuascript::compiler::test {
             "f(a: 1 + *, b: 2)\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 10} },
-            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", "2"}})
+            ExpectFunctionCall("f", {{"a", [] (auto e)
+                {
+                auto const binary_exp = dynamic_cast<const BinaryExpression*>(e);
+                ASSERT_EQ(binary_exp->op, TokenType::Plus);
+                }}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "garbage_arg_discards_and_parses_complex_valid_arg",

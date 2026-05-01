@@ -293,7 +293,7 @@ namespace valuascript::compiler::test {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
             EXPECT_EQ(sw->cases.size(), 2);
-            ASSERT_EQ(sw->cases[0].second.get(), nullptr);
+            ASSERT_NE(sw->cases[0].second.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{

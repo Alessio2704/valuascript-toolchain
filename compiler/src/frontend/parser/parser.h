@@ -146,6 +146,8 @@ namespace valuascript::compiler
         const Token& consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords = true,
                                         bool check_statement_boundary = false);
 
+        [[nodiscard]] static bool is_expression_complete(const Expression* expr);
+
         void verify_statement_end() const;
 
         void consume_unexpected_statement_gracefully();

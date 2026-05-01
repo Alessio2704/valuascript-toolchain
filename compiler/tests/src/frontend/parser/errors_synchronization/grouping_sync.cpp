@@ -144,7 +144,7 @@ namespace valuascript::compiler::test {
             auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
             auto *tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
             ASSERT_NE(tuple, nullptr);
-            EXPECT_EQ(tuple->elements.size(), 1);
+            EXPECT_EQ(tuple->elements.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{

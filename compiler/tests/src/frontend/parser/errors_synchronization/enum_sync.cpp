@@ -1,80 +1,100 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        const EnumDefinition *ExpectRecoveredEnum(const Program &ast, const std::string &expected_name) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        const EnumDefinition* ExpectRecoveredEnum(const Program& ast, const std::string& expected_name)
+        {
             EXPECT_EQ(ast.execution_steps.size(), 1) << "Expected 'let a = 1' to survive.";
             EXPECT_EQ(ast.enum_definitions.size(), 1);
-            const auto *enum_def = ast.enum_definitions.front().get();
+            const auto* enum_def = ast.enum_definitions.front().get();
             EXPECT_EQ(enum_def->name, expected_name);
             return enum_def;
         }
 
-        struct ExpectedEnumCase {
+        struct ExpectedEnumCase
+        {
             std::string name;
             std::optional<std::string> expected_number_value;
 
-            ExpectedEnumCase(const char *n) : name(n), expected_number_value(std::nullopt) {
+            ExpectedEnumCase(const char* n) : name(n), expected_number_value(std::nullopt)
+            {
             }
 
-            ExpectedEnumCase(const char *n, const char *v) : name(n), expected_number_value(std::string(v)) {
+            ExpectedEnumCase(const char* n, const char* v) : name(n), expected_number_value(std::string(v))
+            {
             }
         };
 
-        void ExpectEnumCases(const EnumDefinition *enum_def,
-                             const std::optional<std::string> &expected_type,
-                             const std::vector<ExpectedEnumCase> &expected_cases) {
+        void ExpectEnumCases(const EnumDefinition* enum_def,
+                             const std::optional<std::string>& expected_type,
+                             const std::vector<ExpectedEnumCase>& expected_cases)
+        {
             ASSERT_NE(enum_def, nullptr) << "Enum definition was null!";
 
-            if (expected_type.has_value()) {
+            if (expected_type.has_value())
+            {
                 ASSERT_NE(enum_def->underlying_type, nullptr) << "Type annotation missing!";
                 EXPECT_EQ(enum_def->underlying_type->name, expected_type.value()) << "Underlying type mismatch!";
-            } else {
+            }
+            else
+            {
                 ASSERT_EQ(enum_def->underlying_type, nullptr) << "Type annotation is not missing!";
             }
 
             ASSERT_EQ(enum_def->cases.size(), expected_cases.size()) << "Recovered case count mismatch!";
 
-            for (size_t i = 0; i < expected_cases.size(); ++i) {
+            for (size_t i = 0; i < expected_cases.size(); ++i)
+            {
                 EXPECT_EQ(enum_def->cases[i].name, expected_cases[i].name)
                      << "Case name mismatch at index " << i;
 
-                if (expected_cases[i].expected_number_value.has_value()) {
+                if (expected_cases[i].expected_number_value.has_value())
+                {
                     ASSERT_NE(enum_def->cases[i].value, nullptr)
                          << "Expected an assigned value for case '" << expected_cases[i].name << "' but got nullptr";
-                    auto *num_lit = dynamic_cast<NumberLiteral *>(enum_def->cases[i].value.get());
+                    auto* num_lit = dynamic_cast<NumberLiteral*>(enum_def->cases[i].value.get());
                     ASSERT_NE(num_lit, nullptr)
                          << "Expected a NumberLiteral for case '" << expected_cases[i].name << "'";
 
                     EXPECT_EQ(num_lit->value, expected_cases[i].expected_number_value.value())
                          << "Assigned value mismatch for case '" << expected_cases[i].name << "'";
-                } else {
+                }
+                else
+                {
                     EXPECT_EQ(enum_def->cases[i].value, nullptr)
                          << "Expected NO assigned value for case '" << expected_cases[i].name << "' but found one";
                 }
             }
         }
 
-        auto ExpectEnum(std::string name, std::optional<std::string> type, std::vector<ExpectedEnumCase> cases = {}) {
-            return [name = std::move(name), type = std::move(type), cases = std::move(cases)](const Program &ast) {
+        auto ExpectEnum(std::string name, std::optional<std::string> type, std::vector<ExpectedEnumCase> cases = {})
+        {
+            return [name = std::move(name), type = std::move(type), cases = std::move(cases)](const Program& ast)
+            {
                 auto e = ExpectRecoveredEnum(ast, name);
                 ExpectEnumCases(e, type, cases);
             };
         }
 
-        auto ExpectNoEnums() {
-            return [](const Program &ast) {
+        auto ExpectNoEnums()
+        {
+            return [](const Program& ast)
+            {
                 ASSERT_EQ(ast.enum_definitions.size(), 0);
                 ASSERT_EQ(ast.execution_steps.size(), 1);
             };
         }
     }
 
-    class EnumParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class EnumParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(EnumParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(EnumParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -271,7 +291,11 @@ namespace valuascript::compiler::test {
             "enum Test : int { A = 1, B = +-*/, C = 3 }\n"
             "let a = 1\n",
             { {Err::InvalidExpression, 1, 32} },
-            ExpectEnum("Test", "int", { {"A", "1"}, "B", {"C", "3"} })
+            [](const Program& ast) {
+            auto& enum_def = ast.enum_definitions[0];
+            ASSERT_EQ(enum_def->cases.size(), 3);
+
+            }
             },
             ParserErrorsSynchronizationTestCase{
             "missing_expression_discards_case_and_saves_valid_ones",

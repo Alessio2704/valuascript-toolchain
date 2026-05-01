@@ -28,9 +28,25 @@ namespace valuascript::compiler
                                                    ? op_precedence
                                                    : static_cast<Precedence>(static_cast<int>(op_precedence) + 1);
 
-            auto right = parse_expression(next_precedence);
+            std::unique_ptr<Expression> right = nullptr;
+            try
+            {
+                right = parse_expression(next_precedence);
+            }
+            catch (const ParseSyncException&)
+            {
+                synchronize_with({
+                    .stop_tokens = {
+                        TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+                    },
+                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
+                });
+            }
 
-            const SourceSpan combined = cursor_.combine_spans(left->span, right->span);
+            const SourceSpan right_span = right
+                                              ? right->span
+                                              : cursor_.make_span(cursor_.previous(), cursor_.previous());
+            const SourceSpan combined = cursor_.combine_spans(left->span, right_span);
 
             left = std::make_unique<BinaryExpression>(std::move(left), op.type, std::move(right));
 
@@ -52,7 +68,22 @@ namespace valuascript::compiler
         if (TokenTraits::is_unary_operator(cursor_.peek().type))
         {
             Token op = cursor_.advance();
-            auto right = parse_unary_expression();
+            std::unique_ptr<Expression> right = nullptr;
+
+            try
+            {
+                right = parse_unary_expression();
+            }
+            catch (const ParseSyncException&)
+            {
+                synchronize_with({
+                    .stop_tokens = {
+                        TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+                    },
+                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
+                });
+            }
+
             auto unary = std::make_unique<UnaryExpression>(op.type, std::move(right));
             unary->span = cursor_.make_span(op, cursor_.previous());
             return unary;
@@ -90,49 +121,52 @@ namespace valuascript::compiler
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(*this, TokenType::RightParen);
-
-        if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end())
-        {
-            const Token& p0 = cursor_.peek();
-            const TokenType p1 = cursor_.peek(1).type;
-
-            bool is_id_like = p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1);
-
-            if (is_id_like)
-            {
-                if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1))
-                {
-                    if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1))
-                    {
-                        cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
-                    }
-                }
-            }
-            else
-            {
-                if (TokenTraits::is_expression_start(p0.type))
-                {
-                    if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1))
-                    {
-                        cursor_.report_error(cursor_.previous(), ValuascriptErrorCode::MissingOperatorOrArgumentName);
-                    }
-                }
-                else if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma))
-                {
-                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
-                }
-            }
-        }
-
-        auto arguments = parse_key_value_list(
-            TokenType::RightParen,
-            ValuascriptErrorCode::MissingArgumentNameInFunctionCall,
-            ValuascriptErrorCode::MissingColonAfterArgument,
-            ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
-            ValuascriptErrorCode::TrailingCommaInFunctionCall);
+        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
 
         try
         {
+            if (!cursor_.check(TokenType::RightParen) && !cursor_.is_at_end())
+            {
+                const Token& p0 = cursor_.peek();
+                const TokenType p1 = cursor_.peek(1).type;
+
+                bool is_id_like = p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1);
+
+                if (is_id_like)
+                {
+                    if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1))
+                    {
+                        if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1))
+                        {
+                            cursor_.report_error(cursor_.previous(),
+                                                 ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                        }
+                    }
+                }
+                else
+                {
+                    if (TokenTraits::is_expression_start(p0.type))
+                    {
+                        if (!TokenTraits::is_newline_statement_boundary(cursor_.previous(), p0, p1))
+                        {
+                            cursor_.report_error(cursor_.previous(),
+                                                 ValuascriptErrorCode::MissingOperatorOrArgumentName);
+                        }
+                    }
+                    else if (!cursor_.check(TokenType::Colon) && !cursor_.check(TokenType::Comma))
+                    {
+                        cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen);
+                    }
+                }
+            }
+
+            arguments = parse_key_value_list(
+                TokenType::RightParen,
+                ValuascriptErrorCode::MissingArgumentNameInFunctionCall,
+                ValuascriptErrorCode::MissingColonAfterArgument,
+                ValuascriptErrorCode::MissingCommaSeparatorForArgumentsInFunctionCall,
+                ValuascriptErrorCode::TrailingCommaInFunctionCall);
+
             const Token& end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterArguments);
             auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
@@ -225,9 +259,29 @@ namespace valuascript::compiler
     std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target)
     {
         const SourceSpan target_span = target->span;
-        Token property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, true, true);
+
+        Token property_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
+        try
+        {
+            property_token = consume_identifier(ValuascriptErrorCode::ExpectedPropertyName, true, true);
+        }
+        catch (const ParseSyncException&)
+        {
+            synchronize_with({
+                .stop_tokens = {
+                    TokenType::Assign,
+                    TokenType::Comma,
+                    TokenType::RightParen,
+                    TokenType::RightBracket,
+                    TokenType::RightBrace
+                },
+                .force_stop_at_statement_boundary_ignoring_dangling_op = true
+            });
+        }
+
         auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
-        dot_access->span = cursor_.combine_spans(target_span, cursor_.make_span(property_token, property_token));
+        const SourceSpan property_span = cursor_.make_span(property_token, property_token);
+        dot_access->span = cursor_.combine_spans(target_span, property_span);
         return dot_access;
     }
 
