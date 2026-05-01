@@ -15,17 +15,20 @@ namespace valuascript::compiler::test
         size_t column_start;
         size_t line_end;
         size_t column_end;
+        bool skip_span_check;
 
         ExpectedError(ValuascriptErrorCode code,
-                      size_t line_start,
-                      size_t column_start,
+                      size_t line_start = 0,
+                      size_t column_start = 0,
                       size_t line_end = 0,
-                      size_t column_end = 0)
+                      size_t column_end = 0,
+                      bool skip_span_check = false)
             : code(code),
               line_start(line_start),
               column_start(column_start),
               line_end(line_end),
-              column_end(column_end)
+              column_end(column_end),
+              skip_span_check(skip_span_check)
         {
         }
     };

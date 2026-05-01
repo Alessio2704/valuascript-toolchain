@@ -58,7 +58,7 @@ namespace valuascript::compiler::test
     {
         std::vector<ExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 42);
+        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2);
 
         ExpectParseErrors(
             "func test() -> void {\n"

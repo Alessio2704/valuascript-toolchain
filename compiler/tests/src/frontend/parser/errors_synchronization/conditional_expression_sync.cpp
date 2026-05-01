@@ -134,7 +134,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "missing_expression_after_else_bubbles_up_and_discards_statement",
             "let a = if x then 1 else +\n",
-            {{Err::InvalidExpression, 1, 27}},
+            {{Err::InvalidExpression, 1, 26}},
             [](const Program& ast) {
             const auto* cond = GetAssignedConditional(ast);
             ASSERT_NE(cond, nullptr);

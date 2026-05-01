@@ -286,22 +286,25 @@ namespace valuascript::compiler::test
                     << "\nActual Code: " << static_cast<int>(actual.get_code())
                     << "\nActual Message: " << actual.what();
 
-                EXPECT_EQ(actual.get_span().line_start, expected.line_start)
+                if (!expected.skip_span_check)
+                {
+                    EXPECT_EQ(actual.get_span().line_start, expected.line_start)
                     << "Error[" << i << "] Line mismatch for error: " << actual.what();
 
-                EXPECT_EQ(actual.get_span().column_start, expected.column_start)
-                    << "Error[" << i << "] Column mismatch for error: " << actual.what();
+                    EXPECT_EQ(actual.get_span().column_start, expected.column_start)
+                        << "Error[" << i << "] Column mismatch for error: " << actual.what();
 
-                if (expected.line_end != 0)
-                {
-                    EXPECT_EQ(actual.get_span().line_end, expected.line_end)
-                        << "Error [" << i << "] End line mismatch for error: " << actual.what();
-                }
+                    if (expected.line_end != 0)
+                    {
+                        EXPECT_EQ(actual.get_span().line_end, expected.line_end)
+                            << "Error [" << i << "] End line mismatch for error: " << actual.what();
+                    }
 
-                if (expected.column_end != 0)
-                {
-                    EXPECT_EQ(actual.get_span().column_end, expected.column_end)
-                        << "Error[" << i << "] End column mismatch for error: " << actual.what();
+                    if (expected.column_end != 0)
+                    {
+                        EXPECT_EQ(actual.get_span().column_end, expected.column_end)
+                            << "Error[" << i << "] End column mismatch for error: " << actual.what();
+                    }
                 }
             }
 

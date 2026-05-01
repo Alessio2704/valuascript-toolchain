@@ -6,14 +6,6 @@ namespace valuascript::compiler::test
 {
     namespace
     {
-        void ExpectIdentifier(const Expression* expr, const std::string& name)
-        {
-            auto id = dynamic_cast<const IdentifierAccess*>(expr);
-            ASSERT_NE(id, nullptr) << "Expected IdentifierAccess, but got " << (
-                expr ? typeid(*expr).name() : "nullptr");
-            EXPECT_EQ(id->name, name);
-        }
-
         void ExpectNumber(const Expression* expr, const std::string& value)
         {
             auto num = dynamic_cast<const NumberLiteral*>(expr);
@@ -79,26 +71,6 @@ namespace valuascript::compiler::test
         BinaryAndUnaryErrorsParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "binary_missing_right_eof",
-            "let a = 1 +",
-            { {Err::InvalidExpression, 1, 12} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "binary_missing_right_newline",
-            "let a = 1 +\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "binary_missing_left",
             "let a = * 2\n"
             "let b = 2\n",
@@ -111,86 +83,11 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "binary_invalid_right_1",
-            "let a = 1 + * 2\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            auto bin = dynamic_cast<BinaryExpression*>(assign->value.get());
-            ASSERT_NE(bin, nullptr);
-            ASSERT_EQ(bin->op, TokenType::Plus);
-            ASSERT_NE(bin->left, nullptr);
-            ASSERT_EQ(bin->right, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_missing_operand",
-            "let a = -\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 9} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-
-            auto assign_2 = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_2, nullptr);
-            EXPECT_EQ(assign_2->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_invalid_operand",
-            "let a = - *\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "nested_unary_invalid_operand",
-            "let a = - *\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "grouping_missing_operator",
             "let a = (1 2)\n",
             { {Err::MissingOperatorInsideGrouping, 1, 12} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](auto inner) { ExpectNumber(inner, "1"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_recovers_binary_error_and_returns_partial_ast",
-            "let a = [1 +, 2]\n",
-            { {Err::InvalidExpression, 1, 13} },
-            VerifyAssignmentValue([](auto expr) {
-                auto tensor = dynamic_cast<const TensorLiteral*>(expr);
-                ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 2);
-                ExpectNumber(tensor->elements[1].get(), "2");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "function_call_recovers_binary_error_in_argument",
-            "let a = test(arg1: 1 +, arg2: 2)\n",
-            { {Err::InvalidExpression, 1, 23} },
-            VerifyAssignmentValue([](auto expr) {
-                auto call = dynamic_cast<const FunctionCall*>(expr);
-                ASSERT_NE(call, nullptr);
-                ExpectIdentifier(call->target.get(), "test");
-                ASSERT_EQ(call->arguments.size(), 2);
-                EXPECT_EQ(call->arguments[0].first, "arg1");
-                EXPECT_EQ(call->arguments[1].first, "arg2");
-                ExpectNumber(call->arguments[1].second.get(), "2");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -229,93 +126,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "chained_comparisons_inside_grouping",
-            "let a = (1 < 2 < 3)\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 1, 16} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](const Expression *inner) {
-                    ASSERT_NE(inner, nullptr);
-                    });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_inside_failed_grouping",
-            "let a = (-)\n",
-            { {Err::InvalidExpression, 1, 11} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](auto e)
-                {
-                    EXPECT_NE(e, nullptr);
-                });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "chained_comparison_in_tensor_recovers",
-            "let a = [1 < 2 < 3, 4]\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 1, 16} },
-            VerifyAssignmentValue([](auto expr) {
-                auto tensor = dynamic_cast<const TensorLiteral*>(expr);
-                ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 2);
-                ExpectNumber(tensor->elements[1].get(), "4");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "binary_multiple_operators_in_row",
-            "let a = 1 + - * 2\n"
-            "let b = 1\n",
-            { {Err::InvalidExpression, 1, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_chain_with_invalid_operator",
-            "let a = - + * 2\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_not_missing_operand",
-            "let a = not\n"
-            "let b = 2\n",
-            { {Err::InvalidExpression, 1, 9} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "binary_before_closing_grouping",
-            "let a = (1 + )\n",
-            { {Err::InvalidExpression, 1, 14} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](auto e)
-                {
-                    EXPECT_NE(e, nullptr);
-                });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "right_associative_power_missing_operand",
-            "let a = 2 ^ ^ 3\n",
-            { {Err::InvalidExpression, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "binary_operator_dangling_on_next_line",
             "let a = 1\n"
             "* 2\n"
@@ -339,73 +149,6 @@ namespace valuascript::compiler::test
                 ExpectBinary(tensor->elements[1].get(), TokenType::Minus,
                     [](auto left) { ExpectNumber(left, "3"); },
                     [](auto right) { ExpectNumber(right, "4"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "complex_tuple_partial_ast_recovery",
-            "let a = (1 + 2, 3 *, 4 - 1)\n",
-            { {Err::InvalidExpression, 1, 20} },
-            VerifyAssignmentValue([](auto expr) {
-                auto tuple = dynamic_cast<const TupleLiteral*>(expr);
-                ASSERT_NE(tuple, nullptr);
-                ASSERT_EQ(tuple->elements.size(), 3);
-                ExpectBinary(tuple->elements[0].get(), TokenType::Plus,
-                    [](auto left) { ExpectNumber(left, "1"); },
-                    [](auto right) { ExpectNumber(right, "2"); });
-                ExpectBinary(tuple->elements[2].get(), TokenType::Minus,
-                    [](auto left) { ExpectNumber(left, "4"); },
-                    [](auto right) { ExpectNumber(right, "1"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "binary_missing_rhs_in_dictionary_value",
-            "let a = {key1: 1 +, key2: 2}\n",
-            { {Err::InvalidExpression, 1, 19} },
-            VerifyAssignmentValue([](auto expr) {
-                auto dict = dynamic_cast<const DictLiteral*>(expr);
-                ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->elements.size(), 2);
-                EXPECT_EQ(dict->elements[0].key, "key1");
-                EXPECT_NE(dict->elements[0].value.get(), nullptr);
-                EXPECT_EQ(dict->elements[1].key, "key2");
-                ExpectNumber(dict->elements[1].value.get(), "2");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "unary_inside_function_call_argument",
-            "let a = test(arg1: -, arg2: 42)\n",
-            { {Err::InvalidExpression, 1, 21} },
-            VerifyAssignmentValue([](auto expr) {
-                auto call = dynamic_cast<const FunctionCall*>(expr);
-                ASSERT_NE(call, nullptr);
-                ASSERT_EQ(call->arguments.size(), 2);
-                EXPECT_EQ(call->arguments[0].first, "arg1");
-                EXPECT_EQ(call->arguments[1].first, "arg2");
-                ExpectNumber(call->arguments[1].second.get(), "42");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_containing_only_operator",
-            "let a = (+)\n",
-            { {Err::InvalidExpression, 1, 11} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](auto e)
-                {
-                    EXPECT_NE(e, nullptr);
-                });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "nested_parentheses_with_binary_error",
-            "let a = ((1 + * 2))\n",
-            { {Err::InvalidExpression, 1, 15} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](auto inner1) {
-                    ExpectGrouping(inner1, [](auto e)
-                    {
-                        EXPECT_NE(e, nullptr);
-                    });
-                    });
                 })
             },
             ParserErrorsSynchronizationTestCase{

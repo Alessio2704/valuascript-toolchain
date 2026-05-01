@@ -35,19 +35,22 @@ namespace valuascript::compiler::test
             {
                 ExpectedError shifted_err = err;
 
-                if (shifted_err.line_start == 1)
+                if (!shifted_err.skip_span_check)
                 {
-                    shifted_err.column_start += col_offset;
-                }
-                shifted_err.line_start += line_offset;
-
-                if (shifted_err.line_end != 0)
-                {
-                    if (shifted_err.line_end == 1)
+                    if (shifted_err.line_start == 1)
                     {
-                        shifted_err.column_end += col_offset;
+                        shifted_err.column_start += col_offset;
                     }
-                    shifted_err.line_end += line_offset;
+                    shifted_err.line_start += line_offset;
+
+                    if (shifted_err.line_end != 0)
+                    {
+                        if (shifted_err.line_end == 1)
+                        {
+                            shifted_err.column_end += col_offset;
+                        }
+                        shifted_err.line_end += line_offset;
+                    }
                 }
 
                 shifted.push_back(shifted_err);

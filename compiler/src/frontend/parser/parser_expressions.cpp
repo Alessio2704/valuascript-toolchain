@@ -22,6 +22,21 @@ namespace valuascript::compiler
 
             Token op = cursor_.advance();
 
+            if (!inside_expr_grouping)
+            {
+                const Token& next = cursor_.peek();
+                if (next.type == TokenType::EndOfFile || (next.line > op.line && (
+                    TokenTraits::is_statement_start(next, cursor_.peek(1).type) ||
+                    TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
+                {
+                    cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
+
+                    auto partial = std::make_unique<BinaryExpression>(std::move(left), op.type, nullptr);
+                    partial->span = cursor_.combine_spans(partial->left->span, cursor_.make_span(op, op));
+                    return partial;
+                }
+            }
+
             Precedence op_precedence = TokenTraits::get_operator_precedence(op.type);
 
             const Precedence next_precedence = TokenTraits::is_operator_right_associative(op.type)
@@ -68,6 +83,26 @@ namespace valuascript::compiler
         if (TokenTraits::is_unary_operator(cursor_.peek().type))
         {
             Token op = cursor_.advance();
+
+            bool inside_expr_grouping = std::any_of(active_closers_.begin(), active_closers_.end(), [](TokenType t)
+            {
+                return t == TokenType::RightParen || t == TokenType::RightBracket;
+            });
+
+            if (!inside_expr_grouping)
+            {
+                const Token& next = cursor_.peek();
+                if (next.type == TokenType::EndOfFile || (next.line > op.line && (
+                    TokenTraits::is_statement_start(next, cursor_.peek(1).type) ||
+                    TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
+                {
+                    cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
+                    auto unary = std::make_unique<UnaryExpression>(op.type, nullptr);
+                    unary->span = cursor_.make_span(op, op);
+                    return unary;
+                }
+            }
+
             std::unique_ptr<Expression> right = nullptr;
 
             try

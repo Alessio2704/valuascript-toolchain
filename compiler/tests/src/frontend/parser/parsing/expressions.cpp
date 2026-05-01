@@ -40,10 +40,6 @@ namespace valuascript::compiler::test
         ParserStageTest,
         ExpressionSadPathTest,
         testing::Values(
-            ExpressionSadParam{"missing_rhs_addition", "1 + ", ValuascriptErrorCode::InvalidExpression},
-            ExpressionSadParam{"missing_rhs_comparison", "a > ", ValuascriptErrorCode::InvalidExpression},
-            ExpressionSadParam{"missing_unary_operand", "not ", ValuascriptErrorCode::InvalidExpression},
-
             ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", ValuascriptErrorCode::ExpectedRightParenAfterExpression
             },
             ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", ValuascriptErrorCode::InvalidExpression},

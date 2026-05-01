@@ -64,6 +64,13 @@ namespace valuascript::compiler::test
                          IsNumber("2")
                 ));
 
+            reg("Modulo",
+                "10 mod 5",
+                IsBinary(TokenType::Mod,
+                         IsNumber("10"),
+                         IsNumber("5")
+                ));
+
             reg("UnaryPlusBasic",
                 "+42",
                 IsUnary(TokenType::Plus,
