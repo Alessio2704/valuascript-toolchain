@@ -15,7 +15,6 @@ namespace valuascript::compiler {
         InvalidCharacter,
         UnclosedString,
         InvalidIdentifier,
-        DecimalMissingLeadingZero,
         UnterminatedDecimal,
         TrailingSeparatorInNumberLiteral,
 

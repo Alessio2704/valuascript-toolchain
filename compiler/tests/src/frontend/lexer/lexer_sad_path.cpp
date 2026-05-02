@@ -6,28 +6,37 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct SadLexerParam {
+namespace valuascript::compiler::test
+{
+    struct SadLexerParam
+    {
         std::string test_name;
         std::string source_code;
         ValuascriptErrorCode expected_error;
     };
 
-    class LexerSadPathTest : public testing::TestWithParam<SadLexerParam> {
+    class LexerSadPathTest : public testing::TestWithParam<SadLexerParam>
+    {
     };
 
-    TEST_P(LexerSadPathTest, ThrowsCorrectLexicalError) {
-        const SadLexerParam &param = GetParam();
+    TEST_P(LexerSadPathTest, ThrowsCorrectLexicalError)
+    {
+        const SadLexerParam& param = GetParam();
 
-        try {
+        try
+        {
             test::tokenize_code(param.source_code);
             FAIL() << "Lexer should have thrown an exception for test: " << param.test_name;
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical)
             << "Error category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)
             << "Error code mismatch on test: " << param.test_name;
-        } catch (...) {
+        }
+        catch (...)
+        {
             FAIL() << "Lexer threw an unknown exception type for test: " << param.test_name;
         }
     }
@@ -42,8 +51,6 @@ namespace valuascript::compiler::test {
 
             // Malformed Numbers
             SadLexerParam{"percentage_before_number", "x = %1", ValuascriptErrorCode::InvalidCharacter},
-            SadLexerParam{"missing_leading_zero_1", "let a = .5", ValuascriptErrorCode::DecimalMissingLeadingZero},
-            SadLexerParam{"missing_leading_zero_2", ".5", ValuascriptErrorCode::DecimalMissingLeadingZero},
             SadLexerParam{"unterminated_decimal_1", "let a = 1.", ValuascriptErrorCode::UnterminatedDecimal},
             SadLexerParam{"unterminated_decimal_2", "let a = 1_230.", ValuascriptErrorCode::UnterminatedDecimal},
             SadLexerParam{"unterminated_number_after_separator", "let a = 1_", ValuascriptErrorCode::

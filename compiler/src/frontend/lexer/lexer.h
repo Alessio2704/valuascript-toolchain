@@ -46,8 +46,6 @@ namespace valuascript::compiler {
 
         void finalize_number();
 
-        [[nodiscard]] bool is_member_access() const;
-
         void scan_number();
 
         void scan_identifier();

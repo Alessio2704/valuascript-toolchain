@@ -91,7 +91,6 @@ namespace valuascript::compiler::test {
             "let y = \"unclosed string spanning to EOF",
             {
             {ValuascriptErrorCode::UnterminatedDecimal, 1, 9},
-            {ValuascriptErrorCode::DecimalMissingLeadingZero, 2, 9},
             {ValuascriptErrorCode::UnclosedString, 3, 9}
             }
             },
@@ -151,7 +150,6 @@ namespace valuascript::compiler::test {
             "HiddenLexicalErrorsInMath",
             "let result = 10 + .5 * 100_ - \"unclosed",
             {
-            {ValuascriptErrorCode::DecimalMissingLeadingZero, 1, 19},
             {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 24},
             {ValuascriptErrorCode::UnclosedString, 1, 31}
             }
@@ -162,12 +160,11 @@ namespace valuascript::compiler::test {
             "let bad1 = $\n"
             "let valid2 = \"test\"\n"
             "let bad2 = ~\n"
-            "let bad3 = .99\n"
-            "let valid3 = 0.99",
+            "let valid3 = .99\n"
+            "let valid4 = 0.99",
             {
             {ValuascriptErrorCode::InvalidCharacter, 2, 12},
             {ValuascriptErrorCode::InvalidCharacter, 4, 12},
-            {ValuascriptErrorCode::DecimalMissingLeadingZero, 5, 12}
             }
             },
             LexerMultiErrorTestCase{
@@ -181,7 +178,6 @@ namespace valuascript::compiler::test {
             {ValuascriptErrorCode::UnclosedString, 1, 1},
             {ValuascriptErrorCode::UnterminatedDecimal, 2, 1},
             {ValuascriptErrorCode::UnclosedString, 3, 1},
-            {ValuascriptErrorCode::DecimalMissingLeadingZero, 4, 1},
             {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 5, 1}
             }
             },
@@ -193,7 +189,6 @@ namespace valuascript::compiler::test {
             "    let carriage = 12.\n",
             {
             {ValuascriptErrorCode::InvalidCharacter, 3, 18},
-            {ValuascriptErrorCode::DecimalMissingLeadingZero, 4, 18},
             {ValuascriptErrorCode::UnterminatedDecimal, 5, 20}
             }
             },

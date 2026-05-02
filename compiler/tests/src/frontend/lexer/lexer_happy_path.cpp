@@ -6,25 +6,30 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct HappyLexerParam {
+namespace valuascript::compiler::test
+{
+    struct HappyLexerParam
+    {
         std::string test_name;
         std::string source_code;
         size_t expected_token_count;
     };
 
-    class LexerHappyPathTest : public testing::TestWithParam<HappyLexerParam> {
+    class LexerHappyPathTest : public testing::TestWithParam<HappyLexerParam>
+    {
     };
 
-    TEST_P(LexerHappyPathTest, TokenizesSuccessfully) {
-        const HappyLexerParam &param = GetParam();
+    TEST_P(LexerHappyPathTest, TokenizesSuccessfully)
+    {
+        const HappyLexerParam& param = GetParam();
 
         std::vector<Token> tokens;
         EXPECT_NO_THROW({
             tokens = test::tokenize_code(param.source_code);
             }) << "Lexer threw an exception on test: " << param.test_name;
 
-        if (!tokens.empty()) {
+        if (!tokens.empty())
+        {
             EXPECT_EQ(tokens.size(), param.expected_token_count)
             << "Token count mismatch on test: " << param.test_name;
             EXPECT_EQ(tokens.back().type, TokenType::EndOfFile)
@@ -90,12 +95,12 @@ namespace valuascript::compiler::test {
 
             // Member Access
             HappyLexerParam{"member_access_1", "model.cagr", 4},
-            HappyLexerParam{"member_access_2", "[].5", 5},
-            HappyLexerParam{"member_access_3", "().5", 5},
-            HappyLexerParam{"member_access_4", "{}.5", 5},
-            HappyLexerParam{"member_access_5", "{a: 1}.5", 8},
-            HappyLexerParam{"member_access_underscore_identifier_1", "_.5", 4},
-            HappyLexerParam{"member_access_underscore_identifier_2", "_0.5", 4},
+            HappyLexerParam{"member_access_underscore_identifier_1", "_.prop", 4},
+            HappyLexerParam{"member_access_underscore_identifier_2", "_0.prop", 4},
+            HappyLexerParam{"member_access_2", "let a = [].5", 7},
+            HappyLexerParam{"member_access_3", "let a = ().5", 7},
+            HappyLexerParam{"member_access_4", "let a = {}.5", 7},
+            HappyLexerParam{"member_access_5", "let a = {a: 1}.5", 10},
 
             // Floats and Separators
             HappyLexerParam{"at_separator", "let a = 1_000", 5},

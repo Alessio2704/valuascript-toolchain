@@ -15,6 +15,8 @@ namespace valuascript::compiler::test
             reg("DecimalWithSeparators", "1_234.56_78", IsNumber("1_234.56_78"));
             reg("ZeroLiteral", "0", IsNumber("0"));
             reg("DecimalStartingWithZero", "0.001", IsNumber("0.001"));
+            reg("DecimalNotStartingWithZero", ".5", IsNumber(".5"));
+            reg("PercentageDecimalNotStartingWithZero", ".5%", IsPercentage(".5%"));
 
             reg("BooleanTrue", "true", IsBoolean(true));
             reg("BooleanFalse", "false", IsBoolean(false));

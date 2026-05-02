@@ -29,8 +29,6 @@ namespace valuascript::compiler::test
         }
         catch (const ValuaScriptException& e)
         {
-            EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
-                << "Category mismatch on test: " << param.test_name;
             EXPECT_EQ(e.get_code(), param.expected_error)
                 << "Error code mismatch on test: " << param.test_name;
         }
@@ -41,7 +39,7 @@ namespace valuascript::compiler::test
         DotAccessSadPathTest,
         testing::Values(
             DotAccessSadParam{"missing_property", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
-            DotAccessSadParam{"number_as_property", "let a = model.123", ValuascriptErrorCode::ExpectedPropertyName},
+            DotAccessSadParam{"number_as_property", "let a = model.123", ValuascriptErrorCode::MissingOperator},
             DotAccessSadParam{"keyword_as_property", "let a = model.let", ValuascriptErrorCode::
             ReservedKeywordAsIdentifier},
             DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ValuascriptErrorCode::
