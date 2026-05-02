@@ -1,4 +1,5 @@
 #pragma once
+#include "context_infrastructure.h"
 
 namespace valuascript::compiler::test
 {

@@ -45,6 +45,8 @@ runs:
       shell: bash
       env:
         FUZZ_ITERATIONS: 10000
+        EXPANSION_DEPTH: 5
+        EXPANSION_RECURSION: 3
       run: |
         cd build
         CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)

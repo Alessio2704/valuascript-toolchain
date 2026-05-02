@@ -1,6 +1,10 @@
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "utils/parametrised_test_name_helper.h"
 #include <set>
+#include <vector>
+
+#include "frontend/parser/helpers/context_registry.h"
+#include "frontend/parser/helpers/expansion_policy.h"
+#include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
 {
@@ -47,23 +51,6 @@ namespace valuascript::compiler::test
                                                    public testing::WithParamInterface<IntegritySample>
     {
     protected:
-        static bool IsTerminal(InjectableType type)
-        {
-            switch (type)
-            {
-            case InjectableType::TopLevel:
-            case InjectableType::Import:
-            case InjectableType::Directive:
-            case InjectableType::Function:
-            case InjectableType::Struct:
-            case InjectableType::Enum:
-            case InjectableType::TypeAlias:
-                return true;
-            default:
-                return false;
-            }
-        }
-
         static size_t CountTransitions(const std::string& path)
         {
             size_t count = 0;
@@ -99,17 +86,25 @@ namespace valuascript::compiler::test
     TEST_P(ContextExpansionFrameworkIntegrityTest, VerifyExpansionLogic)
     {
         const auto& [start_type, snippet, verifier, test_name] = GetParam();
-        auto results = expand_to_top_level(start_type, snippet, verifier, test_name);
+
+        std::vector<ProcessingItem> results;
+        expand_to_top_level_stream(
+            {start_type, snippet, verifier, test_name, "", 0, 0},
+            [&](ProcessingItem&& item)
+            {
+                results.push_back(std::move(item));
+            },
+            false
+        );
 
         ASSERT_FALSE(results.empty()) << "Expansion logic produced zero terminal programs.";
 
-        std::set<std::string> used_contexts;
         bool elevation_occurred = false;
         int max_observed_depth = 0;
 
         for (const auto& item : results)
         {
-            EXPECT_TRUE(IsTerminal(item.type))
+            EXPECT_TRUE(is_terminal_type(item.type))
                 << "Logic Error: Intermediate type " << static_cast<int>(item.type)
                 << " leaked into final results via path: " << item.path_name;
 
@@ -117,7 +112,7 @@ namespace valuascript::compiler::test
             EXPECT_EQ(CountTransitions(item.path_name), static_cast<size_t>(item.depth))
                 << "Logic Error: Depth tracking mismatch in path: " << item.path_name;
 
-            EXPECT_LE(item.depth, 6);
+            EXPECT_LE(item.depth, ExpansionPolicy::current().max_depth + 1);
 
             if (item.depth > max_observed_depth) max_observed_depth = item.depth;
 
@@ -129,7 +124,7 @@ namespace valuascript::compiler::test
             }
         }
 
-        if (!IsTerminal(start_type))
+        if (!is_terminal_type(start_type))
         {
             EXPECT_GE(max_observed_depth, 1) << "Logic Error: Snippet was never wrapped.";
         }
@@ -167,55 +162,60 @@ namespace valuascript::compiler::test
     {
         const auto& [start_type, snippet, verifier, test_name] = GetParam();
 
-        size_t test_seed = 0x1337;
+        size_t base_seed = 0x1337;
+        size_t scenario_index = 0;
 
-        auto scenarios = generate_recovery_scenarios(
-            start_type,
-            snippet,
-            {},
-            verifier,
-            test_name,
-            test_seed
-        );
-
-        ASSERT_FALSE(scenarios.empty());
-
-        for (const auto& sc : scenarios)
-        {
-            SCOPED_TRACE("Checking Scenario: " + sc.path_name);
-
-            CompilerContext context;
-            auto ast = run_parser(sc.full_code, context);
-            ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << sc.full_code;
-
-            size_t total_top_level_items =
-                ast->import_statements.size() +
-                ast->directives.size() +
-                ast->function_definitions.size() +
-                ast->struct_definitions.size() +
-                ast->enum_definitions.size() +
-                ast->type_aliases.size() +
-                ast->execution_steps.size();
-
-            EXPECT_EQ(total_top_level_items, 3)
-                << "Top-level sentinel injection missing in path: " << sc.path_name;
-
-            if (sc.path_name.find("wrapper") != std::string::npos)
+        expand_to_top_level_stream(
+            {start_type, snippet, verifier, test_name, "", 0, 0},
+            [&](ProcessingItem&& item)
             {
-                bool wrapper_found = false;
-                for (const auto& f : ast->function_definitions)
+                SCOPED_TRACE("Checking Scenario: " + item.path_name);
+
+                ProgramSpec item_spec;
+                std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
+
+                auto prog = BuildRecoveryProgram(
+                    std::move(item.code),
+                    std::move(item_spec),
+                    std::move(item.cumulative_prefix),
+                    base_seed + (scenario_index++ * 2)
+                );
+
+                CompilerContext context;
+
+                auto ast = run_parser(prog.full_code, context);
+                ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << prog.full_code;
+
+                size_t total_top_level_items =
+                    ast->import_statements.size() +
+                    ast->directives.size() +
+                    ast->function_definitions.size() +
+                    ast->struct_definitions.size() +
+                    ast->enum_definitions.size() +
+                    ast->type_aliases.size() +
+                    ast->execution_steps.size();
+
+                EXPECT_EQ(total_top_level_items, 3)
+                    << "Top-level sentinel injection missing in path: " << item.path_name;
+
+                if (item.path_name.find("wrapper") != std::string::npos)
                 {
-                    if (f->name == "ctx_wrapper")
+                    bool wrapper_found = false;
+                    for (const auto& f : ast->function_definitions)
                     {
-                        wrapper_found = true;
-                        EXPECT_EQ(f->body.size(), 3)
-                            << "Block-level sentinels missing inside ctx_wrapper for path: " << sc.path_name
-                            << "\nBody size was: " << f->body.size();
+                        if (f->name == "ctx_wrapper")
+                        {
+                            wrapper_found = true;
+                            EXPECT_EQ(f->body.size(), 3)
+                                << "Block-level sentinels missing inside ctx_wrapper for path: " << item.path_name
+                                << "\nBody size was: " << f->body.size();
+                        }
                     }
+                    EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
                 }
-                EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
-            }
-        }
+            },
+            true
+        );
     }
 
     INSTANTIATE_TEST_SUITE_P(
