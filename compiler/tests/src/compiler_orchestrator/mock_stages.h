@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include "../../../src/core/compiler_stage.h"
+#include "core/compiler_stage.h"
 #include <memory>
 
 using namespace valuascript::compiler;

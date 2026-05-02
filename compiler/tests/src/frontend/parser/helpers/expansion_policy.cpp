@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "expansion_policy.h"
 #include <algorithm>
 #include <cstdlib>

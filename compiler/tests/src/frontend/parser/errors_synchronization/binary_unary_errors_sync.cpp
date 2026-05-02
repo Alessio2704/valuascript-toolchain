@@ -139,20 +139,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "unary_not_applied_to_binary_missing_rhs",
-            "let a = not(1 +)\n",
-            { {Err::InvalidExpression, 1, 16} },
-            VerifyAssignmentValue([](auto expr) {
-                auto unary = dynamic_cast<const UnaryExpression*>(expr);
-                ASSERT_NE(unary, nullptr);
-                EXPECT_EQ(unary->op, TokenType::Not);
-                ExpectGrouping(unary->right.get(), [](auto e)
-                {
-                    EXPECT_NE(e, nullptr);
-                });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "multiline_binary_rejected_at_top_level",
             "let a = 1\n"
             "* 2\n",

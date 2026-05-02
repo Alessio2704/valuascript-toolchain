@@ -1,5 +1,4 @@
 #include "parser_test_base.h"
-#include <deque>
 #include <sstream>
 #include <iomanip>
 #include "context_registry.h"
@@ -69,20 +68,20 @@ namespace valuascript::compiler::test
         auto contexts = ContextRegistry::get_all_for(item.type);
         for (const auto& ctx : contexts)
         {
-            bool is_rec = false;
-            for (auto in_t : ctx.input_types)
+            bool is_recursive = false;
+            for (auto ctx_input_type : ctx.input_types)
             {
-                if (in_t == ctx.output_type)
+                if (ctx_input_type == ctx.output_type)
                 {
-                    is_rec = true;
+                    is_recursive = true;
                     break;
                 }
             }
 
-            if (is_rec && item.recursion_depth >= policy.max_recursion) continue;
+            if (is_recursive && item.recursion_depth >= policy.max_recursion) continue;
 
-            int next_rec_depth = is_rec ? item.recursion_depth + 1 : item.recursion_depth;
-            std::string next_path = item.path_name + " -> " + (is_rec ? ctx.name + "(Recurse)" : ctx.name);
+            int next_rec_depth = is_recursive ? item.recursion_depth + 1 : item.recursion_depth;
+            std::string next_path = item.path_name + " -> " + (is_recursive ? ctx.name + "(Recurse)" : ctx.name);
 
             if (ctx.is_block_context)
             {

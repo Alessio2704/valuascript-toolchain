@@ -162,31 +162,41 @@ namespace valuascript::compiler::test
     inline void ExpectIdentifier(AstNode* node, std::string_view name)
     {
         if (auto id = ExpectNode<IdentifierAccess>(node))
+        {
             EXPECT_EQ(id->name, name) << "Identifier name mismatch.";
+        }
     }
 
     inline void ExpectNumber(AstNode* node, std::string_view val)
     {
         if (auto n = ExpectNode<NumberLiteral>(node))
+        {
             EXPECT_EQ(n->value, val) << "Number literal value mismatch.";
+        }
     }
 
     inline void ExpectString(AstNode* node, std::string_view val)
     {
         if (auto s = ExpectNode<StringLiteral>(node))
+        {
             EXPECT_EQ(s->value, val) << "String literal value mismatch.";
+        }
     }
 
     inline void ExpectBoolean(AstNode* node, bool val)
     {
         if (auto b = ExpectNode<BooleanLiteral>(node))
+        {
             EXPECT_EQ(b->value, val) << "Boolean literal value mismatch.";
+        }
     }
 
     inline void ExpectPercentage(AstNode* node, std::string_view val)
     {
         if (auto p = ExpectNode<PercentageLiteral>(node))
+        {
             EXPECT_EQ(p->value, val) << "Percentage literal value mismatch.";
+        }
     }
 
     inline void ExpectSelf(AstNode* node)
@@ -276,7 +286,9 @@ namespace valuascript::compiler::test
         if (auto d = ExpectNode<DotAccess>(node))
         {
             if (target_v) target_v(d->target.get());
-            EXPECT_EQ(d->property_name, prop) << "Dot access property name mismatch.";
+            {
+                EXPECT_EQ(d->property_name, prop) << "Dot access property name mismatch.";
+            }
         }
     }
 
@@ -286,7 +298,9 @@ namespace valuascript::compiler::test
         if (auto sw = ExpectNode<SwitchExpression>(node))
         {
             if (target_v) target_v(sw->target.get());
-            ASSERT_EQ(sw->cases.size(), cases.size()) << "Switch cases count mismatch.";
+            {
+                ASSERT_EQ(sw->cases.size(), cases.size()) << "Switch cases count mismatch.";
+            }
             for (size_t i = 0; i < cases.size(); i++)
             {
                 EXPECT_EQ(sw->cases[i].first, cases[i].labels) << "Switch case labels mismatch at index " << i << ".";
