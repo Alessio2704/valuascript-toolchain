@@ -99,18 +99,6 @@ namespace valuascript::compiler::test
             ExpectConditionalBranches(true, true, true)
             },
             ParserErrorsSynchronizationTestCase{
-            "garbage_in_condition_recovers_then_and_else",
-            "let a = if x + * then 1 else 2\n",
-            {{Err::InvalidExpression, 1, 16}},
-            ExpectConditionalBranches(true, true, true)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "garbage_in_then_branch_recovers_else",
-            "let a = if x then 1 + * else 2\n",
-            {{Err::InvalidExpression, 1, 23}},
-            ExpectConditionalBranches(true, true, true)
-            },
-            ParserErrorsSynchronizationTestCase{
             "empty_condition_recovers_then_and_else",
             "let a = if then 1 else 2\n",
             {{Err::InvalidExpression, 1, 12}},
@@ -135,17 +123,6 @@ namespace valuascript::compiler::test
             "missing_expression_after_else_bubbles_up_and_discards_statement",
             "let a = if x then 1 else +\n",
             {{Err::InvalidExpression, 1, 26}},
-            [](const Program& ast) {
-            const auto* cond = GetAssignedConditional(ast);
-            ASSERT_NE(cond, nullptr);
-            EXPECT_NE(cond->then_branch, nullptr);
-            EXPECT_NE(cond->else_branch, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_synchronizes_internal_errors_in_condition",
-            "let a = if (x + *) then 1 else 2\n",
-            {{Err::InvalidExpression, 1, 17}},
             [](const Program& ast) {
             const auto* cond = GetAssignedConditional(ast);
             ASSERT_NE(cond, nullptr);

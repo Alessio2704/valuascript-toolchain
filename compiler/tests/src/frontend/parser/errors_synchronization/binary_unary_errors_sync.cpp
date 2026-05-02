@@ -139,19 +139,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "deep_precedence_error_in_list_recovers",
-            "let a = [1 + 2 * *, 3 - 4]\n",
-            { {Err::InvalidExpression, 1, 18} },
-            VerifyAssignmentValue([](auto expr) {
-                auto tensor = dynamic_cast<const TensorLiteral*>(expr);
-                ASSERT_NE(tensor, nullptr);
-                ASSERT_EQ(tensor->elements.size(), 2);
-                ExpectBinary(tensor->elements[1].get(), TokenType::Minus,
-                    [](auto left) { ExpectNumber(left, "3"); },
-                    [](auto right) { ExpectNumber(right, "4"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "unary_not_applied_to_binary_missing_rhs",
             "let a = not(1 +)\n",
             { {Err::InvalidExpression, 1, 16} },

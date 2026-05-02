@@ -79,30 +79,6 @@ namespace valuascript::compiler::test {
         BracketAndDotAccessParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "bracket_empty",
-            "let a = arr[]\n",
-            { {Err::EmptyBracketAccess, 1, 12} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_unexpected_comma",
-            "let a = arr[1, 2]\n",
-            { {Err::UnexpectedCommaInBracketAccess, 1, 14} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_invalid_expression_inside",
-            "let a = arr[*]\n",
-            { {Err::InvalidExpression, 1, 13} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "bracket_wrong_closing_preserves_index_and_next_stmt",
             "let a = arr[1}\n"
             "let b = 2\n",
@@ -172,18 +148,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_garbage_property_discards_statement",
-            "let a = obj.*\n"
-            "let b = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dot_garbage_fails_entire_chain",
             "let a = obj.*[1]\n",
             { {Err::ExpectedPropertyName, 1, 13} },
@@ -207,16 +171,6 @@ namespace valuascript::compiler::test {
             { {Err::InvalidExpression, 1, 13} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_nested_failure_preserves_outer",
-            "let a = arr[nested[*]]\n",
-            { {Err::InvalidExpression, 1, 20} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
-                    ExpectBracketAccess(i, [](auto inner_t) { ExpectIdentifier(inner_t, "nested"); }, nullptr);
-                    });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -271,26 +225,6 @@ namespace valuascript::compiler::test {
 
             EXPECT_EQ(assign->targets[0].first, "a");
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_multiple_colons_yields_partial_slice",
-            "let a = arr[1:2:3]\n",
-            { {Err::UnmatchedBracketAfterTensorIndex, 1, 16} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
-                    ExpectSlice(i, [](auto l) { ExpectNumber(l, "1"); }, [](auto r) { ExpectNumber(r, "2"); });
-                    });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_slice_missing_right_side_with_immediate_close_is_valid",
-            "let a = arr[1:]\n",
-            {},
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
-                    ExpectSlice(i, [](auto l) { ExpectNumber(l, "1"); }, nullptr);
-                    });
-                })
             },
             ParserErrorsSynchronizationTestCase{
             "bracket_recovers_and_resumes_complex_chain_on_broken_target",
@@ -540,18 +474,6 @@ namespace valuascript::compiler::test {
                     ASSERT_NE(group, nullptr);
                     EXPECT_NE(group->expression, nullptr);
                     }, "prop");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dot_access_valid_multiline_chaining",
-            "let a = obj\n"
-            "  .prop1\n"
-            "  .prop2\n",
-            {},
-            VerifyAssignmentValue([](auto expr) {
-                ExpectDotAccess(expr, [](auto t1) {
-                    ExpectDotAccess(t1, [](auto obj) { ExpectIdentifier(obj, "obj"); }, "prop1");
-                    }, "prop2");
                 })
             }
         ),

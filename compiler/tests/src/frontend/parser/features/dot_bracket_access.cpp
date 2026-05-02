@@ -13,6 +13,10 @@ namespace valuascript::compiler::test
                 "obj.property",
                 IsDot(IsIdentifier("obj"), "property"));
 
+            reg("DotAccessNewLine",
+                "obj\n.property\n.property",
+                IsDot(IsDot(IsIdentifier("obj"), "property"), "property"));
+
             reg("SimpleDotAccessWithSpace",
                 "obj      .         property",
                 IsDot(IsIdentifier("obj"), "property"));
