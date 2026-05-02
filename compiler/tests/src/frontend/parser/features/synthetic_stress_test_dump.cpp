@@ -90,6 +90,7 @@ namespace valuascript::compiler::test
         cfg.weights.reassign_target_flavors.self_dot = 0.0;
 
         cfg.weights.expression_types.binary = 0.0;
+        cfg.weights.expression_types.unary = 0.0;
         cfg.weights.expression_types.dot = 0.0;
         cfg.weights.expression_types.bracket = 0.0;
         cfg.weights.expression_types.call = 0.0;

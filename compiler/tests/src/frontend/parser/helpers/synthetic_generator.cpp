@@ -1,10 +1,23 @@
 #include "synthetic_generator.h"
 #include "recovery_sentinel.h"
+#include "token/operator_lookup.h"
 #include <sstream>
 #include <algorithm>
 
 namespace valuascript::compiler::test
 {
+    static const std::vector<std::pair<TokenType, std::string>>& get_fuzzer_binary_ops()
+    {
+        static const auto ops = get_all_binary_operators();
+        return ops;
+    }
+
+    static const std::vector<std::pair<TokenType, std::string>>& get_fuzzer_unary_ops()
+    {
+        static const auto ops = get_all_unary_operators();
+        return ops;
+    }
+
     SyntheticGenerator::SyntheticGenerator(size_t seed, SyntheticGeneratorConfig config)
         : rng_(static_cast<unsigned int>(seed)), config_(std::move(config))
     {
@@ -385,6 +398,7 @@ namespace valuascript::compiler::test
 
         auto type_idx = roll_weighted<ExpressionType>({
                                                           config_.weights.expression_types.binary,
+                                                          config_.weights.expression_types.unary,
                                                           config_.weights.expression_types.dot,
                                                           config_.weights.expression_types.bracket,
                                                           config_.weights.expression_types.call,
@@ -396,9 +410,18 @@ namespace valuascript::compiler::test
         case ExpressionType::Binary:
             {
                 auto [leaf_c, leaf_v] = synth_expression(depth + 1, max_depth);
+                const auto& op = pick_random(get_fuzzer_binary_ops());
                 return {
-                    "(" + inner_c + ") + (" + leaf_c + ")",
-                    IsBinary(TokenType::Plus, IsGrouping(inner_v), IsGrouping(leaf_v))
+                    "(" + inner_c + ") " + op.second + " (" + leaf_c + ")",
+                    IsBinary(op.first, IsGrouping(inner_v), IsGrouping(leaf_v))
+                };
+            }
+        case ExpressionType::Unary:
+            {
+                const auto& op = pick_random(get_fuzzer_unary_ops());
+                return {
+                    op.second + " (" + inner_c + ")",
+                    IsUnary(op.first, IsGrouping(inner_v))
                 };
             }
         case ExpressionType::Dot:

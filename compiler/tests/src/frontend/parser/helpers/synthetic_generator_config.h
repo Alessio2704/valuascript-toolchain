@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
 
     enum class ReassignTargetFlavor { Id, Dot, Bracket, SelfDot };
 
-    enum class ExpressionType { Binary, Dot, Bracket, Call, Grouping };
+    enum class ExpressionType { Binary, Unary, Dot, Bracket, Call, Grouping };
 
     enum class HarvestStatementType { Assignment, Reassignment, ExprStmt };
 
@@ -96,6 +96,7 @@ namespace valuascript::compiler::test
             struct
             {
                 double binary = 1.0;
+                double unary = 1.0;
                 double dot = 1.0;
                 double bracket = 1.0;
                 double call = 1.0;
@@ -165,8 +166,10 @@ namespace valuascript::compiler::test
             out << " *   Reassign Targets: [ID: " << weights.reassign_target_flavors.id << ", Dot: " << weights.
                 reassign_target_flavors.dot << ", Brk: " << weights.reassign_target_flavors.bracket << ", Self: " <<
                 weights.reassign_target_flavors.self_dot << "]\n";
-            out << " *   Expr Types: [Bin: " << weights.expression_types.binary << ", Dot: " << weights.expression_types
-                .dot << ", Brk: " << weights.expression_types.bracket << ", Call: " << weights.expression_types.call <<
+            out << " *   Expr Types: [Bin: " << weights.expression_types.binary << ", Un: " << weights.expression_types.
+                unary << ", Dot: " << weights.expression_types
+                                             .dot << ", Brk: " << weights.expression_types.bracket << ", Call: " <<
+                weights.expression_types.call <<
                 ", Grp: " << weights.expression_types.grouping << "]\n";
             out << " *   Harvest Ratio: [Let: " << weights.harvest_statement_types.assignment << ", Re: " << weights.
                 harvest_statement_types.reassignment << ", Call: " << weights.harvest_statement_types.expr_stmt <<

@@ -389,6 +389,7 @@ namespace valuascript::compiler::test
         config.weights.reassign_target_flavors.self_dot = 4.0;
 
         config.weights.expression_types.binary = 1.0;
+        config.weights.expression_types.unary = 0.0;
         config.weights.expression_types.dot = 4.0;
         config.weights.expression_types.bracket = 2.0;
         config.weights.expression_types.call = 2.0;
