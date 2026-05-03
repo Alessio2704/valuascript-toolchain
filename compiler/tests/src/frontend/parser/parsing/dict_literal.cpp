@@ -61,8 +61,8 @@ namespace valuascript::compiler::test
             DictLiteralSadParam{"dict_self_missing_operator", "{ a: 1, b: self.a 5 }", ValuascriptErrorCode::
             MissingOperator}
         ),
-        [](const testing::TestParamInfo<DictLiteralSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<DictLiteralSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

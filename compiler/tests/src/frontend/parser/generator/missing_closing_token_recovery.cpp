@@ -128,8 +128,8 @@ namespace valuascript::compiler::test {
         ParserSync,
         MissingClosingTokenSyncTest,
         ::testing::ValuesIn(GenerateSyncTests()),
-        [](const auto& info) {
-        return info.param.test_name;
+        [](const auto& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

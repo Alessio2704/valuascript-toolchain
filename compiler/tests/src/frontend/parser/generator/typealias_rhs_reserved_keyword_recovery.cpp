@@ -7,26 +7,33 @@
 
 using namespace valuascript::shared;
 
-namespace valuascript::compiler::test {
-    namespace {
-        std::vector<ParserErrorsSynchronizationTestCase> GenerateResilienceTests() {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        std::vector<ParserErrorsSynchronizationTestCase> GenerateResilienceTests()
+        {
             std::vector<ParserErrorsSynchronizationTestCase> test_cases;
             auto keywords = get_all_reserved_keyword_strings();
             auto followers = LanguageConstructsProvider::build_all_test_variants();
 
-            for (const auto &kw: keywords) {
-                for (const auto &follow: followers) {
+            for (const auto& kw : keywords)
+            {
+                for (const auto& follow : followers)
+                {
                     std::string source = "typealias Broken = " + kw + "\n" + follow.source;
 
                     test_cases.push_back({
                         "alias_resilience_" + kw + "_to_" + follow.name,
                         source,
                         {{Err::ReservedKeywordAsIdentifier, 1, 20}},
-                        [verify_following_construct = follow.verify](const Program &program) {
+                        [verify_following_construct = follow.verify](const Program& program)
+                        {
                             auto it = std::find_if(program.type_aliases.begin(), program.type_aliases.end(),
-                                                   [](const auto &type_alias) { return type_alias->name == "Broken"; });
+                                                   [](const auto& type_alias) { return type_alias->name == "Broken"; });
 
-                            if (it != program.type_aliases.end()) {
+                            if (it != program.type_aliases.end())
+                            {
                                 EXPECT_EQ((*it)->target_type, nullptr)
                                     << "Broken alias was kept but contains an invalid target_type.";
                             }
@@ -40,13 +47,22 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class TypeAliasResilienceTest : public ParserErrorsSynchronizationBase {
+    class TypeAliasResilienceTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(TypeAliasResilienceTest, VerifyRecovery) {
+    TEST_P(TypeAliasResilienceTest, VerifyRecovery)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
-    INSTANTIATE_TEST_SUITE_P(ParserResilience, TypeAliasResilienceTest, ::testing::ValuesIn(GenerateResilienceTests()),
-                             [](const auto& info) { return info.param.test_name; });
+    INSTANTIATE_TEST_SUITE_P(
+        ParserResilience,
+        TypeAliasResilienceTest,
+        ::testing::ValuesIn(GenerateResilienceTests()),
+        [](const auto& test_info)
+        {
+        return test_info.param.test_name;
+        }
+    );
 }

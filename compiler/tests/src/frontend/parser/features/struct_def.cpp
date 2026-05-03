@@ -77,8 +77,8 @@ namespace valuascript::compiler::test
         StructDefinition,
         StructDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::structs()),
-        [](const testing::TestParamInfo<RegistryEntry<StructVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<StructVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

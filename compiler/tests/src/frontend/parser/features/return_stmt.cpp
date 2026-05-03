@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
         ReturnStatement,
         ReturnStatementRegistryRunner,
         testing::ValuesIn(ConstructRegistry::returns()),
-        [](const testing::TestParamInfo<RegistryEntry<ReturnVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<ReturnVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

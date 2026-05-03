@@ -42,8 +42,8 @@ namespace valuascript::compiler::test {
             DirectiveSadParam{"missing_operator_5", "#iterations = 1000 a() + b()", ValuascriptErrorCode::
             MissingOperator}
         ),
-        [](const testing::TestParamInfo<DirectiveSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<DirectiveSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

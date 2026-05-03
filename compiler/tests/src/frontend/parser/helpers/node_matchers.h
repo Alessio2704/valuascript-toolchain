@@ -569,36 +569,36 @@ namespace valuascript::compiler::test
         return [v = std::move(value)](Expression* node) { ExpectNumber(node, v); };
     }
 
-    inline ExprVerifier IsString(std::string value)
+    inline ExprVerifier IsString(std::string val)
     {
-        return [v = std::move(value)](Expression* node) { ExpectString(node, v); };
+        return [v = std::move(val)](Expression* node) { ExpectString(node, v); };
     }
 
-    inline ExprVerifier IsBoolean(bool value) { return [value](Expression* node) { ExpectBoolean(node, value); }; }
+    inline ExprVerifier IsBoolean(bool val) { return [val](Expression* node) { ExpectBoolean(node, val); }; }
 
-    inline ExprVerifier IsPercentage(std::string value)
+    inline ExprVerifier IsPercentage(std::string val)
     {
-        return [v = std::move(value)](Expression* node) { ExpectPercentage(node, v); };
+        return [v = std::move(val)](Expression* node) { ExpectPercentage(node, v); };
     }
 
-    inline ExprVerifier IsIdentifier(std::string value)
+    inline ExprVerifier IsIdentifier(std::string val)
     {
-        return [v = std::move(value)](Expression* node) { ExpectIdentifier(node, v); };
+        return [v = std::move(val)](Expression* node) { ExpectIdentifier(node, v); };
     }
 
     inline ExprVerifier IsSelf() { return [](Expression* node) { ExpectSelf(node); }; }
 
-    inline ExprVerifier IsBinary(TokenType op, ExprVerifier left = nullptr, ExprVerifier right = nullptr)
+    inline ExprVerifier IsBinary(TokenType op, ExprVerifier l = nullptr, ExprVerifier r = nullptr)
     {
-        return [op, left = std::move(left), right = std::move(right)](Expression* node)
+        return [op, left = std::move(l), right = std::move(r)](Expression* node)
         {
             ExpectBinary(node, op, left, right);
         };
     }
 
-    inline ExprVerifier IsUnary(TokenType op, ExprVerifier right = nullptr)
+    inline ExprVerifier IsUnary(TokenType op, ExprVerifier r = nullptr)
     {
-        return [op, right = std::move(right)](Expression* node) { ExpectUnary(node, op, right); };
+        return [op, right = std::move(r)](Expression* node) { ExpectUnary(node, op, right); };
     }
 
     inline ExprVerifier IsGrouping(ExprVerifier inner = nullptr)
@@ -617,29 +617,29 @@ namespace valuascript::compiler::test
 
     inline ExprVerifier IsCall(ExprVerifier target, std::vector<ArgSpec> args = {})
     {
-        return [target = std::move(target), a = std::move(args)](Expression* node) { ExpectCall(node, target, a); };
+        return [t = std::move(target), a = std::move(args)](Expression* node) { ExpectCall(node, t, a); };
     }
 
     inline ExprVerifier IsBracket(ExprVerifier target, ExprVerifier idx)
     {
-        return [target = std::move(target), index = std::move(idx)](Expression* node)
+        return [t = std::move(target), index = std::move(idx)](Expression* node)
         {
-            ExpectBracketAccess(node, target, index);
+            ExpectBracketAccess(node, t, index);
         };
     }
 
     inline ExprVerifier IsDot(ExprVerifier target, std::string property)
     {
-        return [target = std::move(target), p = std::move(property)](Expression* node)
+        return [t = std::move(target), p = std::move(property)](Expression* node)
         {
-            ExpectDotAccess(node, target, p);
+            ExpectDotAccess(node, t, p);
         };
     }
 
-    inline ExprVerifier IsSwitch(ExprVerifier target, std::vector<SwitchCaseSpec> cases,
+    inline ExprVerifier IsSwitch(ExprVerifier t, std::vector<SwitchCaseSpec> cases,
                                  ExprVerifier default_expr = nullptr)
     {
-        return [target = std::move(target), c = std::move(cases), d = std::move(default_expr)](Expression* node)
+        return [target = std::move(t), c = std::move(cases), d = std::move(default_expr)](Expression* node)
         {
             ExpectSwitch(node, target, c, d);
         };

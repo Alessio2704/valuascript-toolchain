@@ -68,8 +68,8 @@ namespace valuascript::compiler::test
             ReassignmentSadParam{"missing_operator_7", "a = 1 + a[0] + b[1:2] a.b", ValuascriptErrorCode::
             MissingOperator}
         ),
-        [](const testing::TestParamInfo<ReassignmentSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<ReassignmentSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

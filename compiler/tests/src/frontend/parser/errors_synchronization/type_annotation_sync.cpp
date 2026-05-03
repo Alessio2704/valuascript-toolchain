@@ -19,12 +19,12 @@ namespace valuascript::compiler::test {
         }
 
         auto ExpectAssignmentType(std::function<void(const TypeAnnotation *)> verifier) {
-            return [verifier = std::move(verifier)](const Program &ast) {
+            return [v = std::move(verifier)](const Program &ast) {
                 ASSERT_FALSE(ast.execution_steps.empty()) << "Expected at least one execution step";
                 auto assign = dynamic_cast<Assignment *>(ast.execution_steps[0].get());
                 ASSERT_NE(assign, nullptr) << "Expected first step to be an Assignment";
                 ASSERT_FALSE(assign->targets.empty()) << "Expected at least one assignment target";
-                verifier(assign->targets[0].second.get());
+                v(assign->targets[0].second.get());
             };
         }
     }
@@ -591,12 +591,12 @@ namespace valuascript::compiler::test {
             auto s = ast.struct_definitions[0].get();
             ASSERT_EQ(s->fields.size(), 1);
 
-            auto t = s->fields[0].type.get();
-            EXPECT_EQ(t->name, "dict");
-            ASSERT_EQ(t->generic_args.size(), 2);
+            auto type = s->fields[0].type.get();
+            EXPECT_EQ(type->name, "dict");
+            ASSERT_EQ(type->generic_args.size(), 2);
 
-            ExpectBaseType(t->generic_args[0].get(), "int", 0);
-            ExpectBaseType(t->generic_args[1].get(), "string", 0);
+            ExpectBaseType(type->generic_args[0].get(), "int", 0);
+            ExpectBaseType(type->generic_args[1].get(), "string", 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -620,8 +620,8 @@ namespace valuascript::compiler::test {
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

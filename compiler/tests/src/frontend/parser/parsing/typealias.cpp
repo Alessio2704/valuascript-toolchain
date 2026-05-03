@@ -86,8 +86,8 @@ namespace valuascript::compiler::test
             ValuascriptErrorCode::UnmatchedParenthesisInTuple
             }
         ),
-        [](const testing::TestParamInfo<TypeAliasSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<TypeAliasSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

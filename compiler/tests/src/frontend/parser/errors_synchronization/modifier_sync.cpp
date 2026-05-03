@@ -65,8 +65,8 @@ namespace valuascript::compiler::test {
         }
 
         auto ExpectModifierSet(std::vector<ExpectedModifier> mods) {
-            return [mods = std::move(mods)](const Program &ast) {
-                ExpectModifiers(ast, mods);
+            return [m = std::move(mods)](const Program &ast) {
+                ExpectModifiers(ast, m);
                 EXPECT_GT(ast.execution_steps.size(), 1);
             };
         }
@@ -1152,8 +1152,8 @@ namespace valuascript::compiler::test {
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

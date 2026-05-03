@@ -129,8 +129,8 @@ namespace valuascript::compiler::test
             HappyLexerParam{"max_munch_6", "!=!==", 4}
 
         ),
-        [](const testing::TestParamInfo<HappyLexerParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<HappyLexerParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

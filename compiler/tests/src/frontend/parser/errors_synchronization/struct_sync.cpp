@@ -44,9 +44,9 @@ namespace valuascript::compiler::test {
 
         auto ExpectStruct(std::string name,
                           std::vector<std::pair<std::string, std::optional<std::string> > > fields = {}) {
-            return [name = std::move(name), fields = std::move(fields)](const Program &ast) {
-                auto s = ExpectRecoveredStruct(ast, name);
-                ExpectStructFields(s, fields);
+            return [n = std::move(name), f = std::move(fields)](const Program &ast) {
+                auto s = ExpectRecoveredStruct(ast, n);
+                ExpectStructFields(s, f);
             };
         }
     }
@@ -229,8 +229,8 @@ namespace valuascript::compiler::test {
                 })
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

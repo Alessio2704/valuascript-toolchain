@@ -68,8 +68,8 @@ namespace valuascript::compiler::test
             UnclosedString},
             SadLexerParam{"unclosed_docstring_2", "\"\"\"\"\" return 1 }", ValuascriptErrorCode::UnclosedString}
         ),
-        [](const testing::TestParamInfo<SadLexerParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<SadLexerParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

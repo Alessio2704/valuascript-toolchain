@@ -15,7 +15,8 @@ runs:
       run: |
         cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          -DENABLE_SANITIZERS=OFF
 
     - name: Set up MSVC Developer Command Prompt
       if: runner.os == 'Windows'
@@ -35,7 +36,8 @@ runs:
           -DCMAKE_CXX_FLAGS="/Z7 /MP /EHsc" \
           -DCMAKE_EXE_LINKER_FLAGS="/INCREMENTAL:NO /OPT:REF /OPT:ICF /DEBUG:NONE" \
           -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded \
-          -DINTERPROCEDURAL_OPTIMIZATION=OFF
+          -DINTERPROCEDURAL_OPTIMIZATION=OFF \
+          -DENABLE_SANITIZERS=OFF
 
     - name: Build CMake Project
       shell: bash
@@ -47,4 +49,7 @@ runs:
         cd build
         CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
         echo "Running CTest with $CORES cores..."
-        FUZZ_ITERATIONS=100000 EXPANSION_DEPTH=5 EXPANSION_RECURSION=3 ctest --parallel $CORES --verbose --output-on-failure
+        ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1" \
+        UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
+        FUZZ_ITERATIONS=100000 EXPANSION_DEPTH=5 EXPANSION_RECURSION=3 \
+        ctest --parallel $CORES --verbose --output-on-failure

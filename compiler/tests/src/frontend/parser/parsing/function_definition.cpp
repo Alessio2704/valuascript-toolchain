@@ -90,8 +90,8 @@ namespace valuascript::compiler::test
             FunctionSadParam{"multi_param_default", "func test(a: scalar = 1, b: boolean) -> scalar {}",
             ValuascriptErrorCode::NonDefaultParameterAfterDefault}
         ),
-        [](const testing::TestParamInfo<FunctionSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<FunctionSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

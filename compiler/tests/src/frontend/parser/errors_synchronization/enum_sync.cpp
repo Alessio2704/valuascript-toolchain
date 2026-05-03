@@ -72,10 +72,10 @@ namespace valuascript::compiler::test
 
         auto ExpectEnum(std::string name, std::optional<std::string> type, std::vector<ExpectedEnumCase> cases = {})
         {
-            return [name = std::move(name), type = std::move(type), cases = std::move(cases)](const Program& ast)
+            return [n = std::move(name), t = std::move(type), c = std::move(cases)](const Program& ast)
             {
-                auto e = ExpectRecoveredEnum(ast, name);
-                ExpectEnumCases(e, type, cases);
+                auto e = ExpectRecoveredEnum(ast, n);
+                ExpectEnumCases(e, t, c);
             };
         }
 
@@ -456,8 +456,8 @@ namespace valuascript::compiler::test
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

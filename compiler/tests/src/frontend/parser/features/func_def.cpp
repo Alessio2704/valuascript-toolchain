@@ -95,8 +95,8 @@ namespace valuascript::compiler::test
         FunctionDefinition,
         FunctionDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::functions()),
-        [](const testing::TestParamInfo<RegistryEntry<FuncVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<FuncVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

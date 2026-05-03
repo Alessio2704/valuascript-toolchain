@@ -21,8 +21,8 @@ namespace valuascript::compiler::test
         Expression,
         ExpressionsErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::expressions()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<ExprVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<ErrorRegistryEntry<ExprVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

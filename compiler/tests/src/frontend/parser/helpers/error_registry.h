@@ -8,7 +8,7 @@
 
 namespace valuascript::compiler::test
 {
-    struct ExpectedError
+    struct ParserExpectedError
     {
         ValuascriptErrorCode code;
         size_t line_start;
@@ -17,18 +17,18 @@ namespace valuascript::compiler::test
         size_t column_end;
         bool skip_span_check;
 
-        ExpectedError(ValuascriptErrorCode code,
-                      size_t line_start = 0,
-                      size_t column_start = 0,
-                      size_t line_end = 0,
-                      size_t column_end = 0,
-                      bool skip_span_check = false)
-            : code(code),
-              line_start(line_start),
-              column_start(column_start),
-              line_end(line_end),
-              column_end(column_end),
-              skip_span_check(skip_span_check)
+        ParserExpectedError(ValuascriptErrorCode c,
+                      size_t ls = 0,
+                      size_t cs = 0,
+                      size_t le = 0,
+                      size_t ce = 0,
+                      bool skip_check = false)
+            : code(c),
+              line_start(ls),
+              column_start(cs),
+              line_end(le),
+              column_end(ce),
+              skip_span_check(skip_check)
         {
         }
     };
@@ -38,7 +38,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string code;
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         Verifier verifier;
     };
 
@@ -59,84 +59,84 @@ namespace valuascript::compiler::test
         static std::vector<ErrorRegistryEntry<ModifierVerifier>>& modifiers();
         static std::vector<ErrorRegistryEntry<TypeVerifier>>& type_annotations();
 
-        static void add(const std::string&, const std::string&, const std::vector<ExpectedError>&,
+        static void add(const std::string&, const std::string&, const std::vector<ParserExpectedError>&,
                         const NullVerifier&)
         {
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ImportVerifier& v)
         {
             imports().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const DirectiveVerifier& v)
         {
             directives().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const FuncVerifier& v)
         {
             functions().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const StructVerifier& v)
         {
             structs().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const EnumVerifier& v)
         {
             enums().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const AliasVerifier& v)
         {
             aliases().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const AssignmentVerifier& v)
         {
             assignments().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ReassignmentVerifier& v)
         {
             reassignments().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ReturnVerifier& v)
         {
             returns().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ExprStmtVerifier& v)
         {
             expr_stmts().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ExprVerifier& v)
         {
             expressions().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const ModifierVerifier& v)
         {
             modifiers().emplace_back(n, c, errs, v);
         }
 
-        static void add(const std::string& n, const std::string& c, const std::vector<ExpectedError>& errs,
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const TypeVerifier& v)
         {
             type_annotations().emplace_back(n, c, errs, v);

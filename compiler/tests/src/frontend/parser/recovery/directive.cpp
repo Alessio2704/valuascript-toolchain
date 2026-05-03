@@ -16,27 +16,27 @@ namespace valuascript::compiler::test
             auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
 
             reg("MissingName", "#",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3}},
                 IsDirective("<error>"));
 
             reg("MissingValueAfterEquals", "#dir = ",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8}},
                 IsDirective("dir", IsNull()));
 
             reg("MissingHashValuelessDirective", "dir",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4}},
                 IsNull());
 
             reg("MissingNamePlusValueWithoutEquals", "# \"string\"",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11}},
                 IsDirective("<error>", IsNull()));
 
             reg("InvalidMarkerAsteriskWithValue", "*iterations = 1000",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             reg("InvalidMarkerAsteriskNoValue", "*module",
-                std::vector<ExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             return true;
@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
         Directive,
         DirectiveErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::directives()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<DirectiveVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<ErrorRegistryEntry<DirectiveVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

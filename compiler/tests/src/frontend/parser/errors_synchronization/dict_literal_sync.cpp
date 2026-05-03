@@ -55,9 +55,9 @@ namespace valuascript::compiler::test
 
         auto ExpectDict(std::vector<ExpectedDictPair> pairs)
         {
-            return [pairs = std::move(pairs)](const Program& ast)
+            return [p = std::move(pairs)](const Program& ast)
             {
-                ExpectDictLiteral(ast, pairs);
+                ExpectDictLiteral(ast, p);
                 EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
             };
         }
@@ -687,8 +687,8 @@ namespace valuascript::compiler::test
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

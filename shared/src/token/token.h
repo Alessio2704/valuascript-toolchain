@@ -9,8 +9,8 @@ namespace valuascript::shared {
         size_t line;
         size_t column;
 
-        Token(const TokenType type, std::string lexeme, const size_t line, const size_t column)
-            : type(type), lexeme(std::move(lexeme)), line(line), column(column) {
+        Token(const TokenType t, std::string lex, const size_t l, const size_t c)
+            : type(t), lexeme(std::move(lex)), line(l), column(c) {
         }
     };
 }

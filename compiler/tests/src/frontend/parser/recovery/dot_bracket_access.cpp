@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
             auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
 
             reg("EmptyBracket", "arr[]",
-                std::vector<ExpectedError>{
+                std::vector<ParserExpectedError>{
                     {ValuascriptErrorCode::EmptyBracketAccess, 1, 4, 1, 5}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
@@ -23,7 +23,7 @@ namespace valuascript::compiler::test
             // );
 
             reg("InvalidExpressionInBracket", "arr[*]",
-                std::vector<ExpectedError>{
+                std::vector<ParserExpectedError>{
                     {ValuascriptErrorCode::InvalidExpression, 1, 5, 1, 6}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
@@ -42,7 +42,7 @@ namespace valuascript::compiler::test
             // );
 
             reg("MultipleColumnsInBracketSlice", "arr[1:2:3]",
-                std::vector<ExpectedError>{
+                std::vector<ParserExpectedError>{
                     {ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex, 1, 8, 1, 9}
                 },
                 IsBracket(IsIdentifier("arr"),
@@ -72,7 +72,7 @@ namespace valuascript::compiler::test
             // );
 
             reg("UnexpectedCommaInBracket", "arr[1, 2]",
-                std::vector<ExpectedError>{
+                std::vector<ParserExpectedError>{
                     {ValuascriptErrorCode::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
             // );
 
             reg("GarbageDotAccessProperty", "obj.*",
-                std::vector<ExpectedError>{
+                std::vector<ParserExpectedError>{
                     {ValuascriptErrorCode::ExpectedPropertyName, 1, 5, 1, 6}
                 },
                 IsDot(IsIdentifier("obj"), "<error>")

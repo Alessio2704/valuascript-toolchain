@@ -65,5 +65,5 @@ namespace valuascript::compiler::test {
 
     INSTANTIATE_TEST_SUITE_P(ParserScopeSilenced, SilencedTopLevelDeclarationInBlockTest,
                              ::testing::ValuesIn(GenerateTopLevelBrokenInBlockTests()),
-                             [](const auto& info) { return info.param.test_name; });
+                             [](const auto& test_info) { return test_info.param.test_name; });
 }

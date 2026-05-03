@@ -400,8 +400,8 @@ namespace valuascript::compiler::test
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

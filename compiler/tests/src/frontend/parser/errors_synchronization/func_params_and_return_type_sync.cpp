@@ -52,10 +52,10 @@ namespace valuascript::compiler::test {
         auto ExpectFunction(std::string name,
                             std::vector<std::pair<std::string, std::optional<std::string> > > params = {},
                             std::vector<std::string> returns = {"void"}) {
-            return [name = std::move(name), params = std::move(params), returns = std::move(returns)](
+            return [n = std::move(name), par = std::move(params), ret = std::move(returns)](
                 const Program &ast) {
-                auto f = ExpectRecoveredFunction(ast, name);
-                ExpectFunctionSignature(f, params, returns);
+                auto f = ExpectRecoveredFunction(ast, n);
+                ExpectFunctionSignature(f, par, ret);
             };
         }
     }
@@ -483,8 +483,8 @@ namespace valuascript::compiler::test {
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase> &info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase> &test_info) {
+        return test_info.param.test_name;
         }
     );
 }

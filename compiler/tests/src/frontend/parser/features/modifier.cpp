@@ -94,8 +94,8 @@ namespace valuascript::compiler::test
         Modifier,
         ModifierRegistryRunner,
         testing::ValuesIn(ConstructRegistry::modifiers()),
-        [](const testing::TestParamInfo<RegistryEntry<ModifierVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<ModifierVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

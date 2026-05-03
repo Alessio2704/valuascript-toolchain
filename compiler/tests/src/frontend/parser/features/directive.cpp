@@ -46,8 +46,8 @@ namespace valuascript::compiler::test
         Directive,
         DirectiveRegistryRunner,
         testing::ValuesIn(ConstructRegistry::directives()),
-        [](const testing::TestParamInfo<RegistryEntry<DirectiveVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<DirectiveVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

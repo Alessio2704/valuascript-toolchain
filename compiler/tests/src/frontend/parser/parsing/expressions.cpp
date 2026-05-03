@@ -63,8 +63,8 @@ namespace valuascript::compiler::test
             ExpressionSadParam{"missing_operator_7", "a + b (1, 2)", ValuascriptErrorCode::
             MissingOperatorOrArgumentName}
         ),
-        [](const testing::TestParamInfo<ExpressionSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<ExpressionSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

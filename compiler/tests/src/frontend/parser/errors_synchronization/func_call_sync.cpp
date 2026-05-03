@@ -88,10 +88,10 @@ namespace valuascript::compiler::test
 
         auto ExpectFunctionCall(std::string target_name, std::vector<ExpectedArgument> args = {})
         {
-            return [target_name = std::move(target_name), args = std::move(args)](const Program& ast)
+            return [t = std::move(target_name), a = std::move(args)](const Program& ast)
             {
-                auto call = ExpectRecoveredFunctionCall(ast, target_name);
-                ExpectFunctionCallArgs(call, args);
+                auto call = ExpectRecoveredFunctionCall(ast, t);
+                ExpectFunctionCallArgs(call, a);
             };
         }
     }
@@ -322,8 +322,8 @@ namespace valuascript::compiler::test
                 }}, {"b", "2"}})
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

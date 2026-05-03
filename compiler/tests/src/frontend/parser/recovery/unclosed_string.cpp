@@ -8,7 +8,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, ImportStatementWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 8, 1, 24);
 
         ExpectParseErrorsWithRecovery(
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 22);
 
         ExpectParseErrorsWithRecovery(
@@ -40,7 +40,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveAssignmentWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 20);
 
         ExpectParseErrorsWithRecovery(
@@ -56,7 +56,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, FunctionDocstringUnclosed)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3);
         errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2);
 
@@ -83,7 +83,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TupleLiteralWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 19, 1, 29);
         errors.emplace_back(ValuascriptErrorCode::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30);
 
@@ -110,7 +110,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DictLiteralWithUnclosedStringValue)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31);
         errors.emplace_back(ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31);
 
@@ -136,7 +136,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TensorLiteralWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23);
         errors.emplace_back(ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23);
 
@@ -163,7 +163,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, EnumCaseValueWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41);
         errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41);
 
@@ -185,7 +185,7 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, ModifierArgumentWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
+        std::vector<ParserExpectedError> errors;
         errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31);
         errors.emplace_back(ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31);
 

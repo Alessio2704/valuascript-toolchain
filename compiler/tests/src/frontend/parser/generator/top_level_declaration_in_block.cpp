@@ -3,20 +3,26 @@
 #include "language_constructs_provider.h"
 #include "invalid_top_level_declaration_in_block.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        std::vector<ParserErrorsSynchronizationTestCase> GenerateTopLevelInBlockTests() {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        std::vector<ParserErrorsSynchronizationTestCase> GenerateTopLevelInBlockTests()
+        {
             std::vector<ParserErrorsSynchronizationTestCase> test_cases;
             auto constructs = LanguageConstructsProvider::build_all_test_variants();
             auto envs = get_environments();
 
-            for (const auto &env: envs) {
-                for (const auto &construct: constructs) {
+            for (const auto& env : envs)
+            {
+                for (const auto& construct : constructs)
+                {
                     if (!construct.is_top_level_only) continue;
 
                     if (!env.supports_modifiers &&
                         construct.name.find("_mod") != std::string::npos &&
-                        construct.name.find("_mod0") == std::string::npos) {
+                        construct.name.find("_mod0") == std::string::npos)
+                    {
                         continue;
                     }
 
@@ -28,7 +34,8 @@ namespace valuascript::compiler::test {
 
                     std::vector<ExpectedParserError> expected_errors;
 
-                    if (env.expects_missing_value_error) {
+                    if (env.expects_missing_value_error)
+                    {
                         expected_errors.push_back({
                             Err::MissingValueAfterEquals,
                             span.line_start,
@@ -58,14 +65,17 @@ namespace valuascript::compiler::test {
         }
     }
 
-    class TopLevelDeclarationInBlockTest : public ParserErrorsSynchronizationBase {
+    class TopLevelDeclarationInBlockTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(TopLevelDeclarationInBlockTest, RaisesErrorWithCorrectFullSpan) {
+    TEST_P(TopLevelDeclarationInBlockTest, RaisesErrorWithCorrectFullSpan)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
-    INSTANTIATE_TEST_SUITE_P(ParserScope, TopLevelDeclarationInBlockTest,
+    INSTANTIATE_TEST_SUITE_P(ParserScope,
+                             TopLevelDeclarationInBlockTest,
                              ::testing::ValuesIn(GenerateTopLevelInBlockTests()),
-                             [](const auto& info) { return info.param.test_name; });
+                             [](const auto& test_info) { return test_info.param.test_name; });
 }

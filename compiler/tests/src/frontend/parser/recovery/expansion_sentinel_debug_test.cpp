@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
     public:
         static void DumpRecoveryExpansion(InjectableType type,
                                           const std::string& snippet,
-                                          const std::vector<ExpectedError>& errors,
+                                          const std::vector<ParserExpectedError>& errors,
                                           const std::string& label,
                                           const UniversalVerifier& verifier)
         {
@@ -67,7 +67,7 @@ namespace valuascript::compiler::test
         DumpRecoveryExpansion(
             InjectableType::StrongStatement,
             "let x = ",
-            {ExpectedError(ValuascriptErrorCode::MissingValueAfterEquals, 1, 7)},
+            {ParserExpectedError(ValuascriptErrorCode::MissingValueAfterEquals, 1, 7)},
             "BrokenAssignment",
             AssignmentVerifier([](Assignment*)
             {
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
         DumpRecoveryExpansion(
             InjectableType::Expression,
             "1 + ",
-            {ExpectedError(ValuascriptErrorCode::InvalidExpression, 1, 5)},
+            {ParserExpectedError(ValuascriptErrorCode::InvalidExpression, 1, 5)},
             "MalformedBinary",
             ExprVerifier([](Expression*)
             {

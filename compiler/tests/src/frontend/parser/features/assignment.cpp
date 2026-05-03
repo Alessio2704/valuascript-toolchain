@@ -62,8 +62,8 @@ namespace valuascript::compiler::test
         Assignment,
         AssignmentRegistryRunner,
         testing::ValuesIn(ConstructRegistry::assignments()),
-        [](const testing::TestParamInfo<RegistryEntry<AssignmentVerifier>>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<RegistryEntry<AssignmentVerifier>>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

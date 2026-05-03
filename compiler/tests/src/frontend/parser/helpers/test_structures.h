@@ -39,7 +39,7 @@ namespace valuascript::compiler::test
         std::string path_name;
         std::string full_code;
         ProgramSpec spec;
-        std::vector<ExpectedError> shifted_errors;
+        std::vector<ParserExpectedError> shifted_errors;
         int depth;
     };
 }

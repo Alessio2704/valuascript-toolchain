@@ -149,7 +149,7 @@ namespace valuascript::compiler::test
     }
 
     void ParserTestBase::RunRecoveryScenario(ProcessingItem&& item,
-                                             const std::vector<ExpectedError>& errors,
+                                             const std::vector<ParserExpectedError>& errors,
                                              size_t seed)
     {
         ProgramSpec item_spec;
@@ -183,7 +183,7 @@ namespace valuascript::compiler::test
         ExpectProgram(ast.get(), spec);
     }
 
-    void ParserTestBase::ExpectParseErrors(const std::string& code, const std::vector<ExpectedError>& expected_errors,
+    void ParserTestBase::ExpectParseErrors(const std::string& code, const std::vector<ParserExpectedError>& expected_errors,
                                            const std::optional<ProgramSpec>& spec)
     {
         SCOPED_TRACE(format_source_with_lines(code));
@@ -212,7 +212,7 @@ namespace valuascript::compiler::test
     }
 
     void ParserTestBase::ExpectParseErrorsWithRecovery(const std::string& code,
-                                                       const std::vector<ExpectedError>& expected_errors,
+                                                       const std::vector<ParserExpectedError>& expected_errors,
                                                        ProgramSpec broken_part_spec)
     {
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();

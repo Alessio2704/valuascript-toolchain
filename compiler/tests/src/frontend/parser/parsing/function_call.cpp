@@ -51,8 +51,8 @@ namespace valuascript::compiler::test
             FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", ValuascriptErrorCode::
             MissingCommaSeparatorForArgumentsInFunctionCall}
         ),
-        [](const testing::TestParamInfo<FunctionCallSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<FunctionCallSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

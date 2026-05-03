@@ -73,8 +73,8 @@ namespace valuascript::compiler::test
             ::MissingOperatorInSwitchCaseResult}
 
         ),
-        [](const testing::TestParamInfo<SwitchSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<SwitchSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

@@ -31,9 +31,9 @@ namespace valuascript::compiler::test
 
         auto ExpectTensor(std::vector<std::string> numbers)
         {
-            return [numbers = std::move(numbers)](const Program& ast)
+            return [n = std::move(numbers)](const Program& ast)
             {
-                ExpectTensorElements(ast, numbers);
+                ExpectTensorElements(ast, n);
                 EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
             };
         }
@@ -484,8 +484,8 @@ namespace valuascript::compiler::test
             EXPECT_EQ(tensor_rec->elements.size(), 1);
             }
             }
-        ), [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        ), [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

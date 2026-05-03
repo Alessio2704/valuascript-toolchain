@@ -20,9 +20,9 @@ namespace valuascript::compiler::test
 
         auto ExpectFunctionBodySize(std::string name, size_t expected_body_statements)
         {
-            return [name = std::move(name), expected_body_statements](const Program& ast)
+            return [n = std::move(name), expected_body_statements](const Program& ast)
             {
-                auto f = ExpectRecoveredFunction(ast, name);
+                auto f = ExpectRecoveredFunction(ast, n);
                 ASSERT_NE(f, nullptr) << "Function not found!";
                 EXPECT_EQ(f->body.size(), expected_body_statements) << "Function body statement count mismatch!";
             };
@@ -576,8 +576,8 @@ namespace valuascript::compiler::test
             }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
             BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", ValuascriptErrorCode::
             MissingOperatorOrExpectedColonOrBracketInTensor}
         ),
-        [](const testing::TestParamInfo<BracketAccessSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<BracketAccessSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

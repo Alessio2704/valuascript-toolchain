@@ -87,7 +87,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectBracketAccess(assign_a->value.get(), [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
+            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
                 ExpectNumber(i, "1");
                 });
 
@@ -105,7 +105,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectBracketAccess(assign_a->value.get(), [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
+            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
                 ExpectSlice(i, [](auto l) { ExpectNumber(l, "1"); }, [](auto r) { ExpectNumber(r, "2"); });
                 });
             }
@@ -122,7 +122,7 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "a");
-            ExpectBracketAccess(assign->value.get(), [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
+            ExpectBracketAccess(assign->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -130,8 +130,8 @@ namespace valuascript::compiler::test {
             "let a = arr[*].prop\n",
             { {Err::InvalidExpression, 1, 13} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectDotAccess(expr, [](auto t) {
-                    ExpectBracketAccess(t, [](auto arr) { ExpectIdentifier(arr, "arr"); }, nullptr);
+                ExpectDotAccess(expr, [](auto target) {
+                    ExpectBracketAccess(target, [](auto arr) { ExpectIdentifier(arr, "arr"); }, nullptr);
                     }, "prop");
                 })
             },
@@ -160,7 +160,7 @@ namespace valuascript::compiler::test {
             "let a = arr[1 : *]\n",
             { {Err::InvalidExpression, 1, 17} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
+                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
                     ExpectNumber(i, "1");
                     });
                 })
@@ -170,7 +170,7 @@ namespace valuascript::compiler::test {
             "let a = arr[* : 2]\n",
             { {Err::InvalidExpression, 1, 13} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
+                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -180,7 +180,7 @@ namespace valuascript::compiler::test {
             {Err::MissingOperatorOrExpectedColonOrBracketInTensor, 1, 15}
             },
             VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
+                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -190,7 +190,7 @@ namespace valuascript::compiler::test {
             VerifyAssignmentValue([](auto expr) {
                 ExpectBracketAccess(expr, [](auto b2) {
                     ExpectBracketAccess(b2, [](auto b1) {
-                        ExpectBracketAccess(b1, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) { ExpectNumber(i,
+                        ExpectBracketAccess(b1, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) { ExpectNumber(i,
                             "1"); });
                         }, nullptr);
                     }, [](auto i) { ExpectNumber(i, "2"); });
@@ -201,7 +201,7 @@ namespace valuascript::compiler::test {
             "let a = obj.let\n",
             { {Err::ReservedKeywordAsIdentifier, 1, 13} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectDotAccess(expr, [](auto t) { ExpectIdentifier(t, "obj"); }, "let");
+                ExpectDotAccess(expr, [](auto target) { ExpectIdentifier(target, "obj"); }, "let");
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -247,7 +247,7 @@ namespace valuascript::compiler::test {
             },
             VerifyAssignmentValue([](auto expr) {
                 ExpectBracketAccess(expr, [](auto inner_brk) {
-                    ExpectBracketAccess(inner_brk, [](auto t) { ExpectIdentifier(t, "arr"); }, nullptr);
+                    ExpectBracketAccess(inner_brk, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
                     }, nullptr);
                 })
             },
@@ -256,7 +256,7 @@ namespace valuascript::compiler::test {
             "let a = arr[ [1, *] ]\n",
             { {Err::InvalidExpression, 1, 18} },
             VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
+                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
                     auto tensor = dynamic_cast<const TensorLiteral*>(i);
                     ASSERT_NE(tensor, nullptr) << "Expected inner expression to be a TensorLiteral";
                     ASSERT_EQ(tensor->elements.size(), 1);
@@ -408,7 +408,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
-            ExpectDotAccess(reassignment->target.get(), [](auto t) { ExpectIdentifier(t, "a"); }, "prop");
+            ExpectDotAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, "prop");
             ExpectNumber(reassignment->value.get(), "2");
             }
             },
@@ -421,7 +421,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
-            ExpectBracketAccess(reassignment->target.get(), [](auto t) { ExpectIdentifier(t, "a"); }, [](auto i) {
+            ExpectBracketAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, [](auto i) {
                 ExpectNumber(i, "0"); });
             ExpectNumber(reassignment->value.get(), "2");
             }
@@ -435,8 +435,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
-            ExpectBracketAccess(reassignment->target.get(), [](auto t) {
-                ExpectDotAccess(t, [](auto t2) { ExpectIdentifier(t2, "a"); }, "prop");
+            ExpectBracketAccess(reassignment->target.get(), [](auto target) {
+                ExpectDotAccess(target, [](auto target2) { ExpectIdentifier(target2, "a"); }, "prop");
                 }, [](auto i) { ExpectNumber(i, "0"); });
             ExpectNumber(reassignment->value.get(), "2");
             }
@@ -459,7 +459,7 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBracketAfterTensorIndex, 1, 14},
             },
             VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto t) { ExpectIdentifier(t, "arr"); }, [](auto i) {
+                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
                     ExpectNumber(i, "1");
                     });
                 })
@@ -477,8 +477,8 @@ namespace valuascript::compiler::test {
                 })
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
+            return test_info.param.test_name;
         }
     );
 }

@@ -9,8 +9,8 @@ namespace valuascript::compiler::test
     class ErrorShifter
     {
     public:
-        static std::vector<ExpectedError> shift_errors(const std::string& prefix_code,
-                                                       const std::vector<ExpectedError>& original_errors)
+        static std::vector<ParserExpectedError> shift_errors(const std::string& prefix_code,
+                                                       const std::vector<ParserExpectedError>& original_errors)
         {
             size_t line_offset = 0;
             size_t col_offset = 0;
@@ -28,12 +28,12 @@ namespace valuascript::compiler::test
                 }
             }
 
-            std::vector<ExpectedError> shifted;
+            std::vector<ParserExpectedError> shifted;
             shifted.reserve(original_errors.size());
 
             for (const auto& err : original_errors)
             {
-                ExpectedError shifted_err = err;
+                ParserExpectedError shifted_err = err;
 
                 if (!shifted_err.skip_span_check)
                 {

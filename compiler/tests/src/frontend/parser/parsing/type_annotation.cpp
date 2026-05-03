@@ -44,8 +44,8 @@ namespace valuascript::compiler::test {
             TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", ValuascriptErrorCode::
             UnmatchedBracketAfterGenericArgs}
         ),
-        [](const testing::TestParamInfo<TypeAnnotationSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<TypeAnnotationSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

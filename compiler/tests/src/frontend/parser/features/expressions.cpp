@@ -20,9 +20,9 @@ namespace valuascript::compiler::test
         Expression,
         ExpressionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::expressions()),
-        [](const testing::TestParamInfo<RegistryEntry<ExprVerifier>>& info)
+        [](const testing::TestParamInfo<RegistryEntry<ExprVerifier>>& test_info)
         {
-            return info.param.test_name;
+            return test_info.param.test_name;
         }
     );
 }

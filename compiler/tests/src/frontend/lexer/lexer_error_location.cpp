@@ -10,7 +10,7 @@
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
-    struct ExpectedError {
+    struct LexerExpectedError {
         ValuascriptErrorCode code;
         size_t line;
         size_t column;
@@ -19,7 +19,7 @@ namespace valuascript::compiler::test {
     struct LexerMultiErrorTestCase {
         std::string test_name;
         std::string source_code;
-        std::vector<ExpectedError> expected_errors;
+        std::vector<LexerExpectedError> expected_errors;
     };
 
     class LexerMultiErrorTest : public testing::TestWithParam<LexerMultiErrorTestCase> {
@@ -209,8 +209,8 @@ namespace valuascript::compiler::test {
             }
             }
         ),
-        [](const ::testing::TestParamInfo<LexerMultiErrorTestCase>& info) {
-        return info.param.test_name;
+        [](const ::testing::TestParamInfo<LexerMultiErrorTestCase>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

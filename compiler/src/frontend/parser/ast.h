@@ -43,7 +43,7 @@ namespace valuascript::compiler {
     public:
         std::string value;
 
-        explicit PercentageLiteral(std::string value) : value(std::move(value)) {
+        explicit PercentageLiteral(std::string val) : value(std::move(val)) {
         }
     };
 
@@ -146,8 +146,8 @@ namespace valuascript::compiler {
     public:
         std::vector<DictItem> elements;
 
-        explicit DictLiteral(std::vector<DictItem> elements)
-            : elements(std::move(elements)) {
+        explicit DictLiteral(std::vector<DictItem> elems)
+            : elements(std::move(elems)) {
         }
     };
 
@@ -164,8 +164,8 @@ namespace valuascript::compiler {
     public:
         std::vector<std::unique_ptr<Expression> > elements;
 
-        explicit TupleLiteral(std::vector<std::unique_ptr<Expression> > elements)
-            : elements(std::move(elements)) {
+        explicit TupleLiteral(std::vector<std::unique_ptr<Expression> > elems)
+            : elements(std::move(elems)) {
         }
     };
 
@@ -204,10 +204,10 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
         std::unique_ptr<Expression> value;
 
-        Assignment(std::vector<Modifier> modifiers,
-                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets,
-                   std::unique_ptr<Expression> value)
-            : modifiers(std::move(modifiers)), targets(std::move(targets)), value(std::move(value)) {
+        Assignment(std::vector<Modifier> mods,
+                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > tar,
+                   std::unique_ptr<Expression> val)
+            : modifiers(std::move(mods)), targets(std::move(tar)), value(std::move(val)) {
         }
     };
 
@@ -216,8 +216,8 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> value;
 
-        Reassignment(std::unique_ptr<Expression> target, std::unique_ptr<Expression> value)
-            : target(std::move(target)), value(std::move(value)) {
+        Reassignment(std::unique_ptr<Expression> tar, std::unique_ptr<Expression> val)
+            : target(std::move(tar)), value(std::move(val)) {
         }
     };
 
@@ -225,8 +225,8 @@ namespace valuascript::compiler {
     public:
         std::unique_ptr<Expression> expr;
 
-        explicit ExpressionStatement(std::unique_ptr<Expression> expr)
-            : expr(std::move(expr)) {
+        explicit ExpressionStatement(std::unique_ptr<Expression> e)
+            : expr(std::move(e)) {
         }
     };
 
@@ -274,13 +274,13 @@ namespace valuascript::compiler {
         std::vector<std::unique_ptr<Statement> > body;
         std::optional<std::string> docstring;
 
-        explicit FunctionDefinition(std::vector<Modifier> modifiers,
+        explicit FunctionDefinition(std::vector<Modifier> mods,
                                     std::string n,
                                     std::vector<FunctionParameter> params,
                                     std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
                                     std::vector<std::unique_ptr<Statement> > b,
                                     std::optional<std::string> docs = std::nullopt)
-            : modifiers(std::move(modifiers)), name(std::move(n)), parameters(std::move(params)),
+            : modifiers(std::move(mods)), name(std::move(n)), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs)) {
         }
     };
@@ -298,10 +298,10 @@ namespace valuascript::compiler {
         std::string name;
         std::vector<StructField> fields;
 
-        explicit StructDefinition(std::vector<Modifier> modifiers,
-                                  std::string name,
-                                  std::vector<StructField> fields)
-            : modifiers(std::move(modifiers)), name(std::move(name)), fields(std::move(fields)) {
+        explicit StructDefinition(std::vector<Modifier> mods,
+                                  std::string n,
+                                  std::vector<StructField> f)
+            : modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f)) {
         }
     };
 
@@ -318,14 +318,14 @@ namespace valuascript::compiler {
         std::unique_ptr<TypeAnnotation> underlying_type;
         std::vector<EnumCase> cases;
 
-        EnumDefinition(std::vector<Modifier> modifiers,
-                       std::string name,
-                       std::unique_ptr<TypeAnnotation> underlying_type,
-                       std::vector<EnumCase> cases)
-            : modifiers(std::move(modifiers)),
-              name(std::move(name)),
-              underlying_type(std::move(underlying_type)),
-              cases(std::move(cases)) {
+        EnumDefinition(std::vector<Modifier> mods,
+                       std::string n,
+                       std::unique_ptr<TypeAnnotation> type,
+                       std::vector<EnumCase> c)
+            : modifiers(std::move(mods)),
+              name(std::move(n)),
+              underlying_type(std::move(type)),
+              cases(std::move(c)) {
         }
     };
 
@@ -334,8 +334,8 @@ namespace valuascript::compiler {
         std::unique_ptr<Expression> target;
         std::string property_name;
 
-        DotAccess(std::unique_ptr<Expression> target, std::string property_name)
-            : target(std::move(target)), property_name(std::move(property_name)) {
+        DotAccess(std::unique_ptr<Expression> t, std::string prop)
+            : target(std::move(t)), property_name(std::move(prop)) {
         }
     };
 
@@ -345,12 +345,12 @@ namespace valuascript::compiler {
         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
         std::unique_ptr<Expression> default_case;
 
-        SwitchExpression(std::unique_ptr<Expression> target,
-                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases,
-                         std::unique_ptr<Expression> default_case)
-            : target(std::move(target)),
-              cases(std::move(cases)),
-              default_case(std::move(default_case)) {
+        SwitchExpression(std::unique_ptr<Expression> t,
+                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > c,
+                         std::unique_ptr<Expression> def)
+            : target(std::move(t)),
+              cases(std::move(c)),
+              default_case(std::move(def)) {
         }
     };
 
@@ -360,10 +360,10 @@ namespace valuascript::compiler {
         std::string name;
         std::unique_ptr<TypeAnnotation> target_type;
 
-        explicit TypeAliasDefinition(std::vector<Modifier> modifiers,
-                                     std::string name,
-                                     std::unique_ptr<TypeAnnotation> target_type)
-            : modifiers(std::move(modifiers)), name(std::move(name)), target_type(std::move(target_type)) {
+        explicit TypeAliasDefinition(std::vector<Modifier> mods,
+                                     std::string n,
+                                     std::unique_ptr<TypeAnnotation> t_type)
+            : modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type)) {
         }
     };
 

@@ -1,6 +1,5 @@
 #include "context_registry.h"
 #include "recovery_sentinel.h"
-#include <type_traits>
 #include <utility>
 
 namespace valuascript::compiler::test
@@ -9,18 +8,13 @@ namespace valuascript::compiler::test
     {
         StmtVerifier extract_stmt_v(const UniversalVerifier& v)
         {
-            return std::visit([](auto&& ver) -> StmtVerifier
-            {
-                using T = std::decay_t<decltype(ver)>;
-                if constexpr (std::is_same_v<T, StmtVerifier>) return ver;
-                if constexpr (std::is_same_v<T, ReturnVerifier> ||
-                    std::is_same_v<T, AssignmentVerifier> ||
-                    std::is_same_v<T, ReassignmentVerifier> ||
-                    std::is_same_v<T, ExprStmtVerifier>)
-                {
-                    return StmtVerifier(ver);
-                }
-                return StmtVerifier();
+            return std::visit(overloaded{
+                [](const StmtVerifier& ver) { return ver; },
+                [](const AssignmentVerifier& ver) { return StmtVerifier(ver); },
+                [](const ReassignmentVerifier& ver) { return StmtVerifier(ver); },
+                [](const ReturnVerifier& ver) { return StmtVerifier(ver); },
+                [](const ExprStmtVerifier& ver) { return StmtVerifier(ver); },
+                [](const auto&) { return StmtVerifier(); }
             }, v);
         }
 

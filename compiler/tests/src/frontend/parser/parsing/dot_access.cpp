@@ -45,8 +45,8 @@ namespace valuascript::compiler::test
             DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ValuascriptErrorCode::
             ExpectedPropertyName}
         ),
-        [](const testing::TestParamInfo<DotAccessSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<DotAccessSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

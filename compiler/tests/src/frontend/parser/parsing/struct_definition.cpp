@@ -50,8 +50,8 @@ namespace valuascript::compiler::test
             StructErrorParam{"missing_right_brace", "struct Point { x: integer", ValuascriptErrorCode::
             ExpectedRightBraceAfterStructBody}
         ),
-        [](const testing::TestParamInfo<StructErrorParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<StructErrorParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }

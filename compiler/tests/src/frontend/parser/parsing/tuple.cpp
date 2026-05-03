@@ -54,8 +54,8 @@ namespace valuascript::compiler::test
             TupleSadParam{"missing_operator_3", "(a, b (c + d))", ValuascriptErrorCode::MissingOperatorOrArgumentName},
             TupleSadParam{"missing_operator_4", "(a, b + (c  d))", ValuascriptErrorCode::MissingOperatorInsideGrouping}
         ),
-        [](const testing::TestParamInfo<TupleSadParam>& info) {
-        return info.param.test_name;
+        [](const testing::TestParamInfo<TupleSadParam>& test_info) {
+        return test_info.param.test_name;
         }
     );
 }
