@@ -8,12 +8,9 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, ImportStatementWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 8, 1, 24);
-
         ExpectParseErrorsWithRecovery(
             "import \"/path/to/module",
-            errors,
+            {{ValuascriptErrorCode::UnclosedString, 1, 8, 1, 24}},
             ProgramSpec{
                 .imports = {
                     IsImport("\"/path/to/module")
@@ -24,12 +21,9 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 22);
-
         ExpectParseErrorsWithRecovery(
             "#config \"unclosed_val",
-            errors,
+            {{ValuascriptErrorCode::UnclosedString, 1, 9, 1, 22}},
             ProgramSpec{
                 .directives = {
                     IsDirective("config", IsString("\"unclosed_val"))
@@ -40,12 +34,9 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveAssignmentWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 20);
-
         ExpectParseErrorsWithRecovery(
             "#mode = \"debug_mode",
-            errors,
+            {{ValuascriptErrorCode::UnclosedString, 1, 9, 1, 20}},
             ProgramSpec{
                 .directives = {
                     IsDirective("mode", IsString("\"debug_mode"))
@@ -56,16 +47,15 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, FunctionDocstringUnclosed)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2);
-
         ExpectParseErrors(
             "func test() -> void {\n"
             "\"\"\"This is a broken docstring\n"
             "let x = 1\n"
             "}",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3},
+                {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2}
+            },
             ProgramSpec{
                 .functions = {
                     IsFunctionDef(
@@ -83,13 +73,12 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TupleLiteralWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 19, 1, 29);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30);
-
         ExpectParseErrorsWithRecovery(
             R"(let t = ("first", "unclosed))",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 1, 19, 1, 29},
+                {ValuascriptErrorCode::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30}
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({},
@@ -110,13 +99,12 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DictLiteralWithUnclosedStringValue)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31);
-
         ExpectParseErrorsWithRecovery(
             "let d = { key: \"unclosed_val }",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31},
+                {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31}
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({},
@@ -136,13 +124,12 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TensorLiteralWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23);
-
         ExpectParseErrorsWithRecovery(
             R"(let v =["val1", "val2])",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23},
+                {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23}
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({},
@@ -163,13 +150,12 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, EnumCaseValueWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41);
-
         ExpectParseErrorsWithRecovery(
             "enum Status: string { Error = \"failure }",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41},
+                {ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41}
+            },
             ProgramSpec{
                 .enums = {
                     IsEnumDef("Status", {},
@@ -185,14 +171,13 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, ModifierArgumentWithUnclosedString)
     {
-        std::vector<ParserExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31);
-
         ExpectParseErrorsWithRecovery(
             "@deprecated(reason: \"not_safe)\n"
             "let x = 1",
-            errors,
+            {
+                {ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31},
+                {ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31}
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(

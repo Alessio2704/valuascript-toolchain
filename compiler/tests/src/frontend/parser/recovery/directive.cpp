@@ -13,30 +13,33 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v)
+            {
+                ErrorRegistry::add(n, c, errs, v);
+            };
 
             reg("MissingName", "#",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3}},
+                {{ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3}},
                 IsDirective("<error>"));
 
             reg("MissingValueAfterEquals", "#dir = ",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8}},
+                {{ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8}},
                 IsDirective("dir", IsNull()));
 
             reg("MissingHashValuelessDirective", "dir",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4}},
+                {{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4}},
                 IsNull());
 
             reg("MissingNamePlusValueWithoutEquals", "# \"string\"",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11}},
+                {{ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11}},
                 IsDirective("<error>", IsNull()));
 
             reg("InvalidMarkerAsteriskWithValue", "*iterations = 1000",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                {{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             reg("InvalidMarkerAsteriskNoValue", "*module",
-                std::vector<ParserExpectedError>{{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                {{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             return true;

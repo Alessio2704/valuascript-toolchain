@@ -6,10 +6,13 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v)
+            {
+                ErrorRegistry::add(n, c, errs, v);
+            };
 
             reg("ChainingNotAllowedForComparisonOperations1", "1 < 2 < 3",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Less,
@@ -21,7 +24,7 @@ namespace valuascript::compiler::test
                 ));
 
             reg("ChainingNotAllowedForComparisonOperations2", "1 > 2 > 3",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Greater,
@@ -33,7 +36,7 @@ namespace valuascript::compiler::test
                 ));
 
             reg("ChainingNotAllowedForComparisonOperations3", "1 != 2 != 3 ",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::NotEquals,
@@ -45,7 +48,7 @@ namespace valuascript::compiler::test
                 ));
 
             reg("ChainingNotAllowedForComparisonOperations4", "x == y == z",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::Equals,
@@ -58,7 +61,7 @@ namespace valuascript::compiler::test
             );
 
             reg("ChainingNotAllowedForComparisonOperationsMixedOperators1", "1 < 2 > 3",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Greater,
@@ -71,7 +74,7 @@ namespace valuascript::compiler::test
             );
 
             reg("ChainingNotAllowedForComparisonOperationsMixedOperators2", "1 == 2 != 3",
-                std::vector<ParserExpectedError>{
+                {
                     {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::NotEquals,
