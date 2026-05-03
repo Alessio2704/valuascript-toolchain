@@ -572,13 +572,13 @@ namespace valuascript::compiler::test
     std::pair<std::string, ProgramSpec> SyntheticGenerator::generate_program(int piece_count)
     {
         std::vector<std::pair<std::string, SpecAdderFn>> pieces;
-        pieces.reserve(piece_count);
+        pieces.reserve(static_cast<size_t>(piece_count));
 
         for (int i = 0; i < piece_count; ++i)
         {
             TopLevelConstruct choice = roll_top_level_construct();
             if (choice == TopLevelConstruct::None) continue;
-            pieces.push_back(generators_[static_cast<int>(choice)]());
+            pieces.push_back(generators_[static_cast<size_t>(choice)]());
         }
 
         std::shuffle(pieces.begin(), pieces.end(), rng_);

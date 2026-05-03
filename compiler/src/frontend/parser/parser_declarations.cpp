@@ -231,7 +231,7 @@ namespace valuascript::compiler
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
         CloserTracker tracker(*this, TokenType::RightBrace);
 
-        auto is_at_parent_boundary = [this](int offset = 0)
+        auto is_at_parent_boundary = [this](size_t offset = 0)
         {
             const Token& tok = cursor_.peek(offset);
             const TokenType next = cursor_.peek(offset + 1).type;
@@ -490,7 +490,7 @@ namespace valuascript::compiler
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
-        auto is_at_parent_boundary = [this](int offset = 0)
+        auto is_at_parent_boundary = [this](size_t offset = 0)
         {
             const Token& tok = cursor_.peek(offset);
             const TokenType next = cursor_.peek(offset + 1).type;

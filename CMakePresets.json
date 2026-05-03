@@ -1,10 +1,21 @@
 {
   "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
   "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}"
+    },
     {
       "name": "RelWithDebInfo",
       "displayName": "RelWithDebInfo",
-      "binaryDir": "${sourceDir}/cmake-build-relwithdebinfo",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "ENABLE_SANITIZERS": "ON",
@@ -18,7 +29,7 @@
     {
       "name": "Release",
       "displayName": "Release",
-      "binaryDir": "${sourceDir}/cmake-build-release",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "ENABLE_SANITIZERS": "OFF",
@@ -28,7 +39,7 @@
     {
       "name": "Debug",
       "displayName": "Debug",
-      "binaryDir": "${sourceDir}/cmake-build-debug",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "ENABLE_SANITIZERS": "ON",
@@ -37,6 +48,55 @@
       "environment": {
         "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1",
         "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "RelWithDebInfo"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release"
+    },
+    {
+      "name": "Debug",
+      "configurePreset": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "RelWithDebInfo",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "Debug",
+      "configurePreset": "Debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
       }
     }
   ]

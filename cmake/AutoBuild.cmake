@@ -41,12 +41,7 @@ function(auto_build_component TARGET_NAME)
         endif ()
 
         target_compile_features(${TARGET_NAME}_lib ${SCOPE} cxx_std_20)
-
-        if (MSVC)
-            target_compile_options(${TARGET_NAME}_lib ${SCOPE_PRIVATE} "/W4" "/WX")
-        else ()
-            target_compile_options(${TARGET_NAME}_lib ${SCOPE_PRIVATE} "-Wall" "-Wextra" "-Wpedantic")
-        endif ()
+        target_link_libraries(${TARGET_NAME}_lib ${SCOPE_PRIVATE} valua_compiler_flags)
     endif ()
 
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
@@ -62,6 +57,7 @@ function(auto_build_component TARGET_NAME)
             )
         endif ()
 
+        target_link_libraries(${TARGET_NAME} PRIVATE valua_compiler_flags)
         message(STATUS "[${TARGET_NAME}] Executable configured.")
     endif ()
 
@@ -79,6 +75,7 @@ function(auto_build_component TARGET_NAME)
 
             target_link_libraries(${TEST_EXE_NAME} PRIVATE
                     ${TARGET_NAME}_lib
+                    valua_compiler_flags
                     GTest::gtest_main
                     GTest::gmock
             )

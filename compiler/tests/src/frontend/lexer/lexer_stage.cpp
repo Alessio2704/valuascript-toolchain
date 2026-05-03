@@ -141,7 +141,7 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[2].lexeme, "1_000_000");
         EXPECT_EQ(tokens[3].lexeme, "0.000_1");
 
-        for (int i = 0; i < 4; ++i) {
+        for (size_t i = 0; i < 4; ++i) {
             EXPECT_EQ(tokens[i].type, TokenType::Number);
         }
     }
@@ -155,7 +155,7 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[1].lexeme, "4.54%");
         EXPECT_EQ(tokens[2].lexeme, "0.54%");
 
-        for (int i = 0; i < 3; ++i) {
+        for (size_t i = 0; i < 3; ++i) {
             EXPECT_EQ(tokens[i].type, TokenType::PercentageLiteral);
         }
     }

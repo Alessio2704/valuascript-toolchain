@@ -173,7 +173,7 @@ namespace valuascript::compiler
 
     TokenType Parser::peek_past_modifiers() const
     {
-        int offset = 0;
+        size_t offset = 0;
         while (cursor_.peek(offset).type == TokenType::At)
         {
             offset++;
@@ -210,7 +210,7 @@ namespace valuascript::compiler
     bool Parser::is_missing_closing_brace() const
     {
         int depth = 1;
-        int offset = 0;
+        size_t offset = 0;
 
         while (true)
         {

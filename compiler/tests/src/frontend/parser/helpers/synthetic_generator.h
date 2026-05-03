@@ -68,7 +68,7 @@ namespace valuascript::compiler::test
                 static const T empty_val{};
                 return empty_val;
             }
-            return items[rand_range(0, static_cast<int>(items.size()) - 1)];
+            return items[static_cast<size_t>(rand_range(0, static_cast<int>(items.size()) - 1))];
         }
 
         template <typename TargetVerifier, typename RegistryPoolVerifier>
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
                                        const std::vector<RegistryEntry<RegistryPoolVerifier>>& pool,
                                        const std::function<std::pair<std::string, TargetVerifier>()>& synth_fn)
         {
-            generators_[static_cast<int>(construct)] = [this, registry_chance, &pool, synth_fn
+            generators_[static_cast<size_t>(construct)] = [this, registry_chance, &pool, synth_fn
                 ]() -> std::pair<std::string, SpecAdderFn>
                 {
                     std::string code;
@@ -112,7 +112,7 @@ namespace valuascript::compiler::test
                                      const std::vector<RegistryEntry<RegistryPoolType>>& pool,
                                      const std::function<std::pair<std::string, VerifierType>()>& synth_fn)
         {
-            generators_[static_cast<int>(construct)] = [=, &pool, this]()
+            generators_[static_cast<size_t>(construct)] = [=, &pool, this]()
             {
                 auto contexts = ContextRegistry::get_container_contexts_for(type);
                 auto ctx = pick_random(contexts);

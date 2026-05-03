@@ -138,7 +138,7 @@ namespace valuascript::compiler::test
                 config.registry.imports = 0.0;
                 config.registry.directives = 0.0;
 
-                SyntheticGenerator gen(mod_count + static_cast<int>(goal.top_type), config);
+                SyntheticGenerator gen(mod_count + static_cast<size_t>(goal.top_type), config);
                 constexpr int requested_count = 20;
                 auto [code, spec] = gen.generate_program(requested_count);
                 auto ast = parse(code);
@@ -310,11 +310,11 @@ namespace valuascript::compiler::test
             }
         }
 
-        EXPECT_NEAR(static_cast<double>(enum_values) / iterations, 0.7, MARGIN);
-        EXPECT_NEAR(static_cast<double>(explicit_types) / iterations, 0.2, MARGIN);
-        EXPECT_NEAR(static_cast<double>(docstrings) / iterations, 0.8, MARGIN);
-        EXPECT_NEAR(static_cast<double>(dir_values) / iterations, 0.6, MARGIN);
-        EXPECT_NEAR(static_cast<double>(any_types) / iterations, 0.4, MARGIN);
+        EXPECT_NEAR(static_cast<double>(enum_values) / static_cast<double>(iterations), 0.7, MARGIN);
+        EXPECT_NEAR(static_cast<double>(explicit_types) / static_cast<double>(iterations), 0.2, MARGIN);
+        EXPECT_NEAR(static_cast<double>(docstrings) / static_cast<double>(iterations), 0.8, MARGIN);
+        EXPECT_NEAR(static_cast<double>(dir_values) / static_cast<double>(iterations), 0.6, MARGIN);
+        EXPECT_NEAR(static_cast<double>(any_types) / static_cast<double>(iterations), 0.4, MARGIN);
 
         int non_any_types = static_cast<int>(iterations) - any_types;
         ASSERT_GT(non_any_types, 0);
@@ -367,10 +367,10 @@ namespace valuascript::compiler::test
             EXPECT_NE(parse(s_res), nullptr);
         }
 
-        EXPECT_NEAR(static_cast<double>(count_mods) / iterations, 0.3, MARGIN);
-        EXPECT_NEAR(static_cast<double>(count_types) / iterations, 0.75, MARGIN);
-        EXPECT_NEAR(static_cast<double>(count_exprs) / iterations, 0.25, MARGIN);
-        EXPECT_NEAR(static_cast<double>(count_stmts) / iterations, 0.6, MARGIN);
+        EXPECT_NEAR(static_cast<double>(count_mods) / static_cast<double>(iterations), 0.3, MARGIN);
+        EXPECT_NEAR(static_cast<double>(count_types) / static_cast<double>(iterations), 0.75, MARGIN);
+        EXPECT_NEAR(static_cast<double>(count_exprs) / static_cast<double>(iterations), 0.25, MARGIN);
+        EXPECT_NEAR(static_cast<double>(count_stmts) / static_cast<double>(iterations), 0.6, MARGIN);
     }
 
     TEST_F(SyntheticGeneratorKnobTest, CategoricalWeights)
@@ -530,7 +530,7 @@ namespace valuascript::compiler::test
         for (size_t i = 0; i < iterations; ++i)
         {
             TopLevelConstruct choice = gen.roll_top_level_construct();
-            counts[static_cast<int>(choice)]++;
+            counts[static_cast<size_t>(choice)]++;
         }
 
         auto total = static_cast<double>(iterations);

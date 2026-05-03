@@ -36,9 +36,9 @@ namespace valuascript::compiler
         void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
         [[nodiscard]] bool get_suppress_errors() const { return suppress_errors_; }
 
-        [[nodiscard]] const Token& peek(int lookahead = 0) const;
+        [[nodiscard]] const Token& peek(size_t lookahead = 0) const;
 
-        [[nodiscard]] const Token& previous(int lookback = 1) const;
+        [[nodiscard]] const Token& previous(size_t lookback = 1) const;
 
         [[nodiscard]] bool is_at_end() const;
 
