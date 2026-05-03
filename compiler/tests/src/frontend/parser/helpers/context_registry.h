@@ -11,10 +11,10 @@ namespace valuascript::compiler::test
         static std::vector<Context> get_block_contexts();
 
     private:
-        static std::vector<Context> aggregate_all();
-        static std::vector<Context> get_expression_contexts();
-        static std::vector<Context> get_type_contexts();
-        static std::vector<Context> get_modifier_contexts();
-        static std::vector<Context> get_block_contexts_impl();
+        static const std::vector<Context>& aggregate_all();
+        static const std::vector<Context>& get_expression_contexts();
+        static const std::vector<Context>& get_type_contexts();
+        static const std::vector<Context>& get_modifier_contexts();
+        static const std::vector<Context>& get_block_contexts_impl();
     };
 }

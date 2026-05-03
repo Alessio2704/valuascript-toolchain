@@ -11,26 +11,31 @@ namespace valuascript::compiler
         bool is_right_associative;
     };
 
-    static const std::unordered_map<TokenType, OperatorConfig> kOperatorConfigs = {
-        {TokenType::Or, {Precedence::Or, false}},
-        {TokenType::And, {Precedence::And, false}},
-        {TokenType::Equals, {Precedence::Comparison, false}},
-        {TokenType::NotEquals, {Precedence::Comparison, false}},
-        {TokenType::Less, {Precedence::Comparison, false}},
-        {TokenType::LessEqual, {Precedence::Comparison, false}},
-        {TokenType::Greater, {Precedence::Comparison, false}},
-        {TokenType::GreaterEqual, {Precedence::Comparison, false}},
-        {TokenType::Plus, {Precedence::Term, false}},
-        {TokenType::Minus, {Precedence::Term, false}},
-        {TokenType::Star, {Precedence::Factor, false}},
-        {TokenType::Slash, {Precedence::Factor, false}},
-        {TokenType::Mod, {Precedence::Factor, false}},
-        {TokenType::Caret, {Precedence::Power, true}}
-    };
+    static const std::unordered_map<TokenType, OperatorConfig>& get_operator_configs()
+    {
+        static const std::unordered_map<TokenType, OperatorConfig> configs = {
+            {TokenType::Or, {Precedence::Or, false}},
+            {TokenType::And, {Precedence::And, false}},
+            {TokenType::Equals, {Precedence::Comparison, false}},
+            {TokenType::NotEquals, {Precedence::Comparison, false}},
+            {TokenType::Less, {Precedence::Comparison, false}},
+            {TokenType::LessEqual, {Precedence::Comparison, false}},
+            {TokenType::Greater, {Precedence::Comparison, false}},
+            {TokenType::GreaterEqual, {Precedence::Comparison, false}},
+            {TokenType::Plus, {Precedence::Term, false}},
+            {TokenType::Minus, {Precedence::Term, false}},
+            {TokenType::Star, {Precedence::Factor, false}},
+            {TokenType::Slash, {Precedence::Factor, false}},
+            {TokenType::Mod, {Precedence::Factor, false}},
+            {TokenType::Caret, {Precedence::Power, true}}
+        };
+        return configs;
+    }
 
     Precedence TokenTraits::get_operator_precedence(const TokenType op_type)
     {
-        if (auto it = kOperatorConfigs.find(op_type); it != kOperatorConfigs.end())
+        auto& configs = get_operator_configs();
+        if (auto it = configs.find(op_type); it != configs.end())
         {
             return it->second.precedence;
         }
@@ -39,7 +44,8 @@ namespace valuascript::compiler
 
     bool TokenTraits::is_operator_right_associative(TokenType op_type)
     {
-        if (auto it = kOperatorConfigs.find(op_type); it != kOperatorConfigs.end())
+        auto& configs = get_operator_configs();
+        if (auto it = configs.find(op_type); it != configs.end())
         {
             return it->second.is_right_associative;
         }
@@ -51,9 +57,9 @@ namespace valuascript::compiler
         static const std::unordered_set<TokenType> binary_ops = []
         {
             std::unordered_set<TokenType> set;
-            for (const auto& [lexeme, tok] : kBinaryOperators)
+            for (const auto& [token, lexeme] : get_all_binary_operators())
             {
-                set.insert(tok);
+                set.insert(token);
             }
             return set;
         }();
@@ -65,9 +71,9 @@ namespace valuascript::compiler
         static const std::unordered_set<TokenType> unary_ops = []
         {
             std::unordered_set<TokenType> set;
-            for (const auto& [lexeme, tok] : kUnaryOperators)
+            for (const auto& [token, lexeme] : get_all_unary_operators())
             {
-                set.insert(tok);
+                set.insert(token);
             }
             return set;
         }();

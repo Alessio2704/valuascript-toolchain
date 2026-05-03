@@ -5,7 +5,7 @@ namespace valuascript::compiler::test
 {
     std::vector<Context> ContextRegistry::get_all_for(const InjectableType type)
     {
-        static std::vector<Context> cache = aggregate_all();
+        const auto& cache = aggregate_all();
         std::vector<Context> result;
         for (const auto& ctx : cache)
         {
@@ -51,17 +51,23 @@ namespace valuascript::compiler::test
         return result;
     }
 
-    std::vector<Context> ContextRegistry::aggregate_all()
+    const std::vector<Context>& ContextRegistry::aggregate_all()
     {
-        std::vector<Context> all;
+        static const std::vector<Context> all = []()
+        {
+            std::vector<Context> vec;
+            auto add = [&](const std::vector<Context>& list)
+            {
+                vec.insert(vec.end(), list.begin(), list.end());
+            };
 
-        auto add = [&](const std::vector<Context>& list) { all.insert(all.end(), list.begin(), list.end()); };
+            add(get_block_contexts_impl());
+            add(get_expression_contexts());
+            add(get_type_contexts());
+            add(get_modifier_contexts());
 
-        add(get_block_contexts_impl());
-        add(get_expression_contexts());
-        add(get_type_contexts());
-        add(get_modifier_contexts());
-
+            return vec;
+        }();
         return all;
     }
 }

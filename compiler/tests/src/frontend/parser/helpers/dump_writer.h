@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <iostream>
 #include <gtest/gtest.h>
 
 namespace valuascript::compiler::test

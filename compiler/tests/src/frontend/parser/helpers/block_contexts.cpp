@@ -1,70 +1,90 @@
 #include "context_registry.h"
 #include "recovery_sentinel.h"
 #include <type_traits>
+#include <utility>
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_block_contexts_impl()
+    namespace
     {
-        Context ctx;
-        ctx.name = "function_body_wrapper";
-        ctx.input_types = {InjectableType::WeakStatement, InjectableType::StrongStatement};
-        ctx.output_type = InjectableType::TopLevel;
-        ctx.prefix = "func ctx_wrapper() -> void {\n  ";
-        ctx.suffix = "\n}\n";
-        ctx.is_block_context = true;
-
-        auto extract_stmt_v = [](const UniversalVerifier& v) -> StmtVerifier
+        StmtVerifier extract_stmt_v(const UniversalVerifier& v)
         {
             return std::visit([](auto&& ver) -> StmtVerifier
             {
-                if constexpr (std::is_same_v<std::decay_t<decltype(ver)>, StmtVerifier>) return ver;
-                else if constexpr (std::is_same_v<std::decay_t<decltype(ver)>, ReturnVerifier>)
-                    return
-                        StmtVerifier(ver);
-                else if constexpr (std::is_same_v<std::decay_t<decltype(ver)>, AssignmentVerifier>)
-                    return
-                        StmtVerifier(ver);
-                else if constexpr (std::is_same_v<std::decay_t<decltype(ver)>, ReassignmentVerifier>)
-                    return
-                        StmtVerifier(ver);
-                else if constexpr (std::is_same_v<std::decay_t<decltype(ver)>, ExprStmtVerifier>)
-                    return
-                        StmtVerifier(ver);
-                else return StmtVerifier();
+                using T = std::decay_t<decltype(ver)>;
+                if constexpr (std::is_same_v<T, StmtVerifier>) return ver;
+                if constexpr (std::is_same_v<T, ReturnVerifier> ||
+                    std::is_same_v<T, AssignmentVerifier> ||
+                    std::is_same_v<T, ReassignmentVerifier> ||
+                    std::is_same_v<T, ExprStmtVerifier>)
+                {
+                    return StmtVerifier(ver);
+                }
+                return StmtVerifier();
             }, v);
-        };
+        }
 
-        ctx.transform_verifier = [extract_stmt_v](const UniversalVerifier& v) -> UniversalVerifier
-        {
-            return UniversalVerifier(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {extract_stmt_v(v)}));
-        };
-
-        ctx.transform_verifier_block = [extract_stmt_v](const UniversalVerifier& v,
-                                                        const std::vector<RecoveryBlock>& pre,
-                                                        const std::vector<RecoveryBlock>& post) -> UniversalVerifier
+        std::vector<StmtVerifier> build_block_body(const UniversalVerifier& v,
+                                                   const std::vector<RecoveryBlock>& pre,
+                                                   const std::vector<RecoveryBlock>& post)
         {
             std::vector<StmtVerifier> body;
-
-            for (const auto& b : pre)
+            auto add_blocks = [&](const std::vector<RecoveryBlock>& blocks)
             {
-                ProgramSpec temp;
-                b.add_to_spec(temp);
-                body.insert(body.end(), temp.execution_steps.begin(), temp.execution_steps.end());
-            }
+                for (const auto& b : blocks)
+                {
+                    ProgramSpec temp;
+                    b.add_to_spec(temp);
+                    body.insert(body.end(), temp.execution_steps.begin(), temp.execution_steps.end());
+                }
+            };
 
+            add_blocks(pre);
             body.push_back(extract_stmt_v(v));
+            add_blocks(post);
+            return body;
+        }
+    }
 
-            for (const auto& b : post)
+    namespace
+    {
+        using ASTCreator = std::function<UniversalVerifier(std::vector<StmtVerifier>)>;
+
+        Context make_block_context(std::string name, std::string prefix, std::string suffix, ASTCreator creator)
+        {
+            Context ctx;
+            ctx.name = std::move(name);
+            ctx.prefix = std::move(prefix);
+            ctx.suffix = std::move(suffix);
+            ctx.input_types = {InjectableType::WeakStatement, InjectableType::StrongStatement};
+            ctx.output_type = InjectableType::TopLevel;
+            ctx.is_block_context = true;
+
+            ctx.transform_verifier = [creator](const UniversalVerifier& v)
             {
-                ProgramSpec temp;
-                b.add_to_spec(temp);
-                body.insert(body.end(), temp.execution_steps.begin(), temp.execution_steps.end());
-            }
+                return creator({extract_stmt_v(v)});
+            };
 
-            return UniversalVerifier(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, body));
+            ctx.transform_verifier_block = [creator](const UniversalVerifier& v, const auto& pre, const auto& post)
+            {
+                return creator(build_block_body(v, pre, post));
+            };
+
+            return ctx;
+        }
+    }
+
+    const std::vector<Context>& ContextRegistry::get_block_contexts_impl()
+    {
+        static const std::vector<Context> contexts = {
+            make_block_context("function_body_wrapper", "func ctx_wrapper() -> void {\n  ", "\n}\n",
+                               [](auto body)
+                               {
+                                   return UniversalVerifier(
+                                       IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, std::move(body)));
+                               })
         };
 
-        return {ctx};
+        return contexts;
     }
 }

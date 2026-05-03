@@ -3,9 +3,9 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_expression_contexts()
+    const std::vector<Context>& ContextRegistry::get_expression_contexts()
     {
-        return {
+        static const std::vector<Context> contexts = {
             {
                 "single_assignment", {InjectableType::Expression}, InjectableType::StrongStatement, "let ctx_single = ",
                 "\n", [](const UniversalVerifier& v) -> UniversalVerifier
@@ -217,5 +217,7 @@ namespace valuascript::compiler::test
                 }
             }
         };
+
+        return contexts;
     }
 }

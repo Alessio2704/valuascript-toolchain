@@ -3,9 +3,9 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_type_contexts()
+    const std::vector<Context>& ContextRegistry::get_type_contexts()
     {
-        return {
+        static const std::vector<Context> contexts = {
             {
                 "assignment_target", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
                 "let ctx_assign: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
@@ -80,5 +80,7 @@ namespace valuascript::compiler::test
                 }
             }
         };
+
+        return contexts;
     }
 }

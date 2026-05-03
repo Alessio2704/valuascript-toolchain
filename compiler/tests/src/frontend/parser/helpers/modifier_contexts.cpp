@@ -3,11 +3,12 @@
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_modifier_contexts()
+    const std::vector<Context>& ContextRegistry::get_modifier_contexts()
     {
-        return {
+        static const std::vector<Context> contexts = {
             {
-                "assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "", " let ctx_assign = 1\n", [
+                "assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "", " let ctx_assign = 1\n",
+                [
                 ](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment(SpecAdder::get_v<ModifierVerifier>(v), {{"ctx_assign"}},
@@ -36,7 +37,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "struct_definition", {InjectableType::Modifier}, InjectableType::TopLevel, "", " struct ctx_struct {}\n",
+                "struct_definition", {InjectableType::Modifier}, InjectableType::TopLevel, "",
+                " struct ctx_struct {}\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct", SpecAdder::get_v<ModifierVerifier>(v), {}));
@@ -89,5 +91,7 @@ namespace valuascript::compiler::test
                 }
             }
         };
+
+        return contexts;
     }
 }
