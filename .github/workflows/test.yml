@@ -1,4 +1,4 @@
-name: Run Tests
+name: Fast CI
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test-assets:
-    name: Build & Test on ${{ matrix.os }} (${{ matrix.asset_name_suffix }})
+  build-and-test-fast:
+    name: Fast Test on ${{ matrix.os }} (${{ matrix.asset_name_suffix }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,3 +49,8 @@ jobs:
 
       - name: Build and Test Project
         uses: ./.github/actions/build_and_test
+        with:
+          enable_sanitizers: 'OFF'
+          fuzz_iterations: '10000'
+          expansion_depth: '5'
+          expansion_recursion: '3'
