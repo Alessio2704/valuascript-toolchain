@@ -13,7 +13,7 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v)
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<DirectiveVerifier>& v)
             {
                 ErrorRegistry::add(n, c, errs, v);
             };

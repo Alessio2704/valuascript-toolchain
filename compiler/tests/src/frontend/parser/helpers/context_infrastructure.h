@@ -43,6 +43,24 @@ namespace valuascript::compiler::test
     template <class... Ts>
     overloaded(Ts...) -> overloaded<Ts...>;
 
+    template <typename TargetVerifier>
+    struct OneOf
+    {
+        UniversalVerifier value;
+
+        OneOf(TargetVerifier v) : value(std::move(v))
+        {
+        }
+
+        OneOf(NullVerifier v) : value(v)
+        {
+        }
+
+        OneOf(UniversalVerifier v) : value(std::move(v))
+        {
+        }
+    };
+
     struct Context
     {
         std::string name;

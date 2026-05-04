@@ -34,7 +34,8 @@ namespace valuascript::compiler::test
                                                                const std::string& inner_prefix,
                                                                size_t seed);
 
-        static void RunRecoveryScenario(ProcessingItem&& item, const std::vector<ParserExpectedError>& errors, size_t seed);
+        static void RunRecoveryScenario(ProcessingItem&& item, const std::vector<ParserExpectedError>& errors,
+                                        size_t seed);
 
         static void ExpectValidParse(const std::string& code, const ProgramSpec& spec);
         static void ExpectParseErrors(const std::string& code, const std::vector<ParserExpectedError>& expected_errors,
@@ -58,38 +59,53 @@ namespace valuascript::compiler::test
         static void ExpectValidReturn(const std::string& code_snippet, const ReturnVerifier& verifier);
 
         static void ExpectAssignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                           const AssignmentVerifier& v);
+                                           OneOf<AssignmentVerifier> v);
+
         static void ExpectReassignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                             const ReassignmentVerifier& v);
-        static void ExpectExpressionStatementErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                                    const ExprStmtVerifier& v);
+                                             OneOf<ReassignmentVerifier> v);
+
+        static void ExpectExpressionStatementErrors(const std::string& snippet,
+                                                    const std::vector<ParserExpectedError>& errs,
+                                                    OneOf<ExprStmtVerifier> v);
+
         static void ExpectImportErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                       const ImportVerifier& v);
+                                       OneOf<ImportVerifier> v);
+
         static void ExpectDirectiveErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                          const DirectiveVerifier& v);
-        static void ExpectFunctionDefinitionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                                   const FuncVerifier& v);
-        static void ExpectStructDefinitionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                                 const StructVerifier& v);
+                                          OneOf<DirectiveVerifier> v);
+
+        static void ExpectFunctionDefinitionErrors(const std::string& snippet,
+                                                   const std::vector<ParserExpectedError>& errs,
+                                                   OneOf<FuncVerifier> v);
+
+        static void ExpectStructDefinitionErrors(const std::string& snippet,
+                                                 const std::vector<ParserExpectedError>& errs,
+                                                 OneOf<StructVerifier> v);
+
         static void ExpectEnumDefinitionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                               const EnumVerifier& v);
+                                               OneOf<EnumVerifier> v);
+
         static void ExpectTypeAliasErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                          const AliasVerifier& v);
+                                          OneOf<AliasVerifier> v);
+
         static void ExpectExpressionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                           const ExprVerifier& v);
+                                           OneOf<ExprVerifier> v);
+
         static void ExpectTypeAnnotationErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                               const TypeVerifier& v);
+                                               OneOf<TypeVerifier> v);
+
         static void ExpectModifierErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                         const ModifierVerifier& v);
+                                         OneOf<ModifierVerifier> v);
+
         static void ExpectReturnErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
-                                       const ReturnVerifier& v);
+                                       OneOf<ReturnVerifier> v);
 
         template <typename Verifier>
         static void ExpectValidUnified(InjectableType type, const std::string& snippet,
                                        const Verifier& verifier, const std::string& group_name)
         {
             expand_to_top_level_stream(
-                {type, snippet, UniversalVerifier(verifier), group_name, "", 0, 0},
+                {type, snippet, verifier, group_name, "", 0, 0},
                 [&](ProcessingItem&& item)
                 {
                     ProgramSpec spec;
@@ -114,7 +130,7 @@ namespace valuascript::compiler::test
             size_t scenario_index = 0;
 
             expand_to_top_level_stream(
-                {type, snippet, UniversalVerifier(verifier), group_name, "", 0, 0},
+                {type, snippet, verifier, group_name, "", 0, 0},
                 [&](ProcessingItem&& item)
                 {
                     RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));

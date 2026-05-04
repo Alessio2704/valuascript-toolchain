@@ -13,13 +13,14 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v)
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ImportVerifier>& v)
             {
                 ErrorRegistry::add(n, c, errs, v);
             };
 
             reg("MissingImportKeyword", "file_path.vs",
-                {{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 1, 13}}, IsNull());
+                {{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 1, 13}},
+                IsNull());
 
             reg("MissingImportStringPath", "import ",
                 {{ValuascriptErrorCode::MissingImportPathString, 1, 7, 1, 8}},

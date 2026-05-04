@@ -1,3 +1,4 @@
+#include "frontend/parser/errors_synchronization/parser_errors_synchronization_base.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/error_registry.h"
 #include "frontend/parser/helpers/recovery_sentinel.h"
@@ -13,7 +14,7 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v)
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<AssignmentVerifier>& v)
             {
                 ErrorRegistry::add(n, c, errs, v);
             };

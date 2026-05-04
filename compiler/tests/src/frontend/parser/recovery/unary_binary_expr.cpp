@@ -6,7 +6,10 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const auto& v) { ErrorRegistry::add(n, c, errs, v); };
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
+            {
+                ErrorRegistry::add(n, c, errs, v);
+            };
 
             reg("BinaryMissingRight", "1 + ",
                 {

@@ -68,80 +68,81 @@ namespace valuascript::compiler::test
     }
 
     void ParserTestBase::ExpectAssignmentErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                const AssignmentVerifier& v)
+                                                OneOf<AssignmentVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, StmtVerifier(v), "Assignment");
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Assignment");
     }
 
     void ParserTestBase::ExpectReassignmentErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                  const ReassignmentVerifier& v)
+                                                  OneOf<ReassignmentVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, StmtVerifier(v), "Reassignment");
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Reassignment");
     }
 
-    void ParserTestBase::ExpectExpressionStatementErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                         const ExprStmtVerifier& v)
+    void ParserTestBase::ExpectExpressionStatementErrors(const std::string& s,
+                                                         const std::vector<ParserExpectedError>& e,
+                                                         OneOf<ExprStmtVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, StmtVerifier(v), "Expression Statement");
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Expression Statement");
     }
 
     void ParserTestBase::ExpectImportErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                            const ImportVerifier& v)
+                                            OneOf<ImportVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Import, s, e, v, "Import");
+        ExpectParseErrorsUnified(InjectableType::Import, s, e, v.value, "Import");
     }
 
     void ParserTestBase::ExpectDirectiveErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                               const DirectiveVerifier& v)
+                                               OneOf<DirectiveVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Directive, s, e, v, "Directive");
+        ExpectParseErrorsUnified(InjectableType::Directive, s, e, v.value, "Directive");
     }
 
     void ParserTestBase::ExpectFunctionDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                        const FuncVerifier& v)
+                                                        OneOf<FuncVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Function, s, e, v, "Function Definition");
+        ExpectParseErrorsUnified(InjectableType::Function, s, e, v.value, "Function Definition");
     }
 
     void ParserTestBase::ExpectStructDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                      const StructVerifier& v)
+                                                      OneOf<StructVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Struct, s, e, v, "Struct Definition");
+        ExpectParseErrorsUnified(InjectableType::Struct, s, e, v.value, "Struct Definition");
     }
 
     void ParserTestBase::ExpectEnumDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                    const EnumVerifier& v)
+                                                    OneOf<EnumVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Enum, s, e, v, "Enum Definition");
+        ExpectParseErrorsUnified(InjectableType::Enum, s, e, v.value, "Enum Definition");
     }
 
     void ParserTestBase::ExpectTypeAliasErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                               const AliasVerifier& v)
+                                               OneOf<AliasVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::TypeAlias, s, e, v, "Type Alias");
+        ExpectParseErrorsUnified(InjectableType::TypeAlias, s, e, v.value, "Type Alias");
     }
 
     void ParserTestBase::ExpectExpressionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                const ExprVerifier& v)
+                                                OneOf<ExprVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Expression, s, e, v, "Expression");
+        ExpectParseErrorsUnified(InjectableType::Expression, s, e, v.value, "Expression");
     }
 
     void ParserTestBase::ExpectTypeAnnotationErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                                    const TypeVerifier& v)
+                                                    OneOf<TypeVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::TypeAnnotation, s, e, v, "Type Annotation");
+        ExpectParseErrorsUnified(InjectableType::TypeAnnotation, s, e, v.value, "Type Annotation");
     }
 
     void ParserTestBase::ExpectModifierErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                              const ModifierVerifier& v)
+                                              OneOf<ModifierVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::Modifier, s, e, v, "Modifier");
+        ExpectParseErrorsUnified(InjectableType::Modifier, s, e, v.value, "Modifier");
     }
 
     void ParserTestBase::ExpectReturnErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
-                                            const ReturnVerifier& v)
+                                            OneOf<ReturnVerifier> v)
     {
-        ExpectParseErrorsUnified(InjectableType::WeakStatement, s, e, v, "Return");
+        ExpectParseErrorsUnified(InjectableType::WeakStatement, s, e, v.value, "Return");
     }
 }

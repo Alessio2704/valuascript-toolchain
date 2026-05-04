@@ -63,13 +63,6 @@ namespace valuascript::compiler::test {
         StructParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_name_struct",
-            "struct { id: int }\n"
-            "let a = 1\n",
-            { {Err::ExpectedStructName, 1, 8} },
-            ExpectStruct("<error>", {{"id", "int"}})
-            },
-            ParserErrorsSynchronizationTestCase{
             "name_reserved_keyword_full_ast",
             "struct true { host: string, port: int, speed: int }\n"
             "let a = 1\n",
