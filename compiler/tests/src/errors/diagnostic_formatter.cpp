@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
-#include <regex>
-#include "../../../src/core/diagnostic_formatter.h"
-#include "../../../src/core/valuascript_exception.h"
-#include "../../../src/frontend/parser/ast.h"
+#include "core/diagnostic_formatter.h"
+#include "core/valuascript_exception.h"
+#include "frontend/parser/ast.h"
 
 using namespace valuascript::compiler;
 
@@ -10,8 +9,18 @@ namespace valuascript::compiler::test {
     class DiagnosticFormatterTest : public ::testing::Test {
     protected:
         static std::string strip_ansi(const std::string &input) {
-            static const std::regex ansi_regex("\033\\[[0-9;]*m");
-            return std::regex_replace(input, ansi_regex, "");
+            std::string result;
+            result.reserve(input.size());
+            for (size_t i = 0; i < input.size(); ++i) {
+                if (input[i] == '\033' && i + 1 < input.size() && input[i + 1] == '[') {
+                    while (i < input.size() && input[i] != 'm') {
+                        i++;
+                    }
+                } else {
+                    result += input[i];
+                }
+            }
+            return result;
         }
 
         static ValuaScriptException create_dummy_error(ValuascriptErrorCode code, size_t line, size_t col_start,

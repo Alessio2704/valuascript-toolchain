@@ -80,7 +80,7 @@ function(auto_build_component TARGET_NAME)
                     GTest::gmock
             )
 
-            gtest_discover_tests(${TEST_EXE_NAME})
+            gtest_discover_tests(${TEST_EXE_NAME} DISCOVERY_TIMEOUT 60)
             message(STATUS "[${TARGET_NAME}] Tests configured.")
         else ()
             message(STATUS "[${TARGET_NAME}] Tests found but no Core Library to link. Skipping.")
