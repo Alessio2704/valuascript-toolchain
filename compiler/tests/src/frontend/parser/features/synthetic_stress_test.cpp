@@ -1,9 +1,6 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/synthetic_generator.h"
+#include "utils/test_env_config.h"
 
 namespace valuascript::compiler::test
 {
@@ -13,12 +10,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticStressTest, CombinatorialFuzzing)
     {
-        size_t iterations = 1000;
-
-        if (const char* env_p = std::getenv("FUZZ_ITERATIONS"))
-        {
-            iterations = std::stoul(env_p);
-        }
+        constexpr size_t iterations = FUZZ_ITERATIONS;
 
         for (size_t seed = 0; seed < iterations; ++seed)
         {

@@ -1,11 +1,7 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <gtest/gtest.h>
 #include <unordered_set>
 #include <string>
-
+#include "utils/test_env_config.h"
 #include "frontend/parser/helpers/synthetic_generator.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 
@@ -14,15 +10,6 @@ namespace valuascript::compiler::test
     class SyntheticGeneratorKnobTest : public ParserTestBase
     {
     protected:
-        static size_t get_iterations()
-        {
-            if (const char* env_p = std::getenv("FUZZ_ITERATIONS"))
-            {
-                return std::stoul(env_p);
-            }
-            return 10000;
-        }
-
         static constexpr double MARGIN = 0.02;
 
         static std::shared_ptr<Program> parse(const std::string& code)
@@ -251,7 +238,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, FeatureProbabilities)
     {
-        const size_t iterations = get_iterations();
+        constexpr size_t iterations = FUZZ_ITERATIONS;
         SyntheticGeneratorConfig config;
         config.features.enum_case_has_value = 0.7;
         config.features.assignment_has_explicit_type = 0.2;
@@ -324,7 +311,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, RegistryProbabilities)
     {
-        const size_t iterations = get_iterations();
+        const size_t iterations = FUZZ_ITERATIONS;
         ASSERT_FALSE(ConstructRegistry::modifiers().empty());
         ASSERT_FALSE(ConstructRegistry::type_annotations().empty());
         ASSERT_FALSE(ConstructRegistry::expressions().empty());
@@ -375,7 +362,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, CategoricalWeights)
     {
-        const size_t iterations = get_iterations();
+        const size_t iterations = FUZZ_ITERATIONS;
         SyntheticGeneratorConfig config;
 
         config.weights.statement_types.single_assign = 10.0;
@@ -476,7 +463,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, HarvestStatementWeights)
     {
-        const size_t iterations = get_iterations();
+        const size_t iterations = FUZZ_ITERATIONS;
         SyntheticGeneratorConfig config;
 
         config.weights.harvest_statement_types.assignment = 5.0;
@@ -509,7 +496,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, TopLevelConstructWeights)
     {
-        const size_t iterations = get_iterations();
+        const size_t iterations = FUZZ_ITERATIONS;
         SyntheticGeneratorConfig config;
 
         config.weights.top_level_constructs.expression = 1.0;
@@ -551,7 +538,7 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticGeneratorKnobTest, SizeRanges)
     {
-        const size_t iterations = get_iterations();
+        const size_t iterations = FUZZ_ITERATIONS;
         SyntheticGeneratorConfig config;
 
         config.sizes.modifiers_count = {2, 4};

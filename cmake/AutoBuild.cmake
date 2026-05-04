@@ -1,6 +1,5 @@
 function(auto_build_component TARGET_NAME)
-
-    cmake_parse_arguments(ARG "" "" "DEPENDS" ${ARGN})
+    cmake_parse_arguments(ARG "" "" "DEPENDS;TEST_SETTINGS" ${ARGN})
 
     file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
     file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "src/*.h" "src/*.hpp")
@@ -80,8 +79,31 @@ function(auto_build_component TARGET_NAME)
                     GTest::gmock
             )
 
-            gtest_discover_tests(${TEST_EXE_NAME} DISCOVERY_TIMEOUT 60)
-            message(STATUS "[${TARGET_NAME}] Tests configured.")
+            set(COLLECTED_TEST_ENV "")
+            set(DEBUG_LOG_PARMS "")
+
+            if (ARG_TEST_SETTINGS)
+                foreach (SETTING IN LISTS ARG_TEST_SETTINGS)
+                    if (DEFINED ENV{${SETTING}})
+                        set(ENV_VAL $ENV{${SETTING}})
+                        target_compile_definitions(${TEST_EXE_NAME} PRIVATE ${SETTING}=${ENV_VAL})
+                        list(APPEND COLLECTED_TEST_ENV "${SETTING}=${ENV_VAL}")
+                        list(APPEND DEBUG_LOG_PARMS "${SETTING}=${ENV_VAL}")
+                    else ()
+                        list(APPEND DEBUG_LOG_PARMS "${SETTING}=[DEFAULT]")
+                    endif ()
+                endforeach ()
+            endif ()
+
+            list(JOIN DEBUG_LOG_PARMS ", " SETTINGS_DISPLAY)
+            list(JOIN COLLECTED_TEST_ENV "\\;" CTEST_ENV_STRING)
+
+            gtest_discover_tests(${TEST_EXE_NAME}
+                    DISCOVERY_TIMEOUT 60
+                    PROPERTIES ENVIRONMENT "${CTEST_ENV_STRING}"
+            )
+
+            message(STATUS "[${TARGET_NAME}] Tests configured.\n-- ENV VARIABLES: { ${SETTINGS_DISPLAY} }")
         else ()
             message(STATUS "[${TARGET_NAME}] Tests found but no Core Library to link. Skipping.")
         endif ()

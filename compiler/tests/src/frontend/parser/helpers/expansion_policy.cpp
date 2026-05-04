@@ -1,11 +1,5 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "expansion_policy.h"
-#include <algorithm>
-#include <cstdlib>
-#include <string>
+#include "utils/test_env_config.h"
 
 namespace valuascript::compiler::test
 {
@@ -13,16 +7,10 @@ namespace valuascript::compiler::test
     {
         static ExpansionPolicy cached = []()
         {
-            int depth = 5;
-            int recursion = 1;
+            constexpr int depth = EXPANSION_DEPTH;
+            constexpr int recursion = EXPANSION_RECURSION;
 
-            if (const char* env_d = std::getenv("EXPANSION_DEPTH")) depth = std::stoi(env_d);
-            if (const char* env_r = std::getenv("EXPANSION_RECURSION")) recursion = std::stoi(env_r);
-
-            return ExpansionPolicy{
-                std::clamp(depth, 1, 10),
-                std::clamp(recursion, 1, 10)
-            };
+            return ExpansionPolicy{depth, recursion};
         }();
         return cached;
     }

@@ -10,7 +10,36 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/cmake-build-${presetName}"
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "environment": {
+        "FUZZ_ITERATIONS": "10000",
+        "EXPANSION_DEPTH": "5",
+        "EXPANSION_RECURSION": "3"
+      }
+    },
+    {
+      "name": "Release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "OFF",
+        "ENABLE_IWYU": "ON"
+      }
+    },
+    {
+      "name": "Release-Sanitizers",
+      "displayName": "Release-Sanitizers",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "ON",
+        "ENABLE_IWYU": "ON"
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1",
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
     },
     {
       "name": "RelWithDebInfo",
@@ -24,16 +53,6 @@
       "environment": {
         "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1",
         "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
-      }
-    },
-    {
-      "name": "Release",
-      "displayName": "Release",
-      "inherits": "base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "ENABLE_SANITIZERS": "OFF",
-        "ENABLE_IWYU": "ON"
       }
     },
     {
@@ -53,12 +72,16 @@
   ],
   "buildPresets": [
     {
-      "name": "RelWithDebInfo",
-      "configurePreset": "RelWithDebInfo"
-    },
-    {
       "name": "Release",
       "configurePreset": "Release"
+    },
+    {
+      "name": "Release-Sanitizers",
+      "configurePreset": "Release-Sanitizers"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "RelWithDebInfo"
     },
     {
       "name": "Debug",
@@ -67,10 +90,11 @@
   ],
   "testPresets": [
     {
-      "name": "RelWithDebInfo",
-      "configurePreset": "RelWithDebInfo",
+      "name": "base-test",
+      "hidden": true,
       "output": {
-        "outputOnFailure": true
+        "outputOnFailure": true,
+        "verbosity": "verbose"
       },
       "execution": {
         "noTestsAction": "error",
@@ -79,25 +103,23 @@
     },
     {
       "name": "Release",
-      "configurePreset": "Release",
-      "output": {
-        "outputOnFailure": true
-      },
-      "execution": {
-        "noTestsAction": "error",
-        "stopOnFailure": true
-      }
+      "inherits": "base-test",
+      "configurePreset": "Release"
+    },
+    {
+      "name": "Release-Sanitizers",
+      "inherits": "base-test",
+      "configurePreset": "Release-Sanitizers"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "inherits": "base-test",
+      "configurePreset": "RelWithDebInfo"
     },
     {
       "name": "Debug",
-      "configurePreset": "Debug",
-      "output": {
-        "outputOnFailure": true
-      },
-      "execution": {
-        "noTestsAction": "error",
-        "stopOnFailure": true
-      }
+      "inherits": "base-test",
+      "configurePreset": "Debug"
     }
   ]
 }

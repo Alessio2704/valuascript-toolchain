@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(ENABLE_SANITIZERS "Enable Address and Undefined behavior sanitizers" OFF)
+message(STATUS "CHECK: ENABLE_SANITIZERS is currently: ${ENABLE_SANITIZERS}")
 
 add_library(valua_compiler_flags INTERFACE)
 

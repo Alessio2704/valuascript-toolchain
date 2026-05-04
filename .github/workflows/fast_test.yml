@@ -50,7 +50,4 @@ jobs:
       - name: Build and Test Project
         uses: ./.github/actions/build_and_test
         with:
-          enable_sanitizers: 'OFF'
-          fuzz_iterations: '10000'
-          expansion_depth: '5'
-          expansion_recursion: '3'
+          cmake_preset: 'Release'

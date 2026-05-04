@@ -2,22 +2,19 @@ name: "Build and Test ValuaScript"
 description: "Checks out code, builds and tests the project"
 
 inputs:
-  enable_sanitizers:
-    description: "Enable ASAN, UBSAN, ..."
-    required: false
-    default: "OFF"
+  cmake_preset:
+    description: "The CMake preset to use (Debug, Release, RelWithDebInfo)"
+    required: true
+    default: "Release"
   fuzz_iterations:
     description: "Number of iterations for the fuzzer"
     required: false
-    default: "1000"
   expansion_depth:
     description: "Max expansion depth for tests"
     required: false
-    default: "5"
   expansion_recursion:
     description: "Max expansion recursion for tests"
     required: false
-    default: "3"
 
 runs:
   using: "composite"
@@ -31,10 +28,9 @@ runs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+        cmake -G Ninja --preset ${{ inputs.cmake_preset }} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-          -DENABLE_SANITIZERS=${{ inputs.enable_sanitizers }}
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
     - name: Set up MSVC Developer Command Prompt
       if: runner.os == 'Windows'
@@ -46,7 +42,7 @@ runs:
       if: runner.os == 'Windows'
       shell: bash
       run: |
-        MSYS_NO_PATHCONV=1 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+        MSYS_NO_PATHCONV=1 cmake -G Ninja --preset ${{ inputs.cmake_preset }} \
           -DCMAKE_C_COMPILER=cl \
           -DCMAKE_CXX_COMPILER=cl \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -54,24 +50,20 @@ runs:
           -DCMAKE_CXX_FLAGS="/Z7 /MP /EHsc" \
           -DCMAKE_EXE_LINKER_FLAGS="/INCREMENTAL:NO /OPT:REF /OPT:ICF /DEBUG:NONE" \
           -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded \
-          -DINTERPROCEDURAL_OPTIMIZATION=OFF \
-          -DENABLE_SANITIZERS=${{ inputs.enable_sanitizers }}
+          -DINTERPROCEDURAL_OPTIMIZATION=OFF
 
     - name: Build CMake Project
       shell: bash
-      run: cmake --build build --config Release -j
+      run: cmake --build --preset ${{ inputs.cmake_preset }} -j
 
     - name: Run C++ Engine Tests
       shell: bash
       run: |
-        cd build
         CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
         echo "Running CTest with $CORES cores..."
 
-        export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1"
-        export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1"
-        export FUZZ_ITERATIONS=${{ inputs.fuzz_iterations }}
-        export EXPANSION_DEPTH=${{ inputs.expansion_depth }}
-        export EXPANSION_RECURSION=${{ inputs.expansion_recursion }}
+        [ -n "${{ inputs.fuzz_iterations }}" ] && export FUZZ_ITERATIONS=${{ inputs.fuzz_iterations }}
+        [ -n "${{ inputs.expansion_depth }}" ] && export EXPANSION_DEPTH=${{ inputs.expansion_depth }}
+        [ -n "${{ inputs.expansion_recursion }}" ] && export EXPANSION_RECURSION=${{ inputs.expansion_recursion }}
         
-        ctest --parallel $CORES --verbose --output-on-failure
+         ctest --preset ${{ inputs.cmake_preset }} -j $CORES
