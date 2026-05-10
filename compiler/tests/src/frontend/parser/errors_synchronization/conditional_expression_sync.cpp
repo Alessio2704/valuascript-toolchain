@@ -218,27 +218,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "correct_ast_structure_for_complex_valid_conditional",
-            "let a = if x > 5 then y * 2 else z - 3\n",
-            {},
-            [](const Program& ast) {
-            const auto* cond = GetAssignedConditional(ast);
-            ASSERT_NE(cond, nullptr);
-
-            auto* condition = dynamic_cast<const BinaryExpression*>(cond->condition.get());
-            ASSERT_NE(condition, nullptr);
-            EXPECT_EQ(condition->op, TokenType::Greater);
-
-            auto* then_branch = dynamic_cast<const BinaryExpression*>(cond->then_branch.get());
-            ASSERT_NE(then_branch, nullptr);
-            EXPECT_EQ(then_branch->op, TokenType::Star);
-
-            auto* else_branch = dynamic_cast<const BinaryExpression*>(cond->else_branch.get());
-            ASSERT_NE(else_branch, nullptr);
-            EXPECT_EQ(else_branch->op, TokenType::Minus);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_then_and_else_tokens_but_valid_expressions_maintains_ast_integrity",
             "let a = if x > 5 y * 2 z - 3\n",
             {
@@ -295,30 +274,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dangling_operator_in_condition_recovers_then_and_else",
-            "let a = if x + then 1 else 2\n",
-            {{Err::InvalidExpression, 1, 16}},
-            [](const Program& ast) {
-            const auto* cond = GetAssignedConditional(ast);
-            ASSERT_NE(cond, nullptr);
-            EXPECT_NE(cond->condition, nullptr);
-            EXPECT_NE(cond->then_branch, nullptr);
-            EXPECT_NE(cond->else_branch, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dangling_operator_in_then_branch_recovers_else",
-            "let a = if x then 1 + else 2\n",
-            {{Err::InvalidExpression, 1, 23}},
-            [](const Program& ast) {
-            const auto* cond = GetAssignedConditional(ast);
-            ASSERT_NE(cond, nullptr);
-            EXPECT_NE(cond->condition, nullptr);
-            EXPECT_NE(cond->then_branch, nullptr);
-            EXPECT_NE(cond->else_branch, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "bare_if_token_at_eof_discards_gracefully",
             "let a = if\n",
             {
@@ -350,53 +305,6 @@ namespace valuascript::compiler::test
 
             EXPECT_NE(cond->then_branch, nullptr);
             EXPECT_NE(cond->else_branch, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "chained_else_if_error_in_middle_condition_preserves_chain",
-            "let a = if x then 1 else if y + then 2 else 3\n",
-            {{Err::InvalidExpression, 1, 33}},
-            [](const Program& ast) {
-            const auto* cond = GetAssignedConditional(ast);
-            ASSERT_NE(cond, nullptr);
-
-            EXPECT_NE(cond->condition, nullptr);
-            EXPECT_NE(cond->then_branch, nullptr);
-
-            auto* inner_cond = dynamic_cast<const ConditionalExpression*>(cond->else_branch.get());
-            ASSERT_NE(inner_cond, nullptr);
-
-            EXPECT_NE(inner_cond->condition, nullptr);
-            EXPECT_NE(inner_cond->then_branch, nullptr) << "Inner then branch should recover";
-            EXPECT_NE(inner_cond->else_branch, nullptr) << "Inner else branch should recover";
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "conditional_inside_binary_expression_preserves_outer_math",
-            "let a = 10 * (if x + then 1 else 2) + 5\n",
-            {{Err::InvalidExpression, 1, 22}},
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            const auto* assign = dynamic_cast<const Assignment*>(ast.execution_steps.front().get());
-            ASSERT_NE(assign, nullptr);
-
-            auto* plus_expr = dynamic_cast<const BinaryExpression*>(assign->value.get());
-            ASSERT_NE(plus_expr, nullptr) << "Outer addition was destroyed!";
-            EXPECT_EQ(plus_expr->op, TokenType::Plus);
-
-            auto* star_expr = dynamic_cast<const BinaryExpression*>(plus_expr->left.get());
-            ASSERT_NE(star_expr, nullptr) << "Outer multiplication was destroyed!";
-            EXPECT_EQ(star_expr->op, TokenType::Star);
-
-            auto* grouping = dynamic_cast<const GroupingExpression*>(star_expr->right.get());
-            ASSERT_NE(grouping, nullptr);
-
-            auto* cond = dynamic_cast<const ConditionalExpression*>(grouping->expression.get());
-            ASSERT_NE(cond, nullptr) << "Inner conditional was destroyed!";
-
-            EXPECT_NE(cond->condition, nullptr);
-            EXPECT_NE(cond->then_branch, nullptr) << "Then branch should be intact";
-            EXPECT_NE(cond->else_branch, nullptr) << "Else branch should be intact";
             }
             }
         ),

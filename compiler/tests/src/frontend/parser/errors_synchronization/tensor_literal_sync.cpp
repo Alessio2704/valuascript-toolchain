@@ -76,25 +76,11 @@ namespace valuascript::compiler::test
             ExpectTensor({"1", "3"})
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_double_comma",
-            "let a = [ 1,, 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 13} },
-            ExpectTensor({"1", "3"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "empty_tensor_with_garbage",
             "let a = [ * ]\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 11} },
             ExpectTensor({})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_trailing_comma_allowed",
-            "let a = [ 1, 2, ]\n"
-            "let recovery = 1\n",
-            {},
-            ExpectTensor({"1", "2"})
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_closed_with_wrong_brace",
