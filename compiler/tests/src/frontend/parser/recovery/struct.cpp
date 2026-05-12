@@ -1,8 +1,4 @@
-#include "../helpers/node_matchers.h"
-#include "frontend/parser/errors_synchronization/parser_errors_synchronization_base.h"
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "frontend/parser/helpers/error_registry.h"
-#include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
 {
@@ -20,6 +16,21 @@ namespace valuascript::compiler::test
                 ErrorRegistry::add(n, c, errs, v);
             };
 
+            // reg("OnlyStruct", "struct",
+            //     {{ValuascriptErrorCode::ExpectedStructName, 1, 8, 1, 9}},
+            //     IsStructDef("<error>", {}, {})
+            // );
+
+            // reg("OnlyStructName", "struct Test",
+            //     {{ValuascriptErrorCode::ExpectedBraceInStructDefinition, 1, 12, 1, 13}},
+            //     IsStructDef("Test", {}, {})
+            // );
+
+            reg("MissingStructClosingBrace", "struct Test {",
+                {{ValuascriptErrorCode::ExpectedRightBraceAfterStructBody, 1, 14, 1, 15}},
+                IsStructDef("Test", {}, {})
+            );
+
             reg("MissingStructName", "struct { id: int }",
                 {{ValuascriptErrorCode::ExpectedStructName, 1, 8, 1, 9}},
                 IsStructDef("<error>", {}, {
@@ -28,8 +39,17 @@ namespace valuascript::compiler::test
                 )
             );
 
+            reg("MissingStructComma", "struct Test { id: int name: string }",
+                {{ValuascriptErrorCode::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
+                IsStructDef("Test", {}, {
+                                {"id", {}, IsType("int")},
+                                {"name", {}, IsType("string")},
+                            }
+                )
+            );
+
             reg("MissingStructLeftBrace", "struct Test id: int }",
-                {{ValuascriptErrorCode::ExpectedBraceInStructDefinition, 1, 13, 1, 14}},
+                {{ValuascriptErrorCode::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
                 IsNull()
             );
 

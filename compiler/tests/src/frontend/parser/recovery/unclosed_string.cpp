@@ -54,7 +54,7 @@ namespace valuascript::compiler::test
             "}",
             {
                 {ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3},
-                {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2}
+                {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2, 4, 3}
             },
             ProgramSpec{
                 .functions = {
@@ -103,7 +103,7 @@ namespace valuascript::compiler::test
             "let d = { key: \"unclosed_val }",
             {
                 {ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31},
-                {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31}
+                {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31, 1, 32}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -128,7 +128,7 @@ namespace valuascript::compiler::test
             R"(let v =["val1", "val2])",
             {
                 {ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23},
-                {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23}
+                {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23, 1, 24}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -154,7 +154,7 @@ namespace valuascript::compiler::test
             "enum Status: string { Error = \"failure }",
             {
                 {ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41},
-                {ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41}
+                {ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41, 1, 42}
             },
             ProgramSpec{
                 .enums = {
@@ -176,7 +176,7 @@ namespace valuascript::compiler::test
             "let x = 1",
             {
                 {ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31},
-                {ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31}
+                {ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31, 1, 32}
             },
             ProgramSpec{
                 .execution_steps = {

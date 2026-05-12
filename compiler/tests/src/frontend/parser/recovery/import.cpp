@@ -1,6 +1,4 @@
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "frontend/parser/helpers/error_registry.h"
-#include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
 {

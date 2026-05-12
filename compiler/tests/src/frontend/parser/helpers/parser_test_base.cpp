@@ -183,7 +183,8 @@ namespace valuascript::compiler::test
         ExpectProgram(ast.get(), spec);
     }
 
-    void ParserTestBase::ExpectParseErrors(const std::string& code, const std::vector<ParserExpectedError>& expected_errors,
+    void ParserTestBase::ExpectParseErrors(const std::string& code,
+                                           const std::vector<ParserExpectedError>& expected_errors,
                                            const std::optional<ProgramSpec>& spec)
     {
         SCOPED_TRACE(format_source_with_lines(code));
@@ -199,8 +200,14 @@ namespace valuascript::compiler::test
             EXPECT_EQ(actual_errors[i].get_code(), expected_errors[i].code);
             if (!expected_errors[i].skip_span_check)
             {
-                EXPECT_EQ(actual_errors[i].get_span().line_start, expected_errors[i].line_start);
-                EXPECT_EQ(actual_errors[i].get_span().column_start, expected_errors[i].column_start);
+                EXPECT_EQ(actual_errors[i].get_span().line_start, expected_errors[i].line_start) <<
+ "Line start mismatch on error: " << i << std::endl;
+                EXPECT_EQ(actual_errors[i].get_span().line_end, expected_errors[i].line_end) <<
+ "Line end mismatch on error: " << i << std::endl;
+                EXPECT_EQ(actual_errors[i].get_span().column_start, expected_errors[i].column_start) <<
+ "Column start mismatch on error: " << i << std::endl;
+                EXPECT_EQ(actual_errors[i].get_span().column_end, expected_errors[i].column_end) <<
+ "Column end mismatch on error: " << i << std::endl;
             }
         }
 
