@@ -20,9 +20,7 @@ namespace valuascript::compiler
             });
         }
 
-        auto stmt = std::make_unique<ImportStatement>(path.lexeme);
-        stmt->span = cursor_.make_span(start_token, cursor_.previous());
-        return stmt;
+        return make_node<ImportStatement>(start_token, path.lexeme);
     }
 
     std::unique_ptr<Directive> Parser::parse_directive()
@@ -103,9 +101,7 @@ namespace valuascript::compiler
             }
         }
 
-        auto dir = std::make_unique<Directive>(directive_name, std::move(value));
-        dir->span = cursor_.make_span(start_token, cursor_.previous());
-        return dir;
+        return make_node<Directive>(start_token, directive_name, std::move(value));
     }
 
     std::vector<Modifier> Parser::parse_modifiers(bool is_statement_context)
@@ -311,10 +307,8 @@ namespace valuascript::compiler
             end_token = cursor_.previous();
         }
 
-        auto struct_def = std::make_unique<
-            StructDefinition>(std::move(modifiers), name_token.lexeme, std::move(fields));
-        struct_def->span = cursor_.make_span(start_token, end_token);
-        return struct_def;
+        return make_node_with_span<StructDefinition>(
+            cursor_.make_span(start_token, end_token), std::move(modifiers), name_token.lexeme, std::move(fields));
     }
 
     std::unique_ptr<EnumDefinition> Parser::parse_enum_definition(std::vector<Modifier> modifiers)
@@ -416,10 +410,9 @@ namespace valuascript::compiler
             end_token = cursor_.previous();
         }
 
-        auto enum_def = std::make_unique<EnumDefinition>(std::move(modifiers), name_token.lexeme,
-                                                         std::move(underlying_type), std::move(cases));
-        enum_def->span = cursor_.make_span(start_token, end_token);
-        return enum_def;
+        return make_node_with_span<EnumDefinition>(
+            cursor_.make_span(start_token, end_token), std::move(modifiers), name_token.lexeme,
+            std::move(underlying_type), std::move(cases));
     }
 
     std::unique_ptr<FunctionDefinition> Parser::parse_function_definition(std::vector<Modifier> modifiers)
@@ -578,14 +571,12 @@ namespace valuascript::compiler
             end_token = cursor_.previous();
         }
 
-        auto func_def = std::make_unique<FunctionDefinition>(std::move(modifiers), name.lexeme, std::move(params),
-                                                             std::move(return_types), std::move(body),
-                                                             std::move(docstring));
-        func_def->span = cursor_.make_span(start_token, end_token);
-        return func_def;
+        return make_node_with_span<FunctionDefinition>(
+            cursor_.make_span(start_token, end_token), std::move(modifiers), name.lexeme, std::move(params),
+            std::move(return_types), std::move(body), std::move(docstring));
     }
 
-    std::unique_ptr<TypeAnnotation> Parser::parse_type_annotation(ParentBoundaryPredicate is_at_parent_boundary)
+    std::unique_ptr<TypeAnnotation> Parser::parse_type_annotation(const ParentBoundaryPredicate& is_at_parent_boundary)
     {
         const Token& start_token = cursor_.peek();
 
@@ -621,9 +612,8 @@ namespace valuascript::compiler
                 }
             }
 
-            auto tuple_type_annotation = std::make_unique<TupleTypeAnnotation>(std::move(elements));
-            tuple_type_annotation->span = cursor_.make_span(start_token, end_token);
-            return tuple_type_annotation;
+            return make_node_with_span<TupleTypeAnnotation>(cursor_.make_span(start_token, end_token),
+                                                            std::move(elements));
         }
 
         Token name_token = consume_identifier(ValuascriptErrorCode::MissingTypeAnnotation);
@@ -660,9 +650,7 @@ namespace valuascript::compiler
             }
         }
 
-        auto type_ann = std::make_unique<TypeAnnotation>(name_token.lexeme, std::move(generic_args));
-        type_ann->span = cursor_.make_span(start_token, cursor_.previous());
-        return type_ann;
+        return make_node<TypeAnnotation>(start_token, name_token.lexeme, std::move(generic_args));
     }
 
     std::unique_ptr<TypeAliasDefinition> Parser::parse_type_alias_definition(std::vector<Modifier> modifiers)
@@ -721,9 +709,7 @@ namespace valuascript::compiler
             verify_statement_end();
         }
 
-        auto type_alias = std::make_unique<TypeAliasDefinition>(std::move(modifiers), name_token.lexeme,
-                                                                std::move(target_type));
-        type_alias->span = cursor_.make_span(start_token, cursor_.previous());
-        return type_alias;
+        return make_node<TypeAliasDefinition>(start_token, std::move(modifiers), name_token.lexeme,
+                                              std::move(target_type));
     }
 }

@@ -30,10 +30,9 @@ namespace valuascript::compiler
                     TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
                 {
                     cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
-
-                    auto partial = std::make_unique<BinaryExpression>(std::move(left), op.type, nullptr);
-                    partial->span = cursor_.combine_spans(partial->left->span, cursor_.make_span(op, op));
-                    return partial;
+                    return make_node_with_span<BinaryExpression>(
+                        cursor_.combine_spans(left->span, cursor_.make_span(op, op)), std::move(left), op.type,
+                        nullptr);
                 }
             }
 
@@ -63,9 +62,7 @@ namespace valuascript::compiler
                                               : cursor_.make_span(cursor_.previous(), cursor_.previous());
             const SourceSpan combined = cursor_.combine_spans(left->span, right_span);
 
-            left = std::make_unique<BinaryExpression>(std::move(left), op.type, std::move(right));
-
-            left->span = combined;
+            left = make_node_with_span<BinaryExpression>(combined, std::move(left), op.type, std::move(right));
 
             if (op_precedence == Precedence::Comparison &&
                 TokenTraits::get_operator_precedence(cursor_.peek().type) == Precedence::Comparison)
@@ -97,9 +94,7 @@ namespace valuascript::compiler
                     TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
                 {
                     cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
-                    auto unary = std::make_unique<UnaryExpression>(op.type, nullptr);
-                    unary->span = cursor_.make_span(op, op);
-                    return unary;
+                    return make_node_with_span<UnaryExpression>(cursor_.make_span(op, op), op.type, nullptr);
                 }
             }
 
@@ -119,9 +114,7 @@ namespace valuascript::compiler
                 });
             }
 
-            auto unary = std::make_unique<UnaryExpression>(op.type, std::move(right));
-            unary->span = cursor_.make_span(op, cursor_.previous());
-            return unary;
+            return make_node<UnaryExpression>(op, op.type, std::move(right));
         }
         return parse_postfix_expression();
     }
@@ -165,9 +158,7 @@ namespace valuascript::compiler
                 const Token& p0 = cursor_.peek();
                 const TokenType p1 = cursor_.peek(1).type;
 
-                bool is_id_like = p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1);
-
-                if (is_id_like)
+                if (p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1))
                 {
                     if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1))
                     {
@@ -230,17 +221,18 @@ namespace valuascript::compiler
 
             const Token& end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterArguments);
-            auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
-            func_call->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-            return func_call;
+
+            return make_node_with_span<FunctionCall>(
+                cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token)),
+                std::move(target), std::move(arguments));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightParen);
-            auto func_call = std::make_unique<FunctionCall>(std::move(target), std::move(arguments));
-            func_call->span = cursor_.combine_spans(target_span,
-                                                    cursor_.make_span(cursor_.previous(), cursor_.previous()));
-            return func_call;
+
+            return make_node_with_span<FunctionCall>(
+                cursor_.combine_spans(target_span, cursor_.make_span(cursor_.previous(), cursor_.previous())),
+                std::move(target), std::move(arguments));
         }
     }
 
@@ -291,10 +283,9 @@ namespace valuascript::compiler
                                                       ? end_expr->span
                                                       : cursor_.make_span(cursor_.previous(), cursor_.previous());
 
-                index_expr = std::make_unique<BinaryExpression>(std::move(index_expr), TokenType::Colon,
-                                                                std::move(end_expr));
-
-                index_expr->span = cursor_.combine_spans(colon_span, slice_end_span);
+                index_expr = make_node_with_span<BinaryExpression>(
+                    cursor_.combine_spans(colon_span, slice_end_span), std::move(index_expr), TokenType::Colon,
+                    std::move(end_expr));
             }
             else if (!index_expr)
             {
@@ -303,17 +294,18 @@ namespace valuascript::compiler
 
             const Token& end_token = cursor_.consume(TokenType::RightBracket,
                                                      ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex);
-            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
-            bracket_access->span = cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token));
-            return bracket_access;
+
+            return make_node_with_span<BracketAccess>(
+                cursor_.combine_spans(target_span, cursor_.make_span(end_token, end_token)), std::move(target),
+                std::move(index_expr));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightBracket);
-            auto bracket_access = std::make_unique<BracketAccess>(std::move(target), std::move(index_expr));
-            bracket_access->span = cursor_.combine_spans(target_span,
-                                                         cursor_.make_span(cursor_.previous(), cursor_.previous()));
-            return bracket_access;
+
+            return make_node_with_span<BracketAccess>(
+                cursor_.combine_spans(target_span, cursor_.make_span(cursor_.previous(), cursor_.previous())),
+                std::move(target), std::move(index_expr));
         }
     }
 
@@ -340,10 +332,9 @@ namespace valuascript::compiler
             });
         }
 
-        auto dot_access = std::make_unique<DotAccess>(std::move(target), property_token.lexeme);
         const SourceSpan property_span = cursor_.make_span(property_token, property_token);
-        dot_access->span = cursor_.combine_spans(target_span, property_span);
-        return dot_access;
+        return make_node_with_span<DotAccess>(cursor_.combine_spans(target_span, property_span), std::move(target),
+                                              property_token.lexeme);
     }
 
     std::unique_ptr<Expression> Parser::parse_primary_expression()
@@ -356,46 +347,34 @@ namespace valuascript::compiler
         {
         case TokenType::Number:
             {
-                cursor_.advance();
-                auto node = std::make_unique<NumberLiteral>(cursor_.previous().lexeme);
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<NumberLiteral>(t, t.lexeme);
             }
         case TokenType::PercentageLiteral:
             {
-                cursor_.advance();
-                auto node = std::make_unique<PercentageLiteral>(cursor_.previous().lexeme);
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<PercentageLiteral>(t, t.lexeme);
             }
         case TokenType::String:
             {
-                cursor_.advance();
-                auto node = std::make_unique<StringLiteral>(cursor_.previous().lexeme);
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<StringLiteral>(t, t.lexeme);
             }
         case TokenType::True:
         case TokenType::False:
             {
-                cursor_.advance();
-                auto node = std::make_unique<BooleanLiteral>(cursor_.previous().type == TokenType::True);
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<BooleanLiteral>(t, t.type == TokenType::True);
             }
         case TokenType::Identifier:
             {
-                cursor_.advance();
-                auto node = std::make_unique<IdentifierAccess>(cursor_.previous().lexeme);
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<IdentifierAccess>(t, t.lexeme);
             }
         case TokenType::Self:
             {
-                cursor_.advance();
-                auto node = std::make_unique<SelfExpression>();
-                node->span = cursor_.make_span(cursor_.previous(), cursor_.previous());
-                return node;
+                const Token& t = cursor_.advance();
+                return make_node<SelfExpression>(t);
             }
         case TokenType::Switch:
             cursor_.advance();
@@ -480,9 +459,7 @@ namespace valuascript::compiler
                 {
                     cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
                     cursor_.advance();
-                    auto node = std::make_unique<IdentifierAccess>(tok.lexeme);
-                    node->span = cursor_.make_span(tok, tok);
-                    return node;
+                    return make_node_with_span<IdentifierAccess>(cursor_.make_span(tok, tok), tok.lexeme);
                 }
 
                 cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
@@ -497,9 +474,7 @@ namespace valuascript::compiler
 
         if (cursor_.match({TokenType::RightParen}))
         {
-            auto node = std::make_unique<TupleLiteral>(std::vector<std::unique_ptr<Expression>>{});
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<TupleLiteral>(start_token, std::vector<std::unique_ptr<Expression>>{});
         }
 
         std::unique_ptr<Expression> first_expr = nullptr;
@@ -546,16 +521,12 @@ namespace valuascript::compiler
         {
             const Token& end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterTupleElements);
-            auto node = std::make_unique<TupleLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            return make_node_with_span<TupleLiteral>(cursor_.make_span(start_token, end_token), std::move(elements));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightParen);
-            auto node = std::make_unique<TupleLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<TupleLiteral>(start_token, std::move(elements));
         }
     }
 
@@ -576,16 +547,13 @@ namespace valuascript::compiler
 
             const Token& end_token = cursor_.consume(TokenType::RightParen,
                                                      ValuascriptErrorCode::ExpectedRightParenAfterExpression);
-            auto node = std::make_unique<GroupingExpression>(std::move(first_expr));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            return make_node_with_span<GroupingExpression>(cursor_.make_span(start_token, end_token),
+                                                           std::move(first_expr));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightParen);
-            auto node = std::make_unique<GroupingExpression>(std::move(first_expr));
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<GroupingExpression>(start_token, std::move(first_expr));
         }
     }
 
@@ -599,16 +567,12 @@ namespace valuascript::compiler
         {
             const Token& end_token = cursor_.consume(TokenType::RightBracket,
                                                      ValuascriptErrorCode::UnmatchedBracketAfterTensorElements);
-            auto node = std::make_unique<TensorLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            return make_node_with_span<TensorLiteral>(cursor_.make_span(start_token, end_token), std::move(elements));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightBracket);
-            auto node = std::make_unique<TensorLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<TensorLiteral>(start_token, std::move(elements));
         }
     }
 
@@ -652,6 +616,7 @@ namespace valuascript::compiler
         );
 
         std::vector<DictItem> elements;
+        elements.reserve(items_gen.size());
         for (auto& g : items_gen)
         {
             elements.push_back({std::move(g.modifiers), g.name.lexeme, std::move(g.value)});
@@ -661,16 +626,12 @@ namespace valuascript::compiler
         {
             const Token& end_token = cursor_.consume(TokenType::RightBrace,
                                                      ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral);
-            auto node = std::make_unique<DictLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            return make_node_with_span<DictLiteral>(cursor_.make_span(start_token, end_token), std::move(elements));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightBrace);
-            auto node = std::make_unique<DictLiteral>(std::move(elements));
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<DictLiteral>(start_token, std::move(elements));
         }
     }
 
@@ -728,10 +689,8 @@ namespace valuascript::compiler
 
         else_branch = parse_expression();
 
-        auto cond_expr = std::make_unique<ConditionalExpression>(std::move(condition), std::move(then_branch),
-                                                                 std::move(else_branch));
-        cond_expr->span = cursor_.make_span(start_token, cursor_.previous());
-        return cond_expr;
+        return make_node<ConditionalExpression>(start_token, std::move(condition), std::move(then_branch),
+                                                std::move(else_branch));
     }
 
     std::unique_ptr<Expression> Parser::parse_switch_expression()
@@ -751,18 +710,14 @@ namespace valuascript::compiler
         {
             const Token& end_token = cursor_.consume(TokenType::RightBrace,
                                                      ValuascriptErrorCode::ExpectedRightBraceAfterSwitchBody);
-            auto node = std::make_unique<
-                SwitchExpression>(std::move(target), std::move(cases), std::move(default_case));
-            node->span = cursor_.make_span(start_token, end_token);
-            return node;
+            return make_node_with_span<SwitchExpression>(cursor_.make_span(start_token, end_token), std::move(target),
+                                                         std::move(cases), std::move(default_case));
         }
         catch (const ParseSyncException&)
         {
             synchronize_and_consume_closer(TokenType::RightBrace);
-            auto node = std::make_unique<
-                SwitchExpression>(std::move(target), std::move(cases), std::move(default_case));
-            node->span = cursor_.make_span(start_token, cursor_.previous());
-            return node;
+            return make_node<SwitchExpression>(start_token, std::move(target), std::move(cases),
+                                               std::move(default_case));
         }
     }
 

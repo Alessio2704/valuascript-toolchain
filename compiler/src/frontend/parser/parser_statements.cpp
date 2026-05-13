@@ -275,9 +275,7 @@ namespace valuascript::compiler
             verify_statement_end();
         }
 
-        auto assign = std::make_unique<Assignment>(std::move(modifiers), std::move(targets), std::move(value));
-        assign->span = cursor_.make_span(start_token, cursor_.previous());
-        return assign;
+        return make_node<Assignment>(start_token, std::move(modifiers), std::move(targets), std::move(value));
     }
 
     std::unique_ptr<Statement> Parser::parse_expression_statement()
@@ -320,9 +318,8 @@ namespace valuascript::compiler
             const SourceSpan end_span = value ? value->span : start_span;
             if (value) verify_statement_end();
 
-            auto reassignment = std::make_unique<Reassignment>(std::move(expr), std::move(value));
-            reassignment->span = cursor_.combine_spans(start_span, end_span);
-            return reassignment;
+            return make_node_with_span<Reassignment>(
+                cursor_.combine_spans(start_span, end_span), std::move(expr), std::move(value));
         }
 
         if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
@@ -337,9 +334,7 @@ namespace valuascript::compiler
 
         verify_statement_end();
 
-        auto expr_stmt = std::make_unique<ExpressionStatement>(std::move(expr));
-        expr_stmt->span = start_span;
-        return expr_stmt;
+        return make_node_with_span<ExpressionStatement>(start_span, std::move(expr));
     }
 
     std::unique_ptr<ReturnStatement> Parser::parse_return_statement()
@@ -369,8 +364,6 @@ namespace valuascript::compiler
 
         verify_statement_end();
 
-        auto ret_stmt = std::make_unique<ReturnStatement>(std::move(return_values));
-        ret_stmt->span = cursor_.make_span(start_token, cursor_.previous());
-        return ret_stmt;
+        return make_node<ReturnStatement>(start_token, std::move(return_values));
     }
 }

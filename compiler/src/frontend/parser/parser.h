@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <optional>
+#include <utility>
 #include "ast.h"
 #include "token_cursor.h"
 #include "token_traits.h"
@@ -122,7 +123,7 @@ namespace valuascript::compiler
          */
         using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
 
-        std::unique_ptr<TypeAnnotation> parse_type_annotation(ParentBoundaryPredicate is_at_parent_boundary = nullptr);
+        std::unique_ptr<TypeAnnotation> parse_type_annotation(const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -376,6 +377,22 @@ namespace valuascript::compiler
                 parse_element,
                 is_at_parent_boundary
             );
+        }
+
+        template <typename T, typename... Args>
+        std::unique_ptr<T> make_node(const Token& start_token, Args&&... args)
+        {
+            auto node = std::make_unique<T>(std::forward<Args>(args)...);
+            node->span = cursor_.make_span(start_token, cursor_.previous());
+            return node;
+        }
+
+        template <typename T, typename... Args>
+        std::unique_ptr<T> make_node_with_span(const SourceSpan& span, Args&&... args)
+        {
+            auto node = std::make_unique<T>(std::forward<Args>(args)...);
+            node->span = span;
+            return node;
         }
     };
 }
