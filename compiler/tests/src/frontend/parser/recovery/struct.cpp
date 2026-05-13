@@ -39,6 +39,16 @@ namespace valuascript::compiler::test
                 )
             );
 
+            reg("MissingStructColumn", "struct Test { id int }",
+                {{ValuascriptErrorCode::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
+                IsStructDef("Test", {}, {})
+            );
+
+            reg("MissingStructFieldType", "struct Test { id: }",
+                {{ValuascriptErrorCode::MissingTypeAnnotation, 1, 19, 1, 20}},
+                IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
+            );
+
             reg("MissingStructComma", "struct Test { id: int name: string }",
                 {{ValuascriptErrorCode::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
                 IsStructDef("Test", {}, {

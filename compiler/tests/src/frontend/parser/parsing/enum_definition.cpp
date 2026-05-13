@@ -33,21 +33,13 @@ namespace valuascript::compiler::test {
         ParserInvalidEnumDefinitions,
         EnumSadTest,
         testing::Values(
-            EnumSadParam{"missing_name", "enum : string { a }", ValuascriptErrorCode::ExpectedEnumName},
             EnumSadParam{"missing_colon", "enum Option string { a }", ValuascriptErrorCode::ExpectedColonAfterEnumName},
-            EnumSadParam{"missing_type", "enum Option: { a }", ValuascriptErrorCode::MissingTypeAnnotation},
             EnumSadParam{"missing_left_brace", "enum Option: string a }", ValuascriptErrorCode::
             ExpectedLeftBraceBeforeEnumBody},
-            EnumSadParam{"invalid_case_name_number", "enum Option: string { 1 = \"a\" }", ValuascriptErrorCode::
-            ExpectedEnumCaseName},
-            EnumSadParam{"invalid_case_name_string", "enum Option: string { \"call\" }", ValuascriptErrorCode::
-            ExpectedEnumCaseName},
             EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ValuascriptErrorCode::
             ExpectedRightBraceAfterEnumBody},
             EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::
             ReservedKeywordAsIdentifier},
-            EnumSadParam{"missing_comma", "enum Scenario: string { LOW BASE, HIGH }", ValuascriptErrorCode::
-            ExpectedCommaSeparatorInEnum},
             EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::
             ReservedKeywordAsIdentifier},
             EnumSadParam{"missing_operator_1", "enum Test : int { A = a b, B = 2 }", ValuascriptErrorCode::

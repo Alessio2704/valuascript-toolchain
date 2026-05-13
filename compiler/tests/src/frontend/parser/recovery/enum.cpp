@@ -37,6 +37,36 @@ namespace valuascript::compiler::test
             //     {{ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 17, 1, 18}},
             //     IsEnumDef("Test", {}, IsType("int")));
 
+            reg("EnumMissingName", "enum : int { A }",
+                {
+                    {ValuascriptErrorCode::ExpectedEnumName, 1, 6, 1, 7}
+                },
+                IsEnumDef("<error>", {}, IsType("int"), {
+                              {"A"}
+                          }
+                )
+            );
+
+            // reg("EnumMissingColon", "enum Test int { A }",
+            //     {
+            //         {ValuascriptErrorCode::ExpectedColonAfterEnumName, 1, 11, 1, 14}
+            //     },
+            //     IsEnumDef("Test", {}, IsType("int"), {
+            //                   {"A"}
+            //               }
+            //     )
+            // );
+
+            reg("EnumMissingTypeAnnotation", "enum Test: { A }",
+                {
+                    {ValuascriptErrorCode::MissingTypeAnnotation, 1, 12, 1, 13}
+                },
+                IsEnumDef("Test", {}, IsNullType(), {
+                              {"A"}
+                          }
+                )
+            );
+
             reg("NoCommasASTAllCases", "enum Test: int { A B C }",
                 {
                     {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 1, 20, 1, 21},
@@ -59,6 +89,26 @@ namespace valuascript::compiler::test
                               {"A", {}, IsNumber("1")},
                               {"B", {}, IsCall(IsIdentifier("a"))},
                               {"C", {}, IsNumber("2")},
+                          }
+                )
+            );
+
+            reg("NumberCaseName", "enum Test: int { 1 }",
+                {
+                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 18, 1, 19}
+                },
+                IsEnumDef("Test", {}, IsType("int"), {
+                              {"<error>"},
+                          }
+                )
+            );
+
+            reg("StringCaseName", "enum Test: int { \"A\" }",
+                {
+                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 18, 1, 21}
+                },
+                IsEnumDef("Test", {}, IsType("int"), {
+                              {"<error>"},
                           }
                 )
             );

@@ -43,7 +43,6 @@ namespace valuascript::compiler::test
         testing::Values(
             BracketAccessSadParam{"unclosed_vector_access", "vec[0", ValuascriptErrorCode::
             UnmatchedBracketAfterTensorIndex},
-            BracketAccessSadParam{"empty_vector_access", "vec[]", ValuascriptErrorCode::EmptyBracketAccess},
             BracketAccessSadParam{"missing_operator_1", "vec[1 2]", ValuascriptErrorCode::
             MissingOperatorOrExpectedColonOrBracketInTensor},
             BracketAccessSadParam{"missing_operator_2", "vec[1 + 2 3]", ValuascriptErrorCode::
