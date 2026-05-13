@@ -78,6 +78,83 @@ namespace valuascript::compiler::test
                 {
                     return UniversalVerifier(IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), {{"A"}}));
                 }
+            },
+            {
+                "tuple_type_start", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(",
+                ", int)", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsTupleType({
+                            SpecAdder::get_v<TypeVerifier>(v),
+                            IsType("int")
+                        }));
+                }
+            },
+            {
+                "tuple_type_middle", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(int, ",
+                ", string)", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsTupleType({
+                            IsType("int"),
+                            SpecAdder::get_v<TypeVerifier>(v),
+                            IsType("string"),
+                        }));
+                }
+            },
+            {
+                "tuple_type_end", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(int, string, ",
+                ")", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsTupleType({
+                            IsType("int"),
+                            IsType("string"),
+                            SpecAdder::get_v<TypeVerifier>(v)
+                        }));
+                }
+            },
+            {
+                "generic_type_start", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "vector<",
+                ", int>", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsType("vector", {
+                                   SpecAdder::get_v<TypeVerifier>(v),
+                                   IsType("int")
+                               }
+                        )
+                    );
+                }
+            },
+            {
+                "generic_type_middle", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "vector<int, ",
+                ", string>", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsType("vector", {
+                                   IsType("int"),
+                                   SpecAdder::get_v<TypeVerifier>(v),
+                                   IsType("string")
+                               }
+                        )
+                    );
+                }
+            },
+            {
+                "generic_type_end", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                "vector<int, string, ",
+                ">", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsType("vector", {
+                                   IsType("int"),
+                                   IsType("string"),
+                                   SpecAdder::get_v<TypeVerifier>(v)
+                               }
+                        )
+                    );
+                }
             }
         };
 
