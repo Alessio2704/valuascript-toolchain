@@ -79,6 +79,10 @@ namespace valuascript::compiler {
                 return "Expected 'func'.";
             case ValuascriptErrorCode::MissingFunctionName:
                 return "Syntax Error: Expected function name.";
+        case ValuascriptErrorCode::ExpectedIdentifier:
+            return "Syntax Error: Expected name identifier.";
+        case ValuascriptErrorCode::ExpectedColon:
+            return "Syntax Error: Expected colon ':'.";
             case ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName:
                 return "Expected '(' after function name.";
             case ValuascriptErrorCode::MissingParameterName:

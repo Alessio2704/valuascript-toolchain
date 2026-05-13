@@ -338,7 +338,7 @@ namespace valuascript::compiler::test {
             "func test(a: int =, b: string) -> int {}\n"
             "let a = 1\n",
             {
-            {Err::MissingDefaultParameterValue, 1, 18},
+            {Err::MissingDefaultParameterValue, 1, 19},
             {Err::NonDefaultParameterAfterDefault, 1, 21},
             },
             ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
@@ -347,7 +347,7 @@ namespace valuascript::compiler::test {
             "missing_default_parameter_value_syncs_to_paren",
             "func test(a: int =) -> int {}\n"
             "let a = 1\n",
-            {{Err::MissingDefaultParameterValue, 1, 18}},
+            {{Err::MissingDefaultParameterValue, 1, 19}},
             [](const Program &ast) {
             auto f = ExpectRecoveredFunction(ast, "test");
             ASSERT_NE(f, nullptr);

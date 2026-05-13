@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <optional>
 #include "ast.h"
 #include "token_cursor.h"
 #include "token_traits.h"
@@ -21,6 +22,32 @@ namespace valuascript::compiler
         bool ignore_standalone_modifiers_as_boundaries = false;
         bool stop_early_if_unbalanced_blocks_detected = false;
         std::function<bool(const Token& tok, TokenType next)> custom_stop_predicate = nullptr;
+    };
+
+    struct ParameterRuleSpec
+    {
+        bool allow_modifiers = false;
+        bool allow_type = false;
+        bool require_type = false;
+        bool allow_value = false;
+        bool require_value = false;
+        TokenType value_separator = TokenType::Assign;
+
+        ValuascriptErrorCode missing_name_err = ValuascriptErrorCode::ExpectedIdentifier;
+        ValuascriptErrorCode missing_type_colon_err = ValuascriptErrorCode::ExpectedColon;
+        ValuascriptErrorCode missing_value_separator_err = ValuascriptErrorCode::MissingOperator;
+        ValuascriptErrorCode missing_value_err = ValuascriptErrorCode::InvalidExpression;
+        ValuascriptErrorCode unexpected_modifier_err = ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration;
+    };
+
+    struct GenericParameter
+    {
+        std::vector<Modifier> modifiers;
+        Token name{TokenType::Identifier, "<error>", 0, 0};
+        std::unique_ptr<TypeAnnotation> type;
+        std::unique_ptr<Expression> value;
+        bool has_value_separator = false;
+        SourceSpan span;
     };
 
     class Parser
@@ -174,16 +201,11 @@ namespace valuascript::compiler
 
         void synchronize_and_consume_closer(TokenType expected_closer);
 
+        GenericParameter parse_generic_parameter(const ParameterRuleSpec& spec,
+                                                 ParentBoundaryPredicate is_at_parent_boundary = nullptr);
+
         std::vector<std::unique_ptr<Expression>> parse_expression_list(
             TokenType closing_token,
-            std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
-            std::vector<TokenType> recovery_boundaries = {});
-
-        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> parse_key_value_list(
-            TokenType closing_token,
-            ValuascriptErrorCode key_err,
-            ValuascriptErrorCode colon_err,
-            ValuascriptErrorCode missing_comma_err,
             std::optional<ValuascriptErrorCode> trailing_comma_err = std::nullopt,
             std::vector<TokenType> recovery_boundaries = {});
 

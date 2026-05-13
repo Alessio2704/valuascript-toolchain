@@ -66,6 +66,8 @@ namespace valuascript::compiler {
         EmptyGenericTypeAnnotation,
         UnmatchedBracketAfterGenericArgs,
         ExpectedLetToken,
+        ExpectedIdentifier,
+        ExpectedColon,
         ReservedKeywordAsIdentifier,
         ExpectedCommaInMultiAssignment,
         IncompleteAssignment,
