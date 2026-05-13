@@ -7,18 +7,14 @@ namespace valuascript::compiler
     {
         const Token& start_token = cursor_.consume(TokenType::Import, ValuascriptErrorCode::ExpectedImportToken);
 
-        Token path(TokenType::String, "<error>", cursor_.peek().line, cursor_.peek().column);
-        try
-        {
-            path = cursor_.consume(TokenType::String, ValuascriptErrorCode::MissingImportPathString);
-        }
-        catch (const ParseSyncException&)
-        {
-            synchronize_with({
+        auto path = attempt_parse<Token>(
+            [&]() { return cursor_.consume(TokenType::String, ValuascriptErrorCode::MissingImportPathString); },
+            {
                 .stop_tokens = {TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::String, "<error>", cursor_.peek().line, cursor_.peek().column)
+        );
 
         return make_node<ImportStatement>(start_token, path.lexeme);
     }
@@ -36,16 +32,13 @@ namespace valuascript::compiler
         }
         else
         {
-            try
-            {
-                name_token = consume_identifier(ValuascriptErrorCode::MissingDirectiveName);
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+            name_token = attempt_parse<Token>(
+                [&]() { return consume_identifier(ValuascriptErrorCode::MissingDirectiveName); },
+                {
                     .stop_at_any_newline = true
-                });
-            }
+                },
+                Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+            );
         }
 
         std::string directive_name = name_token.lexeme;
@@ -68,31 +61,25 @@ namespace valuascript::compiler
                 }
                 else
                 {
-                    try
-                    {
-                        value = parse_expression();
-                    }
-                    catch (const ParseSyncException&)
-                    {
-                        synchronize_with({
+                    value = attempt_parse<std::unique_ptr<Expression>>(
+                        [&]() { return parse_expression(); },
+                        {
                             .stop_at_any_newline = true
-                        });
-                    }
+                        },
+                        nullptr
+                    );
                 }
             }
             else if (cursor_.peek().line == cursor_.previous().line && TokenTraits::is_expression_start(
                 cursor_.peek().type))
             {
-                try
-                {
-                    value = parse_expression();
-                }
-                catch (const ParseSyncException&)
-                {
-                    synchronize_with({
+                value = attempt_parse<std::unique_ptr<Expression>>(
+                    [&]() { return parse_expression(); },
+                    {
                         .stop_at_any_newline = true
-                    });
-                }
+                    },
+                    nullptr
+                );
             }
 
             if (value)
@@ -114,14 +101,12 @@ namespace valuascript::compiler
 
             try
             {
-                Token name_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-                try
-                {
-                    name_token = consume_identifier(ValuascriptErrorCode::ExpectedModifierName, is_statement_context);
-                }
-                catch (const ParseSyncException&)
-                {
-                    synchronize_with({
+                auto name_token = attempt_parse<Token>(
+                    [&]()
+                    {
+                        return consume_identifier(ValuascriptErrorCode::ExpectedModifierName, is_statement_context);
+                    },
+                    {
                         .stop_tokens = {TokenType::LeftParen, TokenType::At},
                         .stop_at_statement_boundary_respecting_dangling_op = true,
                         .custom_stop_predicate = [](const Token& tok, TokenType next)
@@ -132,8 +117,9 @@ namespace valuascript::compiler
                                 t == TokenType::Colon || t == TokenType::Comma || t == TokenType::Assign ||
                                 TokenTraits::is_grouping_closer(t) || TokenTraits::is_grouping_opener(t);
                         }
-                    });
-                }
+                    },
+                    Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+                );
 
                 std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
 
@@ -238,18 +224,14 @@ namespace valuascript::compiler
     {
         const Token& start_token = cursor_.consume(TokenType::Struct, ValuascriptErrorCode::ExpectedStructToken);
 
-        Token name_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-        try
-        {
-            name_token = consume_identifier(ValuascriptErrorCode::ExpectedStructName);
-        }
-        catch (const ParseSyncException&)
-        {
-            synchronize_with({
+        auto name_token = attempt_parse<Token>(
+            [&]() { return consume_identifier(ValuascriptErrorCode::ExpectedStructName); },
+            {
                 .stop_tokens = {TokenType::LeftBrace, TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+        );
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedBraceInStructDefinition);
         CloserTracker tracker(*this, TokenType::RightBrace);
@@ -315,34 +297,27 @@ namespace valuascript::compiler
     {
         const Token& start_token = cursor_.consume(TokenType::Enum, ValuascriptErrorCode::ExpectedEnumToken);
 
-        Token name_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-        try
-        {
-            name_token = consume_identifier(ValuascriptErrorCode::ExpectedEnumName);
-        }
-        catch (const ParseSyncException&)
-        {
-            synchronize_with({
+        auto name_token = attempt_parse<Token>(
+            [&]() { return consume_identifier(ValuascriptErrorCode::ExpectedEnumName); },
+            {
                 .stop_tokens = {TokenType::Colon, TokenType::LeftBrace, TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+        );
 
         std::unique_ptr<TypeAnnotation> underlying_type = nullptr;
         if (cursor_.check(TokenType::Colon))
         {
             cursor_.advance();
-            try
-            {
-                underlying_type = parse_type_annotation();
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+            underlying_type = attempt_parse<std::unique_ptr<TypeAnnotation>>(
+                [&]() { return parse_type_annotation(); },
+                {
                     .stop_tokens = {TokenType::LeftBrace, TokenType::Comma},
                     .stop_at_statement_boundary_respecting_dangling_op = true
-                });
-            }
+                },
+                nullptr
+            );
         }
         else if (cursor_.check(TokenType::LeftBrace))
         {
@@ -419,18 +394,14 @@ namespace valuascript::compiler
     {
         const Token& start_token = cursor_.consume(TokenType::Func, ValuascriptErrorCode::ExpectedFuncToken);
 
-        Token name(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-        try
-        {
-            name = consume_identifier(ValuascriptErrorCode::MissingFunctionName);
-        }
-        catch (const ParseSyncException&)
-        {
-            synchronize_with({
+        auto name = attempt_parse<Token>(
+            [&]() { return consume_identifier(ValuascriptErrorCode::MissingFunctionName); },
+            {
                 .stop_tokens = {TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+        );
 
         cursor_.consume(TokenType::LeftParen, ValuascriptErrorCode::ExpectedLeftParenAfterFunctionName);
 
@@ -493,29 +464,28 @@ namespace valuascript::compiler
         if (cursor_.check(TokenType::Arrow))
         {
             cursor_.advance();
-            try
-            {
-                return_types = parse_list<std::unique_ptr<TypeAnnotation>>(
-                    TokenType::LeftBrace,
-                    std::make_optional(ValuascriptErrorCode::TrailingComma),
-                    ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList,
-                    std::vector<TokenType>{},
-                    [&]() { return parse_type_annotation(); }
-                );
-
-                if (return_types.empty())
+            attempt_parse_void(
+                [&]()
                 {
-                    cursor_.report_error_no_panic(cursor_.peek(),
-                                                  ValuascriptErrorCode::MissingTypeAnnotationAfterArrow);
-                }
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+                    return_types = parse_list<std::unique_ptr<TypeAnnotation>>(
+                        TokenType::LeftBrace,
+                        std::make_optional(ValuascriptErrorCode::TrailingComma),
+                        ValuascriptErrorCode::ExpectedCommaSeparatorInReturnTypeList,
+                        std::vector<TokenType>{},
+                        [&]() { return parse_type_annotation(); }
+                    );
+
+                    if (return_types.empty())
+                    {
+                        cursor_.report_error_no_panic(cursor_.peek(),
+                                                      ValuascriptErrorCode::MissingTypeAnnotationAfterArrow);
+                    }
+                },
+                {
                     .stop_tokens = {TokenType::LeftBrace},
                     .stop_at_statement_boundary_respecting_dangling_op = true
-                });
-            }
+                }
+            );
         }
         else if (cursor_.check(TokenType::LeftBrace))
         {
@@ -543,20 +513,17 @@ namespace valuascript::compiler
             {
                 break;
             }
-            try
-            {
-                parse_statement_or_declaration(ParseContext::FunctionBody, nullptr, body);
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+
+            attempt_parse_void(
+                [&]() { parse_statement_or_declaration(ParseContext::FunctionBody, nullptr, body); },
+                {
                     .stop_tokens = {TokenType::RightBrace, TokenType::Return},
                     .force_stop_at_statement_boundary_ignoring_dangling_op = true,
                     .stop_at_currently_tracked_closers = false,
                     .stop_at_currently_tracked_sync_tokens = false,
                     .skip_nested_groupings_during_recovery = false
-                });
-            }
+                }
+            );
         }
 
         Token end_token = cursor_.previous();
@@ -657,18 +624,14 @@ namespace valuascript::compiler
     {
         const Token& start_token = cursor_.consume(TokenType::Typealias, ValuascriptErrorCode::ExpectedTypeAliasToken);
 
-        Token name_token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-        try
-        {
-            name_token = consume_identifier(ValuascriptErrorCode::ExpectedTypeAliasName);
-        }
-        catch (const ParseSyncException&)
-        {
-            synchronize_with({
+        auto name_token = attempt_parse<Token>(
+            [&]() { return consume_identifier(ValuascriptErrorCode::ExpectedTypeAliasName); },
+            {
                 .stop_tokens = {TokenType::Assign, TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+        );
 
         if (cursor_.check(TokenType::Assign))
         {

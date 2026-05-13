@@ -123,7 +123,8 @@ namespace valuascript::compiler
          */
         using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
 
-        std::unique_ptr<TypeAnnotation> parse_type_annotation(const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
+        std::unique_ptr<TypeAnnotation> parse_type_annotation(
+            const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
 
@@ -201,6 +202,39 @@ namespace valuascript::compiler
         void synchronize_to_closer(TokenType closing_token);
 
         void synchronize_and_consume_closer(TokenType expected_closer);
+
+        template <typename ReturnType, typename ParseFunc>
+        ReturnType attempt_parse(ParseFunc parse_func, const RecoveryConfig& config, ReturnType fallback_value,
+                                 bool* out_failed = nullptr)
+        {
+            try
+            {
+                ReturnType result = parse_func();
+                if (out_failed) *out_failed = false;
+                return result;
+            }
+            catch (const ParseSyncException&)
+            {
+                synchronize_with(config);
+                if (out_failed) *out_failed = true;
+                return fallback_value;
+            }
+        }
+
+        template <typename ParseFunc>
+        void attempt_parse_void(ParseFunc parse_func, const RecoveryConfig& config, bool* out_failed = nullptr)
+        {
+            try
+            {
+                parse_func();
+                if (out_failed) *out_failed = false;
+            }
+            catch (const ParseSyncException&)
+            {
+                synchronize_with(config);
+                if (out_failed) *out_failed = true;
+            }
+        }
 
         GenericParameter parse_generic_parameter(const ParameterRuleSpec& spec,
                                                  ParentBoundaryPredicate is_at_parent_boundary = nullptr);

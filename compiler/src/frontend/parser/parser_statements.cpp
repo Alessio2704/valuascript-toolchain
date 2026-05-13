@@ -178,34 +178,27 @@ namespace valuascript::compiler
                                               ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements);
             }
 
-            Token target(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column);
-            try
-            {
-                target = consume_identifier(ValuascriptErrorCode::InvalidIdentifier);
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+            auto target = attempt_parse<Token>(
+                [&]() { return consume_identifier(ValuascriptErrorCode::InvalidIdentifier); },
+                {
                     .stop_tokens = {TokenType::Colon, TokenType::Comma, TokenType::Assign},
                     .stop_at_statement_boundary_respecting_dangling_op = true
-                });
-            }
+                },
+                Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column)
+            );
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
 
             if (cursor_.match({TokenType::Colon}))
             {
-                try
-                {
-                    type_annotation = parse_type_annotation();
-                }
-                catch (const ParseSyncException&)
-                {
-                    synchronize_with({
+                type_annotation = attempt_parse<std::unique_ptr<TypeAnnotation>>(
+                    [&]() { return parse_type_annotation(); },
+                    {
                         .stop_tokens = {TokenType::Comma, TokenType::Assign},
                         .stop_at_statement_boundary_respecting_dangling_op = true
-                    });
-                }
+                    },
+                    nullptr
+                );
             }
 
             targets.emplace_back(target.lexeme, std::move(type_annotation));
@@ -345,20 +338,17 @@ namespace valuascript::compiler
 
         do
         {
-            try
-            {
-                return_values.push_back(parse_expression());
-            }
-            catch (const ParseSyncException&)
-            {
-                return_values.push_back(nullptr);
-
-                synchronize_with({
-                    .stop_tokens = {TokenType::Comma},
-                    .stop_at_statement_boundary_respecting_dangling_op = true,
-                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
-                });
-            }
+            return_values.push_back(
+                attempt_parse<std::unique_ptr<Expression>>(
+                    [&]() { return parse_expression(); },
+                    {
+                        .stop_tokens = {TokenType::Comma},
+                        .stop_at_statement_boundary_respecting_dangling_op = true,
+                        .force_stop_at_statement_boundary_ignoring_dangling_op = true
+                    },
+                    nullptr
+                )
+            );
         }
         while (cursor_.match({TokenType::Comma}));
 

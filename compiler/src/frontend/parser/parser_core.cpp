@@ -14,19 +14,15 @@ namespace valuascript::compiler
 
         while (!cursor_.is_at_end())
         {
-            try
-            {
-                parse_statement_or_declaration(ParseContext::TopLevel, program.get(), dummy_block);
-            }
-            catch (const ParseSyncException&)
-            {
-                synchronize_with({
+            attempt_parse_void(
+                [&]() { parse_statement_or_declaration(ParseContext::TopLevel, program.get(), dummy_block); },
+                {
                     .force_stop_at_statement_boundary_ignoring_dangling_op = true,
                     .stop_at_currently_tracked_closers = false,
                     .stop_at_currently_tracked_sync_tokens = false,
                     .skip_nested_groupings_during_recovery = false
-                });
-            }
+                }
+            );
         }
 
         program->span = cursor_.make_span(start_token, cursor_.previous());

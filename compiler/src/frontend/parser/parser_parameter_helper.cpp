@@ -27,35 +27,29 @@ namespace valuascript::compiler
         }
 
         bool name_failed = false;
-        try
-        {
-            result.name = consume_identifier(spec.missing_name_err, false);
-        }
-        catch (const ParseSyncException&)
-        {
-            name_failed = true;
-            synchronize_with({
+        result.name = attempt_parse<Token>(
+            [&]() { return consume_identifier(spec.missing_name_err, false); },
+            {
                 .stop_tokens = {TokenType::Colon, spec.value_separator, TokenType::Comma},
                 .stop_at_statement_boundary_respecting_dangling_op = true
-            });
-        }
+            },
+            Token(TokenType::Identifier, "<error>", cursor_.peek().line, cursor_.peek().column),
+            &name_failed
+        );
 
         if (spec.allow_type)
         {
             if (cursor_.check(TokenType::Colon))
             {
                 cursor_.advance();
-                try
-                {
-                    result.type = parse_type_annotation(std::move(is_at_parent_boundary));
-                }
-                catch (const ParseSyncException&)
-                {
-                    synchronize_with({
+                result.type = attempt_parse<std::unique_ptr<TypeAnnotation>>(
+                    [&]() { return parse_type_annotation(is_at_parent_boundary); },
+                    {
                         .stop_tokens = {spec.value_separator, TokenType::Comma},
                         .stop_at_statement_boundary_respecting_dangling_op = true
-                    });
-                }
+                    },
+                    nullptr
+                );
             }
             else if (spec.require_type && !name_failed)
             {
@@ -102,29 +96,28 @@ namespace valuascript::compiler
                 }
                 else
                 {
-                    try
-                    {
-                        result.value = parse_expression();
-
-                        if ((TokenTraits::is_expression_start(cursor_.peek().type) ||
-                                TokenTraits::is_binary_operator(cursor_.peek().type)) &&
-                            cursor_.peek(1).type != spec.value_separator &&
-                            cursor_.peek(1).type != TokenType::Colon)
+                    attempt_parse_void(
+                        [&]()
                         {
-                            if (!TokenTraits::is_newline_statement_boundary(
-                                cursor_.previous(), cursor_.peek(), cursor_.peek(1).type))
+                            result.value = parse_expression();
+
+                            if ((TokenTraits::is_expression_start(cursor_.peek().type) ||
+                                    TokenTraits::is_binary_operator(cursor_.peek().type)) &&
+                                cursor_.peek(1).type != spec.value_separator &&
+                                cursor_.peek(1).type != TokenType::Colon)
                             {
-                                cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                                if (!TokenTraits::is_newline_statement_boundary(
+                                    cursor_.previous(), cursor_.peek(), cursor_.peek(1).type))
+                                {
+                                    cursor_.report_error(cursor_.peek(), ValuascriptErrorCode::MissingOperator);
+                                }
                             }
-                        }
-                    }
-                    catch (const ParseSyncException&)
-                    {
-                        synchronize_with({
+                        },
+                        {
                             .stop_tokens = {TokenType::Comma},
                             .stop_at_statement_boundary_respecting_dangling_op = true
-                        });
-                    }
+                        }
+                    );
                 }
             }
         }
