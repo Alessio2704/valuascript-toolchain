@@ -5,6 +5,7 @@
 #include <functional>
 #include <optional>
 #include <utility>
+#include <type_traits>
 #include "ast.h"
 #include "token_cursor.h"
 #include "token_traits.h"
@@ -150,12 +151,24 @@ namespace valuascript::compiler
 
         std::unique_ptr<Expression> handle_invalid_expression_start();
 
-        std::unique_ptr<Expression> parse_prefix_number();
-        std::unique_ptr<Expression> parse_prefix_percentage();
-        std::unique_ptr<Expression> parse_prefix_string();
-        std::unique_ptr<Expression> parse_prefix_boolean();
-        std::unique_ptr<Expression> parse_prefix_identifier();
-        std::unique_ptr<Expression> parse_prefix_self();
+        template <typename T>
+        std::unique_ptr<Expression> parse_literal_prefix()
+        {
+            const Token& t = cursor_.advance();
+            if constexpr (std::is_same_v<T, BooleanLiteral>)
+            {
+                return make_node<T>(t, t.type == TokenType::True);
+            }
+            else if constexpr (std::is_same_v<T, SelfExpression>)
+            {
+                return make_node<T>(t);
+            }
+            else
+            {
+                return make_node<T>(t, t.lexeme);
+            }
+        }
+
         std::unique_ptr<Expression> parse_prefix_unary();
 
         std::unique_ptr<Expression> parse_infix_binary(std::unique_ptr<Expression> left, const Token& op);
@@ -222,6 +235,10 @@ namespace valuascript::compiler
         void synchronize_to_closer(TokenType closing_token);
 
         void synchronize_and_consume_closer(TokenType expected_closer);
+
+        void reject_modifiers(const std::vector<Modifier>& modifiers,
+                              ValuascriptErrorCode error_code =
+                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration) const;
 
         template <typename ReturnType, typename ParseFunc>
         ReturnType attempt_parse(ParseFunc parse_func, const RecoveryConfig& config, ReturnType fallback_value,

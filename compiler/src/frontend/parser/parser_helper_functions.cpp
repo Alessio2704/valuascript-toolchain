@@ -237,4 +237,11 @@ namespace valuascript::compiler
 
         return true;
     }
+
+    void Parser::reject_modifiers(const std::vector<Modifier>& modifiers, ValuascriptErrorCode error_code) const
+    {
+        if (modifiers.empty()) return;
+        SourceSpan span = cursor_.combine_spans(modifiers.front().span, modifiers.back().span);
+        cursor_.report_error_no_panic(span, error_code);
+    }
 }

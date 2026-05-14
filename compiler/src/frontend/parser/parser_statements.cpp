@@ -16,12 +16,7 @@ namespace valuascript::compiler
         if (type == TokenType::EndOfFile ||
             (type == TokenType::RightBrace && ctx == ParseContext::FunctionBody))
         {
-            if (!modifiers.empty())
-            {
-                SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                cursor_.report_error_no_panic(
-                    span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-            }
+            reject_modifiers(modifiers);
             return;
         }
 
@@ -43,24 +38,14 @@ namespace valuascript::compiler
             {
             case TokenType::Import:
                 {
-                    if (!modifiers.empty())
-                    {
-                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                        cursor_.report_error_no_panic(
-                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
+                    reject_modifiers(modifiers);
                     auto stmt = parse_import_statement();
                     if (program) program->import_statements.push_back(std::move(stmt));
                     break;
                 }
             case TokenType::Hash:
                 {
-                    if (!modifiers.empty())
-                    {
-                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                        cursor_.report_error_no_panic(
-                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
+                    reject_modifiers(modifiers);
                     auto dir = parse_directive();
                     if (program) program->directives.push_back(std::move(dir));
                     break;
@@ -98,12 +83,7 @@ namespace valuascript::compiler
                 }
             case TokenType::Return:
                 {
-                    if (!modifiers.empty())
-                    {
-                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                        cursor_.report_error_no_panic(
-                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
+                    reject_modifiers(modifiers);
 
                     if (ctx == ParseContext::TopLevel)
                     {
@@ -125,12 +105,7 @@ namespace valuascript::compiler
             case TokenType::LeftBracket:
             default:
                 {
-                    if (!modifiers.empty())
-                    {
-                        SourceSpan span = cursor_.make_span(start_token, cursor_.previous());
-                        cursor_.report_error_no_panic(
-                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
+                    reject_modifiers(modifiers);
 
                     if (auto expr_stmt = parse_expression_statement())
                     {
@@ -169,14 +144,7 @@ namespace valuascript::compiler
         do
         {
             auto inner_mods = parse_modifiers();
-            if (!inner_mods.empty())
-            {
-                auto first = inner_mods.front().span;
-                auto back = inner_mods.back().span;
-                auto combined_span = cursor_.combine_spans(first, back);
-                cursor_.report_error_no_panic(combined_span,
-                                              ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements);
-            }
+            reject_modifiers(inner_mods, ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements);
 
             auto target = attempt_parse<Token>(
                 [&]() { return consume_identifier(ValuascriptErrorCode::InvalidIdentifier); },

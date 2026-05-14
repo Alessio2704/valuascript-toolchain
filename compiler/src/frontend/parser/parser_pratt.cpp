@@ -47,13 +47,13 @@ namespace valuascript::compiler
             set_prefix(TokenType::LeftBracket, &Parser::parse_tensor_literal);
             set_prefix(TokenType::LeftBrace, &Parser::parse_dict_literal);
 
-            set_prefix(TokenType::Number, &Parser::parse_prefix_number);
-            set_prefix(TokenType::PercentageLiteral, &Parser::parse_prefix_percentage);
-            set_prefix(TokenType::String, &Parser::parse_prefix_string);
-            set_prefix(TokenType::True, &Parser::parse_prefix_boolean);
-            set_prefix(TokenType::False, &Parser::parse_prefix_boolean);
-            set_prefix(TokenType::Identifier, &Parser::parse_prefix_identifier);
-            set_prefix(TokenType::Self, &Parser::parse_prefix_self);
+            set_prefix(TokenType::Number, &Parser::parse_literal_prefix<NumberLiteral>);
+            set_prefix(TokenType::PercentageLiteral, &Parser::parse_literal_prefix<PercentageLiteral>);
+            set_prefix(TokenType::String, &Parser::parse_literal_prefix<StringLiteral>);
+            set_prefix(TokenType::True, &Parser::parse_literal_prefix<BooleanLiteral>);
+            set_prefix(TokenType::False, &Parser::parse_literal_prefix<BooleanLiteral>);
+            set_prefix(TokenType::Identifier, &Parser::parse_literal_prefix<IdentifierAccess>);
+            set_prefix(TokenType::Self, &Parser::parse_literal_prefix<SelfExpression>);
 
             set_prefix(TokenType::Switch, &Parser::parse_switch_expression);
             set_prefix(TokenType::If, &Parser::parse_conditional_expression);
@@ -195,42 +195,6 @@ namespace valuascript::compiler
         );
 
         return make_node<UnaryExpression>(op, op.type, std::move(right));
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_number()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<NumberLiteral>(t, t.lexeme);
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_percentage()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<PercentageLiteral>(t, t.lexeme);
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_string()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<StringLiteral>(t, t.lexeme);
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_boolean()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<BooleanLiteral>(t, t.type == TokenType::True);
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_identifier()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<IdentifierAccess>(t, t.lexeme);
-    }
-
-    std::unique_ptr<Expression> Parser::parse_prefix_self()
-    {
-        const Token& t = cursor_.advance();
-        return make_node<SelfExpression>(t);
     }
 
     std::unique_ptr<Expression> Parser::handle_invalid_expression_start()
