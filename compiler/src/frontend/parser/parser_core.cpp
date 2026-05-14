@@ -15,7 +15,7 @@ namespace valuascript::compiler
         while (!cursor_.is_at_end())
         {
             attempt_parse_void(
-                [&]() { parse_statement_or_declaration(ParseContext::TopLevel, program.get(), dummy_block); },
+                [&] { parse_statement_or_declaration(ParseContext::TopLevel, program.get(), dummy_block); },
                 {
                     .force_stop_at_statement_boundary_ignoring_dangling_op = true,
                     .stop_at_currently_tracked_closers = false,

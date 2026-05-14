@@ -4,139 +4,7 @@
 
 namespace valuascript::compiler
 {
-    std::unique_ptr<Expression> Parser::parse_expression(const Precedence min_precedence)
-    {
-        auto left = parse_unary_expression();
-
-        while (TokenTraits::get_operator_precedence(cursor_.peek().type) >= min_precedence)
-        {
-            bool inside_expr_grouping = std::any_of(active_closers_.begin(), active_closers_.end(), [](TokenType t)
-            {
-                return t == TokenType::RightParen || t == TokenType::RightBracket;
-            });
-
-            if (cursor_.peek().line > cursor_.previous().line && !inside_expr_grouping)
-            {
-                break;
-            }
-
-            Token op = cursor_.advance();
-
-            if (!inside_expr_grouping)
-            {
-                const Token& next = cursor_.peek();
-                if (next.type == TokenType::EndOfFile || (next.line > op.line && (
-                    TokenTraits::is_statement_start(next, cursor_.peek(1).type) ||
-                    TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
-                {
-                    cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
-                    return make_node_with_span<BinaryExpression>(
-                        cursor_.combine_spans(left->span, cursor_.make_span(op, op)), std::move(left), op.type,
-                        nullptr);
-                }
-            }
-
-            Precedence op_precedence = TokenTraits::get_operator_precedence(op.type);
-
-            const Precedence next_precedence = TokenTraits::is_operator_right_associative(op.type)
-                                                   ? op_precedence
-                                                   : static_cast<Precedence>(static_cast<int>(op_precedence) + 1);
-
-            auto right = attempt_parse<std::unique_ptr<Expression>>(
-                [&]() { return parse_expression(next_precedence); },
-                {
-                    .stop_tokens = {
-                        TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
-                    },
-                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
-                },
-                nullptr
-            );
-
-            const SourceSpan right_span = right
-                                              ? right->span
-                                              : cursor_.make_span(cursor_.previous(), cursor_.previous());
-            const SourceSpan combined = cursor_.combine_spans(left->span, right_span);
-
-            left = make_node_with_span<BinaryExpression>(combined, std::move(left), op.type, std::move(right));
-
-            if (op_precedence == Precedence::Comparison &&
-                TokenTraits::get_operator_precedence(cursor_.peek().type) == Precedence::Comparison)
-            {
-                cursor_.report_error_no_panic(cursor_.peek(),
-                                              ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations);
-            }
-        }
-
-        return left;
-    }
-
-    std::unique_ptr<Expression> Parser::parse_unary_expression()
-    {
-        if (TokenTraits::is_unary_operator(cursor_.peek().type))
-        {
-            Token op = cursor_.advance();
-
-            bool inside_expr_grouping = std::any_of(active_closers_.begin(), active_closers_.end(), [](TokenType t)
-            {
-                return t == TokenType::RightParen || t == TokenType::RightBracket;
-            });
-
-            if (!inside_expr_grouping)
-            {
-                const Token& next = cursor_.peek();
-                if (next.type == TokenType::EndOfFile || (next.line > op.line && (
-                    TokenTraits::is_statement_start(next, cursor_.peek(1).type) ||
-                    TokenTraits::is_expression_statement_start(next, cursor_.peek(1).type))))
-                {
-                    cursor_.report_error_no_panic(op, ValuascriptErrorCode::InvalidExpression);
-                    return make_node_with_span<UnaryExpression>(cursor_.make_span(op, op), op.type, nullptr);
-                }
-            }
-
-            auto right = attempt_parse<std::unique_ptr<Expression>>(
-                [&] { return parse_unary_expression(); },
-                {
-                    .stop_tokens = {
-                        TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
-                    },
-                    .force_stop_at_statement_boundary_ignoring_dangling_op = true
-                },
-                nullptr
-            );
-
-            return make_node<UnaryExpression>(op, op.type, std::move(right));
-        }
-        return parse_postfix_expression();
-    }
-
-    std::unique_ptr<Expression> Parser::parse_postfix_expression()
-    {
-        auto expr = parse_primary_expression();
-        while (true)
-        {
-            SourceSpan start_span = expr->span;
-            if (cursor_.match({TokenType::LeftParen}))
-            {
-                expr = parse_function_call(std::move(expr));
-            }
-            else if (cursor_.match({TokenType::LeftBracket}))
-            {
-                expr = parse_tensor_access(std::move(expr));
-            }
-            else if (cursor_.match({TokenType::Dot}))
-            {
-                expr = parse_dot_access(std::move(expr));
-            }
-            else
-            {
-                break;
-            }
-        }
-        return expr;
-    }
-
-    std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target)
+    std::unique_ptr<Expression> Parser::parse_function_call(std::unique_ptr<Expression> target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(*this, TokenType::RightParen);
@@ -227,7 +95,7 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target)
+    std::unique_ptr<Expression> Parser::parse_tensor_access(std::unique_ptr<Expression> target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(*this, TokenType::RightBracket);
@@ -300,7 +168,7 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target)
+    std::unique_ptr<Expression> Parser::parse_dot_access(std::unique_ptr<Expression> target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
 
@@ -324,139 +192,9 @@ namespace valuascript::compiler
                                               property_token.lexeme);
     }
 
-    std::unique_ptr<Expression> Parser::parse_primary_expression()
-    {
-        const Token& tok = cursor_.peek();
-        const Token& next = cursor_.peek(1);
-        const Token& prev = cursor_.previous();
-
-        switch (tok.type)
-        {
-        case TokenType::Number:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<NumberLiteral>(t, t.lexeme);
-            }
-        case TokenType::PercentageLiteral:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<PercentageLiteral>(t, t.lexeme);
-            }
-        case TokenType::String:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<StringLiteral>(t, t.lexeme);
-            }
-        case TokenType::True:
-        case TokenType::False:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<BooleanLiteral>(t, t.type == TokenType::True);
-            }
-        case TokenType::Identifier:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<IdentifierAccess>(t, t.lexeme);
-            }
-        case TokenType::Self:
-            {
-                const Token& t = cursor_.advance();
-                return make_node<SelfExpression>(t);
-            }
-        case TokenType::Switch:
-            cursor_.advance();
-            return parse_switch_expression();
-        case TokenType::If:
-            {
-                cursor_.advance();
-                return parse_conditional_expression();
-            }
-        case TokenType::LeftParen:
-            cursor_.advance();
-            return parse_tuple_or_grouping();
-        case TokenType::LeftBracket:
-            cursor_.advance();
-            return parse_tensor_literal();
-        case TokenType::LeftBrace:
-            cursor_.advance();
-            return parse_dict_literal();
-        default:
-            {
-                bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type);
-                bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
-
-                if (is_stmt_start)
-                {
-                    if (tok.line > prev.line)
-                    {
-                        if (TokenTraits::is_dangling_operator(prev.type) ||
-                            TokenTraits::is_grouping_opener(prev.type))
-                        {
-                            cursor_.report_error(prev, ValuascriptErrorCode::InvalidExpression);
-                        }
-                        else
-                        {
-                            cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
-                        }
-                    }
-
-                    const Token& start_tok = cursor_.peek();
-
-                    if (tok.type == TokenType::At && !is_at_any_declaration())
-                    {
-                        parse_modifiers();
-                        SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
-                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
-                        cursor_.report_error_no_panic(
-                            span, ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration);
-                    }
-                    else
-                    {
-                        consume_unexpected_statement_gracefully();
-                        SourceSpan span = cursor_.make_span(start_tok, cursor_.previous());
-                        cursor_.report_error_no_panic(span, ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
-                    }
-
-                    if (TokenTraits::is_expression_start(cursor_.peek().type))
-                    {
-                        return parse_primary_expression();
-                    }
-
-                    throw ParseSyncException();
-                }
-
-                if (tok.type == TokenType::Case || tok.type == TokenType::Default ||
-                    tok.type == TokenType::RightBrace || tok.type == TokenType::RightParen ||
-                    tok.type == TokenType::RightBracket || tok.type == TokenType::Return ||
-                    tok.type == TokenType::Then || tok.type == TokenType::Else)
-                {
-                    if (tok.line > prev.line)
-                    {
-                        if (TokenTraits::is_dangling_operator(prev.type) ||
-                            TokenTraits::is_grouping_opener(prev.type))
-                        {
-                            cursor_.report_error(prev, ValuascriptErrorCode::InvalidExpression);
-                        }
-                    }
-
-                    cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
-                }
-
-                if (is_reserved_keyword(tok))
-                {
-                    cursor_.report_error_no_panic(tok, ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
-                    cursor_.advance();
-                    return make_node_with_span<IdentifierAccess>(cursor_.make_span(tok, tok), tok.lexeme);
-                }
-
-                cursor_.report_error(tok, ValuascriptErrorCode::InvalidExpression, force_location);
-            }
-        }
-    }
-
     std::unique_ptr<Expression> Parser::parse_tuple_or_grouping()
     {
-        const Token& start_token = cursor_.previous();
+        const Token& start_token = cursor_.advance();
         CloserTracker tracker(*this, TokenType::RightParen);
 
         if (cursor_.match({TokenType::RightParen}))
@@ -541,7 +279,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<Expression> Parser::parse_tensor_literal()
     {
-        const Token& start_token = cursor_.previous();
+        const Token& start_token = cursor_.advance();
         CloserTracker tracker(*this, TokenType::RightBracket);
         auto elements = parse_expression_list(TokenType::RightBracket);
 
@@ -560,7 +298,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<Expression> Parser::parse_dict_literal()
     {
-        const Token& start_token = cursor_.previous();
+        const Token& start_token = cursor_.advance();
         CloserTracker tracker(*this, TokenType::RightBrace);
 
         ParameterRuleSpec dict_spec{
@@ -619,7 +357,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<Expression> Parser::parse_conditional_expression()
     {
-        const Token& start_token = cursor_.previous();
+        const Token& start_token = cursor_.advance();
         SyncSetTracker tracker(*this, {TokenType::Then, TokenType::Else});
 
         auto condition = attempt_parse<std::unique_ptr<Expression>>(
@@ -669,7 +407,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<Expression> Parser::parse_switch_expression()
     {
-        const Token& start_token = cursor_.previous();
+        const Token& start_token = cursor_.advance();
         auto target = parse_switch_target();
 
         cursor_.consume(TokenType::LeftBrace, ValuascriptErrorCode::ExpectedLeftBraceBeforeSwitchBody);

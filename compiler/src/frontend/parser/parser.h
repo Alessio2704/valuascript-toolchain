@@ -53,6 +53,20 @@ namespace valuascript::compiler
 
     class Parser
     {
+    public:
+        using PrefixParseFn = std::unique_ptr<Expression> (Parser::*)();
+        using InfixParseFn = std::unique_ptr<Expression> (Parser::*)(std::unique_ptr<Expression> left, const Token& op);
+
+        struct ParseRule
+        {
+            PrefixParseFn prefix;
+            InfixParseFn infix;
+            Precedence precedence;
+            bool is_right_associative;
+        };
+
+        static ParseRule get_rule(TokenType type);
+
     private:
         struct CloserTracker
         {
@@ -134,11 +148,17 @@ namespace valuascript::compiler
 
         std::unique_ptr<Expression> parse_expression(Precedence min_precedence = Precedence::Or);
 
-        std::unique_ptr<Expression> parse_unary_expression();
+        std::unique_ptr<Expression> handle_invalid_expression_start();
 
-        std::unique_ptr<Expression> parse_postfix_expression();
+        std::unique_ptr<Expression> parse_prefix_number();
+        std::unique_ptr<Expression> parse_prefix_percentage();
+        std::unique_ptr<Expression> parse_prefix_string();
+        std::unique_ptr<Expression> parse_prefix_boolean();
+        std::unique_ptr<Expression> parse_prefix_identifier();
+        std::unique_ptr<Expression> parse_prefix_self();
+        std::unique_ptr<Expression> parse_prefix_unary();
 
-        std::unique_ptr<Expression> parse_primary_expression();
+        std::unique_ptr<Expression> parse_infix_binary(std::unique_ptr<Expression> left, const Token& op);
 
         std::unique_ptr<Expression> parse_tuple_or_grouping();
 
@@ -151,11 +171,11 @@ namespace valuascript::compiler
 
         std::unique_ptr<Expression> parse_dict_literal();
 
-        std::unique_ptr<Expression> parse_function_call(std::unique_ptr<Expression> target);
+        std::unique_ptr<Expression> parse_function_call(std::unique_ptr<Expression> target, const Token& op);
 
-        std::unique_ptr<Expression> parse_tensor_access(std::unique_ptr<Expression> target);
+        std::unique_ptr<Expression> parse_tensor_access(std::unique_ptr<Expression> target, const Token& op);
 
-        std::unique_ptr<Expression> parse_dot_access(std::unique_ptr<Expression> target);
+        std::unique_ptr<Expression> parse_dot_access(std::unique_ptr<Expression> target, const Token& op);
 
         std::unique_ptr<Expression> parse_conditional_expression();
 

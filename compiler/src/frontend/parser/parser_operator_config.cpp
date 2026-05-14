@@ -5,51 +5,26 @@
 
 namespace valuascript::compiler
 {
-    struct OperatorConfig
+    std::pair<Precedence, bool> TokenTraits::get_binary_op_info(TokenType type)
     {
-        Precedence precedence;
-        bool is_right_associative;
-    };
-
-    static const std::unordered_map<TokenType, OperatorConfig>& get_operator_configs()
-    {
-        static const std::unordered_map<TokenType, OperatorConfig> configs = {
-            {TokenType::Or, {Precedence::Or, false}},
-            {TokenType::And, {Precedence::And, false}},
-            {TokenType::Equals, {Precedence::Comparison, false}},
-            {TokenType::NotEquals, {Precedence::Comparison, false}},
-            {TokenType::Less, {Precedence::Comparison, false}},
-            {TokenType::LessEqual, {Precedence::Comparison, false}},
-            {TokenType::Greater, {Precedence::Comparison, false}},
-            {TokenType::GreaterEqual, {Precedence::Comparison, false}},
-            {TokenType::Plus, {Precedence::Term, false}},
-            {TokenType::Minus, {Precedence::Term, false}},
-            {TokenType::Star, {Precedence::Factor, false}},
-            {TokenType::Slash, {Precedence::Factor, false}},
-            {TokenType::Mod, {Precedence::Factor, false}},
-            {TokenType::Caret, {Precedence::Power, true}}
-        };
-        return configs;
-    }
-
-    Precedence TokenTraits::get_operator_precedence(const TokenType op_type)
-    {
-        auto& configs = get_operator_configs();
-        if (auto it = configs.find(op_type); it != configs.end())
+        switch (type)
         {
-            return it->second.precedence;
+        case TokenType::Or: return {Precedence::Or, false};
+        case TokenType::And: return {Precedence::And, false};
+        case TokenType::Equals:
+        case TokenType::NotEquals:
+        case TokenType::Less:
+        case TokenType::LessEqual:
+        case TokenType::Greater:
+        case TokenType::GreaterEqual: return {Precedence::Comparison, false};
+        case TokenType::Plus:
+        case TokenType::Minus: return {Precedence::Term, false};
+        case TokenType::Star:
+        case TokenType::Slash:
+        case TokenType::Mod: return {Precedence::Factor, false};
+        case TokenType::Caret: return {Precedence::Power, true};
+        default: return {Precedence::None, false};
         }
-        return Precedence::None;
-    }
-
-    bool TokenTraits::is_operator_right_associative(TokenType op_type)
-    {
-        auto& configs = get_operator_configs();
-        if (auto it = configs.find(op_type); it != configs.end())
-        {
-            return it->second.is_right_associative;
-        }
-        return false;
     }
 
     bool TokenTraits::is_binary_operator(const TokenType type)
@@ -63,7 +38,7 @@ namespace valuascript::compiler
             }
             return set;
         }();
-        return binary_ops.find(type) != binary_ops.end();
+        return binary_ops.contains(type);
     }
 
     bool TokenTraits::is_unary_operator(const TokenType type)
@@ -77,7 +52,12 @@ namespace valuascript::compiler
             }
             return set;
         }();
-        return unary_ops.find(type) != unary_ops.end();
+        return unary_ops.contains(type);
+    }
+
+    bool TokenTraits::is_postfix_operator(const TokenType type)
+    {
+        return type == TokenType::Dot || type == TokenType::LeftParen || type == TokenType::LeftBracket;
     }
 
     bool TokenTraits::is_dangling_operator(const TokenType type)

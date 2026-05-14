@@ -12,25 +12,7 @@ namespace valuascript::compiler
 
     bool TokenTraits::is_expression_start(const TokenType type)
     {
-        if (is_unary_operator(type)) return true;
-
-        switch (type)
-        {
-        case TokenType::Number:
-        case TokenType::PercentageLiteral:
-        case TokenType::String:
-        case TokenType::DocString:
-        case TokenType::True:
-        case TokenType::False:
-        case TokenType::Identifier:
-        case TokenType::Switch:
-        case TokenType::If:
-        case TokenType::LeftParen:
-        case TokenType::LeftBracket:
-        case TokenType::LeftBrace:
-        case TokenType::Self: return true;
-        default: return false;
-        }
+        return Parser::get_rule(type).prefix != nullptr;
     }
 
     bool TokenTraits::is_statement_start(const Token& token, TokenType lookahead_type)
