@@ -1,5 +1,6 @@
 #pragma once
 #include "ast_core.h"
+#include "optional"
 #include "ast_expr.h"
 #include "ast_stmt.h"
 #include "ast_type.h"

@@ -19,10 +19,13 @@ namespace valuascript::compiler
         if (cursor.match({TokenType::LeftParen}))
         {
             CloserTracker tracker(ctx, TokenType::RightParen);
-            auto elements = ListParser::parse_list<TypeAnnPtr>(
-                ctx, TokenType::RightParen, E::SingleElementTuplesNotAllowed, E::ExpectedCommaSeparatorInTupleType, {},
-                [&]() { return parse_type_annotation(is_at_parent_boundary); }, is_at_parent_boundary
-            );
+
+            auto elements = ListParser<TypeAnnPtr>(ctx)
+                            .stop_at(TokenType::RightParen)
+                            .on_trailing_comma(E::SingleElementTuplesNotAllowed)
+                            .on_missing_comma(E::ExpectedCommaSeparatorInTupleType)
+                            .is_at_parent_boundary(is_at_parent_boundary)
+                            .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             Token end_token = cursor.previous();
             try { end_token = cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisInTuple); }
@@ -43,10 +46,12 @@ namespace valuascript::compiler
 
         if (cursor.match({TokenType::Less}))
         {
-            generic_args = ListParser::parse_list<TypeAnnPtr>(
-                ctx, TokenType::Greater, E::TrailingCommaInGenericArgument, E::ExpectedCommaSeparatorInGenericArgs, {},
-                [&]() { return parse_type_annotation(is_at_parent_boundary); }, is_at_parent_boundary
-            );
+            generic_args = ListParser<TypeAnnPtr>(ctx)
+                           .stop_at(TokenType::Greater)
+                           .on_trailing_comma(E::TrailingCommaInGenericArgument)
+                           .on_missing_comma(E::ExpectedCommaSeparatorInGenericArgs)
+                           .is_at_parent_boundary(is_at_parent_boundary)
+                           .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             if (generic_args.empty()) cursor.report_error_no_panic(cursor.peek(), E::EmptyGenericTypeAnnotation);
             try { cursor.consume(TokenType::Greater, E::UnmatchedBracketAfterGenericArgs); }

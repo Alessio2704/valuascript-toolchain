@@ -227,18 +227,20 @@ namespace valuascript::compiler
                 .missing_name_err = E::MissingArgumentNameInFunctionCall,
                 .missing_value_separator_err = E::MissingColonAfterArgument, .missing_value_err = E::InvalidExpression
             };
-            auto args_gen = ListParser::parse_list<GenericParameter>(
-                ctx, TokenType::RightParen, E::TrailingCommaInFunctionCall,
-                E::MissingCommaSeparatorForArgumentsInFunctionCall, {},
-                [this]()
-                {
-                    const Token& tok = cursor.peek();
-                    return (tok.type == TokenType::Identifier ||
-                            TokenTraits::acts_like_identifier(tok, cursor.peek(1).type)) && cursor.peek(1).type ==
-                        TokenType::Colon;
-                },
-                [&]() { return parser.parse_generic_parameter(arg_spec); }
-            );
+
+            auto args_gen = ListParser<GenericParameter>(ctx)
+                            .stop_at(TokenType::RightParen)
+                            .on_trailing_comma(E::TrailingCommaInFunctionCall)
+                            .on_missing_comma(E::MissingCommaSeparatorForArgumentsInFunctionCall)
+                            .is_element_start([this]()
+                            {
+                                const Token& tok = cursor.peek();
+                                return (tok.type == TokenType::Identifier ||
+                                        TokenTraits::acts_like_identifier(tok, cursor.peek(1).type)) && cursor.peek(1).
+                                    type
+                                    == TokenType::Colon;
+                            })
+                            .parse_elements([&]() { return parser.parse_generic_parameter(arg_spec); });
 
             for (auto& g : args_gen) arguments.emplace_back(g.name.lexeme, std::move(g.value));
 
@@ -420,17 +422,17 @@ namespace valuascript::compiler
             .missing_value_separator_err = E::ExpectedColonAfterDictionaryKey, .missing_value_err = E::InvalidExpression
         };
 
-        auto items_gen = ListParser::parse_list<GenericParameter>(
-            ctx, TokenType::RightBrace, std::nullopt, E::ExpectedCommaSeparatorInDictionaryLiteral, {},
-            [this]()
-            {
-                const Token& tok = cursor.peek();
-                if (tok.type == TokenType::At) return !ctx.is_at_any_declaration();
-                if (tok.type == TokenType::Identifier) return true;
-                return is_reserved_keyword(tok) && (cursor.peek(1).type == TokenType::Colon);
-            },
-            [&]() { return parser.parse_generic_parameter(dict_spec); }
-        );
+        auto items_gen = ListParser<GenericParameter>(ctx)
+                         .stop_at(TokenType::RightBrace)
+                         .on_missing_comma(E::ExpectedCommaSeparatorInDictionaryLiteral)
+                         .is_element_start([this]()
+                         {
+                             const Token& tok = cursor.peek();
+                             if (tok.type == TokenType::At) return !ctx.is_at_any_declaration();
+                             if (tok.type == TokenType::Identifier) return true;
+                             return is_reserved_keyword(tok) && (cursor.peek(1).type == TokenType::Colon);
+                         })
+                         .parse_elements([&]() { return parser.parse_generic_parameter(dict_spec); });
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
@@ -648,10 +650,12 @@ namespace valuascript::compiler
                                                                  const std::optional<E> trailing_comma_err,
                                                                  const std::vector<TokenType>& recovery_boundaries)
     {
-        return ListParser::parse_list<ExprPtr>(
-            ctx, closing_token, trailing_comma_err, E::MissingCommaOrOperatorBetweenExpressions, recovery_boundaries,
-            [this]() { return TokenTraits::is_expression_start(cursor.peek().type); },
-            [this]() { return parse_expression(); }
-        );
+        return ListParser<ExprPtr>(ctx)
+               .stop_at(closing_token)
+               .on_trailing_comma(trailing_comma_err)
+               .on_missing_comma(E::MissingCommaOrOperatorBetweenExpressions)
+               .with_recovery_boundaries(recovery_boundaries)
+               .is_element_start([this]() { return TokenTraits::is_expression_start(cursor.peek().type); })
+               .parse_elements([this]() { return parse_expression(); });
     }
 }
