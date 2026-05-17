@@ -3,6 +3,8 @@
 #include "statement_parser.h"
 #include "declaration_parser.h"
 #include "type_parser.h"
+#include "error_recovery.h"
+#include "ast_factory.h"
 
 namespace valuascript::compiler
 {
@@ -31,7 +33,8 @@ namespace valuascript::compiler
 
         while (!ctx.cursor.is_at_end())
         {
-            ctx.attempt_parse_void(
+            ErrorRecovery::attempt_parse_void(
+                ctx,
                 [&] { parse_statement_or_declaration(ParseContextType::TopLevel, program.get(), dummy_block); },
                 RecoveryConfig::ForceStopAtBoundary()
             );
@@ -180,5 +183,31 @@ namespace valuascript::compiler
         {
         }
         ctx.cursor.set_suppress_errors(prev_suppress);
+    }
+
+    std::unique_ptr<Expression> Parser::parse_expression(Precedence min_precedence)
+    {
+        return expr_parser->parse_expression(min_precedence);
+    }
+
+    std::unique_ptr<TypeAnnotation> Parser::parse_type_annotation(const std::function<bool(int)>& is_at_parent_boundary)
+    {
+        return type_parser->parse_type_annotation(is_at_parent_boundary);
+    }
+
+    std::vector<Modifier> Parser::parse_modifiers(bool is_statement_context)
+    {
+        return decl_parser->parse_modifiers(is_statement_context);
+    }
+
+    GenericParameter Parser::parse_generic_parameter(const ParameterRuleSpec& spec,
+                                                     const std::function<bool(int)>& is_at_parent_boundary)
+    {
+        return decl_parser->parse_generic_parameter(spec, is_at_parent_boundary);
+    }
+
+    void Parser::verify_statement_end() const
+    {
+        stmt_parser->verify_statement_end();
     }
 }

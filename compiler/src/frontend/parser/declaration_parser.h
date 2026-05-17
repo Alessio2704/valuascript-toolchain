@@ -1,6 +1,6 @@
 #pragma once
-
 #include "parser_context.h"
+#include "declaration_rules.h"
 
 namespace valuascript::compiler
 {

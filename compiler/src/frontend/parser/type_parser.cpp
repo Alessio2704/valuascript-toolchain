@@ -1,5 +1,8 @@
 #include "type_parser.h"
 #include "parser.h"
+#include "ast_factory.h"
+#include "list_parser.h"
+#include "error_recovery.h"
 
 namespace valuascript::compiler
 {
@@ -16,8 +19,9 @@ namespace valuascript::compiler
 
         if (cursor.match({TokenType::LeftParen}))
         {
-            ParserContext::CloserTracker tracker(ctx, TokenType::RightParen);
-            auto elements = ctx.parse_list<std::unique_ptr<TypeAnnotation>>(
+            CloserTracker tracker(ctx, TokenType::RightParen);
+            auto elements = ListParser::parse_list<std::unique_ptr<TypeAnnotation>>(
+                ctx,
                 TokenType::RightParen,
                 E::SingleElementTuplesNotAllowed,
                 E::ExpectedCommaSeparatorInTupleType,
@@ -38,7 +42,7 @@ namespace valuascript::compiler
                     end_token = cursor.advance();
                 else end_token = cursor.previous();
             }
-            return ctx.make_node_with_span<
+            return AstFactory::make_node_with_span<
                 TupleTypeAnnotation>(cursor.make_span(start, end_token), std::move(elements));
         }
 
@@ -47,7 +51,8 @@ namespace valuascript::compiler
 
         if (cursor.match({TokenType::Less}))
         {
-            generic_args = ctx.parse_list<std::unique_ptr<TypeAnnotation>>(
+            generic_args = ListParser::parse_list<std::unique_ptr<TypeAnnotation>>(
+                ctx,
                 TokenType::Greater,
                 E::TrailingCommaInGenericArgument,
                 E::ExpectedCommaSeparatorInGenericArgs,
@@ -68,6 +73,6 @@ namespace valuascript::compiler
                     cursor.advance();
             }
         }
-        return ctx.make_node<TypeAnnotation>(start, name_token.lexeme, std::move(generic_args));
+        return AstFactory::make_node<TypeAnnotation>(cursor, start, name_token.lexeme, std::move(generic_args));
     }
 }

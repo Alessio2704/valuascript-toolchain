@@ -1,8 +1,7 @@
 #include "statement_parser.h"
 #include "parser.h"
-#include "expression_parser.h"
-#include "declaration_parser.h"
-#include "type_parser.h"
+#include "ast_factory.h"
+#include "error_recovery.h"
 
 namespace valuascript::compiler
 {
@@ -31,19 +30,21 @@ namespace valuascript::compiler
         std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
         do
         {
-            auto inner_mods = parser.decl_parser->parse_modifiers();
+            auto inner_mods = parser.parse_modifiers();
             ctx.reject_modifiers(inner_mods, E::ModifiersAttachedToMultiAssignmentSingleElements);
 
-            Token target = ctx.try_consume_identifier(E::InvalidIdentifier,
-                                                      RecoveryConfig::StopAtBoundary({
-                                                          TokenType::Colon, TokenType::Comma, TokenType::Assign
-                                                      }));
+            Token target = ErrorRecovery::try_consume_identifier(ctx, E::InvalidIdentifier,
+                                                                 RecoveryConfig::StopAtBoundary({
+                                                                     TokenType::Colon, TokenType::Comma,
+                                                                     TokenType::Assign
+                                                                 }));
 
             std::unique_ptr<TypeAnnotation> type_annotation = nullptr;
             if (cursor.match({TokenType::Colon}))
             {
-                type_annotation = ctx.try_parse<std::unique_ptr<TypeAnnotation>>(
-                    [&]() { return parser.type_parser->parse_type_annotation(); },
+                type_annotation = ErrorRecovery::try_parse<std::unique_ptr<TypeAnnotation>>(
+                    ctx,
+                    [&]() { return parser.parse_type_annotation(); },
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign}));
             }
             targets.emplace_back(target.lexeme, std::move(type_annotation));
@@ -78,7 +79,7 @@ namespace valuascript::compiler
             if (is_at_boundary())
                 cursor.report_error_no_panic(cursor.peek(),
                                              E::MissingValueAfterEquals, false);
-            else value = parser.expr_parser->parse_expression();
+            else value = parser.parse_expression();
         }
         else
         {
@@ -89,7 +90,7 @@ namespace valuascript::compiler
             cursor.report_error_no_panic(report_at, E::IncompleteAssignment);
             if (!is_at_boundary() && TokenTraits::is_expression_start(cursor.peek().type))
             {
-                try { value = parser.expr_parser->parse_expression(); }
+                try { value = parser.parse_expression(); }
                 catch (const ParseSyncException&)
                 {
                 }
@@ -97,12 +98,13 @@ namespace valuascript::compiler
         }
 
         if (value) verify_statement_end();
-        return ctx.make_node<Assignment>(start, std::move(modifiers), std::move(targets), std::move(value));
+        return AstFactory::make_node<Assignment>(cursor, start, std::move(modifiers), std::move(targets),
+                                                 std::move(value));
     }
 
     std::unique_ptr<Statement> StatementParser::parse_expression_statement()
     {
-        auto expr = parser.expr_parser->parse_expression();
+        auto expr = parser.parse_expression();
         const SourceSpan start_span = expr->span;
 
         if (cursor.match({TokenType::Comma}))
@@ -126,13 +128,14 @@ namespace valuascript::compiler
             if (cursor.is_at_end() || is_pseudo_stmt)
                 cursor.report_error_no_panic(
                     cursor.peek(), E::MissingValueAfterEquals, false);
-            else value = parser.expr_parser->parse_expression();
+            else value = parser.parse_expression();
 
             const SourceSpan end_span = value ? value->span : start_span;
             if (value) verify_statement_end();
 
-            return ctx.make_node_with_span<Reassignment>(cursor.combine_spans(start_span, end_span), std::move(expr),
-                                                         std::move(value));
+            return AstFactory::make_node_with_span<Reassignment>(cursor.combine_spans(start_span, end_span),
+                                                                 std::move(expr),
+                                                                 std::move(value));
         }
 
         if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
@@ -144,7 +147,7 @@ namespace valuascript::compiler
         }
 
         verify_statement_end();
-        return ctx.make_node_with_span<ExpressionStatement>(start_span, std::move(expr));
+        return AstFactory::make_node_with_span<ExpressionStatement>(start_span, std::move(expr));
     }
 
     std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement()
@@ -155,13 +158,17 @@ namespace valuascript::compiler
         do
         {
             return_values.push_back(
-                ctx.try_parse<std::unique_ptr<Expression>>([&]() { return parser.expr_parser->parse_expression(); },
-                                                           RecoveryConfig::ForceStopAtBoundary({TokenType::Comma}))
+                ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
+                    ctx,
+                    [&]() { return parser.parse_expression(); },
+                    RecoveryConfig::ForceStopAtBoundary({
+                        TokenType::Comma
+                    }))
             );
         }
         while (cursor.match({TokenType::Comma}));
 
         verify_statement_end();
-        return ctx.make_node<ReturnStatement>(start, std::move(return_values));
+        return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(return_values));
     }
 }

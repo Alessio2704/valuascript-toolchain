@@ -1,6 +1,6 @@
 #pragma once
-
 #include "parser_context.h"
+#include "ast_factory.h"
 
 namespace valuascript::compiler
 {
@@ -60,6 +60,14 @@ namespace valuascript::compiler
                                                                        trailing_comma_err = std::nullopt,
                                                                        const std::vector<TokenType>& recovery_boundaries
                                                                            = {});
+
+    private:
+        bool is_inside_expr_grouping() const;
+        bool can_continue_expression(const Token& op_tok, const ParseRule& rule, Precedence min_prec,
+                                     bool inside_grouping) const;
+        bool is_dangling_binary_operator(const Token& op) const;
+        std::unique_ptr<Expression> handle_dangling_binary_operator(std::unique_ptr<Expression> left, const Token& op);
+        void check_comparison_chaining(const ParseRule& previous_rule) const;
     };
 
     template <typename T>
@@ -68,15 +76,15 @@ namespace valuascript::compiler
         const Token& t = cursor.advance();
         if constexpr (std::is_same_v<T, BooleanLiteral>)
         {
-            return ctx.make_node<T>(t, t.type == TokenType::True);
+            return AstFactory::make_node<T>(cursor, t, t.type == TokenType::True);
         }
         else if constexpr (std::is_same_v<T, SelfExpression>)
         {
-            return ctx.make_node<T>(t);
+            return AstFactory::make_node<T>(cursor, t);
         }
         else
         {
-            return ctx.make_node<T>(t, t.lexeme);
+            return AstFactory::make_node<T>(cursor, t, t.lexeme);
         }
     }
 }
