@@ -113,7 +113,7 @@ namespace valuascript::compiler
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
-                if (parser.expr_parser->is_expression_complete(expr.get()))
+                if (expr && expr->is_complete())
                     cursor.report_error(
                         cursor.previous(), E::InvalidLeftSideExpressionInReassignment);
             }
@@ -137,7 +137,7 @@ namespace valuascript::compiler
 
         if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
         {
-            if (parser.expr_parser->is_expression_complete(expr.get()))
+            if (expr && expr->is_complete())
                 cursor.report_error(
                     cursor.previous(), E::InvalidStandaloneStatement);
             return nullptr;

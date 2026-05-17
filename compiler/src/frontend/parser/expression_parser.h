@@ -1,4 +1,3 @@
-// --- START OF FILE expression_parser.h ---
 #pragma once
 
 #include "parser_context.h"
@@ -61,7 +60,6 @@ namespace valuascript::compiler
                                                                        trailing_comma_err = std::nullopt,
                                                                        const std::vector<TokenType>& recovery_boundaries
                                                                            = {});
-        bool is_expression_complete(const Expression* expr) const;
     };
 
     template <typename T>

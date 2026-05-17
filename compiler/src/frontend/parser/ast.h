@@ -30,6 +30,8 @@ namespace valuascript::compiler
 
     class Expression : public AstNode
     {
+    public:
+        [[nodiscard]] virtual bool is_complete() const { return true; }
     };
 
     class Statement : public AstNode
@@ -103,6 +105,11 @@ namespace valuascript::compiler
             : left(std::move(l)), op(o), right(std::move(r))
         {
         }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return left && left->is_complete() && right && right->is_complete();
+        }
     };
 
     class UnaryExpression : public Expression
@@ -115,6 +122,11 @@ namespace valuascript::compiler
             : op(o), right(std::move(r))
         {
         }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return right && right->is_complete();
+        }
     };
 
     class GroupingExpression : public Expression
@@ -125,6 +137,11 @@ namespace valuascript::compiler
         explicit GroupingExpression(std::unique_ptr<Expression> expr)
             : expression(std::move(expr))
         {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return expression && expression->is_complete();
         }
     };
 
@@ -141,6 +158,13 @@ namespace valuascript::compiler
             : condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els))
         {
         }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return condition && condition->is_complete() &&
+                then_branch && then_branch->is_complete() &&
+                else_branch && else_branch->is_complete();
+        }
     };
 
     class FunctionCall : public Expression
@@ -153,6 +177,16 @@ namespace valuascript::compiler
                               std::vector<std::pair<std::string, std::unique_ptr<Expression>>> args)
             : target(std::move(tgt)), arguments(std::move(args))
         {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            if (!target || !target->is_complete()) return false;
+            for (const auto& [name, val] : arguments)
+            {
+                if (!val || !val->is_complete()) return false;
+            }
+            return true;
         }
     };
 
@@ -179,6 +213,15 @@ namespace valuascript::compiler
             : elements(std::move(elems))
         {
         }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            for (const auto& item : elements)
+            {
+                if (!item.value || !item.value->is_complete()) return false;
+            }
+            return true;
+        }
     };
 
     class TensorLiteral : public Expression
@@ -189,6 +232,15 @@ namespace valuascript::compiler
         explicit TensorLiteral(std::vector<std::unique_ptr<Expression>> elems)
             : elements(std::move(elems))
         {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            for (const auto& elem : elements)
+            {
+                if (!elem || !elem->is_complete()) return false;
+            }
+            return true;
         }
     };
 
@@ -201,6 +253,15 @@ namespace valuascript::compiler
             : elements(std::move(elems))
         {
         }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            for (const auto& elem : elements)
+            {
+                if (!elem || !elem->is_complete()) return false;
+            }
+            return true;
+        }
     };
 
     class BracketAccess : public Expression
@@ -212,6 +273,56 @@ namespace valuascript::compiler
         explicit BracketAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
             : target(std::move(tgt)), index(std::move(idx))
         {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return target && target->is_complete() && index && index->is_complete();
+        }
+    };
+
+    class DotAccess : public Expression
+    {
+    public:
+        std::unique_ptr<Expression> target;
+        std::string property_name;
+
+        DotAccess(std::unique_ptr<Expression> t, std::string prop)
+            : target(std::move(t)), property_name(std::move(prop))
+        {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            return target && target->is_complete();
+        }
+    };
+
+    class SwitchExpression : public Expression
+    {
+    public:
+        std::unique_ptr<Expression> target;
+        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> cases;
+        std::unique_ptr<Expression> default_case;
+
+        SwitchExpression(std::unique_ptr<Expression> t,
+                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> c,
+                         std::unique_ptr<Expression> def)
+            : target(std::move(t)),
+              cases(std::move(c)),
+              default_case(std::move(def))
+        {
+        }
+
+        [[nodiscard]] bool is_complete() const override
+        {
+            if (!target || !target->is_complete()) return false;
+            for (const auto& [ids, result] : cases)
+            {
+                if (!result || !result->is_complete()) return false;
+            }
+            if (default_case && !default_case->is_complete()) return false;
+            return true;
         }
     };
 
@@ -386,35 +497,6 @@ namespace valuascript::compiler
               name(std::move(n)),
               underlying_type(std::move(type)),
               cases(std::move(c))
-        {
-        }
-    };
-
-    class DotAccess : public Expression
-    {
-    public:
-        std::unique_ptr<Expression> target;
-        std::string property_name;
-
-        DotAccess(std::unique_ptr<Expression> t, std::string prop)
-            : target(std::move(t)), property_name(std::move(prop))
-        {
-        }
-    };
-
-    class SwitchExpression : public Expression
-    {
-    public:
-        std::unique_ptr<Expression> target;
-        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> cases;
-        std::unique_ptr<Expression> default_case;
-
-        SwitchExpression(std::unique_ptr<Expression> t,
-                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> c,
-                         std::unique_ptr<Expression> def)
-            : target(std::move(t)),
-              cases(std::move(c)),
-              default_case(std::move(def))
         {
         }
     };
