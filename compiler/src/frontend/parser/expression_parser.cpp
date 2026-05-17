@@ -2,9 +2,7 @@
 #include "parser.h"
 #include "declaration_parser.h"
 #include "token/reserved_keyword_lookup.h"
-#include "token/operator_lookup.h"
 #include <algorithm>
-#include <array>
 
 namespace valuascript::compiler
 {
@@ -12,58 +10,6 @@ namespace valuascript::compiler
 
     ExpressionParser::ExpressionParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {
-    }
-
-    ExpressionParser::ParseRule ExpressionParser::get_rule(TokenType type)
-    {
-        static const std::array<ParseRule, 256> rules = []
-        {
-            std::array<ParseRule, 256> r{};
-            auto set_prefix = [&r](TokenType t, PrefixParseFn pre) { r[static_cast<size_t>(t)].prefix = pre; };
-            auto set_infix = [&r](TokenType t, InfixParseFn in, Precedence prec, bool is_right_assoc = false)
-            {
-                auto idx = static_cast<size_t>(t);
-                r[idx].infix = in;
-                r[idx].precedence = prec;
-                r[idx].is_right_associative = is_right_assoc;
-            };
-
-            for (const auto& [token, lexeme] : get_all_unary_operators())
-            {
-                set_prefix(token, &ExpressionParser::parse_prefix_unary);
-            }
-
-            for (const auto& [token, lexeme] : get_all_binary_operators())
-            {
-                auto [prec, is_right] = TokenTraits::get_binary_op_info(token);
-                if (prec != Precedence::None) set_infix(token, &ExpressionParser::parse_infix_binary, prec, is_right);
-            }
-
-            set_infix(TokenType::LeftParen, &ExpressionParser::parse_function_call, Precedence::Postfix);
-            set_infix(TokenType::LeftBracket, &ExpressionParser::parse_tensor_access, Precedence::Postfix);
-            set_infix(TokenType::Dot, &ExpressionParser::parse_dot_access, Precedence::Postfix);
-
-            set_prefix(TokenType::LeftParen, &ExpressionParser::parse_tuple_or_grouping);
-            set_prefix(TokenType::LeftBracket, &ExpressionParser::parse_tensor_literal);
-            set_prefix(TokenType::LeftBrace, &ExpressionParser::parse_dict_literal);
-
-            set_prefix(TokenType::Number, &ExpressionParser::parse_literal_prefix<NumberLiteral>);
-            set_prefix(TokenType::PercentageLiteral, &ExpressionParser::parse_literal_prefix<PercentageLiteral>);
-            set_prefix(TokenType::String, &ExpressionParser::parse_literal_prefix<StringLiteral>);
-            set_prefix(TokenType::True, &ExpressionParser::parse_literal_prefix<BooleanLiteral>);
-            set_prefix(TokenType::False, &ExpressionParser::parse_literal_prefix<BooleanLiteral>);
-            set_prefix(TokenType::Identifier, &ExpressionParser::parse_literal_prefix<IdentifierAccess>);
-            set_prefix(TokenType::Self, &ExpressionParser::parse_literal_prefix<SelfExpression>);
-
-            set_prefix(TokenType::Switch, &ExpressionParser::parse_switch_expression);
-            set_prefix(TokenType::If, &ExpressionParser::parse_conditional_expression);
-
-            return r;
-        }();
-
-        auto idx = static_cast<size_t>(type);
-        if (idx < rules.size()) return rules[idx];
-        return {nullptr, nullptr, Precedence::None, false};
     }
 
     std::unique_ptr<Expression> ExpressionParser::parse_expression(const Precedence min_precedence)
