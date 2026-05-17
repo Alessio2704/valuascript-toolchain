@@ -87,7 +87,7 @@ namespace valuascript::compiler
             {
                 RecoveryConfig config;
                 config.stop_tokens = {TokenType::LeftParen, TokenType::At};
-                config.stop_at_statement_boundary_respecting_dangling_op = true;
+                config.options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 config.custom_stop_predicate = [](const Token& tok, TokenType next)
                 {
                     return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next) || tok.type
@@ -158,7 +158,7 @@ namespace valuascript::compiler
 
                 RecoveryConfig sync_config;
                 sync_config.stop_tokens = {TokenType::At};
-                sync_config.stop_at_statement_boundary_respecting_dangling_op = true;
+                sync_config.options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 sync_config.custom_stop_predicate = [](const Token& tok, TokenType)
                 {
                     return TokenTraits::is_grouping_closer(tok.type);
@@ -414,10 +414,7 @@ namespace valuascript::compiler
 
             RecoveryConfig body_config;
             body_config.stop_tokens = {TokenType::RightBrace, TokenType::Return};
-            body_config.force_stop_at_statement_boundary_ignoring_dangling_op = true;
-            body_config.stop_at_currently_tracked_closers = false;
-            body_config.stop_at_currently_tracked_sync_tokens = false;
-            body_config.skip_nested_groupings_during_recovery = false;
+            body_config.options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp;
 
             ctx.attempt_parse_void(
                 [&]() { parser.parse_statement_or_declaration(ParseContextType::FunctionBody, nullptr, body); },

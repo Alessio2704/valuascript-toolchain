@@ -12,40 +12,75 @@
 
 namespace valuascript::compiler
 {
+    enum class RecoveryOptions : uint32_t
+    {
+        None = 0,
+        StopAtBoundaryRespectingDanglingOp = 1 << 0,
+        ForceStopAtBoundaryIgnoringDanglingOp = 1 << 1,
+        StopAtNewline = 1 << 2,
+        StopAtTrackedClosers = 1 << 3,
+        StopAtTrackedSyncTokens = 1 << 4,
+        SkipNestedGroupings = 1 << 5,
+        IgnoreStandaloneModifiersAsBoundaries = 1 << 6,
+        StopEarlyIfUnbalancedBlocks = 1 << 7
+    };
+
+    constexpr RecoveryOptions operator|(RecoveryOptions a, RecoveryOptions b)
+    {
+        return static_cast<RecoveryOptions>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    }
+
+    constexpr RecoveryOptions operator&(RecoveryOptions a, RecoveryOptions b)
+    {
+        return static_cast<RecoveryOptions>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+    }
+
+    constexpr RecoveryOptions operator~(RecoveryOptions a)
+    {
+        return static_cast<RecoveryOptions>(~static_cast<uint32_t>(a));
+    }
+
+    constexpr RecoveryOptions DefaultRecoveryOptions =
+        RecoveryOptions::StopAtTrackedClosers |
+        RecoveryOptions::StopAtTrackedSyncTokens |
+        RecoveryOptions::SkipNestedGroupings;
+
     struct RecoveryConfig
     {
         std::vector<TokenType> stop_tokens = {};
-        bool stop_at_statement_boundary_respecting_dangling_op = false;
-        bool force_stop_at_statement_boundary_ignoring_dangling_op = false;
-        bool stop_at_any_newline = false;
-        bool stop_at_currently_tracked_closers = true;
-        bool stop_at_currently_tracked_sync_tokens = true;
-        bool skip_nested_groupings_during_recovery = true;
-        bool ignore_standalone_modifiers_as_boundaries = false;
-        bool stop_early_if_unbalanced_blocks_detected = false;
+        RecoveryOptions options = DefaultRecoveryOptions;
         std::function<bool(const Token& tok, TokenType next)> custom_stop_predicate = nullptr;
+
+        [[nodiscard]] bool has(RecoveryOptions opt) const
+        {
+            return (options & opt) != RecoveryOptions::None;
+        }
 
         static RecoveryConfig StopAtBoundary(std::vector<TokenType> extra_stops = {})
         {
-            RecoveryConfig c;
-            c.stop_tokens = std::move(extra_stops);
-            c.stop_at_statement_boundary_respecting_dangling_op = true;
-            return c;
+            return {
+                std::move(extra_stops),
+                DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp,
+                nullptr
+            };
         }
 
         static RecoveryConfig ForceStopAtBoundary(std::vector<TokenType> extra_stops = {})
         {
-            RecoveryConfig c;
-            c.stop_tokens = std::move(extra_stops);
-            c.force_stop_at_statement_boundary_ignoring_dangling_op = true;
-            return c;
+            return {
+                std::move(extra_stops),
+                DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp,
+                nullptr
+            };
         }
 
         static RecoveryConfig StopAtNewline()
         {
-            RecoveryConfig c;
-            c.stop_at_any_newline = true;
-            return c;
+            return {
+                {},
+                DefaultRecoveryOptions | RecoveryOptions::StopAtNewline,
+                nullptr
+            };
         }
     };
 
@@ -278,8 +313,9 @@ namespace valuascript::compiler
                 {
                     synchronize_with({
                         .stop_tokens = {TokenType::Comma, closing_token},
-                        .stop_at_statement_boundary_respecting_dangling_op = true,
-                        .ignore_standalone_modifiers_as_boundaries = true,
+                        .options = DefaultRecoveryOptions |
+                        RecoveryOptions::StopAtBoundaryRespectingDanglingOp |
+                        RecoveryOptions::IgnoreStandaloneModifiersAsBoundaries,
                         .custom_stop_predicate = [&](const Token&, TokenType)
                         {
                             if (is_at_parent_boundary && is_at_parent_boundary(0)) return true;

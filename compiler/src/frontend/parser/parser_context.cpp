@@ -36,7 +36,7 @@ namespace valuascript::compiler
     {
         recover([&](TokenType type, int depth)
         {
-            if (config.skip_nested_groupings_during_recovery && depth > 0) return false;
+            if (config.has(RecoveryOptions::SkipNestedGroupings) && depth > 0) return false;
             for (TokenType t : config.stop_tokens) if (type == t) return true;
 
             const Token& tok = cursor.peek();
@@ -44,37 +44,40 @@ namespace valuascript::compiler
 
             if (type == TokenType::Return && is_active_closer(TokenType::RightBrace))
             {
-                if (config.force_stop_at_statement_boundary_ignoring_dangling_op || config.
-                    stop_at_statement_boundary_respecting_dangling_op) return true;
+                if (config.has(RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp) ||
+                    config.has(RecoveryOptions::StopAtBoundaryRespectingDanglingOp))
+                    return true;
             }
 
-            if (config.force_stop_at_statement_boundary_ignoring_dangling_op)
+            if (config.has(RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp))
             {
                 if (TokenTraits::is_statement_start(tok, next) || (tok.line > cursor.previous().line &&
-                    TokenTraits::is_expression_statement_start(tok, next))) return true;
+                    TokenTraits::is_expression_statement_start(tok, next)))
+                    return true;
             }
 
-            if (config.stop_at_statement_boundary_respecting_dangling_op)
+            if (config.has(RecoveryOptions::StopAtBoundaryRespectingDanglingOp))
             {
                 bool is_boundary = TokenTraits::is_statement_start(tok, next) ||
                     TokenTraits::is_newline_statement_boundary(cursor.previous(), tok, next);
-                if (config.ignore_standalone_modifiers_as_boundaries && type == TokenType::At)
+                if (config.has(RecoveryOptions::IgnoreStandaloneModifiersAsBoundaries) && type == TokenType::At)
                 {
                     if (!is_at_any_declaration()) is_boundary = false;
                 }
                 if (is_boundary) return true;
             }
 
-            if (config.stop_at_any_newline && tok.line > cursor.previous().line) return true;
-            if (config.stop_at_currently_tracked_closers && is_active_closer(type)) return true;
-            if (config.stop_at_currently_tracked_sync_tokens && is_in_sync_set(type)) return true;
+            if (config.has(RecoveryOptions::StopAtNewline) && tok.line > cursor.previous().line) return true;
+            if (config.has(RecoveryOptions::StopAtTrackedClosers) && is_active_closer(type)) return true;
+            if (config.has(RecoveryOptions::StopAtTrackedSyncTokens) && is_in_sync_set(type)) return true;
             if (config.custom_stop_predicate && config.custom_stop_predicate(tok, next)) return true;
 
-            if (config.stop_early_if_unbalanced_blocks_detected)
+            if (config.has(RecoveryOptions::StopEarlyIfUnbalancedBlocks))
             {
                 if (is_missing_closing_brace() && (is_at_top_level_declaration() || tok.type == TokenType::Return ||
                     TokenTraits::is_statement_start(tok, next) || (tok.line > cursor.previous().line &&
-                        TokenTraits::is_expression_statement_start(tok, next)))) return true;
+                        TokenTraits::is_expression_statement_start(tok, next))))
+                    return true;
             }
 
             return false;
@@ -95,7 +98,8 @@ namespace valuascript::compiler
                 }
                 if (TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) return true;
                 if (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
-                    cursor.peek(), cursor.peek(1).type)) return true;
+                    cursor.peek(), cursor.peek(1).type))
+                    return true;
                 if (t == TokenType::Then || t == TokenType::Else || t == TokenType::Case || t == TokenType::Default)
                     return true;
             }
@@ -107,7 +111,8 @@ namespace valuascript::compiler
     {
         synchronize_to_closer(expected_closer);
         if (cursor.check(expected_closer) || (TokenTraits::is_grouping_closer(cursor.peek().type) && !
-            is_active_closer(cursor.peek().type))) cursor.advance();
+            is_active_closer(cursor.peek().type)))
+            cursor.advance();
     }
 
     const Token& ParserContext::consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords,

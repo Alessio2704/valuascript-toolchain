@@ -401,8 +401,7 @@ namespace valuascript::compiler
 
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Comma, TokenType::RightParen};
-        conf.stop_at_currently_tracked_closers = false;
-        conf.stop_at_currently_tracked_sync_tokens = false;
+        conf.options = RecoveryOptions::SkipNestedGroupings;
 
         auto first_expr = ctx.try_parse<std::unique_ptr<Expression>>(
             [&]() { return parse_expression(); },
@@ -538,9 +537,7 @@ namespace valuascript::compiler
         conf.stop_tokens = {
             TokenType::Then, TokenType::Else, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
         };
-        conf.stop_at_currently_tracked_closers = false;
-        conf.stop_at_currently_tracked_sync_tokens = false;
-        conf.stop_early_if_unbalanced_blocks_detected = true;
+        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
 
         auto condition = ctx.try_parse<std::unique_ptr<Expression>>([&]() { return parse_expression(); }, conf);
         if (!cursor.match({TokenType::Then}))
@@ -593,9 +590,8 @@ namespace valuascript::compiler
             {
                 RecoveryConfig conf;
                 conf.stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace};
-                conf.stop_at_statement_boundary_respecting_dangling_op = true;
-                conf.stop_at_currently_tracked_closers = false;
-                conf.stop_at_currently_tracked_sync_tokens = false;
+                conf.options = RecoveryOptions::SkipNestedGroupings |
+                    RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 Token id = ctx.try_consume_identifier(E::ExpectedEnumCaseNameAfterCase, conf);
                 identifiers.push_back(id.lexeme);
             }
@@ -607,9 +603,8 @@ namespace valuascript::compiler
                 {
                     RecoveryConfig conf;
                     conf.stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace};
-                    conf.stop_at_statement_boundary_respecting_dangling_op = true;
-                    conf.stop_at_currently_tracked_closers = false;
-                    conf.stop_at_currently_tracked_sync_tokens = false;
+                    conf.options = RecoveryOptions::SkipNestedGroupings |
+                        RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                     ctx.synchronize_with(conf);
                 }
             }
@@ -625,9 +620,7 @@ namespace valuascript::compiler
 
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-        conf.stop_at_currently_tracked_closers = false;
-        conf.stop_at_currently_tracked_sync_tokens = false;
-        conf.stop_early_if_unbalanced_blocks_detected = true;
+        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
         auto result = ctx.try_parse<std::unique_ptr<Expression>>([&]() { return parse_switch_result(); }, conf);
         return {std::move(identifiers), std::move(result)};
     }
@@ -636,9 +629,7 @@ namespace valuascript::compiler
     {
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-        conf.stop_at_currently_tracked_closers = false;
-        conf.stop_at_currently_tracked_sync_tokens = false;
-        conf.stop_early_if_unbalanced_blocks_detected = true;
+        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
         return ctx.try_parse<std::unique_ptr<Expression>>([&]() { return parse_switch_result(); }, conf);
     }
 
@@ -672,8 +663,7 @@ namespace valuascript::compiler
         bool failed = false;
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::RightParen, TokenType::LeftBrace};
-        conf.stop_at_currently_tracked_closers = false;
-        conf.stop_at_currently_tracked_sync_tokens = false;
+        conf.options = RecoveryOptions::SkipNestedGroupings;
 
         auto target = ctx.try_parse<std::unique_ptr<Expression>>(
             [&]()
@@ -713,9 +703,7 @@ namespace valuascript::compiler
 
             RecoveryConfig conf;
             conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-            conf.stop_at_currently_tracked_closers = false;
-            conf.stop_at_currently_tracked_sync_tokens = false;
-            conf.stop_early_if_unbalanced_blocks_detected = true;
+            conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
             ctx.attempt_parse_void(
                 [&]()
                 {
