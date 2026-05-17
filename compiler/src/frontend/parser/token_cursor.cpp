@@ -6,6 +6,8 @@
 
 namespace valuascript::compiler
 {
+    using E = ValuascriptErrorCode;
+
     TokenCursor::TokenCursor(const std::vector<Token>& tokens, std::string file_path,
                              CompilerContext& context)
         : tokens_(tokens), file_path_(std::move(file_path)), context_(context)
@@ -136,8 +138,8 @@ namespace valuascript::compiler
                 {
                     should_shift = true;
                 }
-                else if (code == ValuascriptErrorCode::MissingOperator ||
-                    code == ValuascriptErrorCode::MissingCommaOrOperatorBetweenExpressions)
+                else if (code == E::MissingOperator ||
+                    code == E::MissingCommaOrOperatorBetweenExpressions)
                 {
                     should_shift = true;
                 }

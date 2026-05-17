@@ -9,8 +9,10 @@
 
 using namespace valuascript::shared;
 
-namespace valuascript::compiler {
-    struct SourceSpan {
+namespace valuascript::compiler
+{
+    struct SourceSpan
+    {
         size_t line_start = 0;
         size_t column_start = 0;
         size_t line_end = 0;
@@ -18,95 +20,116 @@ namespace valuascript::compiler {
         std::string file_path;
     };
 
-    class AstNode {
+    class AstNode
+    {
     public:
         SourceSpan span;
 
         virtual ~AstNode() = default;
     };
 
-    class Expression : public AstNode {
+    class Expression : public AstNode
+    {
     };
 
-    class Statement : public AstNode {
+    class Statement : public AstNode
+    {
     };
 
-    class NumberLiteral : public Expression {
+    class NumberLiteral : public Expression
+    {
     public:
         std::string value;
 
-        explicit NumberLiteral(std::string val) : value(std::move(val)) {
+        explicit NumberLiteral(std::string val) : value(std::move(val))
+        {
         }
     };
 
-    class PercentageLiteral : public Expression {
+    class PercentageLiteral : public Expression
+    {
     public:
         std::string value;
 
-        explicit PercentageLiteral(std::string val) : value(std::move(val)) {
+        explicit PercentageLiteral(std::string val) : value(std::move(val))
+        {
         }
     };
 
-    class StringLiteral : public Expression {
+    class StringLiteral : public Expression
+    {
     public:
         std::string value;
 
-        explicit StringLiteral(std::string val) : value(std::move(val)) {
+        explicit StringLiteral(std::string val) : value(std::move(val))
+        {
         }
     };
 
-    class BooleanLiteral : public Expression {
+    class BooleanLiteral : public Expression
+    {
     public:
         bool value;
 
-        explicit BooleanLiteral(bool val) : value(val) {
+        explicit BooleanLiteral(bool val) : value(val)
+        {
         }
     };
 
-    class IdentifierAccess : public Expression {
+    class IdentifierAccess : public Expression
+    {
     public:
         std::string name;
 
-        explicit IdentifierAccess(std::string n) : name(std::move(n)) {
+        explicit IdentifierAccess(std::string n) : name(std::move(n))
+        {
         }
     };
 
-    class SelfExpression : public Expression {
+    class SelfExpression : public Expression
+    {
     public:
         SelfExpression() = default;
     };
 
-    class BinaryExpression : public Expression {
+    class BinaryExpression : public Expression
+    {
     public:
         std::unique_ptr<Expression> left;
         TokenType op;
         std::unique_ptr<Expression> right;
 
         explicit BinaryExpression(std::unique_ptr<Expression> l, TokenType o, std::unique_ptr<Expression> r)
-            : left(std::move(l)), op(o), right(std::move(r)) {
+            : left(std::move(l)), op(o), right(std::move(r))
+        {
         }
     };
 
-    class UnaryExpression : public Expression {
+    class UnaryExpression : public Expression
+    {
     public:
         TokenType op;
         std::unique_ptr<Expression> right;
 
         explicit UnaryExpression(TokenType o, std::unique_ptr<Expression> r)
-            : op(o), right(std::move(r)) {
+            : op(o), right(std::move(r))
+        {
         }
     };
 
-    class GroupingExpression : public Expression {
+    class GroupingExpression : public Expression
+    {
     public:
         std::unique_ptr<Expression> expression;
 
         explicit GroupingExpression(std::unique_ptr<Expression> expr)
-            : expression(std::move(expr)) {
+            : expression(std::move(expr))
+        {
         }
     };
 
-    class ConditionalExpression : public Expression {
+    class ConditionalExpression : public Expression
+    {
     public:
         std::unique_ptr<Expression> condition;
         std::unique_ptr<Expression> then_branch;
@@ -115,184 +138,218 @@ namespace valuascript::compiler {
         explicit ConditionalExpression(std::unique_ptr<Expression> cond,
                                        std::unique_ptr<Expression> thn,
                                        std::unique_ptr<Expression> els)
-            : condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els)) {
+            : condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els))
+        {
         }
     };
 
-    class FunctionCall : public Expression {
+    class FunctionCall : public Expression
+    {
     public:
         std::unique_ptr<Expression> target;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
 
         explicit FunctionCall(std::unique_ptr<Expression> tgt,
-                              std::vector<std::pair<std::string, std::unique_ptr<Expression> > > args)
-            : target(std::move(tgt)), arguments(std::move(args)) {
+                              std::vector<std::pair<std::string, std::unique_ptr<Expression>>> args)
+            : target(std::move(tgt)), arguments(std::move(args))
+        {
         }
     };
 
-    struct Modifier {
+    struct Modifier
+    {
         std::string name;
-        std::vector<std::pair<std::string, std::unique_ptr<Expression> > > arguments;
+        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
         SourceSpan span;
     };
 
-    struct DictItem {
+    struct DictItem
+    {
         std::vector<Modifier> modifiers;
         std::string key;
         std::unique_ptr<Expression> value;
     };
 
-    class DictLiteral : public Expression {
+    class DictLiteral : public Expression
+    {
     public:
         std::vector<DictItem> elements;
 
         explicit DictLiteral(std::vector<DictItem> elems)
-            : elements(std::move(elems)) {
+            : elements(std::move(elems))
+        {
         }
     };
 
-    class TensorLiteral : public Expression {
+    class TensorLiteral : public Expression
+    {
     public:
-        std::vector<std::unique_ptr<Expression> > elements;
+        std::vector<std::unique_ptr<Expression>> elements;
 
-        explicit TensorLiteral(std::vector<std::unique_ptr<Expression> > elems)
-            : elements(std::move(elems)) {
+        explicit TensorLiteral(std::vector<std::unique_ptr<Expression>> elems)
+            : elements(std::move(elems))
+        {
         }
     };
 
-    class TupleLiteral : public Expression {
+    class TupleLiteral : public Expression
+    {
     public:
-        std::vector<std::unique_ptr<Expression> > elements;
+        std::vector<std::unique_ptr<Expression>> elements;
 
-        explicit TupleLiteral(std::vector<std::unique_ptr<Expression> > elems)
-            : elements(std::move(elems)) {
+        explicit TupleLiteral(std::vector<std::unique_ptr<Expression>> elems)
+            : elements(std::move(elems))
+        {
         }
     };
 
-    class BracketAccess : public Expression {
+    class BracketAccess : public Expression
+    {
     public:
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> index;
 
         explicit BracketAccess(std::unique_ptr<Expression> tgt, std::unique_ptr<Expression> idx)
-            : target(std::move(tgt)), index(std::move(idx)) {
+            : target(std::move(tgt)), index(std::move(idx))
+        {
         }
     };
 
-    class TypeAnnotation : public AstNode {
+    class TypeAnnotation : public AstNode
+    {
     public:
         std::string name;
-        std::vector<std::unique_ptr<TypeAnnotation> > generic_args;
+        std::vector<std::unique_ptr<TypeAnnotation>> generic_args;
 
-        explicit TypeAnnotation(std::string n, std::vector<std::unique_ptr<TypeAnnotation> > args = {})
-            : name(std::move(n)), generic_args(std::move(args)) {
+        explicit TypeAnnotation(std::string n, std::vector<std::unique_ptr<TypeAnnotation>> args = {})
+            : name(std::move(n)), generic_args(std::move(args))
+        {
         }
     };
 
-    class TupleTypeAnnotation : public TypeAnnotation {
+    class TupleTypeAnnotation : public TypeAnnotation
+    {
     public:
-        std::vector<std::unique_ptr<TypeAnnotation> > element_types;
+        std::vector<std::unique_ptr<TypeAnnotation>> element_types;
 
-        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation> > elements)
-            : TypeAnnotation("tuple"), element_types(std::move(elements)) {
+        explicit TupleTypeAnnotation(std::vector<std::unique_ptr<TypeAnnotation>> elements)
+            : TypeAnnotation("tuple"), element_types(std::move(elements))
+        {
         }
     };
 
-    class Assignment : public Statement {
+    class Assignment : public Statement
+    {
     public:
         std::vector<Modifier> modifiers;
-        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > targets;
+        std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> targets;
         std::unique_ptr<Expression> value;
 
         Assignment(std::vector<Modifier> mods,
-                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation> > > tar,
+                   std::vector<std::pair<std::string, std::unique_ptr<TypeAnnotation>>> tar,
                    std::unique_ptr<Expression> val)
-            : modifiers(std::move(mods)), targets(std::move(tar)), value(std::move(val)) {
+            : modifiers(std::move(mods)), targets(std::move(tar)), value(std::move(val))
+        {
         }
     };
 
-    class Reassignment : public Statement {
+    class Reassignment : public Statement
+    {
     public:
         std::unique_ptr<Expression> target;
         std::unique_ptr<Expression> value;
 
         Reassignment(std::unique_ptr<Expression> tar, std::unique_ptr<Expression> val)
-            : target(std::move(tar)), value(std::move(val)) {
+            : target(std::move(tar)), value(std::move(val))
+        {
         }
     };
 
-    class ExpressionStatement : public Statement {
+    class ExpressionStatement : public Statement
+    {
     public:
         std::unique_ptr<Expression> expr;
 
         explicit ExpressionStatement(std::unique_ptr<Expression> e)
-            : expr(std::move(e)) {
+            : expr(std::move(e))
+        {
         }
     };
 
-    class ReturnStatement : public Statement {
+    class ReturnStatement : public Statement
+    {
     public:
-        std::vector<std::unique_ptr<Expression> > values;
+        std::vector<std::unique_ptr<Expression>> values;
 
-        explicit ReturnStatement(std::vector<std::unique_ptr<Expression> > return_values)
-            : values(std::move(return_values)) {
+        explicit ReturnStatement(std::vector<std::unique_ptr<Expression>> return_values)
+            : values(std::move(return_values))
+        {
         }
     };
 
-    class Directive : public AstNode {
+    class Directive : public AstNode
+    {
     public:
         std::string name;
         std::unique_ptr<Expression> value;
 
         explicit Directive(std::string n, std::unique_ptr<Expression> val)
-            : name(std::move(n)), value(std::move(val)) {
+            : name(std::move(n)), value(std::move(val))
+        {
         }
     };
 
-    class ImportStatement : public AstNode {
+    class ImportStatement : public AstNode
+    {
     public:
         std::string path;
 
         explicit ImportStatement(std::string p)
-            : path(std::move(p)) {
+            : path(std::move(p))
+        {
         }
     };
 
-    struct FunctionParameter {
+    struct FunctionParameter
+    {
         std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<TypeAnnotation> type;
         std::unique_ptr<Expression> default_value = nullptr;
     };
 
-    class FunctionDefinition : public AstNode {
+    class FunctionDefinition : public AstNode
+    {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
         std::vector<FunctionParameter> parameters;
-        std::vector<std::unique_ptr<TypeAnnotation> > return_types;
-        std::vector<std::unique_ptr<Statement> > body;
+        std::vector<std::unique_ptr<TypeAnnotation>> return_types;
+        std::vector<std::unique_ptr<Statement>> body;
         std::optional<std::string> docstring;
 
         explicit FunctionDefinition(std::vector<Modifier> mods,
                                     std::string n,
                                     std::vector<FunctionParameter> params,
-                                    std::vector<std::unique_ptr<TypeAnnotation> > ret_types,
-                                    std::vector<std::unique_ptr<Statement> > b,
+                                    std::vector<std::unique_ptr<TypeAnnotation>> ret_types,
+                                    std::vector<std::unique_ptr<Statement>> b,
                                     std::optional<std::string> docs = std::nullopt)
             : modifiers(std::move(mods)), name(std::move(n)), parameters(std::move(params)),
-              return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs)) {
+              return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs))
+        {
         }
     };
 
-    struct StructField {
+    struct StructField
+    {
         std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<TypeAnnotation> type;
         SourceSpan span;
     };
 
-    class StructDefinition : public AstNode {
+    class StructDefinition : public AstNode
+    {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
@@ -301,17 +358,20 @@ namespace valuascript::compiler {
         explicit StructDefinition(std::vector<Modifier> mods,
                                   std::string n,
                                   std::vector<StructField> f)
-            : modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f)) {
+            : modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f))
+        {
         }
     };
 
-    struct EnumCase {
+    struct EnumCase
+    {
         std::vector<Modifier> modifiers;
         std::string name;
         std::unique_ptr<Expression> value;
     };
 
-    class EnumDefinition : public Statement {
+    class EnumDefinition : public Statement
+    {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
@@ -325,36 +385,42 @@ namespace valuascript::compiler {
             : modifiers(std::move(mods)),
               name(std::move(n)),
               underlying_type(std::move(type)),
-              cases(std::move(c)) {
+              cases(std::move(c))
+        {
         }
     };
 
-    class DotAccess : public Expression {
+    class DotAccess : public Expression
+    {
     public:
         std::unique_ptr<Expression> target;
         std::string property_name;
 
         DotAccess(std::unique_ptr<Expression> t, std::string prop)
-            : target(std::move(t)), property_name(std::move(prop)) {
+            : target(std::move(t)), property_name(std::move(prop))
+        {
         }
     };
 
-    class SwitchExpression : public Expression {
+    class SwitchExpression : public Expression
+    {
     public:
         std::unique_ptr<Expression> target;
-        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > cases;
+        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> cases;
         std::unique_ptr<Expression> default_case;
 
         SwitchExpression(std::unique_ptr<Expression> t,
-                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression> > > c,
+                         std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> c,
                          std::unique_ptr<Expression> def)
             : target(std::move(t)),
               cases(std::move(c)),
-              default_case(std::move(def)) {
+              default_case(std::move(def))
+        {
         }
     };
 
-    class TypeAliasDefinition : public AstNode {
+    class TypeAliasDefinition : public AstNode
+    {
     public:
         std::vector<Modifier> modifiers;
         std::string name;
@@ -363,23 +429,27 @@ namespace valuascript::compiler {
         explicit TypeAliasDefinition(std::vector<Modifier> mods,
                                      std::string n,
                                      std::unique_ptr<TypeAnnotation> t_type)
-            : modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type)) {
+            : modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type))
+        {
         }
     };
 
-    class Program : public AstNode {
+    class Program : public AstNode
+    {
     public:
-        std::vector<std::unique_ptr<ImportStatement> > import_statements;
-        std::vector<std::unique_ptr<Directive> > directives;
-        std::vector<std::unique_ptr<Statement> > execution_steps;
-        std::vector<std::unique_ptr<FunctionDefinition> > function_definitions;
-        std::vector<std::unique_ptr<StructDefinition> > struct_definitions;
-        std::vector<std::unique_ptr<EnumDefinition> > enum_definitions;
-        std::vector<std::unique_ptr<TypeAliasDefinition> > type_aliases;
+        std::vector<std::unique_ptr<ImportStatement>> import_statements;
+        std::vector<std::unique_ptr<Directive>> directives;
+        std::vector<std::unique_ptr<Statement>> execution_steps;
+        std::vector<std::unique_ptr<FunctionDefinition>> function_definitions;
+        std::vector<std::unique_ptr<StructDefinition>> struct_definitions;
+        std::vector<std::unique_ptr<EnumDefinition>> enum_definitions;
+        std::vector<std::unique_ptr<TypeAliasDefinition>> type_aliases;
     };
 
-    inline Expression *unwrap_grouping(Expression *expr) {
-        while (auto *grouping = dynamic_cast<GroupingExpression *>(expr)) {
+    inline Expression* unwrap_grouping(Expression* expr)
+    {
+        while (auto* grouping = dynamic_cast<GroupingExpression*>(expr))
+        {
             expr = grouping->expression.get();
         }
         return expr;

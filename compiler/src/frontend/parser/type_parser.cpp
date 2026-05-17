@@ -1,0 +1,73 @@
+#include "type_parser.h"
+#include "parser.h"
+
+namespace valuascript::compiler
+{
+    using E = ValuascriptErrorCode;
+
+    TypeParser::TypeParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
+    {
+    }
+
+    std::unique_ptr<TypeAnnotation> TypeParser::parse_type_annotation(
+        const ParentBoundaryPredicate& is_at_parent_boundary)
+    {
+        const Token& start = cursor.peek();
+
+        if (cursor.match({TokenType::LeftParen}))
+        {
+            ParserContext::CloserTracker tracker(ctx, TokenType::RightParen);
+            auto elements = ctx.parse_list<std::unique_ptr<TypeAnnotation>>(
+                TokenType::RightParen,
+                E::SingleElementTuplesNotAllowed,
+                E::ExpectedCommaSeparatorInTupleType,
+                {},
+                [&]() { return parse_type_annotation(is_at_parent_boundary); }, is_at_parent_boundary
+            );
+
+            Token end_token = cursor.previous();
+            try
+            {
+                end_token = cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisInTuple);
+            }
+            catch (const ParseSyncException&)
+            {
+                TokenType peek_type = cursor.peek().type;
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.
+                    is_active_closer(peek_type))
+                    end_token = cursor.advance();
+                else end_token = cursor.previous();
+            }
+            return ctx.make_node_with_span<
+                TupleTypeAnnotation>(cursor.make_span(start, end_token), std::move(elements));
+        }
+
+        Token name_token = ctx.consume_identifier(E::MissingTypeAnnotation);
+        std::vector<std::unique_ptr<TypeAnnotation>> generic_args;
+
+        if (cursor.match({TokenType::Less}))
+        {
+            generic_args = ctx.parse_list<std::unique_ptr<TypeAnnotation>>(
+                TokenType::Greater,
+                E::TrailingCommaInGenericArgument,
+                E::ExpectedCommaSeparatorInGenericArgs,
+                {},
+                [&]() { return parse_type_annotation(is_at_parent_boundary); }, is_at_parent_boundary
+            );
+
+            if (generic_args.empty())
+                cursor.report_error_no_panic(cursor.peek(),
+                                             E::EmptyGenericTypeAnnotation);
+
+            try { cursor.consume(TokenType::Greater, E::UnmatchedBracketAfterGenericArgs); }
+            catch (const ParseSyncException&)
+            {
+                TokenType peek_type = cursor.peek().type;
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.
+                    is_active_closer(peek_type))
+                    cursor.advance();
+            }
+        }
+        return ctx.make_node<TypeAnnotation>(start, name_token.lexeme, std::move(generic_args));
+    }
+}
