@@ -1,5 +1,4 @@
 #pragma once
-
 #include "parser_context.h"
 
 namespace valuascript::compiler
@@ -16,7 +15,7 @@ namespace valuascript::compiler
         explicit StatementParser(Parser& p);
 
         std::unique_ptr<Assignment> parse_assignment(std::vector<Modifier> modifiers);
-        std::unique_ptr<Statement> parse_expression_statement();
+        StmtPtr parse_expression_statement();
         std::unique_ptr<ReturnStatement> parse_return_statement();
 
         void verify_statement_end() const;

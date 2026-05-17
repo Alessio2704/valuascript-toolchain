@@ -26,8 +26,8 @@ namespace valuascript::compiler
     {
         std::vector<Modifier> modifiers;
         Token name{TokenType::Identifier, "<error>", 0, 0};
-        std::unique_ptr<TypeAnnotation> type;
-        std::unique_ptr<Expression> value;
+        TypeAnnPtr type;
+        ExprPtr value;
         bool has_value_separator = false;
         SourceSpan span;
     };

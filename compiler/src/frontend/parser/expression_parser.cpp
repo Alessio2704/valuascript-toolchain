@@ -17,26 +17,18 @@ namespace valuascript::compiler
 
     bool ExpressionParser::is_inside_expr_grouping() const
     {
-        return std::any_of(
-            ctx.active_closers.begin(),
-            ctx.active_closers.end(),
-            [](TokenType t) { return t == TokenType::RightParen || t == TokenType::RightBracket; }
-        );
+        return std::any_of(ctx.active_closers.begin(), ctx.active_closers.end(),
+                           [](TokenType t) { return t == TokenType::RightParen || t == TokenType::RightBracket; });
     }
 
     bool ExpressionParser::can_continue_expression(const Token& op_tok, const ParseRule& rule, Precedence min_prec,
                                                    bool inside_grouping) const
     {
-        if (rule.precedence < min_prec || rule.precedence == Precedence::None || rule.infix == nullptr)
-        {
-            return false;
-        }
-
+        if (rule.precedence < min_prec || rule.precedence == Precedence::None || rule.infix == nullptr) return false;
         if (op_tok.line > cursor.previous().line && !inside_grouping)
         {
             if (!TokenTraits::is_postfix_operator(op_tok.type)) return false;
         }
-
         return true;
     }
 
@@ -44,12 +36,11 @@ namespace valuascript::compiler
     {
         const Token& next = cursor.peek();
         return next.type == TokenType::EndOfFile || (next.line > op.line && (
-            TokenTraits::is_statement_start(next, cursor.peek(1).type) ||
-            TokenTraits::is_expression_statement_start(next, cursor.peek(1).type)));
+            TokenTraits::is_statement_start(next, cursor.peek(1).type) || TokenTraits::is_expression_statement_start(
+                next, cursor.peek(1).type)));
     }
 
-    std::unique_ptr<Expression> ExpressionParser::handle_dangling_binary_operator(
-        std::unique_ptr<Expression> left, const Token& op)
+    ExprPtr ExpressionParser::handle_dangling_binary_operator(ExprPtr left, const Token& op)
     {
         cursor.report_error_no_panic(op, E::InvalidExpression);
         return AstFactory::make_node_with_span<BinaryExpression>(
@@ -58,14 +49,12 @@ namespace valuascript::compiler
 
     void ExpressionParser::check_comparison_chaining(const ParseRule& previous_rule) const
     {
-        if (previous_rule.precedence == Precedence::Comparison &&
-            get_rule(cursor.peek().type).precedence == Precedence::Comparison)
-        {
+        if (previous_rule.precedence == Precedence::Comparison && get_rule(cursor.peek().type).precedence ==
+            Precedence::Comparison)
             cursor.report_error_no_panic(cursor.peek(), E::ChainingNotAllowedForComparisonOperations);
-        }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_expression(const Precedence min_precedence)
+    ExprPtr ExpressionParser::parse_expression(const Precedence min_precedence)
     {
         const Token& start_tok = cursor.peek();
         ParseRule rule = get_rule(start_tok.type);
@@ -80,59 +69,44 @@ namespace valuascript::compiler
             ParseRule infix_rule = get_rule(op_tok.type);
             bool inside_expr_grouping = is_inside_expr_grouping();
 
-            if (!can_continue_expression(op_tok, infix_rule, min_precedence, inside_expr_grouping))
-            {
-                break;
-            }
+            if (!can_continue_expression(op_tok, infix_rule, min_precedence, inside_expr_grouping)) break;
 
             Token op = cursor.advance();
-
             if (!inside_expr_grouping && infix_rule.infix == &ExpressionParser::parse_infix_binary)
-            {
-                if (is_dangling_binary_operator(op))
-                {
-                    return handle_dangling_binary_operator(std::move(left), op);
-                }
-            }
+                if (is_dangling_binary_operator(op)) return handle_dangling_binary_operator(std::move(left), op);
 
             left = (this->*(infix_rule.infix))(std::move(left), op);
-
             check_comparison_chaining(infix_rule);
         }
-
         return left;
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_infix_binary(std::unique_ptr<Expression> left, const Token& op)
+    ExprPtr ExpressionParser::parse_infix_binary(ExprPtr left, const Token& op)
     {
         ParseRule infix_rule = get_rule(op.type);
         Precedence next_precedence = infix_rule.is_right_associative
                                          ? infix_rule.precedence
                                          : static_cast<Precedence>(static_cast<int>(infix_rule.precedence) + 1);
 
-        auto right = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx,
-            [&]() { return parse_expression(next_precedence); },
+        auto right = ErrorRecovery::try_parse<ExprPtr>(
+            ctx, [&]() { return parse_expression(next_precedence); },
             RecoveryConfig::ForceStopAtBoundary({
-                TokenType::Comma, TokenType::RightParen,
-                TokenType::RightBracket, TokenType::RightBrace
+                TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
             })
         );
-
         const SourceSpan right_span = right ? right->span : cursor.make_span(cursor.previous(), cursor.previous());
         return AstFactory::make_node_with_span<BinaryExpression>(cursor.combine_spans(left->span, right_span),
-                                                                 std::move(left),
-                                                                 op.type, std::move(right));
+                                                                 std::move(left), op.type, std::move(right));
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_prefix_unary()
+    ExprPtr ExpressionParser::parse_prefix_unary()
     {
         Token op = cursor.advance();
-        bool inside_expr_grouping = std::any_of(
-            ctx.active_closers.begin(),
-            ctx.active_closers.end(),
-            [](TokenType t) { return t == TokenType::RightParen || t == TokenType::RightBracket; }
-        );
+        bool inside_expr_grouping = std::any_of(ctx.active_closers.begin(), ctx.active_closers.end(),
+                                                [](TokenType t)
+                                                {
+                                                    return t == TokenType::RightParen || t == TokenType::RightBracket;
+                                                });
 
         if (!inside_expr_grouping)
         {
@@ -146,24 +120,20 @@ namespace valuascript::compiler
             }
         }
 
-        auto right = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx,
-            [&] { return parse_expression(Precedence::Unary); },
+        auto right = ErrorRecovery::try_parse<ExprPtr>(
+            ctx, [&] { return parse_expression(Precedence::Unary); },
             RecoveryConfig::ForceStopAtBoundary({
-                TokenType::Comma, TokenType::RightParen,
-                TokenType::RightBracket, TokenType::RightBrace
+                TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
             })
         );
-
         return AstFactory::make_node<UnaryExpression>(cursor, op, op.type, std::move(right));
     }
 
-    std::unique_ptr<Expression> ExpressionParser::handle_invalid_expression_start()
+    ExprPtr ExpressionParser::handle_invalid_expression_start()
     {
         const Token& tok = cursor.peek();
         const Token& next = cursor.peek(1);
         const Token& prev = cursor.previous();
-
         bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type);
         bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
@@ -176,7 +146,6 @@ namespace valuascript::compiler
                         report_error(prev, E::InvalidExpression);
                 else cursor.report_error(tok, E::InvalidExpression, force_location);
             }
-
             const Token& start_tok = cursor.peek();
             if (tok.type == TokenType::At && !ctx.is_at_any_declaration())
             {
@@ -216,16 +185,14 @@ namespace valuascript::compiler
             cursor.advance();
             return AstFactory::make_node_with_span<IdentifierAccess>(cursor.make_span(tok, tok), tok.lexeme);
         }
-
         cursor.report_error(tok, E::InvalidExpression, force_location);
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_function_call(std::unique_ptr<Expression> target,
-                                                                      const Token& /*op*/)
+    ExprPtr ExpressionParser::parse_function_call(ExprPtr target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(ctx, TokenType::RightParen);
-        std::vector<std::pair<std::string, std::unique_ptr<Expression>>> arguments;
+        std::vector<std::pair<std::string, ExprPtr>> arguments;
 
         try
         {
@@ -237,11 +204,9 @@ namespace valuascript::compiler
                 if (p0.type == TokenType::Identifier || TokenTraits::acts_like_identifier(p0, p1))
                 {
                     if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1))
-                    {
                         if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), p0, p1))
                             cursor.report_error(
                                 cursor.previous(), E::MissingOperatorOrArgumentName);
-                    }
                 }
                 else
                 {
@@ -252,26 +217,19 @@ namespace valuascript::compiler
                                 cursor.previous(), E::MissingOperatorOrArgumentName);
                     }
                     else if (!cursor.check(TokenType::Colon) && !cursor.check(TokenType::Comma))
-                    {
-                        cursor.report_error(cursor.peek(), E::ExpectedArgumentNameOrClosingParen);
-                    }
+                        cursor.report_error(
+                            cursor.peek(), E::ExpectedArgumentNameOrClosingParen);
                 }
             }
 
             ParameterRuleSpec arg_spec{
-                .allow_value = true,
-                .require_value = true,
-                .value_separator = TokenType::Colon,
+                .allow_value = true, .require_value = true, .value_separator = TokenType::Colon,
                 .missing_name_err = E::MissingArgumentNameInFunctionCall,
-                .missing_value_separator_err = E::MissingColonAfterArgument,
-                .missing_value_err = E::InvalidExpression
+                .missing_value_separator_err = E::MissingColonAfterArgument, .missing_value_err = E::InvalidExpression
             };
             auto args_gen = ListParser::parse_list<GenericParameter>(
-                ctx,
-                TokenType::RightParen,
-                E::TrailingCommaInFunctionCall,
-                E::MissingCommaSeparatorForArgumentsInFunctionCall,
-                {},
+                ctx, TokenType::RightParen, E::TrailingCommaInFunctionCall,
+                E::MissingCommaSeparatorForArgumentsInFunctionCall, {},
                 [this]()
                 {
                     const Token& tok = cursor.peek();
@@ -284,8 +242,7 @@ namespace valuascript::compiler
 
             for (auto& g : args_gen) arguments.emplace_back(g.name.lexeme, std::move(g.value));
 
-            const Token& end_token = cursor.consume(TokenType::RightParen,
-                                                    E::ExpectedRightParenAfterArguments);
+            const Token& end_token = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterArguments);
             return AstFactory::make_node_with_span<FunctionCall>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
                 std::move(arguments));
@@ -299,16 +256,15 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_tensor_access(std::unique_ptr<Expression> target,
-                                                                      const Token& /*op*/)
+    ExprPtr ExpressionParser::parse_tensor_access(ExprPtr target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(ctx, TokenType::RightBracket);
-        std::unique_ptr<Expression> index_expr = nullptr;
+        ExprPtr index_expr = nullptr;
 
         try
         {
-            auto parse_bound = [&]() -> std::unique_ptr<Expression>
+            auto parse_bound = [&]() -> ExprPtr
             {
                 if (cursor.check(TokenType::Colon) || cursor.check(TokenType::RightBracket)) return nullptr;
                 auto expr = parse_expression();
@@ -332,23 +288,18 @@ namespace valuascript::compiler
 
             if (cursor.match({TokenType::Colon}))
             {
-                std::unique_ptr<Expression> end_expr = parse_bound();
+                ExprPtr end_expr = parse_bound();
                 const SourceSpan colon_span = index_expr ? index_expr->span : target_span;
                 const SourceSpan slice_end_span = end_expr
                                                       ? end_expr->span
                                                       : cursor.make_span(cursor.previous(), cursor.previous());
                 index_expr = AstFactory::make_node_with_span<BinaryExpression>(
-                    cursor.combine_spans(colon_span, slice_end_span),
-                    std::move(index_expr), TokenType::Colon,
+                    cursor.combine_spans(colon_span, slice_end_span), std::move(index_expr), TokenType::Colon,
                     std::move(end_expr));
             }
-            else if (!index_expr)
-            {
-                cursor.report_error(cursor.previous(), E::EmptyBracketAccess);
-            }
+            else if (!index_expr) cursor.report_error(cursor.previous(), E::EmptyBracketAccess);
 
-            const Token& end_token = cursor.consume(TokenType::RightBracket,
-                                                    E::UnmatchedBracketAfterTensorIndex);
+            const Token& end_token = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorIndex);
             return AstFactory::make_node_with_span<BracketAccess>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
                 std::move(index_expr));
@@ -362,8 +313,7 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_dot_access(std::unique_ptr<Expression> target,
-                                                                   const Token& /*op*/)
+    ExprPtr ExpressionParser::parse_dot_access(ExprPtr target, const Token& /*op*/)
     {
         Token property_token = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedPropertyName,
                                                                      RecoveryConfig::ForceStopAtBoundary({
@@ -376,40 +326,33 @@ namespace valuascript::compiler
             property_token.lexeme);
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_tuple_or_grouping()
+    ExprPtr ExpressionParser::parse_tuple_or_grouping()
     {
         const Token& start = cursor.advance();
         CloserTracker tracker(ctx, TokenType::RightParen);
 
         if (cursor.match({TokenType::RightParen}))
             return AstFactory::make_node<TupleLiteral>(
-                cursor, start, std::vector<std::unique_ptr<Expression>>{});
+                cursor, start, std::vector<ExprPtr>{});
 
         bool failed = false;
-
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Comma, TokenType::RightParen};
         conf.options = RecoveryOptions::SkipNestedGroupings;
 
-        auto first_expr = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx,
-            [&]() { return parse_expression(); },
-            conf,
-            &failed
-        );
+        auto first_expr = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf, &failed);
 
         if (cursor.match({TokenType::Comma})) return complete_tuple(std::move(first_expr), start);
         return complete_grouping(std::move(first_expr), failed, start);
     }
 
-    std::unique_ptr<Expression> ExpressionParser::complete_tuple(std::unique_ptr<Expression> first_expr,
-                                                                 const Token& start)
+    ExprPtr ExpressionParser::complete_tuple(ExprPtr first_expr, const Token& start)
     {
         if (cursor.check(TokenType::RightParen))
             cursor.report_error_no_panic(
                 cursor.previous(), E::SingleElementTuplesNotAllowed);
 
-        std::vector<std::unique_ptr<Expression>> elements;
+        std::vector<ExprPtr> elements;
         if (first_expr) elements.push_back(std::move(first_expr));
 
         auto remaining = parse_expression_list(TokenType::RightParen, E::TrailingCommaInTuple);
@@ -418,8 +361,7 @@ namespace valuascript::compiler
 
         try
         {
-            const Token& end = cursor.consume(TokenType::RightParen,
-                                              E::ExpectedRightParenAfterTupleElements);
+            const Token& end = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterTupleElements);
             return AstFactory::make_node_with_span<TupleLiteral>(cursor.make_span(start, end), std::move(elements));
         }
         catch (const ParseSyncException&)
@@ -429,20 +371,16 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::complete_grouping(std::unique_ptr<Expression> first_expr, bool failed,
-                                                                    const Token& start)
+    ExprPtr ExpressionParser::complete_grouping(ExprPtr first_expr, bool failed, const Token& start)
     {
         try
         {
             if (!failed && !cursor.check(TokenType::RightParen) && TokenTraits::is_expression_start(cursor.peek().type))
             {
                 if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), cursor.peek(), cursor.peek(1).type))
-                {
                     cursor.report_error(cursor.peek(), E::MissingOperatorInsideGrouping);
-                }
             }
-            const Token& end = cursor.consume(TokenType::RightParen,
-                                              E::ExpectedRightParenAfterExpression);
+            const Token& end = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterExpression);
             return AstFactory::make_node_with_span<GroupingExpression>(cursor.make_span(start, end),
                                                                        std::move(first_expr));
         }
@@ -453,7 +391,7 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_tensor_literal()
+    ExprPtr ExpressionParser::parse_tensor_literal()
     {
         const Token& start = cursor.advance();
         CloserTracker tracker(ctx, TokenType::RightBracket);
@@ -461,8 +399,7 @@ namespace valuascript::compiler
 
         try
         {
-            const Token& end = cursor.consume(TokenType::RightBracket,
-                                              E::UnmatchedBracketAfterTensorElements);
+            const Token& end = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorElements);
             return AstFactory::make_node_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
         }
         catch (const ParseSyncException&)
@@ -472,27 +409,19 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_dict_literal()
+    ExprPtr ExpressionParser::parse_dict_literal()
     {
         const Token& start = cursor.advance();
         CloserTracker tracker(ctx, TokenType::RightBrace);
 
         ParameterRuleSpec dict_spec{
-            .allow_modifiers = true,
-            .allow_value = true,
-            .require_value = true,
-            .value_separator = TokenType::Colon,
+            .allow_modifiers = true, .allow_value = true, .require_value = true, .value_separator = TokenType::Colon,
             .missing_name_err = E::ExpectedDictionaryKey,
-            .missing_value_separator_err = E::ExpectedColonAfterDictionaryKey,
-            .missing_value_err = E::InvalidExpression
+            .missing_value_separator_err = E::ExpectedColonAfterDictionaryKey, .missing_value_err = E::InvalidExpression
         };
 
         auto items_gen = ListParser::parse_list<GenericParameter>(
-            ctx,
-            TokenType::RightBrace,
-            std::nullopt,
-            E::ExpectedCommaSeparatorInDictionaryLiteral,
-            {},
+            ctx, TokenType::RightBrace, std::nullopt, E::ExpectedCommaSeparatorInDictionaryLiteral, {},
             [this]()
             {
                 const Token& tok = cursor.peek();
@@ -509,8 +438,7 @@ namespace valuascript::compiler
 
         try
         {
-            const Token& end = cursor.consume(TokenType::RightBrace,
-                                              E::UnmatchedBraceInDictionaryLiteral);
+            const Token& end = cursor.consume(TokenType::RightBrace, E::UnmatchedBraceInDictionaryLiteral);
             return AstFactory::make_node_with_span<DictLiteral>(cursor.make_span(start, end), std::move(elements));
         }
         catch (const ParseSyncException&)
@@ -520,35 +448,28 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_conditional_expression()
+    ExprPtr ExpressionParser::parse_conditional_expression()
     {
         const Token& start = cursor.advance();
         SyncSetTracker tracker(ctx, {TokenType::Then, TokenType::Else});
-
         RecoveryConfig conf;
         conf.stop_tokens = {
             TokenType::Then, TokenType::Else, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
         };
         conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
 
-        auto condition = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx, [&]() { return parse_expression(); }, conf);
-        if (!cursor.match({TokenType::Then}))
-            cursor.report_error_no_panic(
-                cursor.peek(), E::MissingThenToken);
+        auto condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        if (!cursor.match({TokenType::Then})) cursor.report_error_no_panic(cursor.peek(), E::MissingThenToken);
 
-        auto then_branch = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx, [&]() { return parse_expression(); }, conf);
-        if (!cursor.match({TokenType::Else}))
-            cursor.report_error_no_panic(
-                cursor.peek(), E::MissingElseToken);
+        auto then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        if (!cursor.match({TokenType::Else})) cursor.report_error_no_panic(cursor.peek(), E::MissingElseToken);
 
-        std::unique_ptr<Expression> else_branch = parse_expression();
+        ExprPtr else_branch = parse_expression();
         return AstFactory::make_node<ConditionalExpression>(cursor, start, std::move(condition), std::move(then_branch),
                                                             std::move(else_branch));
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_switch_expression()
+    ExprPtr ExpressionParser::parse_switch_expression()
     {
         const Token& start = cursor.advance();
         auto target = parse_switch_target();
@@ -556,8 +477,8 @@ namespace valuascript::compiler
         cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeSwitchBody);
         CloserTracker tracker(ctx, TokenType::RightBrace);
 
-        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>> cases;
-        std::unique_ptr<Expression> default_case = nullptr;
+        std::vector<std::pair<std::vector<std::string>, ExprPtr>> cases;
+        ExprPtr default_case = nullptr;
         parse_switch_body(cases, default_case);
 
         try
@@ -574,7 +495,7 @@ namespace valuascript::compiler
         }
     }
 
-    std::pair<std::vector<std::string>, std::unique_ptr<Expression>> ExpressionParser::parse_switch_case()
+    std::pair<std::vector<std::string>, ExprPtr> ExpressionParser::parse_switch_case()
     {
         std::vector<std::string> identifiers;
 
@@ -603,7 +524,6 @@ namespace valuascript::compiler
                     ErrorRecovery::synchronize_with(ctx, conf);
                 }
             }
-
             if (cursor.match({TokenType::Comma})) continue;
             if (cursor.check(TokenType::Identifier))
             {
@@ -616,29 +536,28 @@ namespace valuascript::compiler
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
         conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
-        auto result = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx, [&]() { return parse_switch_result(); }, conf);
+        auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
         return {std::move(identifiers), std::move(result)};
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_switch_default()
+    ExprPtr ExpressionParser::parse_switch_default()
     {
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
         conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
-        return ErrorRecovery::try_parse<std::unique_ptr<
-            Expression>>(ctx, [&]() { return parse_switch_result(); }, conf);
+        return ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_switch_result()
+    ExprPtr ExpressionParser::parse_switch_result()
     {
         cursor.consume(TokenType::Arrow, E::ExpectedRightArrowAfterSwitchCaseIdentifier);
         auto expr = parse_expression();
 
         bool should_break_out = ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || cursor.peek().
-            type == TokenType::Return || TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) || (cursor.
-                peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
-                    cursor.peek(), cursor.peek(1).type)));
+            type == TokenType::Return ||
+            TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) || (cursor.peek().line > cursor.
+                previous().line &&
+                TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)));
 
         if (!should_break_out && !cursor.check(TokenType::Case) && !cursor.check(TokenType::Default) && !cursor.
             check(TokenType::RightBrace) && !cursor.is_at_end())
@@ -648,23 +567,21 @@ namespace valuascript::compiler
                 if (TokenTraits::is_expression_start(cursor.peek().type))
                     cursor.report_error_no_panic(
                         cursor.peek(), E::MissingOperatorInSwitchCaseResult, true);
-                else
-                    cursor.report_error_no_panic(cursor.peek(), E::CaseOrDefaultMissingInSwitchAfterResult, true);
+                else cursor.report_error_no_panic(cursor.peek(), E::CaseOrDefaultMissingInSwitchAfterResult, true);
             }
         }
         return expr;
     }
 
-    std::unique_ptr<Expression> ExpressionParser::parse_switch_target()
+    ExprPtr ExpressionParser::parse_switch_target()
     {
         bool failed = false;
         RecoveryConfig conf;
         conf.stop_tokens = {TokenType::RightParen, TokenType::LeftBrace};
         conf.options = RecoveryOptions::SkipNestedGroupings;
 
-        auto target = ErrorRecovery::try_parse<std::unique_ptr<Expression>>(
-            ctx,
-            [&]()
+        auto target = ErrorRecovery::try_parse<ExprPtr>(
+            ctx, [&]()
             {
                 cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterSwitch);
                 CloserTracker tracker(ctx, TokenType::RightParen);
@@ -685,64 +602,54 @@ namespace valuascript::compiler
         return target;
     }
 
-    void ExpressionParser::parse_switch_body(
-        std::vector<std::pair<std::vector<std::string>, std::unique_ptr<Expression>>>& cases,
-        std::unique_ptr<Expression>& default_case)
+    void ExpressionParser::parse_switch_body(std::vector<std::pair<std::vector<std::string>, ExprPtr>>& cases,
+                                             ExprPtr& default_case)
     {
         SyncSetTracker tracker(ctx, {TokenType::Case, TokenType::Default});
-
         while (!cursor.check(TokenType::RightBrace) && !cursor.is_at_end())
         {
             bool should_break_out = ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || cursor.
-                peek().type == TokenType::Return || TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)
-                || (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
-                    cursor.peek(), cursor.peek(1).type)));
+                peek().type == TokenType::Return ||
+                TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) || (cursor.peek().line > cursor.
+                    previous().line &&
+                    TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)));
             if (should_break_out) break;
 
             RecoveryConfig conf;
             conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
             conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
-            ErrorRecovery::attempt_parse_void(
-                ctx,
-                [&]()
+            ErrorRecovery::attempt_parse_void(ctx, [&]()
+            {
+                if (cursor.match({TokenType::Case})) cases.push_back(parse_switch_case());
+                else if (cursor.match({TokenType::Default}))
                 {
-                    if (cursor.match({TokenType::Case})) cases.push_back(parse_switch_case());
-                    else if (cursor.match({TokenType::Default}))
+                    if (default_case != nullptr)
+                        cursor.report_error_no_panic(
+                            cursor.previous(), E::MultipleDefaultCasesInSwitch);
+                    default_case = parse_switch_default();
+                }
+                else
+                {
+                    if (TokenTraits::is_top_level_token(cursor.peek().type))
                     {
-                        if (default_case != nullptr)
-                            cursor.report_error_no_panic(cursor.previous(), E::MultipleDefaultCasesInSwitch);
-                        default_case = parse_switch_default();
+                        const Token& start_tok = cursor.peek();
+                        parser.consume_unexpected_statement_gracefully();
+                        cursor.report_error_no_panic(cursor.make_span(start_tok, cursor.previous()),
+                                                     E::TopLevelDeclarationNotAllowedHere);
+                        throw ParseSyncException();
                     }
-                    else
-                    {
-                        if (TokenTraits::is_top_level_token(cursor.peek().type))
-                        {
-                            const Token& start_tok = cursor.peek();
-                            parser.consume_unexpected_statement_gracefully();
-                            cursor.report_error_no_panic(cursor.make_span(start_tok, cursor.previous()),
-                                                         E::TopLevelDeclarationNotAllowedHere);
-                            throw ParseSyncException();
-                        }
-                        else
-                        {
-                            cursor.report_error(cursor.peek(), E::ExpectedCaseOrDefaultInsideSwitchBody, true);
-                        }
-                    }
-                }, conf
-            );
+                    else cursor.report_error(cursor.peek(), E::ExpectedCaseOrDefaultInsideSwitchBody, true);
+                }
+            }, conf);
         }
     }
 
-    std::vector<std::unique_ptr<Expression>> ExpressionParser::parse_expression_list(
-        const TokenType closing_token, const std::optional<E> trailing_comma_err,
-        const std::vector<TokenType>& recovery_boundaries)
+    std::vector<ExprPtr> ExpressionParser::parse_expression_list(const TokenType closing_token,
+                                                                 const std::optional<E> trailing_comma_err,
+                                                                 const std::vector<TokenType>& recovery_boundaries)
     {
-        return ListParser::parse_list<std::unique_ptr<Expression>>(
-            ctx,
-            closing_token,
-            trailing_comma_err,
-            E::MissingCommaOrOperatorBetweenExpressions,
-            recovery_boundaries,
+        return ListParser::parse_list<ExprPtr>(
+            ctx, closing_token, trailing_comma_err, E::MissingCommaOrOperatorBetweenExpressions, recovery_boundaries,
             [this]() { return TokenTraits::is_expression_start(cursor.peek().type); },
             [this]() { return parse_expression(); }
         );

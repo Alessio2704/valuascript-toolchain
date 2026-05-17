@@ -17,13 +17,13 @@ namespace valuascript::compiler
 
         using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
 
-        std::unique_ptr<ImportStatement> parse_import_statement();
-        std::unique_ptr<Directive> parse_directive();
+        ImportPtr parse_import_statement();
+        DirectivePtr parse_directive();
         std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
-        std::unique_ptr<StructDefinition> parse_struct_definition(std::vector<Modifier> modifiers);
-        std::unique_ptr<EnumDefinition> parse_enum_definition(std::vector<Modifier> modifiers);
-        std::unique_ptr<TypeAliasDefinition> parse_type_alias_definition(std::vector<Modifier> modifiers);
-        std::unique_ptr<FunctionDefinition> parse_function_definition(std::vector<Modifier> modifiers);
+        StructDefPtr parse_struct_definition(std::vector<Modifier> modifiers);
+        EnumDefPtr parse_enum_definition(std::vector<Modifier> modifiers);
+        TypeAliasPtr parse_type_alias_definition(std::vector<Modifier> modifiers);
+        FuncDefPtr parse_function_definition(std::vector<Modifier> modifiers);
         GenericParameter parse_generic_parameter(const ParameterRuleSpec& spec,
                                                  const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
     };

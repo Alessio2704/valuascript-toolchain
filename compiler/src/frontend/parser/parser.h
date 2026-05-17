@@ -28,13 +28,11 @@ namespace valuascript::compiler
         ~Parser();
 
         std::unique_ptr<Program> parse_program();
-        void parse_statement_or_declaration(ParseContextType parse_ctx, Program* program,
-                                            std::vector<std::unique_ptr<Statement>>& block);
+        void parse_statement_or_declaration(ParseContextType parse_ctx, Program* program, std::vector<StmtPtr>& block);
         void consume_unexpected_statement_gracefully();
 
-        std::unique_ptr<Expression> parse_expression(Precedence min_precedence = Precedence::Or);
-        std::unique_ptr<TypeAnnotation> parse_type_annotation(
-            const std::function<bool(int)>& is_at_parent_boundary = nullptr);
+        ExprPtr parse_expression(Precedence min_precedence = Precedence::Or);
+        TypeAnnPtr parse_type_annotation(const std::function<bool(int)>& is_at_parent_boundary = nullptr);
         std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
         GenericParameter parse_generic_parameter(const ParameterRuleSpec& spec,
                                                  const std::function<bool(int)>& is_at_parent_boundary = nullptr);

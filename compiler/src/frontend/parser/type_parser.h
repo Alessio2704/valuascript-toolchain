@@ -1,5 +1,4 @@
 #pragma once
-
 #include "parser_context.h"
 
 namespace valuascript::compiler
@@ -17,7 +16,6 @@ namespace valuascript::compiler
 
         using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
 
-        std::unique_ptr<TypeAnnotation> parse_type_annotation(
-            const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
+        TypeAnnPtr parse_type_annotation(const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);
     };
 }
