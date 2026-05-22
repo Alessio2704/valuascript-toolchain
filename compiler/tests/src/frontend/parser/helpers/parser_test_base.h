@@ -5,6 +5,7 @@
 #include "recovery_sentinel.h"
 #include "test_structures.h"
 #include "core/compiler_context.h"
+#include "expansion_calculator.h"
 
 #include "utils/parametrised_test_name_helper.h"
 
@@ -104,10 +105,14 @@ namespace valuascript::compiler::test
         static void ExpectValidUnified(InjectableType type, const std::string& snippet,
                                        const Verifier& verifier, const std::string& group_name)
         {
+            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
+            size_t actual_expansions = 0;
+
             expand_to_top_level_stream(
                 {type, snippet, verifier, group_name, "", 0, 0},
                 [&](ProcessingItem&& item)
                 {
+                    actual_expansions++;
                     ProgramSpec spec;
                     std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
 
@@ -116,6 +121,12 @@ namespace valuascript::compiler::test
                 },
                 false
             );
+
+            if (!HasFailure())
+            {
+                EXPECT_EQ(actual_expansions, expected_expansions)
+                    << "Expansion count mismatch for " << group_name << " (Valid Parse).";
+            }
         }
 
         template <typename Verifier>
@@ -127,16 +138,25 @@ namespace valuascript::compiler::test
             std::string test_name = test_info ? test_info->name() : "fallback";
             size_t base_seed = std::hash<std::string>{}(test_name);
 
+            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
+            size_t actual_expansions = 0;
             size_t scenario_index = 0;
 
             expand_to_top_level_stream(
                 {type, snippet, verifier, group_name, "", 0, 0},
                 [&](ProcessingItem&& item)
                 {
+                    actual_expansions++;
                     RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));
                 },
                 true
             );
+
+            if (!HasFailure())
+            {
+                EXPECT_EQ(actual_expansions, expected_expansions)
+                    << "Expansion count mismatch for " << group_name << " (Error Recovery).";
+            }
         }
     };
 }

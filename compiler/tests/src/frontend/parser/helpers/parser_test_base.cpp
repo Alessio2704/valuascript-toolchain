@@ -3,10 +3,10 @@
 #include <iomanip>
 #include "context_registry.h"
 #include "error_shifter.h"
-#include "expansion_policy.h"
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
+#include "context_tree_walker.h"
 
 namespace valuascript::compiler::test
 {
@@ -42,86 +42,81 @@ namespace valuascript::compiler::test
         return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
     }
 
-    void ParserTestBase::expand_to_top_level_stream(ProcessingItem&& item,
+    void ParserTestBase::expand_to_top_level_stream(ProcessingItem&& initial_item,
                                                     const ExpansionCallback& callback,
                                                     bool inject_sentinels)
     {
-        auto policy = ExpansionPolicy::current();
+        ContextTreeWalker<ProcessingItem>::Callbacks cb;
 
-        if (is_terminal_type(item.type))
+        cb.get_type = [](const ProcessingItem& item) { return item.type; };
+
+        cb.on_terminal = [&](ProcessingItem item)
         {
             callback(std::move(item));
-            return;
-        }
+        };
 
-        if (item.type == InjectableType::StrongStatement)
+        cb.on_promotion = [&](const ProcessingItem& item)
         {
             callback({
                 InjectableType::TopLevel, item.code, item.verifier,
                 item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
                 item.depth + 1, item.recursion_depth
             });
-        }
+        };
 
-        if (item.depth >= policy.max_depth) return;
-
-        auto contexts = ContextRegistry::get_all_for(item.type);
-        for (const auto& ctx : contexts)
+        cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
         {
-            bool is_recursive = false;
-            for (auto ctx_input_type : ctx.input_types)
+            std::string next_path = item.path_name + " -> " +
+                (next_rec_depth > item.recursion_depth ? ctx.name + "(Recurse)" : ctx.name);
+
+            return ProcessingItem{
+                ctx.output_type,
+                ctx.prefix + item.code + ctx.suffix,
+                ctx.transform_verifier(item.verifier),
+                next_path,
+                ctx.prefix + item.cumulative_prefix,
+                item.depth + 1,
+                next_rec_depth
+            };
+        };
+
+        cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
+        {
+            std::vector<RecoveryBlock> pre, post;
+            std::string inner_code = item.code;
+            std::string inner_prefix = item.cumulative_prefix;
+
+            std::string next_path = item.path_name + " -> " +
+                (next_rec_depth > item.recursion_depth ? ctx.name + "(Recurse)" : ctx.name);
+
+            if (inject_sentinels)
             {
-                if (ctx_input_type == ctx.output_type)
-                {
-                    is_recursive = true;
-                    break;
-                }
+                size_t seed = std::hash<std::string>{}(item.path_name + ctx.name);
+                pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
+                post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
+                inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
+                inner_prefix = pre[0].source + "\n  " + inner_prefix;
             }
 
-            if (is_recursive && item.recursion_depth >= policy.max_recursion) continue;
+            return ProcessingItem{
+                ctx.output_type,
+                ctx.prefix + inner_code + ctx.suffix,
+                ctx.transform_verifier_block(item.verifier, pre, post),
+                next_path,
+                ctx.prefix + inner_prefix,
+                item.depth + 1,
+                next_rec_depth
+            };
+        };
 
-            int next_rec_depth = is_recursive ? item.recursion_depth + 1 : item.recursion_depth;
-            std::string next_path = item.path_name + " -> " + (is_recursive ? ctx.name + "(Recurse)" : ctx.name);
+        cb.should_abort = [] { return HasFailure(); };
 
-            if (ctx.is_block_context)
-            {
-                std::vector<RecoveryBlock> pre, post;
-                std::string inner_code = item.code;
-                std::string inner_prefix = item.cumulative_prefix;
+        int start_depth = initial_item.depth;
+        int start_rec_depth = initial_item.recursion_depth;
 
-                if (inject_sentinels)
-                {
-                    size_t seed = std::hash<std::string>{}(item.path_name + ctx.name);
-                    pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
-                    post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
-                    inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
-                    inner_prefix = pre[0].source + "\n  " + inner_prefix;
-                }
-
-                expand_to_top_level_stream({
-                                               ctx.output_type,
-                                               ctx.prefix + inner_code + ctx.suffix,
-                                               ctx.transform_verifier_block(item.verifier, pre, post),
-                                               next_path,
-                                               ctx.prefix + inner_prefix,
-                                               item.depth + 1,
-                                               next_rec_depth
-                                           }, callback, inject_sentinels);
-            }
-            else
-            {
-                expand_to_top_level_stream({
-                                               ctx.output_type,
-                                               ctx.prefix + item.code + ctx.suffix,
-                                               ctx.transform_verifier(item.verifier),
-                                               next_path,
-                                               ctx.prefix + item.cumulative_prefix,
-                                               item.depth + 1,
-                                               next_rec_depth
-                                           }, callback, inject_sentinels);
-            }
-        }
+        ContextTreeWalker<ProcessingItem>::walk(std::move(initial_item), start_depth, start_rec_depth, cb);
     }
+
 
     ConstructedRecoveryProgram ParserTestBase::BuildRecoveryProgram(std::string inner_code,
                                                                     ProgramSpec inner_spec,
