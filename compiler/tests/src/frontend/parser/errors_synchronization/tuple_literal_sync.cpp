@@ -64,42 +64,6 @@ namespace valuascript::compiler::test {
             ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
-            "empty_tuple_with_comma_is_invalid",
-            "let a = (,)\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 1, 10},
-            {Err::SingleElementTuplesNotAllowed, 1, 10}
-            },
-            ExpectTuple(0),
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_tuple_with_garbage",
-            "let a = (*)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 10} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto grouping = dynamic_cast<GroupingExpression*>(assignment->value.get());
-            EXPECT_NE(grouping, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_first_value_is_broken_expression",
-            "let a = (1 + *, 2)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 14} },
-            ExpectTuple(2),
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_second_value_is_broken_expression",
-            "let a = (1, 2 + *)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 17} },
-            ExpectTuple(2)
-            },
-            ParserErrorsSynchronizationTestCase{
             "array_inside_tuple_first_element_error",
             "let a = ([1, 2)\n"
             "let recovery = 1\n",
@@ -120,13 +84,6 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             { {Err::UnmatchedBracketAfterTensorElements, 1, 18} },
             ExpectTuple(2)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_deeply_nested_error",
-            "let a = (1, (2, (3, *, 5)), 6)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 21} },
-            ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_with_switch_expression_error",
@@ -242,39 +199,6 @@ namespace valuascript::compiler::test {
             {Err::InvalidExpression, 1, 15}
             },
             ExpectTuple(2)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_with_colon_instead_of_comma",
-            "let a = (1, x: 2)\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-
-            auto tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
-            ASSERT_NE(tuple, nullptr);
-            ASSERT_EQ(tuple->elements.size(), 2);
-
-            auto first = dynamic_cast<NumberLiteral*>(tuple->elements[0].get());
-            ASSERT_EQ(first->value, "1");
-            auto second = dynamic_cast<IdentifierAccess*>(tuple->elements[1].get());
-            ASSERT_EQ(second->name, "x");
-            },
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_multiline_recovery",
-            "let a = (\n"
-            "  1,\n"
-            "  *,\n"
-            "  3\n"
-            ")\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 3, 3}
-            },
-            ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_deep_unclosed_cascade",

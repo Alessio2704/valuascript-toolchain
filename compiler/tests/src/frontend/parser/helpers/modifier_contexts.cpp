@@ -37,6 +37,20 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                "function_parameter_with_default", {InjectableType::Modifier}, InjectableType::TopLevel, "func ctx_param(",
+                " p: int = 1) -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_param", {},
+                                                           {
+                                                               ParamSpec{
+                                                                   "p", SpecAdder::get_v<ModifierVerifier>(v),
+                                                                   IsType("int"),
+                                                                   IsNumber("1")
+                                                               }
+                                                           }, {IsType("void")}));
+                }
+            },
+            {
                 "struct_definition", {InjectableType::Modifier}, InjectableType::TopLevel, "",
                 " struct ctx_struct {}\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier

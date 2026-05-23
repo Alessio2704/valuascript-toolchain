@@ -3,6 +3,7 @@
 namespace valuascript::compiler::test
 {
     using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -93,6 +94,14 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
                 IsBinary(TokenType::Caret, IsNumber("2"), IsNull())
+            );
+
+            reg("ModifierInsideExpressionContext", "1 + @test 2",
+                {
+                    {E::TopLevelDeclarationNotAllowedHere, 1, 5, 1, 10},
+                    {E::ModifiersAttachedToInvalidDeclaration, 1, 5, 1, 10}
+                },
+                IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
             );
 
             return true;

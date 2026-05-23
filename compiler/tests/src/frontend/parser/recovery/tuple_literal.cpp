@@ -52,6 +52,47 @@ namespace valuascript::compiler::test
                 })
             );
 
+            reg("EmptyTupleWithGarbage", "(*)",
+                {
+                    {E::InvalidExpression, 1, 2, 1, 3}
+                },
+                IsGrouping(IsNull())
+            );
+
+            reg("TupleWithColonInsteadOfComma", "(1, x: 2)",
+                {
+                    {E::ExpectedRightParenAfterTupleElements, 1, 6, 1, 7}
+                },
+                IsTuple({
+                    IsNumber("1"),
+                    IsIdentifier("x")
+                })
+            );
+
+            reg("TupleMultilineRecovery",
+                "(\n"
+                "  1,\n"
+                "  *,\n"
+                "  3\n"
+                ")",
+                {
+                    {E::InvalidExpression, 3, 3, 3, 4}
+                },
+                IsTuple({
+                    IsNumber("1"),
+                    IsNull(),
+                    IsNumber("3")
+                })
+            );
+
+            reg("EmptyTupleWithCommaIsInvalid", "(,)",
+                {
+                    {E::InvalidExpression, 1, 2, 1, 3},
+                    {E::SingleElementTuplesNotAllowed, 1, 2, 1, 3}
+                },
+                IsTuple({})
+            );
+
             return true;
         }();
     }

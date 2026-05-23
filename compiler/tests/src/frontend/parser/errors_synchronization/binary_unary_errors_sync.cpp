@@ -313,20 +313,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "multiline_chained_comparisons_inside_grouping",
-            "let a = (\n"
-            "1 <\n"
-            "2 <\n"
-            "3\n"
-            ")\n",
-            { {Err::ChainingNotAllowedForComparisonOperations, 3, 3} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](const Expression *inner) {
-                    ASSERT_NE(inner, nullptr);
-                    });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "precedence_inversion_sanity_check_inside_multiline",
             "let a = (1\n+ 2 * 3)\n",
             {},

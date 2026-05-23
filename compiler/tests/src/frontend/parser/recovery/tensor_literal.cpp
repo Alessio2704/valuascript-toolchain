@@ -120,6 +120,27 @@ namespace valuascript::compiler::test
                 })
             );
 
+            // reg("TensorWithMismatchedNestedCloser", "[ ( 1 + 2 ], 3 ]",
+            //     {
+            //         {E::ExpectedRightParenAfterExpression, 1, 11, 1, 12}
+            //     },
+            //     IsTensor({
+            //         IsGrouping(
+            //             IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
+            //         ),
+            //         IsNumber("3")
+            //     })
+            // );
+
+            reg("TensorLiteralWithSliceSyntax", "[1:2, 3 ]",
+                {
+                    {E::UnmatchedBracketAfterTensorElements, 1, 3, 1, 4}
+                },
+                IsTensor({
+                    IsNumber("1")
+                })
+            );
+
             return true;
         }();
     }

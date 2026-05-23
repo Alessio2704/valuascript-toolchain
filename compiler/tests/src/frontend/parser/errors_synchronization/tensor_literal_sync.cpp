@@ -211,18 +211,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_literal_with_slice_syntax",
-            "let a = [1:2, 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 11} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-            EXPECT_EQ(tensor->elements.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_multiline_deeply_nested_failures",
             "let a =[\n"
             "  (1 + *),\n"

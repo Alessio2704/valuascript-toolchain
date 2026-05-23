@@ -104,17 +104,6 @@ namespace valuascript::compiler::test {
             { {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 12} },
             ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}}} })
             },
-
-            ParserErrorsSynchronizationTestCase{
-            "modifier_garbage_in_args",
-            "@test(a: 1, !, b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            {
-            {LexerErrorCode::InvalidCharacter, 1, 13},
-            {Err::MissingArgumentNameInModifier, 1, 14},
-            },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}}} })
-            },
             ParserErrorsSynchronizationTestCase{
             "modifier_on_invalid_statement",
             "@test\n"
@@ -147,24 +136,6 @@ namespace valuascript::compiler::test {
             ExpectModifierSet({ {"struct", {{"a", "1"}}} })
             },
             ParserErrorsSynchronizationTestCase{
-            "multiple_modifiers_one_broken",
-            "@valid @broken( missing_colon ) @another let a = 1\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 31} },
-            ExpectModifierSet({
-                {"valid", {}},
-                {"broken", {{"missing_colon", std::nullopt}}},
-                {"another", {}}
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_value_is_broken_expression",
-            "@test(a: 1 + *, b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 14} },
-            ExpectModifierSet({ {"test", {{"a", std::nullopt}, {"b", "2"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_arg_name_is_reserved_keyword",
             "@test(let: 1, func: 2) let a = 1\n"
             "let recovery = 1\n",
@@ -173,27 +144,6 @@ namespace valuascript::compiler::test {
             {Err::ReservedKeywordAsIdentifier, 1, 15}
             },
             ExpectModifierSet({ {"test", {{"let", "1"}, {"func", "2"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_with_broken_dict",
-            "@test(config: { a: 1, b }) let a = 1\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedColonAfterDictionaryKey, 1, 25} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto const step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_EQ(step->modifiers.size(), 1);
-            ASSERT_EQ(step->modifiers[0].name, "test");
-            ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
-            ASSERT_EQ(step->modifiers[0].arguments[0].first, "config");
-            auto const dict_arg = dynamic_cast<DictLiteral*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_EQ(dict_arg->elements.size(), 2);
-            ASSERT_EQ(dict_arg->elements[0].key, "a");
-            auto const num_literal = dynamic_cast<NumberLiteral*>(dict_arg->elements[0].value.get());
-            ASSERT_EQ(num_literal->value, "1");
-            ASSERT_EQ(dict_arg->elements[1].key, "b");
-            ASSERT_EQ(dict_arg->elements[1].value.get(), nullptr);
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_arg_with_broken_switch",
@@ -255,7 +205,6 @@ namespace valuascript::compiler::test {
             { {LexerErrorCode::InvalidCharacter, 1, 8} },
             ExpectModifierSet({ {"first", {}}, {"second", {}}})
             },
-
             ParserErrorsSynchronizationTestCase{
             "modifier_unmatched_arg_paren_at_eof",
             "@test(a: 1\n",
@@ -273,33 +222,6 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             {},
             ExpectModifierSet({ {"test", {{"a", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_inside_expression_context",
-            "let a = 1 + @test 2\n"
-            "let recovery = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 1, 13},
-            {Err::ModifiersAttachedToInvalidDeclaration, 1, 13},
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto binary_exp = dynamic_cast<BinaryExpression*>(assign->value.get());
-            ASSERT_NE(binary_exp, nullptr);
-            ASSERT_EQ(binary_exp->op, TokenType::Plus);
-            auto left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
-            ASSERT_EQ(left->value, "1");
-            auto right = dynamic_cast<NumberLiteral*>(binary_exp->right.get());
-            ASSERT_EQ(right->value, "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_missing_colon_full_mangle",
-            "@test(a: 1, b, c: 3) let x = 1\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 14} },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", std::nullopt}, {"c", "3"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_on_directive",
@@ -405,40 +327,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_arg_value_missing",
-            "@test(a: , b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 10} },
-            [](const Program &ast) {
-            auto assign_expr = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_expr, nullptr);
-            auto& modifier = assign_expr->modifiers[0];
-            EXPECT_EQ(modifier.arguments.size(), 2);
-            EXPECT_EQ(modifier.name, "test");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_double_comma",
-            "@test(a: 1,, b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInModifier, 1, 12} },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_trailing_comma_error",
-            "@test(a: 1,) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::TrailingCommaInModifier, 1, 11} },
-            ExpectModifierSet({ {"test", {{"a", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_name_is_literal",
-            "@test(123: 1) let a = 1\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInModifier, 1, 7} },
-            ExpectModifierSet({ {"test", {{"<error>", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_newline_between_at_and_name",
             "@\n  test(a: 1) let a = 1\n"
             "let recovery = 1\n",
@@ -465,37 +353,6 @@ namespace valuascript::compiler::test {
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_with_broken_binary_expr",
-            "@test(a: 1 + (2 *)) let a = 1\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 18} },
-            [](const Program& ast) {
-            auto const step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_EQ(step->modifiers[0].arguments.size(), 1);
-            ASSERT_EQ(step->modifiers[0].arguments[0].first, "a");
-            auto const binary_exp = dynamic_cast<BinaryExpression*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_NE(binary_exp, nullptr);
-            ASSERT_EQ(binary_exp->op, TokenType::Plus);
-
-            auto const binary_exp_left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
-            auto const binary_exp_right = dynamic_cast<GroupingExpression*>(binary_exp->right.get());
-            ASSERT_NE(binary_exp_left, nullptr);
-            ASSERT_NE(binary_exp_right, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_with_broken_tensor",
-            "@test(vec: [1, 2, $]) let a = 1\n"
-            "let recovery = 1\n",
-            { {LexerErrorCode::InvalidCharacter, 1, 19} },
-            [](const Program& ast) {
-            auto const step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_EQ(step->modifiers[0].arguments[0].first, "vec");
-            auto const tensor = dynamic_cast<TensorLiteral*>(step->modifiers[0].arguments[0].second.get());
-            ASSERT_EQ(tensor->elements.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -537,16 +394,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifiers_with_missing_commas_between_args",
-            "@test(a: 1 b: 2 c: 3) let x = 1\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 12},
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 17}
-            },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}, {"c", "3"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "all_identifiers_are_reserved",
             "@func(let: let) let a = 1\n"
             "let recovery = 1\n",
@@ -576,18 +423,6 @@ namespace valuascript::compiler::test {
             ExpectModifierSet({ {"test", {{"a", "1"}}} })
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_key_modifier_missing_name",
-            "let obj = { @* a: 1, other: 2 }\nlet recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 14} },
-            [](const Program& ast) {
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 2);
-            EXPECT_EQ(dict->elements[0].key, "a");
-            EXPECT_EQ(dict->elements[1].key, "other");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_modifier_missing_name_and_dict_key",
             "let obj = { @ 1: 1, other: 2 }\nlet recovery = 1\n",
             { {Err::ExpectedModifierName, 1, 15},
@@ -599,34 +434,6 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(dict->elements.size(), 2);
             EXPECT_EQ(dict->elements[0].key, "<error>");
             EXPECT_EQ(dict->elements[1].key, "other");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_key_modifier_broken_args_recovers_to_next_key",
-            "let obj = { @test(a: 1 + *) k: 1, other: 2 }\nlet recovery = 1\n",
-            { {Err::InvalidExpression, 1, 26} },
-            [](const Program& ast) {
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 2);
-            EXPECT_EQ(dict->elements[0].key, "k");
-            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
-            EXPECT_EQ(dict->elements[0].modifiers[0].name, "test");
-            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 1);
-            EXPECT_EQ(dict->elements[1].key, "other");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_key_modifier_missing_comma_in_args",
-            "let obj = { @test(a: 1 b: 2) k: 1 }\nlet recovery = 1\n",
-            { {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24} },
-            [](const Program& ast) {
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 1);
-            EXPECT_EQ(dict->elements[0].key, "k");
-            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
-            EXPECT_EQ(dict->elements[0].modifiers[0].arguments.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -656,18 +463,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_key_multiple_modifiers_one_missing_name",
-            "let obj = { @ok @* a: 1, other: 2 }\nlet recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 18} },
-            [](const Program& ast) {
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_EQ(dict->elements.size(), 2);
-            EXPECT_EQ(dict->elements[0].key, "a");
-            EXPECT_EQ(dict->elements[1].key, "other");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_key_multiple_modifiers_one_missing_name_and_key",
             "let obj = { @ok @1 : 1, other: 2 }\nlet recovery = 1\n",
             {
@@ -683,19 +478,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "enum_case_modifier_missing_colon_in_args",
-            "enum E: int { @modifier(a 1) A = 1, B = 2 }\nlet recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 27} },
-            [](const Program& ast) {
-            auto enum_def = ast.enum_definitions[0].get();
-            ASSERT_EQ(enum_def->cases.size(), 2);
-            EXPECT_EQ(enum_def->cases[0].name, "A");
-            ASSERT_EQ(enum_def->cases[0].modifiers.size(), 1);
-            EXPECT_EQ(enum_def->cases[0].modifiers[0].name, "modifier");
-            EXPECT_EQ(enum_def->cases[1].name, "B");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "enum_case_modifier_name_is_reserved_keyword",
             "enum E: int { @let A = 1 }\nlet recovery = 1\n",
             { {Err::ReservedKeywordAsIdentifier, 1, 16} },
@@ -704,31 +486,6 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(enum_def->cases.size(), 1);
             EXPECT_EQ(enum_def->cases[0].modifiers.size(), 1);
             EXPECT_EQ(enum_def->cases[0].modifiers[0].name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "enum_case_modifier_double_comma",
-            "enum E: int { @modifier(a: 1,,) A = 1 }\nlet recovery = 1\n",
-            {
-            {Err::MissingArgumentNameInModifier, 1, 30},
-            {Err::TrailingCommaInModifier, 1, 30},
-            },
-            [](const Program& ast) {
-            auto enum_def = ast.enum_definitions[0].get();
-            ASSERT_EQ(enum_def->cases.size(), 1);
-            EXPECT_EQ(enum_def->cases[0].modifiers[0].arguments.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "enum_case_modifier_broken_args_recovers_to_next_case",
-            "enum E: int { @modifier(a: 1 + *) A = 1, B = 2 }\nlet recovery = 1\n",
-            { {Err::InvalidExpression, 1, 32} },
-            [](const Program& ast) {
-            auto enum_def = ast.enum_definitions[0].get();
-            ASSERT_EQ(enum_def->cases.size(), 2);
-            EXPECT_EQ(enum_def->cases[0].name, "A");
-            ASSERT_EQ(enum_def->cases[0].modifiers.size(), 1);
-            EXPECT_EQ(enum_def->cases[1].name, "B");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -790,39 +547,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_missing_name",
-            "func f(@ 1 a: int, b: int) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 10} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-
-            ASSERT_EQ(func->parameters.size(), 2);
-            EXPECT_EQ(func->parameters[0].name, "a");
-            EXPECT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "<error>");
-            EXPECT_EQ(func->parameters[1].name, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_broken_expression_in_arg",
-            "func f(@test(x: 1 + *) a: int, b: int) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 21} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 2);
-
-            EXPECT_EQ(func->parameters[0].name, "a");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
-
-            EXPECT_EQ(func->parameters[1].name, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_reserved_keyword_as_modifier",
             "func f(@func() a: int, @let b: int) -> void {}\n"
             "let recovery = 1\n",
@@ -879,65 +603,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_arg_missing_value_hits_paren",
-            "func f(@test(a: ) b: int) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 17} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 1);
-
-            EXPECT_EQ(func->parameters[0].name, "b");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_missing_commas_in_args",
-            "func f(@test(a: 1 b: 2 c: 3) p: int) -> void {}\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 19},
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 1);
-
-            EXPECT_EQ(func->parameters[0].name, "p");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
-            EXPECT_EQ(func->parameters[0].modifiers[0].arguments.size(), 3);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_with_default_value_recovery",
-            "func f(@test(x: *) p: int = 10, @ok q: int = 20) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 17} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 2);
-
-            EXPECT_EQ(func->parameters[0].name, "p");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
-            auto def_p = dynamic_cast<NumberLiteral*>(func->parameters[0].default_value.get());
-            ASSERT_NE(def_p, nullptr);
-            EXPECT_EQ(def_p->value, "10");
-
-            EXPECT_EQ(func->parameters[1].name, "q");
-            ASSERT_EQ(func->parameters[1].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[1].modifiers[0].name, "ok");
-            auto def_q = dynamic_cast<NumberLiteral*>(func->parameters[1].default_value.get());
-            ASSERT_NE(def_q, nullptr);
-            EXPECT_EQ(def_q->value, "20");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_modifier_missing_right_paren_in_args",
             "func f(@test(a: 1 p: int) -> void {}\n"
             "let recovery = 1\n",
@@ -953,37 +618,6 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].first, "recovery");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_missing_name",
-            "struct S { @1 id: int, next: float }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedModifierName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-
-            ASSERT_EQ(s->fields.size(), 2);
-            EXPECT_EQ(s->fields[0].name, "id");
-            EXPECT_EQ(s->fields[1].name, "next");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_broken_expression_in_arg",
-            "struct S { @test(val: 1 + *) id: int, next: float }\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 27} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 2);
-
-            EXPECT_EQ(s->fields[0].name, "id");
-            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
-            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
-
-            EXPECT_EQ(s->fields[1].name, "next");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -1041,39 +675,6 @@ namespace valuascript::compiler::test {
             if (field.name == "next") found_next = true;
             }
             EXPECT_TRUE(found_next) << "Failed to recover to field 'next'";
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_arg_missing_value_hits_brace",
-            "struct S { @test(a: ) id: int }\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 21} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 1);
-            EXPECT_EQ(s->fields[0].name, "id");
-            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
-            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_missing_commas_in_args",
-            "struct S { @test(a: 1 b: 2 c: 3) id: int }\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 23},
-            {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 28}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 1);
-
-            EXPECT_EQ(s->fields[0].name, "id");
-            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
-            EXPECT_EQ(s->fields[0].modifiers[0].name, "test");
-            EXPECT_EQ(s->fields[0].modifiers[0].arguments.size(), 3);
             }
             },
             ParserErrorsSynchronizationTestCase{
