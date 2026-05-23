@@ -12,31 +12,37 @@
 #include "frontend/parser/ast.h"
 
 using namespace valuascript::compiler;
-using Err = valuascript::compiler::ValuascriptErrorCode;
+using Err = ParserErrorCode;
 
-namespace valuascript::compiler::test {
-    struct ExpectedParserError {
-        Err code;
+namespace valuascript::compiler::test
+{
+    struct ExpectedParserError
+    {
+        ValuascriptErrorCode code;
         size_t line;
         size_t column;
         size_t line_end = 0;
         size_t column_end = 0;
     };
 
-    struct ParserErrorsSynchronizationTestCase {
+    struct ParserErrorsSynchronizationTestCase
+    {
         std::string test_name;
         std::string source_code;
         std::vector<ExpectedParserError> expected_errors;
-        std::function<void(const Program &)> verify_ast = nullptr;
+        std::function<void(const Program&)> verify_ast = nullptr;
     };
 
-    inline std::ostream &operator<<(std::ostream &os, const ParserErrorsSynchronizationTestCase &test_case) {
+    inline std::ostream& operator<<(std::ostream& os, const ParserErrorsSynchronizationTestCase& test_case)
+    {
         return os << test_case.test_name;
     }
 
-    class ParserErrorsSynchronizationBase : public testing::TestWithParam<ParserErrorsSynchronizationTestCase> {
+    class ParserErrorsSynchronizationBase : public testing::TestWithParam<ParserErrorsSynchronizationTestCase>
+    {
     protected:
-        static void run_parser_and_check_errors(const ParserErrorsSynchronizationTestCase &param) {
+        static void run_parser_and_check_errors(const ParserErrorsSynchronizationTestCase& param)
+        {
             auto context = std::make_shared<CompilerContext>();
             context->settings.fail_fast = false;
 
@@ -56,21 +62,19 @@ namespace valuascript::compiler::test {
                 ast_artifact = parser.run(*context, lexer_artifacts);
                 }) << "Parser threw an exception even though fail_fast was set to false.";
 
-            const auto &actual_errors = context->diagnostics.get_errors();
+            const auto& actual_errors = context->diagnostics.get_errors();
 
             EXPECT_EQ(actual_errors.size(), param.expected_errors.size())
                 << "Mismatch in the number of collected errors.\n"
                 << "Expected " << param.expected_errors.size() << ", but got " << actual_errors.size();
 
             size_t errors_to_check = std::min(actual_errors.size(), param.expected_errors.size());
-            for (size_t i = 0; i < errors_to_check; ++i) {
-                const auto &actual = actual_errors[i];
-                const auto &expected = param.expected_errors[i];
+            for (size_t i = 0; i < errors_to_check; ++i)
+            {
+                const auto& actual = actual_errors[i];
+                const auto& expected = param.expected_errors[i];
 
-                EXPECT_EQ(actual.get_code(), expected.code)
-                    << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
-                    << "\nActual Code: " << static_cast<int>(actual.get_code())
-                    << "\nActual Message: " << actual.what();
+                EXPECT_EQ(actual.get_code(), expected.code);
 
                 EXPECT_EQ(actual.get_span().line_start, expected.line)
                     << "Error [" << i << "] Line mismatch for error: " << actual.what();
@@ -78,22 +82,25 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(actual.get_span().column_start, expected.column)
                     << "Error [" << i << "] Column mismatch for error: " << actual.what();
 
-                if (expected.line_end != 0) {
+                if (expected.line_end != 0)
+                {
                     EXPECT_EQ(actual.get_span().line_end, expected.line_end)
                         << "Error [" << i << "] End line mismatch for error: " << actual.what();
                 }
 
-                if (expected.column_end != 0) {
+                if (expected.column_end != 0)
+                {
                     EXPECT_EQ(actual.get_span().column_end, expected.column_end)
                         << "Error[" << i << "] End column mismatch for error: " << actual.what();
                 }
             }
 
-            if (param.verify_ast) {
+            if (param.verify_ast)
+            {
                 ASSERT_EQ(ast_artifact.code, CompilerStageArtifactCode::Ast)
                     << "Parser did not return an AST artifact.";
 
-                auto ast = std::any_cast<std::shared_ptr<Program> >(ast_artifact.data);
+                auto ast = std::any_cast<std::shared_ptr<Program>>(ast_artifact.data);
                 ASSERT_NE(ast, nullptr) << "Parsed AST is null.";
 
                 param.verify_ast(*ast);

@@ -8,7 +8,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     DeclarationParser::DeclarationParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {

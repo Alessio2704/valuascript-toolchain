@@ -20,14 +20,14 @@ namespace valuascript::compiler
         bool is_active_closer(TokenType type) const;
         bool is_in_sync_set(TokenType type) const;
 
-        const Token& consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords = true,
+        const Token& consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords = true,
                                         bool check_statement_boundary = false);
         TokenType peek_past_modifiers() const;
         bool is_at_top_level_declaration() const;
         bool is_at_any_declaration() const;
         bool is_missing_closing_brace() const;
         void reject_modifiers(const std::vector<Modifier>& modifiers,
-                              ValuascriptErrorCode error_code =
-                                  ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration) const;
+                              ParserErrorCode error_code =
+                                  ParserErrorCode::ModifiersAttachedToInvalidDeclaration) const;
     };
 }

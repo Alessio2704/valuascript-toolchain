@@ -20,10 +20,10 @@ namespace valuascript::compiler::test {
             "let struct = 30\n"
             "let d",
             {
-            {ValuascriptErrorCode::ExpectedModifierName, 1, 3},
-            {ValuascriptErrorCode::InvalidIdentifier, 2, 5},
-            {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 3, 5},
-            {ValuascriptErrorCode::IncompleteAssignment, 4, 6}
+            {Err::ExpectedModifierName, 1, 3},
+            {Err::ExpectedIdentifier, 2, 5},
+            {Err::ReservedKeywordAsIdentifier, 3, 5},
+            {Err::IncompleteAssignment, 4, 6}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -32,9 +32,9 @@ namespace valuascript::compiler::test {
             "func test1(a int) -> int {}\n"
             "func test2(b: int) int {}\n",
             {
-            {ValuascriptErrorCode::MissingFunctionName, 1, 6},
-            {ValuascriptErrorCode::MissingColonAfterParameter, 2, 14},
-            {ValuascriptErrorCode::MissingArrowInFunction, 3, 20}
+            {Err::MissingFunctionName, 1, 6},
+            {Err::MissingColonAfterParameter, 2, 14},
+            {Err::MissingArrowInFunction, 3, 20}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -44,10 +44,10 @@ namespace valuascript::compiler::test {
             "let c = obj[]\n"
             "let d = obj.",
             {
-            {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
-            {ValuascriptErrorCode::ExpectedColonAfterDictionaryKey, 2, 15},
-            {ValuascriptErrorCode::EmptyBracketAccess, 3, 12},
-            {ValuascriptErrorCode::ExpectedPropertyName, 4, 13}
+            {Err::ExpectedDictionaryKey, 1, 11},
+            {Err::ExpectedColonAfterDictionaryKey, 2, 15},
+            {Err::EmptyBracketAccess, 3, 12},
+            {Err::ExpectedPropertyName, 4, 13}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -57,11 +57,11 @@ namespace valuascript::compiler::test {
             "let a = switch (val) { case 1 10 }\n"
             "let a = switch (val) { default -> 1 default -> 2 }\n",
             {
-            {ValuascriptErrorCode::MissingThenToken, 1, 19},
-            {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 2, 17},
-            {ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase, 3, 29},
-            {ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 34},
-            {ValuascriptErrorCode::MultipleDefaultCasesInSwitch, 4, 37}
+            {Err::MissingThenToken, 1, 19},
+            {Err::ChainingNotAllowedForComparisonOperations, 2, 17},
+            {Err::ExpectedEnumCaseNameAfterCase, 3, 29},
+            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 34},
+            {Err::MultipleDefaultCasesInSwitch, 4, 37}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -73,9 +73,9 @@ namespace valuascript::compiler::test {
             "let valid2 = 200\n"
             "let a = { a: 1 b: 2}",
             {
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 20},
-            {ValuascriptErrorCode::ExpectedStructName, 4, 8},
-            {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 6, 16}
+            {Err::MissingOperatorInsideGrouping, 2, 20},
+            {Err::ExpectedStructName, 4, 8},
+            {Err::ExpectedCommaSeparatorInDictionaryLiteral, 6, 16}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -88,9 +88,9 @@ namespace valuascript::compiler::test {
             "let c = { key: \"value\" \n"
             "let valid_4 = 400\n",
             {
-            {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 1, 17},
-            {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 4, 17},
-            {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 6, 23}
+            {Err::ExpectedRightParenAfterExpression, 1, 17},
+            {Err::UnmatchedBracketAfterTensorElements, 4, 17},
+            {Err::UnmatchedBraceInDictionaryLiteral, 6, 23}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -99,8 +99,8 @@ namespace valuascript::compiler::test {
             "let a = func_call(\n\n"
             "let b = some_other()",
             {
-            {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 11},
-            {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 2, 19}
+            {Err::ExpectedDictionaryKey, 1, 11},
+            {Err::ExpectedArgumentNameOrClosingParen, 2, 19}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -125,21 +125,21 @@ namespace valuascript::compiler::test {
             "let res = a (-5)\n"
             "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
             {
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 1, 14},
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 2, 19},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 3, 17},
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 4, 22},
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 5, 22},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 6, 16},
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 7, 24},
-            {ValuascriptErrorCode::MissingOperatorInsideGrouping, 8, 24},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 10, 18},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 13, 18},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 15, 13},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 16, 13},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 17, 13},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 18, 13},
-            {ValuascriptErrorCode::MissingOperatorOrArgumentName, 19, 37},
+            {Err::MissingOperatorOrArgumentName, 1, 14},
+            {Err::MissingOperatorInsideGrouping, 2, 19},
+            {Err::MissingOperatorOrArgumentName, 3, 17},
+            {Err::MissingOperatorInsideGrouping, 4, 22},
+            {Err::MissingOperatorInsideGrouping, 5, 22},
+            {Err::MissingOperatorOrArgumentName, 6, 16},
+            {Err::MissingOperatorInsideGrouping, 7, 24},
+            {Err::MissingOperatorInsideGrouping, 8, 24},
+            {Err::MissingOperatorOrArgumentName, 10, 18},
+            {Err::MissingOperatorOrArgumentName, 13, 18},
+            {Err::MissingOperatorOrArgumentName, 15, 13},
+            {Err::MissingOperatorOrArgumentName, 16, 13},
+            {Err::MissingOperatorOrArgumentName, 17, 13},
+            {Err::MissingOperatorOrArgumentName, 18, 13},
+            {Err::MissingOperatorOrArgumentName, 19, 37},
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -149,10 +149,10 @@ namespace valuascript::compiler::test {
             "let x = trailing_comma(a: 1, )\n"
             "func true() -> void { return 1}",
             {
-            {ValuascriptErrorCode::ExpectedCommaSeparatorInParameterList, 1, 21},
-            {ValuascriptErrorCode::MissingOperator, 2, 28},
-            {ValuascriptErrorCode::TrailingCommaInFunctionCall, 3, 28},
-            {ValuascriptErrorCode::ReservedKeywordAsIdentifier, 4, 6}
+            {Err::ExpectedCommaSeparatorInParameterList, 1, 21},
+            {Err::MissingOperator, 2, 28},
+            {Err::TrailingCommaInFunctionCall, 3, 28},
+            {Err::ReservedKeywordAsIdentifier, 4, 6}
             }
             },
 
@@ -161,8 +161,8 @@ namespace valuascript::compiler::test {
             "let a: = 10\n"
             "func bad_return() -> { }\n",
             {
-            {ValuascriptErrorCode::MissingTypeAnnotation, 1, 8},
-            {ValuascriptErrorCode::MissingTypeAnnotationAfterArrow, 2, 22}
+            {Err::MissingTypeAnnotation, 1, 8},
+            {Err::MissingTypeAnnotationAfterArrow, 2, 22}
             }
             },
 
@@ -173,10 +173,10 @@ namespace valuascript::compiler::test {
             "let c = 10 * / 5\n"
             "let d = (10 + 5] \n",
             {
-            {ValuascriptErrorCode::InvalidExpression, 1, 11},
-            {ValuascriptErrorCode::InvalidExpression, 2, 9},
-            {ValuascriptErrorCode::InvalidExpression, 3, 14},
-            {ValuascriptErrorCode::ExpectedRightParenAfterExpression, 4, 16}
+            {Err::InvalidExpression, 1, 11},
+            {Err::InvalidExpression, 2, 9},
+            {Err::InvalidExpression, 3, 14},
+            {Err::ExpectedRightParenAfterExpression, 4, 16}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -187,9 +187,9 @@ namespace valuascript::compiler::test {
             "func valid2() -> int { return 0 }\n"
             "* let bad_start = 0\n",
             {
-            {ValuascriptErrorCode::InvalidExpression, 1, 1},
-            {ValuascriptErrorCode::InvalidExpression, 3, 1},
-            {ValuascriptErrorCode::InvalidExpression, 5, 1}
+            {Err::InvalidExpression, 1, 1},
+            {Err::InvalidExpression, 3, 1},
+            {Err::InvalidExpression, 5, 1}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -202,7 +202,7 @@ namespace valuascript::compiler::test {
             "enum Scenario: scalar { LOW, BASE, HIGH}\n"
             "}\n",
             {
-            {ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 6, 1}
+            {Err::TopLevelDeclarationNotAllowedHere, 6, 1}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -214,7 +214,7 @@ namespace valuascript::compiler::test {
             "let wacc = get_wacc()\n"
             "enum Scenario: scalar { LOW, BASE, HIGH }\n",
             {
-            {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 5, 22}
+            {Err::ExpectedRightBraceAfterFunctionBody, 5, 22}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -225,17 +225,17 @@ namespace valuascript::compiler::test {
             "let value_of_research_assets, current_year_amortization = get_rd(\n"
             "let a = 10\n",
             {
-            {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 15},
-            {ValuascriptErrorCode::ExpectedArgumentNameOrClosingParen, 4, 66}
+            {LexerErrorCode::TrailingSeparatorInNumberLiteral, 1, 15},
+            {Err::ExpectedArgumentNameOrClosingParen, 4, 66}
             }
             },
             ParserErrorsSynchronizationTestCase{
             "Regression_4",
             "let a = {1, 2, 3}\n",
             {
-            {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 10},
-            {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 13},
-            {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 16}
+            {Err::ExpectedDictionaryKey, 1, 10},
+            {Err::ExpectedDictionaryKey, 1, 13},
+            {Err::ExpectedDictionaryKey, 1, 16}
             }
             }
         ),

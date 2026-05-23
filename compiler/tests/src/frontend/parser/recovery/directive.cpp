@@ -7,6 +7,8 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -17,27 +19,27 @@ namespace valuascript::compiler::test
             };
 
             reg("MissingName", "#",
-                {{ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3}},
+                {{E::MissingDirectiveName, 1, 2, 1, 3}},
                 IsDirective("<error>"));
 
             reg("MissingValueAfterEquals", "#dir = ",
-                {{ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8}},
+                {{E::MissingValueAfterEquals, 1, 7, 1, 8}},
                 IsDirective("dir", IsNull()));
 
             reg("MissingHashValuelessDirective", "dir",
-                {{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4}},
+                {{E::InvalidStandaloneStatement, 1, 1, 1, 4}},
                 IsNull());
 
             reg("MissingNamePlusValueWithoutEquals", "# \"string\"",
-                {{ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11}},
+                {{E::MissingDirectiveName, 1, 3, 1, 11}},
                 IsDirective("<error>", IsNull()));
 
             reg("InvalidMarkerAsteriskWithValue", "*iterations = 1000",
-                {{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                {{E::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             reg("InvalidMarkerAsteriskNoValue", "*module",
-                {{ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2}},
+                {{E::InvalidExpression, 1, 1, 1, 2}},
                 IsNull());
 
             return true;

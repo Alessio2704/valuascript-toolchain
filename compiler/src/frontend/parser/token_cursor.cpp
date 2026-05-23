@@ -6,7 +6,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     TokenCursor::TokenCursor(const std::vector<Token>& tokens, std::string file_path,
                              CompilerContext& context)
@@ -61,7 +61,7 @@ namespace valuascript::compiler
     }
 
     const Token& TokenCursor::consume(const TokenType type,
-                                      const ValuascriptErrorCode code,
+                                      const ParserErrorCode code,
                                       bool use_exact_token_range)
     {
         if (check(type)) return advance();
@@ -95,7 +95,7 @@ namespace valuascript::compiler
     }
 
     void TokenCursor::report_error_no_panic(const SourceSpan& span,
-                                            const ValuascriptErrorCode code) const
+                                            const ParserErrorCode code) const
     {
         if (suppress_errors_) return;
         std::string message = format_error(code);
@@ -110,7 +110,7 @@ namespace valuascript::compiler
     }
 
     void TokenCursor::report_error_no_panic(const Token& token,
-                                            const ValuascriptErrorCode code,
+                                            const ParserErrorCode code,
                                             const bool use_exact_token_range) const
     {
         if (suppress_errors_) return;
@@ -189,7 +189,7 @@ namespace valuascript::compiler
     }
 
     [[noreturn]] void TokenCursor::report_error(const Token& token,
-                                                const ValuascriptErrorCode code,
+                                                const ParserErrorCode code,
                                                 const bool use_exact_token_range) const
     {
         report_error_no_panic(token, code, use_exact_token_range);

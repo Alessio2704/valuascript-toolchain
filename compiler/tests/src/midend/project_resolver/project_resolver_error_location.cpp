@@ -10,6 +10,8 @@ using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test
 {
+    using E = ProjectResolverErrorCode;
+
     class ProjectResolverMultiErrorTest : public testing::Test
     {
     protected:
@@ -62,8 +64,8 @@ namespace valuascript::compiler::test
 
 
         EXPECT_EQ(errors[0].get_category(), ValuascriptErrorCategory::Import);
-        EXPECT_EQ(errors[0].get_code(), ValuascriptErrorCode::CircularImportDetected)
-            << "Expected first error to be CircularImportDetected, got: " << static_cast<int>(errors[0].get_code());
+        EXPECT_TRUE(errors[0].is_error(E::CircularImportDetected))
+            << "Expected first error to be CircularImportDetected, got: " << errors[0].get_error_number();
         EXPECT_TRUE(
             errors[0].what() != nullptr && std::string(errors[0].what()).find("Circular import") != std::string::npos);
 
@@ -74,8 +76,8 @@ namespace valuascript::compiler::test
         EXPECT_EQ(errors[0].get_span().file_path, module_a_file);
 
         EXPECT_EQ(errors[1].get_category(), ValuascriptErrorCategory::Import);
-        EXPECT_EQ(errors[1].get_code(), ValuascriptErrorCode::ImportFileNotFound)
-            << "Expected second error to be ImportFileNotFound, got: " << static_cast<int>(errors[1].get_code());
+        EXPECT_TRUE(errors[1].is_error(E::ImportFileNotFound))
+            << "Expected second error to be ImportFileNotFound, got: " << errors[1].get_error_number();
         EXPECT_TRUE(
             errors[1].what() != nullptr && std::string(errors[1].what()).find("test_missing_module.vs") != std::string::
             npos);

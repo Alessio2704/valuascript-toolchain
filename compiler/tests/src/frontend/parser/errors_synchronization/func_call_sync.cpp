@@ -291,7 +291,7 @@ namespace valuascript::compiler::test
             "f(a: 1, %: 2, b: 3)\n"
             "let recovery = 1\n",
             {
-            {Err::InvalidCharacter, 1, 9},
+            {LexerErrorCode::InvalidCharacter, 1, 9},
             {Err::MissingArgumentNameInFunctionCall, 1, 10},
             },
             ExpectFunctionCall("f", {{"a", "1"}, {"<error>", "2"}, {"b", "3"}})

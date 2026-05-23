@@ -1,10 +1,13 @@
 #pragma once
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include "error_formatter.h"
 
-namespace valuascript::compiler {
-    enum class InternalErrorCode {
+namespace valuascript::compiler
+{
+    enum class InternalErrorCode
+    {
         MissingDependencyInCompilerOrchestrator,
         MissingOutputArtifactInCompilerOrchestrator,
         DuplicateStageInCompilerOrchestrator,
@@ -13,16 +16,20 @@ namespace valuascript::compiler {
         InvalidArtifactCast
     };
 
-    class InternalCompilerException : public std::logic_error {
+    std::string_view get_error_template(InternalErrorCode code);
+
+    class InternalCompilerException : public std::logic_error
+    {
     private:
         InternalErrorCode code_;
 
     public:
-        template<typename... Args>
-        explicit InternalCompilerException(InternalErrorCode code, Args &&... args)
+        template <typename... Args>
+        explicit InternalCompilerException(InternalErrorCode code, Args&&... args)
             : std::logic_error("Internal Compiler Error [ICE-" + std::to_string(static_cast<int>(code)) + "]: " +
-                               format_error(code, std::forward<Args>(args)...)),
-              code_(code) {
+                  format_error(code, std::forward<Args>(args)...)),
+              code_(code)
+        {
         }
 
         [[nodiscard]] InternalErrorCode get_code() const { return code_; }

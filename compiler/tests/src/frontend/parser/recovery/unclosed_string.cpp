@@ -6,11 +6,13 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     TEST_F(UnclosedStringErrorTest, ImportStatementWithUnclosedString)
     {
         ExpectParseErrorsWithRecovery(
             "import \"/path/to/module",
-            {{ValuascriptErrorCode::UnclosedString, 1, 8, 1, 24}},
+            {{LexerErrorCode::UnclosedString, 1, 8, 1, 24}},
             ProgramSpec{
                 .imports = {
                     IsImport("\"/path/to/module")
@@ -23,7 +25,7 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "#config \"unclosed_val",
-            {{ValuascriptErrorCode::UnclosedString, 1, 9, 1, 22}},
+            {{LexerErrorCode::UnclosedString, 1, 9, 1, 22}},
             ProgramSpec{
                 .directives = {
                     IsDirective("config", IsString("\"unclosed_val"))
@@ -36,7 +38,7 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "#mode = \"debug_mode",
-            {{ValuascriptErrorCode::UnclosedString, 1, 9, 1, 20}},
+            {{LexerErrorCode::UnclosedString, 1, 9, 1, 20}},
             ProgramSpec{
                 .directives = {
                     IsDirective("mode", IsString("\"debug_mode"))
@@ -53,8 +55,8 @@ namespace valuascript::compiler::test
             "let x = 1\n"
             "}",
             {
-                {ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3},
-                {ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 2, 4, 3}
+                {LexerErrorCode::UnclosedString, 2, 1, 4, 3},
+                {E::ExpectedRightBraceAfterFunctionBody, 4, 2, 4, 3}
             },
             ProgramSpec{
                 .functions = {
@@ -76,8 +78,8 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             R"(let t = ("first", "unclosed))",
             {
-                {ValuascriptErrorCode::UnclosedString, 1, 19, 1, 29},
-                {ValuascriptErrorCode::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30}
+                {LexerErrorCode::UnclosedString, 1, 19, 1, 29},
+                {E::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -102,8 +104,8 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             "let d = { key: \"unclosed_val }",
             {
-                {ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31},
-                {ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31, 1, 32}
+                {LexerErrorCode::UnclosedString, 1, 16, 1, 31},
+                {E::UnmatchedBraceInDictionaryLiteral, 1, 31, 1, 32}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -127,8 +129,8 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             R"(let v =["val1", "val2])",
             {
-                {ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23},
-                {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23, 1, 24}
+                {LexerErrorCode::UnclosedString, 1, 17, 1, 23},
+                {E::UnmatchedBracketAfterTensorElements, 1, 23, 1, 24}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -153,8 +155,8 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             "enum Status: string { Error = \"failure }",
             {
-                {ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41},
-                {ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41, 1, 42}
+                {LexerErrorCode::UnclosedString, 1, 31, 1, 41},
+                {E::ExpectedRightBraceAfterEnumBody, 1, 41, 1, 42}
             },
             ProgramSpec{
                 .enums = {
@@ -175,8 +177,8 @@ namespace valuascript::compiler::test
             "@deprecated(reason: \"not_safe)\n"
             "let x = 1",
             {
-                {ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31},
-                {ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31, 1, 32}
+                {LexerErrorCode::UnclosedString, 1, 21, 1, 31},
+                {E::UnmatchedParenthesisAfterModifierArgs, 1, 31, 1, 32}
             },
             ProgramSpec{
                 .execution_steps = {

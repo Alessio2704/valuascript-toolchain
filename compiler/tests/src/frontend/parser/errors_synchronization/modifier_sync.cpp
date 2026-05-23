@@ -118,7 +118,7 @@ namespace valuascript::compiler::test {
             "@test(a: 1, !, b: 2) let c = 3\n"
             "let recovery = 1\n",
             {
-            {Err::InvalidCharacter, 1, 13},
+            {LexerErrorCode::InvalidCharacter, 1, 13},
             {Err::MissingArgumentNameInModifier, 1, 14},
             },
             ExpectModifierSet({ {"test", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}}} })
@@ -260,7 +260,7 @@ namespace valuascript::compiler::test {
             "multiple_modifiers_garbage_between",
             "@first & @second let a = 1\n"
             "let recovery = 1\n",
-            { {Err::InvalidCharacter, 1, 8} },
+            { {LexerErrorCode::InvalidCharacter, 1, 8} },
             ExpectModifierSet({ {"first", {}}, {"second", {}}})
             },
 
@@ -498,7 +498,7 @@ namespace valuascript::compiler::test {
             "modifier_arg_with_broken_tensor",
             "@test(vec: [1, 2, $]) let a = 1\n"
             "let recovery = 1\n",
-            { {Err::InvalidCharacter, 1, 19} },
+            { {LexerErrorCode::InvalidCharacter, 1, 19} },
             [](const Program& ast) {
             auto const step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_EQ(step->modifiers[0].arguments[0].first, "vec");

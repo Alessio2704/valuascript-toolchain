@@ -134,7 +134,7 @@ namespace valuascript::compiler
             return attempt_parse<ReturnType>(ctx, parse_func, config, ReturnType{}, out_failed);
         }
 
-        static Token try_consume(ParserContext& ctx, TokenType type, ValuascriptErrorCode err,
+        static Token try_consume(ParserContext& ctx, TokenType type, ParserErrorCode err,
                                  const RecoveryConfig& config, bool* out_failed = nullptr)
         {
             return attempt_parse<Token>(
@@ -143,7 +143,7 @@ namespace valuascript::compiler
             );
         }
 
-        static Token try_consume_identifier(ParserContext& ctx, ValuascriptErrorCode err, const RecoveryConfig& config,
+        static Token try_consume_identifier(ParserContext& ctx, ParserErrorCode err, const RecoveryConfig& config,
                                             bool allow_top_level = true, bool check_boundary = false,
                                             bool* out_failed = nullptr)
         {

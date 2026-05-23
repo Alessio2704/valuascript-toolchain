@@ -9,22 +9,29 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    struct LexerExpectedError {
-        ValuascriptErrorCode code;
+namespace valuascript::compiler::test
+{
+    using E = LexerErrorCode;
+
+    struct LexerExpectedError
+    {
+        E code;
         size_t line;
         size_t column;
     };
 
-    struct LexerMultiErrorTestCase {
+    struct LexerMultiErrorTestCase
+    {
         std::string test_name;
         std::string source_code;
         std::vector<LexerExpectedError> expected_errors;
     };
 
-    class LexerMultiErrorTest : public testing::TestWithParam<LexerMultiErrorTestCase> {
+    class LexerMultiErrorTest : public testing::TestWithParam<LexerMultiErrorTestCase>
+    {
     protected:
-        static void run_lexer_and_check_errors(const LexerMultiErrorTestCase &param) {
+        static void run_lexer_and_check_errors(const LexerMultiErrorTestCase& param)
+        {
             auto context = std::make_shared<CompilerContext>();
             context->settings.fail_fast = false;
 
@@ -39,21 +46,23 @@ namespace valuascript::compiler::test {
                 lexer.run(*context, artifacts);
                 }) << "Lexer threw an exception even though fail_fast was set to false.";
 
-            const auto &actual_errors = context->diagnostics.get_errors();
+            const auto& actual_errors = context->diagnostics.get_errors();
 
             ASSERT_EQ(actual_errors.size(), param.expected_errors.size())
             << "Mismatch in the number of collected errors.\n"
             << "Expected " << param.expected_errors.size() << ", but got " << actual_errors.size();
 
-            for (size_t i = 0; i < actual_errors.size(); ++i) {
-                const auto &actual = actual_errors[i];
-                const auto &expected = param.expected_errors[i];
+            for (size_t i = 0; i < actual_errors.size(); ++i)
+            {
+                const auto& actual = actual_errors[i];
+                const auto& expected = param.expected_errors[i];
 
                 EXPECT_EQ(actual.get_category(), ValuascriptErrorCategory::Lexical);
 
-                EXPECT_EQ(actual.get_code(), expected.code)
-                << "Error [" << i << "] Code mismatch.\nExpected Code: " << static_cast<int>(expected.code)
-                << "\nActual Code: " << static_cast<int>(actual.get_code())
+                EXPECT_TRUE(actual.is_error(expected.code))
+                << "Error [" << i << "] Code mismatch."
+                << "\nExpected Code: " << static_cast<int>(expected.code)
+                << "\nActual Code: " << actual.get_error_number()
                 << "\nActual Message: " << actual.what();
 
                 EXPECT_EQ(actual.get_span().line_start, expected.line)
@@ -65,7 +74,8 @@ namespace valuascript::compiler::test {
         }
     };
 
-    TEST_P(LexerMultiErrorTest, CollectsMultipleErrorsAtCorrectLocations) {
+    TEST_P(LexerMultiErrorTest, CollectsMultipleErrorsAtCorrectLocations)
+    {
         run_lexer_and_check_errors(GetParam());
     }
 
@@ -79,9 +89,9 @@ namespace valuascript::compiler::test {
             "let b = ~\n"
             "let c = \\",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 1, 9},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 9},
-            {ValuascriptErrorCode::InvalidCharacter, 3, 9}
+            {E::InvalidCharacter, 1, 9},
+            {E::InvalidCharacter, 2, 9},
+            {E::InvalidCharacter, 3, 9}
             }
             },
             LexerMultiErrorTestCase{
@@ -90,8 +100,8 @@ namespace valuascript::compiler::test {
             "let x = .5\n"
             "let y = \"unclosed string spanning to EOF",
             {
-            {ValuascriptErrorCode::UnterminatedDecimal, 1, 9},
-            {ValuascriptErrorCode::UnclosedString, 3, 9}
+            {E::UnterminatedDecimal, 1, 9},
+            {E::UnclosedString, 3, 9}
             }
             },
             LexerMultiErrorTestCase{
@@ -99,12 +109,12 @@ namespace valuascript::compiler::test {
             "$$$\n"
             "~~~",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 1, 1},
-            {ValuascriptErrorCode::InvalidCharacter, 1, 2},
-            {ValuascriptErrorCode::InvalidCharacter, 1, 3},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 1},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 2},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 3}
+            {E::InvalidCharacter, 1, 1},
+            {E::InvalidCharacter, 1, 2},
+            {E::InvalidCharacter, 1, 3},
+            {E::InvalidCharacter, 2, 1},
+            {E::InvalidCharacter, 2, 2},
+            {E::InvalidCharacter, 2, 3}
             }
             },
             LexerMultiErrorTestCase{
@@ -113,9 +123,9 @@ namespace valuascript::compiler::test {
             "let num2 = 45._\n"
             "let num3 = 100_",
             {
-            {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 12},
-            {ValuascriptErrorCode::UnterminatedDecimal, 2, 12},
-            {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 3, 12}
+            {E::TrailingSeparatorInNumberLiteral, 1, 12},
+            {E::UnterminatedDecimal, 2, 12},
+            {E::TrailingSeparatorInNumberLiteral, 3, 12}
             }
             },
 
@@ -131,10 +141,10 @@ namespace valuascript::compiler::test {
             "let unclosed = \"started"
             "\n",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 4, 16},
-            {ValuascriptErrorCode::UnterminatedDecimal, 5, 15},
-            {ValuascriptErrorCode::InvalidCharacter, 6, 16},
-            {ValuascriptErrorCode::UnclosedString, 8, 16}
+            {E::InvalidCharacter, 4, 16},
+            {E::UnterminatedDecimal, 5, 15},
+            {E::InvalidCharacter, 6, 16},
+            {E::UnclosedString, 8, 16}
             }
             },
             LexerMultiErrorTestCase{
@@ -143,15 +153,15 @@ namespace valuascript::compiler::test {
             "that spans multiple lines\n"
             "but never closes properly...",
             {
-            {ValuascriptErrorCode::UnclosedString, 1, 11}
+            {E::UnclosedString, 1, 11}
             }
             },
             LexerMultiErrorTestCase{
             "HiddenLexicalErrorsInMath",
             "let result = 10 + .5 * 100_ - \"unclosed",
             {
-            {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 1, 24},
-            {ValuascriptErrorCode::UnclosedString, 1, 31}
+            {E::TrailingSeparatorInNumberLiteral, 1, 24},
+            {E::UnclosedString, 1, 31}
             }
             },
             LexerMultiErrorTestCase{
@@ -163,8 +173,8 @@ namespace valuascript::compiler::test {
             "let valid3 = .99\n"
             "let valid4 = 0.99",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 2, 12},
-            {ValuascriptErrorCode::InvalidCharacter, 4, 12},
+            {E::InvalidCharacter, 2, 12},
+            {E::InvalidCharacter, 4, 12},
             }
             },
             LexerMultiErrorTestCase{
@@ -175,10 +185,10 @@ namespace valuascript::compiler::test {
             ".9\n"
             "1_a",
             {
-            {ValuascriptErrorCode::UnclosedString, 1, 1},
-            {ValuascriptErrorCode::UnterminatedDecimal, 2, 1},
-            {ValuascriptErrorCode::UnclosedString, 3, 1},
-            {ValuascriptErrorCode::TrailingSeparatorInNumberLiteral, 5, 1}
+            {E::UnclosedString, 1, 1},
+            {E::UnterminatedDecimal, 2, 1},
+            {E::UnclosedString, 3, 1},
+            {E::TrailingSeparatorInNumberLiteral, 5, 1}
             }
             },
             LexerMultiErrorTestCase{
@@ -188,8 +198,8 @@ namespace valuascript::compiler::test {
             "    let padded = .123\n"
             "    let carriage = 12.\n",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 3, 18},
-            {ValuascriptErrorCode::UnterminatedDecimal, 5, 20}
+            {E::InvalidCharacter, 3, 18},
+            {E::UnterminatedDecimal, 5, 20}
             }
             },
             LexerMultiErrorTestCase{
@@ -198,14 +208,14 @@ namespace valuascript::compiler::test {
             "~|\n"
             "$$$",
             {
-            {ValuascriptErrorCode::InvalidCharacter, 1, 1},
-            {ValuascriptErrorCode::InvalidCharacter, 1, 2},
-            {ValuascriptErrorCode::InvalidCharacter, 1, 3},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 1},
-            {ValuascriptErrorCode::InvalidCharacter, 2, 2},
-            {ValuascriptErrorCode::InvalidCharacter, 3, 1},
-            {ValuascriptErrorCode::InvalidCharacter, 3, 2},
-            {ValuascriptErrorCode::InvalidCharacter, 3, 3}
+            {E::InvalidCharacter, 1, 1},
+            {E::InvalidCharacter, 1, 2},
+            {E::InvalidCharacter, 1, 3},
+            {E::InvalidCharacter, 2, 1},
+            {E::InvalidCharacter, 2, 2},
+            {E::InvalidCharacter, 3, 1},
+            {E::InvalidCharacter, 3, 2},
+            {E::InvalidCharacter, 3, 3}
             }
             }
         ),

@@ -6,7 +6,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     TypeParser::TypeParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {

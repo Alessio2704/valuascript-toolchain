@@ -5,7 +5,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     StatementParser::StatementParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {
@@ -14,9 +14,12 @@ namespace valuascript::compiler
     void StatementParser::verify_statement_end() const
     {
         if (!cursor.is_at_end() && cursor.peek().line == cursor.previous().line)
+        {
             if (TokenTraits::is_expression_start(cursor.peek().type))
-                cursor.report_error(
-                    cursor.peek(), E::MissingOperator);
+            {
+                cursor.report_error(cursor.peek(), E::MissingOperator);
+            }
+        }
     }
 
     std::unique_ptr<Assignment> StatementParser::parse_assignment(std::vector<Modifier> modifiers)
@@ -30,18 +33,20 @@ namespace valuascript::compiler
             auto inner_mods = parser.parse_modifiers();
             ctx.reject_modifiers(inner_mods, E::ModifiersAttachedToMultiAssignmentSingleElements);
 
-            Token target = ErrorRecovery::try_consume_identifier(ctx, E::InvalidIdentifier,
-                                                                 RecoveryConfig::StopAtBoundary({
-                                                                     TokenType::Colon, TokenType::Comma,
-                                                                     TokenType::Assign
-                                                                 }));
+            Token target = ErrorRecovery::try_consume_identifier(
+                ctx,
+                E::ExpectedIdentifier,
+                RecoveryConfig::StopAtBoundary({TokenType::Colon, TokenType::Comma, TokenType::Assign})
+            );
 
             TypeAnnPtr type_annotation = nullptr;
             if (cursor.match({TokenType::Colon}))
             {
                 type_annotation = ErrorRecovery::try_parse<TypeAnnPtr>(
-                    ctx, [&]() { return parser.parse_type_annotation(); },
-                    RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign}));
+                    ctx,
+                    [&]() { return parser.parse_type_annotation(); },
+                    RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
+                );
             }
             targets.emplace_back(target.lexeme, std::move(type_annotation));
 
@@ -105,9 +110,12 @@ namespace valuascript::compiler
         if (cursor.match({TokenType::Assign}))
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
+            {
                 if (expr && expr->is_complete())
-                    cursor.report_error(cursor.previous(),
-                                        E::InvalidLeftSideExpressionInReassignment);
+                {
+                    cursor.report_error(cursor.previous(), E::InvalidLeftSideExpressionInReassignment);
+                }
+            }
 
             ExprPtr value = nullptr;
             bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
@@ -115,9 +123,13 @@ namespace valuascript::compiler
                 peek(1).type == TokenType::Assign);
 
             if (cursor.is_at_end() || is_pseudo_stmt)
-                cursor.report_error_no_panic(
-                    cursor.peek(), E::MissingValueAfterEquals, false);
-            else value = parser.parse_expression();
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
+            }
+            else
+            {
+                value = parser.parse_expression();
+            }
 
             const SourceSpan end_span = value ? value->span : start_span;
             if (value) verify_statement_end();
@@ -143,10 +155,10 @@ namespace valuascript::compiler
 
         do
         {
-            return_values.push_back(ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parser.parse_expression(); },
-                                                                      RecoveryConfig::ForceStopAtBoundary({
-                                                                          TokenType::Comma
-                                                                      })));
+            return_values.push_back(ErrorRecovery::try_parse<ExprPtr>(
+                    ctx, [&]() { return parser.parse_expression(); },
+                    RecoveryConfig::ForceStopAtBoundary({TokenType::Comma}))
+            );
         }
         while (cursor.match({TokenType::Comma}));
 

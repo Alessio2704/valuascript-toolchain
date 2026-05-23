@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class DotAccessSadPathTest : public AstBaseTest,
@@ -29,7 +29,7 @@ namespace valuascript::compiler::test
         }
         catch (const ValuaScriptException& e)
         {
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -38,12 +38,10 @@ namespace valuascript::compiler::test
         ParserStageTest,
         DotAccessSadPathTest,
         testing::Values(
-            DotAccessSadParam{"missing_property", "let a = model.", ValuascriptErrorCode::ExpectedPropertyName},
-            DotAccessSadParam{"number_as_property", "let a = model.123", ValuascriptErrorCode::MissingOperator},
-            DotAccessSadParam{"keyword_as_property", "let a = model.let", ValuascriptErrorCode::
-            ReservedKeywordAsIdentifier},
-            DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", ValuascriptErrorCode::
-            ExpectedPropertyName}
+            DotAccessSadParam{"missing_property", "let a = model.", E::ExpectedPropertyName},
+            DotAccessSadParam{"number_as_property", "let a = model.123", E::MissingOperator},
+            DotAccessSadParam{"keyword_as_property", "let a = model.let", E::ReservedKeywordAsIdentifier},
+            DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", E::ExpectedPropertyName}
         ),
         [](const testing::TestParamInfo<DotAccessSadParam>& test_info) {
         return test_info.param.test_name;

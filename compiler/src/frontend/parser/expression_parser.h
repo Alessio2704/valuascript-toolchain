@@ -54,7 +54,7 @@ namespace valuascript::compiler
         ExprPtr parse_switch_result();
 
         std::vector<ExprPtr> parse_expression_list(TokenType closing_token,
-                                                   std::optional<ValuascriptErrorCode> trailing_comma_err =
+                                                   std::optional<ParserErrorCode> trailing_comma_err =
                                                        std::nullopt,
                                                    const std::vector<TokenType>& recovery_boundaries = {});
 

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include "core/valuascript_exception.h"
+#include "project_resolver_error_code.h"
 #include "core/error_formatter.h"
 #include "frontend/parser/ast.h"
 
@@ -55,9 +56,9 @@ namespace valuascript::compiler
             {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
-                    ValuascriptErrorCode::CircularImportDetected,
+                    ProjectResolverErrorCode::CircularImportDetected,
                     import_stmt->span,
-                    format_error(ValuascriptErrorCode::CircularImportDetected, next_file)
+                    format_error(ProjectResolverErrorCode::CircularImportDetected, next_file)
                 );
 
                 context.handle_error(ex);
@@ -68,9 +69,9 @@ namespace valuascript::compiler
             {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
-                    ValuascriptErrorCode::ImportFileNotFound,
+                    ProjectResolverErrorCode::ImportFileNotFound,
                     import_stmt->span,
-                    format_error(ValuascriptErrorCode::ImportFileNotFound, clean_path)
+                    format_error(ProjectResolverErrorCode::ImportFileNotFound, clean_path)
                 );
 
                 context.handle_error(ex);

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class SwitchSadPathTest : public AstBaseTest,
@@ -31,7 +31,7 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -40,36 +40,36 @@ namespace valuascript::compiler::test
         ParserStageTest,
         SwitchSadPathTest,
         testing::Values(
-            SwitchSadParam{"missing_left_paren", "let a = switch res) { case UP -> 1 }", ValuascriptErrorCode::
+            SwitchSadParam{"missing_left_paren", "let a = switch res) { case UP -> 1 }", E::
             ExpectedLeftParenAfterSwitch},
             SwitchSadParam{"missing_right_paren", "let a = switch (res { case UP -> 1 }",
-            ValuascriptErrorCode::ExpectedRightParenAfterSwitchTarget},
-            SwitchSadParam{"missing_left_brace", "let a = switch (res) case UP -> 1 }", ValuascriptErrorCode::
+            E::ExpectedRightParenAfterSwitchTarget},
+            SwitchSadParam{"missing_left_brace", "let a = switch (res) case UP -> 1 }", E::
             ExpectedLeftBraceBeforeSwitchBody},
-            SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", ValuascriptErrorCode::
+            SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", E::
             ExpectedRightBraceAfterSwitchBody},
             SwitchSadParam{"number_as_case", "let a = switch (res) { case 1 -> 10 }",
-            ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase},
+            E::ExpectedEnumCaseNameAfterCase},
             SwitchSadParam{"string_as_case", "let a = switch (res) { case \"UP\" -> 10 }",
-            ValuascriptErrorCode::ExpectedEnumCaseNameAfterCase},
+            E::ExpectedEnumCaseNameAfterCase},
             SwitchSadParam{"expression_as_case", "let a = switch (res) { case a + b -> 10 }",
-            ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier},
+            E::ExpectedRightArrowAfterSwitchCaseIdentifier},
             SwitchSadParam{"missing_arrow_case", "let a = switch (res) { case UP 10 }",
-            ValuascriptErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier},
-            SwitchSadParam{"missing_arrow_default", "let a = switch (res) { default 10 }", ValuascriptErrorCode::
+            E::ExpectedRightArrowAfterSwitchCaseIdentifier},
+            SwitchSadParam{"missing_arrow_default", "let a = switch (res) { default 10 }", E::
             ExpectedRightArrowAfterSwitchCaseIdentifier}
             ,
             SwitchSadParam{"duplicate_default", "let a = switch (res) { default -> 1 default -> 2 }",
-            ValuascriptErrorCode::MultipleDefaultCasesInSwitch},
+            E::MultipleDefaultCasesInSwitch},
             SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-            ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere},
-            SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", ValuascriptErrorCode::
+            E::TopLevelDeclarationNotAllowedHere},
+            SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", E::
             MissingOperatorInSwitchCaseResult},
-            SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", ValuascriptErrorCode::
+            SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", E::
             MissingOperatorOrArgumentName},
             SwitchSadParam{"missing_operator_3", "let a = switch (res) { case UP -> 1 + a() (2 + 3) }",
-            ValuascriptErrorCode::MissingOperatorOrArgumentName},
-            SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", ValuascriptErrorCode
+            E::MissingOperatorOrArgumentName},
+            SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", E
             ::MissingOperatorInSwitchCaseResult}
 
         ),

@@ -2,6 +2,8 @@
 
 namespace valuascript::compiler::test
 {
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -13,28 +15,28 @@ namespace valuascript::compiler::test
 
             reg("EmptyBracket", "arr[]",
                 {
-                    {ValuascriptErrorCode::EmptyBracketAccess, 1, 4, 1, 5}
+                    {E::EmptyBracketAccess, 1, 4, 1, 5}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
             );
 
             // reg("EmptyBracketMissingClosing", "arr[",
             //     {
-            //         {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 0, 0, 0, 0, true}
+            //         {E::UnmatchedBracketAfterTensorElements, 0, 0, 0, 0, true}
             //     },
             //     IsBracket(IsIdentifier("arr"), IsNull())
             // );
 
             reg("InvalidExpressionInBracket", "arr[*]",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 5, 1, 6}
+                    {E::InvalidExpression, 1, 5, 1, 6}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
             );
 
             // reg("InvalidRightExpressionInBracketSlice", "arr[1 : *]",
             //     {
-            //         {ValuascriptErrorCode::InvalidExpression, 1, 9, 1, 10}
+            //         {E::InvalidExpression, 1, 9, 1, 10}
             //     },
             //     IsBracket(IsIdentifier("arr"),
             //               IsBinary(TokenType::Colon,
@@ -46,7 +48,7 @@ namespace valuascript::compiler::test
 
             reg("MultipleColumnsInBracketSlice", "arr[1:2:3]",
                 {
-                    {ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex, 1, 8, 1, 9}
+                    {E::UnmatchedBracketAfterTensorIndex, 1, 8, 1, 9}
                 },
                 IsBracket(IsIdentifier("arr"),
                           IsBinary(TokenType::Colon,
@@ -58,14 +60,14 @@ namespace valuascript::compiler::test
 
             // reg("WrongClosingBracketPreservesAll", "arr[1}",
             //     {
-            //         {ValuascriptErrorCode::InvalidExpression, 1, 7, 1, 8}
+            //         {E::InvalidExpression, 1, 7, 1, 8}
             //     },
             //     IsBracket(IsIdentifier("arr"), IsNumber("1"))
             // );
 
             // reg("unmatchedClosingBracketPreservesSlice", "arr[1:2",
             //     {
-            //         {ValuascriptErrorCode::UnmatchedBracketAfterTensorIndex, 0, 0, 0, 0, true}
+            //         {E::UnmatchedBracketAfterTensorIndex, 0, 0, 0, 0, true}
             //     },
             //     IsBracket(IsIdentifier("arr"), IsBinary(TokenType::Colon,
             //                                             IsNumber("1"),
@@ -76,21 +78,21 @@ namespace valuascript::compiler::test
 
             reg("UnexpectedCommaInBracket", "arr[1, 2]",
                 {
-                    {ValuascriptErrorCode::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
+                    {E::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
                 },
                 IsBracket(IsIdentifier("arr"), IsNull())
             );
 
             // reg("MissingDotAccessPropertyNewLine", "obj.",
             //     {
-            //         {ValuascriptErrorCode::ExpectedPropertyName, 1, 5, 1, 6}
+            //         {E::ExpectedPropertyName, 1, 5, 1, 6}
             //     },
             //     IsDot(IsIdentifier("obj"), "<error>")
             // );
 
             reg("GarbageDotAccessProperty", "obj.*",
                 {
-                    {ValuascriptErrorCode::ExpectedPropertyName, 1, 5, 1, 6}
+                    {E::ExpectedPropertyName, 1, 5, 1, 6}
                 },
                 IsDot(IsIdentifier("obj"), "<error>")
             );

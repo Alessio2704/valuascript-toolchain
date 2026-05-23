@@ -48,18 +48,18 @@ namespace valuascript::compiler
 
         bool match(std::initializer_list<TokenType> types);
 
-        const Token& consume(TokenType type, ValuascriptErrorCode code, bool use_exact_token_range = false);
+        const Token& consume(TokenType type, ParserErrorCode code, bool use_exact_token_range = false);
 
         [[nodiscard]] SourceSpan make_span(const Token& start_token, const Token& end_token) const;
 
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan& start, const SourceSpan& end) const;
 
-        void report_error_no_panic(const SourceSpan& span, ValuascriptErrorCode code) const;
+        void report_error_no_panic(const SourceSpan& span, ParserErrorCode code) const;
 
-        void report_error_no_panic(const Token& token, ValuascriptErrorCode code,
+        void report_error_no_panic(const Token& token, ParserErrorCode code,
                                    bool use_exact_token_range = false) const;
 
-        [[noreturn]] void report_error(const Token& token, ValuascriptErrorCode code,
+        [[noreturn]] void report_error(const Token& token, ParserErrorCode code,
                                        bool use_exact_token_range = false) const;
     };
 }

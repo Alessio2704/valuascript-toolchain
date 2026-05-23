@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class TypeAliasSadPathTest : public AstBaseTest,
@@ -31,7 +31,7 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -43,47 +43,47 @@ namespace valuascript::compiler::test
             TypeAliasSadParam{
             "missing_name",
             "typealias = scalar",
-            ValuascriptErrorCode::ExpectedTypeAliasName
+            E::ExpectedTypeAliasName
             },
             TypeAliasSadParam{
             "missing_assignment",
             "typealias MyType scalar",
-            ValuascriptErrorCode::ExpectedAssignAfterTypeAliasName
+            E::ExpectedAssignAfterTypeAliasName
             },
             TypeAliasSadParam{
             "missing_type",
             "typealias MyType =",
-            ValuascriptErrorCode::MissingTypeAnnotation
+            E::MissingTypeAnnotation
             },
             TypeAliasSadParam{
             "reserved_keyword_as_name",
             "typealias struct = scalar",
-            ValuascriptErrorCode::ReservedKeywordAsIdentifier
+            E::ReservedKeywordAsIdentifier
             },
             TypeAliasSadParam{
             "invalid_target_type_number",
             "typealias MyType = 123",
-            ValuascriptErrorCode::MissingTypeAnnotation
+            E::MissingTypeAnnotation
             },
             TypeAliasSadParam{
             "missing_assignment_multiline",
             "typealias MyType \n scalar",
-            ValuascriptErrorCode::ExpectedAssignAfterTypeAliasName
+            E::ExpectedAssignAfterTypeAliasName
             },
             TypeAliasSadParam{
             "modifiers_but_missing_name",
             "@export typealias = string",
-            ValuascriptErrorCode::ExpectedTypeAliasName
+            E::ExpectedTypeAliasName
             },
             TypeAliasSadParam{
             "broken_generic_target",
             "typealias List = vector<",
-            ValuascriptErrorCode::EmptyGenericTypeAnnotation
+            E::EmptyGenericTypeAnnotation
             },
             TypeAliasSadParam{
             "unclosed_tuple_target",
             "typealias Pair = (string, scalar",
-            ValuascriptErrorCode::UnmatchedParenthesisInTuple
+            E::UnmatchedParenthesisInTuple
             }
         ),
         [](const testing::TestParamInfo<TypeAliasSadParam>& test_info) {

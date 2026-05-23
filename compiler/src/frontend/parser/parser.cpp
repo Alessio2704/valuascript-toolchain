@@ -8,7 +8,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     Parser::Parser(TokenCursor cursor) : ctx(std::move(cursor))
     {
@@ -29,11 +29,14 @@ namespace valuascript::compiler
 
         while (!ctx.cursor.is_at_end())
         {
-            ErrorRecovery::attempt_parse_void(ctx, [&]
-            {
-                parse_statement_or_declaration(
-                    ParseContextType::TopLevel, program.get(), dummy_block);
-            }, RecoveryConfig::ForceStopAtBoundary());
+            ErrorRecovery::attempt_parse_void(
+                ctx,
+                [&]
+                {
+                    parse_statement_or_declaration(ParseContextType::TopLevel, program.get(), dummy_block);
+                },
+                RecoveryConfig::ForceStopAtBoundary()
+            );
         }
 
         program->span = ctx.cursor.make_span(start_token, ctx.cursor.previous());

@@ -13,8 +13,8 @@ namespace valuascript::compiler
     private:
         ParserContext& ctx_;
         TokenType closing_token_ = TokenType::EndOfFile;
-        std::optional<ValuascriptErrorCode> trailing_comma_err_ = std::nullopt;
-        std::optional<ValuascriptErrorCode> missing_comma_err_ = std::nullopt;
+        std::optional<ParserErrorCode> trailing_comma_err_ = std::nullopt;
+        std::optional<ParserErrorCode> missing_comma_err_ = std::nullopt;
         std::vector<TokenType> recovery_boundaries_ = {};
         std::function<bool()> is_element_start_ = nullptr;
         std::function<bool(int)> is_at_parent_boundary_ = nullptr;
@@ -30,13 +30,13 @@ namespace valuascript::compiler
             return *this;
         }
 
-        ListParser& on_trailing_comma(std::optional<ValuascriptErrorCode> err)
+        ListParser& on_trailing_comma(std::optional<ParserErrorCode> err)
         {
             trailing_comma_err_ = err;
             return *this;
         }
 
-        ListParser& on_missing_comma(std::optional<ValuascriptErrorCode> err)
+        ListParser& on_missing_comma(std::optional<ParserErrorCode> err)
         {
             missing_comma_err_ = err;
             return *this;
@@ -63,7 +63,6 @@ namespace valuascript::compiler
         template <typename ElementParser>
         std::vector<ElementType> parse_elements(ElementParser parse_element)
         {
-            // Assign default is_element_start predicate if none was provided
             if (!is_element_start_)
             {
                 is_element_start_ = [&]()
@@ -110,7 +109,7 @@ namespace valuascript::compiler
                             const Token& start_tok = ctx_.cursor.peek();
                             if (ctx_.on_unexpected_statement) ctx_.on_unexpected_statement();
                             ctx_.cursor.report_error_no_panic(ctx_.cursor.make_span(start_tok, ctx_.cursor.previous()),
-                                                              ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere);
+                                                              ParserErrorCode::TopLevelDeclarationNotAllowedHere);
                             throw ParseSyncException();
                         }
                     }

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -8,7 +8,7 @@ namespace valuascript::compiler::test {
     struct EnumSadParam {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class EnumSadTest : public AstBaseTest,
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test {
         } catch (const ValuaScriptException &e) {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -33,20 +33,20 @@ namespace valuascript::compiler::test {
         ParserInvalidEnumDefinitions,
         EnumSadTest,
         testing::Values(
-            EnumSadParam{"missing_colon", "enum Option string { a }", ValuascriptErrorCode::ExpectedColonAfterEnumName},
-            EnumSadParam{"missing_left_brace", "enum Option: string a }", ValuascriptErrorCode::
+            EnumSadParam{"missing_colon", "enum Option string { a }", E::ExpectedColonAfterEnumName},
+            EnumSadParam{"missing_left_brace", "enum Option: string a }", E::
             ExpectedLeftBraceBeforeEnumBody},
-            EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", ValuascriptErrorCode::
+            EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", E::
             ExpectedRightBraceAfterEnumBody},
-            EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", ValuascriptErrorCode::
+            EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", E::
             ReservedKeywordAsIdentifier},
-            EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", ValuascriptErrorCode::
+            EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", E::
             ReservedKeywordAsIdentifier},
-            EnumSadParam{"missing_operator_1", "enum Test : int { A = a b, B = 2 }", ValuascriptErrorCode::
+            EnumSadParam{"missing_operator_1", "enum Test : int { A = a b, B = 2 }", E::
             MissingOperator},
-            EnumSadParam{"missing_operator_2", "enum Test : int { A = (a b), B = 2 }", ValuascriptErrorCode::
+            EnumSadParam{"missing_operator_2", "enum Test : int { A = (a b), B = 2 }", E::
             MissingOperatorInsideGrouping},
-            EnumSadParam{"missing_operator_3", "enum Test : int { A = 1 (a + b), B = 2 }", ValuascriptErrorCode::
+            EnumSadParam{"missing_operator_3", "enum Test : int { A = 1 (a + b), B = 2 }", E::
             MissingOperatorOrArgumentName}
         ),
         [](const testing::TestParamInfo<EnumSadParam>& test_info) {

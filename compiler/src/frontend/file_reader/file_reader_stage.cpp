@@ -3,19 +3,23 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include "file_reader_error_code.h"
 #include "core/error_formatter.h"
 
-namespace valuascript::compiler {
+namespace valuascript::compiler
+{
     FileReaderStage::FileReaderStage()
         : CompilerStage(
             "FileReaderStage",
             CompilerStageArtifactCode::SourceCode,
             {CompilerStageArtifactCode::FilePath}
-        ) {
+        )
+    {
     }
 
-    CompilerStageArtifact FileReaderStage::run(CompilerContext &context,
-                                               const std::vector<CompilerStageArtifact> &artifacts) {
+    CompilerStageArtifact FileReaderStage::run(CompilerContext& context,
+                                               const std::vector<CompilerStageArtifact>& artifacts)
+    {
         auto raw_file_path = extract_artifact_data<std::string>(
             artifacts,
             CompilerStageArtifactCode::FilePath
@@ -24,12 +28,13 @@ namespace valuascript::compiler {
         std::string canonical_path = std::filesystem::weakly_canonical(raw_file_path).string();
 
         std::ifstream file_stream(canonical_path, std::ios::in | std::ios::binary);
-        if (!file_stream.is_open()) {
+        if (!file_stream.is_open())
+        {
             ValuaScriptException ex(
                 ValuascriptErrorCategory::File,
-                ValuascriptErrorCode::FileNotFound,
+                FileReaderErrorCode::FileNotFound,
                 {0, 0, 0, 0, canonical_path},
-                format_error(ValuascriptErrorCode::FileNotFound, canonical_path)
+                format_error(FileReaderErrorCode::FileNotFound, canonical_path)
             );
             context.handle_error(ex);
         }

@@ -305,7 +305,7 @@ namespace valuascript::compiler::test
             "let a = [ \"unclosed, 2 ]\n"
             "let recovery = 1\n",
             {
-            {Err::UnclosedString, 1, 11},
+            {LexerErrorCode::UnclosedString, 1, 11},
             {Err::UnmatchedBracketAfterTensorElements, 1, 25}
             },
             [](const Program& ast) {

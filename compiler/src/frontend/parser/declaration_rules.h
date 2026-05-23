@@ -15,11 +15,11 @@ namespace valuascript::compiler
         bool require_value = false;
         TokenType value_separator = TokenType::Assign;
 
-        ValuascriptErrorCode missing_name_err = ValuascriptErrorCode::ExpectedIdentifier;
-        ValuascriptErrorCode missing_type_colon_err = ValuascriptErrorCode::ExpectedColon;
-        ValuascriptErrorCode missing_value_separator_err = ValuascriptErrorCode::MissingOperator;
-        ValuascriptErrorCode missing_value_err = ValuascriptErrorCode::InvalidExpression;
-        ValuascriptErrorCode unexpected_modifier_err = ValuascriptErrorCode::ModifiersAttachedToInvalidDeclaration;
+        ParserErrorCode missing_name_err = ParserErrorCode::ExpectedIdentifier;
+        ParserErrorCode missing_type_colon_err = ParserErrorCode::ExpectedColon;
+        ParserErrorCode missing_value_separator_err = ParserErrorCode::MissingOperator;
+        ParserErrorCode missing_value_err = ParserErrorCode::InvalidExpression;
+        ParserErrorCode unexpected_modifier_err = ParserErrorCode::ModifiersAttachedToInvalidDeclaration;
     };
 
     struct GenericParameter

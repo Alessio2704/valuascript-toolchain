@@ -9,7 +9,7 @@
 
 namespace valuascript::compiler
 {
-    using E = ValuascriptErrorCode;
+    using E = ParserErrorCode;
 
     ExpressionParser::ExpressionParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {
@@ -102,11 +102,13 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_prefix_unary()
     {
         Token op = cursor.advance();
-        bool inside_expr_grouping = std::any_of(ctx.active_closers.begin(), ctx.active_closers.end(),
-                                                [](TokenType t)
-                                                {
-                                                    return t == TokenType::RightParen || t == TokenType::RightBracket;
-                                                });
+        bool inside_expr_grouping = std::any_of(
+            ctx.active_closers.begin(), ctx.active_closers.end(),
+            [](TokenType t)
+            {
+                return t == TokenType::RightParen || t == TokenType::RightBracket;
+            }
+        );
 
         if (!inside_expr_grouping)
         {

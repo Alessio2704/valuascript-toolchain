@@ -5,15 +5,18 @@
 
 #include "core/valuascript_exception.h"
 #include "core/error_formatter.h"
+#include "lexer_error_code.h"
 #include "token/token.h"
 
-namespace valuascript::compiler {
-    class Lexer {
+namespace valuascript::compiler
+{
+    class Lexer
+    {
     private:
         std::string source_;
         std::string file_path_;
         std::vector<Token> tokens_;
-        CompilerContext &context_;
+        CompilerContext& context_;
         size_t start_ = 0;
         size_t current_ = 0;
         size_t line_ = 1;
@@ -22,19 +25,15 @@ namespace valuascript::compiler {
         size_t column_current_ = 1;
 
     public:
-        Lexer(std::string source, std::string file_path, CompilerContext &context);
+        Lexer(std::string source, std::string file_path, CompilerContext& context);
 
         std::vector<Token> tokenize();
 
     private:
         [[nodiscard]] bool is_at_end() const;
-
         char advance();
-
         [[nodiscard]] char peek() const;
-
         [[nodiscard]] char peek_next() const;
-
         bool match(char expected);
 
         void add_token(TokenType type);
@@ -52,8 +51,9 @@ namespace valuascript::compiler {
 
         void scan_token();
 
-        template<typename... Args>
-        void report_error(const ValuascriptErrorCode &code, Args &&... args) const {
+        template <typename... Args>
+        void report_error(const LexerErrorCode& code, Args&&... args) const
+        {
             std::string message = format_error(code, std::forward<Args>(args)...);
 
             ValuaScriptException ex(

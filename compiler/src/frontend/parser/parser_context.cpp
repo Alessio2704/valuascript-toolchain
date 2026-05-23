@@ -18,7 +18,7 @@ namespace valuascript::compiler
         return std::find(sync_set.begin(), sync_set.end(), type) != sync_set.end();
     }
 
-    const Token& ParserContext::consume_identifier(ValuascriptErrorCode fallback_err, bool allow_top_level_keywords,
+    const Token& ParserContext::consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords,
                                                    bool check_statement_boundary)
     {
         if (check_statement_boundary && cursor.peek().line > cursor.previous().line &&
@@ -38,7 +38,7 @@ namespace valuascript::compiler
 
             if (acts_like_id || !allow_top_level_keywords || !forms_statement)
             {
-                cursor.report_error_no_panic(cursor.peek(), ValuascriptErrorCode::ReservedKeywordAsIdentifier, true);
+                cursor.report_error_no_panic(cursor.peek(), ParserErrorCode::ReservedKeywordAsIdentifier, true);
                 return cursor.advance();
             }
         }
@@ -98,7 +98,7 @@ namespace valuascript::compiler
         }
     }
 
-    void ParserContext::reject_modifiers(const std::vector<Modifier>& modifiers, ValuascriptErrorCode error_code) const
+    void ParserContext::reject_modifiers(const std::vector<Modifier>& modifiers, ParserErrorCode error_code) const
     {
         if (modifiers.empty()) return;
         SourceSpan span = cursor.combine_spans(modifiers.front().span, modifiers.back().span);

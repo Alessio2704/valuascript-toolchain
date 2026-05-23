@@ -450,7 +450,7 @@ namespace valuascript::compiler::test {
             "  let = 5\n"
             "}\n",
             {
-            {Err::InvalidIdentifier, 2, 7}
+            {Err::ExpectedIdentifier, 2, 7}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
@@ -519,7 +519,7 @@ namespace valuascript::compiler::test {
             "top_level_reassignment_using_declaration_keyword",
             "let = 5",
             {
-            {Err::InvalidIdentifier, 1, 5}
+            {Err::ExpectedIdentifier, 1, 5}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);

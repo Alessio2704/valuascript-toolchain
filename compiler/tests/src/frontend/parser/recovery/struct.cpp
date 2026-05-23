@@ -7,6 +7,8 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -17,22 +19,22 @@ namespace valuascript::compiler::test
             };
 
             // reg("OnlyStruct", "struct",
-            //     {{ValuascriptErrorCode::ExpectedStructName, 1, 8, 1, 9}},
+            //     {{E::ExpectedStructName, 1, 8, 1, 9}},
             //     IsStructDef("<error>", {}, {})
             // );
 
             // reg("OnlyStructName", "struct Test",
-            //     {{ValuascriptErrorCode::ExpectedBraceInStructDefinition, 1, 12, 1, 13}},
+            //     {{E::ExpectedBraceInStructDefinition, 1, 12, 1, 13}},
             //     IsStructDef("Test", {}, {})
             // );
 
             reg("MissingStructClosingBrace", "struct Test {",
-                {{ValuascriptErrorCode::ExpectedRightBraceAfterStructBody, 1, 14, 1, 15}},
+                {{E::ExpectedRightBraceAfterStructBody, 1, 14, 1, 15}},
                 IsStructDef("Test", {}, {})
             );
 
             reg("MissingStructName", "struct { id: int }",
-                {{ValuascriptErrorCode::ExpectedStructName, 1, 8, 1, 9}},
+                {{E::ExpectedStructName, 1, 8, 1, 9}},
                 IsStructDef("<error>", {}, {
                                 {"id", {}, IsType("int")}
                             }
@@ -40,17 +42,17 @@ namespace valuascript::compiler::test
             );
 
             reg("MissingStructColumn", "struct Test { id int }",
-                {{ValuascriptErrorCode::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
+                {{E::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
                 IsStructDef("Test", {}, {})
             );
 
             reg("MissingStructFieldType", "struct Test { id: }",
-                {{ValuascriptErrorCode::MissingTypeAnnotation, 1, 19, 1, 20}},
+                {{E::MissingTypeAnnotation, 1, 19, 1, 20}},
                 IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
             );
 
             reg("MissingStructComma", "struct Test { id: int name: string }",
-                {{ValuascriptErrorCode::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
+                {{E::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
                 IsStructDef("Test", {}, {
                                 {"id", {}, IsType("int")},
                                 {"name", {}, IsType("string")},
@@ -59,7 +61,7 @@ namespace valuascript::compiler::test
             );
 
             reg("MissingStructLeftBrace", "struct Test id: int }",
-                {{ValuascriptErrorCode::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
+                {{E::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
                 IsNull()
             );
 

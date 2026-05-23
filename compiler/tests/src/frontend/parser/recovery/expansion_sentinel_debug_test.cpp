@@ -48,7 +48,7 @@ namespace valuascript::compiler::test
                 auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors);
                 for (const auto& err : shifted)
                 {
-                    out << "  - Code: " << static_cast<int>(err.code)
+                    out << "  - Code: " << err.code
                         << " at [" << err.line_start << ":" << err.column_start << "]\n";
                 }
 
@@ -67,7 +67,7 @@ namespace valuascript::compiler::test
         DumpRecoveryExpansion(
             InjectableType::StrongStatement,
             "let x = ",
-            {ParserExpectedError(ValuascriptErrorCode::MissingValueAfterEquals, 1, 7)},
+            {ParserExpectedError(ParserErrorCode::MissingValueAfterEquals, 1, 7)},
             "BrokenAssignment",
             AssignmentVerifier([](Assignment*)
             {
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
         DumpRecoveryExpansion(
             InjectableType::Expression,
             "1 + ",
-            {ParserExpectedError(ValuascriptErrorCode::InvalidExpression, 1, 5)},
+            {ParserExpectedError(ParserErrorCode::InvalidExpression, 1, 5)},
             "MalformedBinary",
             ExprVerifier([](Expression*)
             {

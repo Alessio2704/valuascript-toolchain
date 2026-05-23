@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class TupleSadPathTest : public AstBaseTest,
@@ -31,7 +31,7 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -40,19 +40,19 @@ namespace valuascript::compiler::test
         ParserStageTest,
         TupleSadPathTest,
         testing::Values(
-            TupleSadParam{"tuple_missing_second_value_1", "(1, ", ValuascriptErrorCode::
+            TupleSadParam{"tuple_missing_second_value_1", "(1, ", E::
             ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_missing_second_value_2", "(a, ", ValuascriptErrorCode::
+            TupleSadParam{"tuple_missing_second_value_2", "(a, ", E::
             ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_parenthesis", "(a, b", ValuascriptErrorCode::ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_trailing_comma_1", "(a, b,)", ValuascriptErrorCode::TrailingCommaInTuple},
-            TupleSadParam{"single_element_tuples_not_allowed", "(1, )", ValuascriptErrorCode::
+            TupleSadParam{"tuple_parenthesis", "(a, b", E::ExpectedRightParenAfterTupleElements},
+            TupleSadParam{"tuple_trailing_comma_1", "(a, b,)", E::TrailingCommaInTuple},
+            TupleSadParam{"single_element_tuples_not_allowed", "(1, )", E::
             SingleElementTuplesNotAllowed},
-            TupleSadParam{"missing_operator_1", "(a b)", ValuascriptErrorCode::MissingOperatorInsideGrouping},
-            TupleSadParam{"missing_operator_2", "(a, b c)", ValuascriptErrorCode::
+            TupleSadParam{"missing_operator_1", "(a b)", E::MissingOperatorInsideGrouping},
+            TupleSadParam{"missing_operator_2", "(a, b c)", E::
             MissingCommaOrOperatorBetweenExpressions},
-            TupleSadParam{"missing_operator_3", "(a, b (c + d))", ValuascriptErrorCode::MissingOperatorOrArgumentName},
-            TupleSadParam{"missing_operator_4", "(a, b + (c  d))", ValuascriptErrorCode::MissingOperatorInsideGrouping}
+            TupleSadParam{"missing_operator_3", "(a, b (c + d))", E::MissingOperatorOrArgumentName},
+            TupleSadParam{"missing_operator_4", "(a, b + (c  d))", E::MissingOperatorInsideGrouping}
         ),
         [](const testing::TestParamInfo<TupleSadParam>& test_info) {
         return test_info.param.test_name;

@@ -1,24 +1,32 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include "frontend/file_reader/file_reader_stage.h"
+#include "frontend/file_reader/file_reader_error_code.h"
 #include "utils/pid.h"
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    class FileReaderBaseTest : public testing::Test {
+namespace valuascript::compiler::test
+{
+    using E = FileReaderErrorCode;
+
+    class FileReaderBaseTest : public testing::Test
+    {
     protected:
         std::filesystem::path temp_dir;
 
-        void SetUp() override {
+        void SetUp() override
+        {
             temp_dir = generate_test_workspace("vs_base_test", reinterpret_cast<uintptr_t>(this));
         }
 
-        void TearDown() override {
+        void TearDown() override
+        {
             cleanup_test_workspace(temp_dir);
         }
 
-        std::pair<CompilerStageArtifactCode, std::string> read_file(const std::string &test_file_path) {
+        std::pair<CompilerStageArtifactCode, std::string> read_file(const std::string& test_file_path)
+        {
             FileReaderStage reader;
             auto context = std::make_shared<CompilerContext>();
             std::vector<CompilerStageArtifact> history = {
@@ -31,7 +39,8 @@ namespace valuascript::compiler::test {
         }
     };
 
-    TEST_F(FileReaderBaseTest, SuccessfullyReadsFile) {
+    TEST_F(FileReaderBaseTest, SuccessfullyReadsFile)
+    {
         std::string test_file_path = (temp_dir / "dummy_test_file.vs").string();
         std::string expected_content = "let a = 10\nfunc main() { return a }";
 
@@ -45,15 +54,21 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(data, expected_content);
     }
 
-    TEST_F(FileReaderBaseTest, ThrowsOnMissingFile) {
+    TEST_F(FileReaderBaseTest, ThrowsOnMissingFile)
+    {
         std::string ghost_path = (temp_dir / "non_existent_file.vs").string();
-        try {
+        try
+        {
             read_file(ghost_path);
             FAIL() << "Expected ValuaScriptException was not thrown";
-        } catch (const ValuaScriptException &err) {
-            EXPECT_EQ(err.get_code(), ValuascriptErrorCode::FileNotFound);
+        }
+        catch (const ValuaScriptException& err)
+        {
+            EXPECT_TRUE(err.is_error(E::FileNotFound));
             EXPECT_EQ(err.get_category(), ValuascriptErrorCategory::File);
-        } catch (...) {
+        }
+        catch (...)
+        {
             FAIL() << "Expected ValuaScriptException, but a different exception was thrown";
         }
     }

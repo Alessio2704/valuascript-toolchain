@@ -2,6 +2,8 @@
 
 namespace valuascript::compiler::test
 {
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -13,7 +15,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperations1", "1 < 2 < 3",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Less,
                          IsBinary(TokenType::Less,
@@ -25,7 +27,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperations2", "1 > 2 > 3",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Greater,
                          IsBinary(TokenType::Greater,
@@ -37,7 +39,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperations3", "1 != 2 != 3 ",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::NotEquals,
                          IsBinary(TokenType::NotEquals,
@@ -49,7 +51,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperations4", "x == y == z",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::Equals,
                          IsBinary(TokenType::Equals,
@@ -62,7 +64,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperationsMixedOperators1", "1 < 2 > 3",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
                 IsBinary(TokenType::Greater,
                          IsBinary(TokenType::Less,
@@ -75,7 +77,7 @@ namespace valuascript::compiler::test
 
             reg("ChainingNotAllowedForComparisonOperationsMixedOperators2", "1 == 2 != 3",
                 {
-                    {ValuascriptErrorCode::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
                 IsBinary(TokenType::NotEquals,
                          IsBinary(TokenType::Equals,

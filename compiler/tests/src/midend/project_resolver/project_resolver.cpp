@@ -10,20 +10,27 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    class ProjectResolverTest : public ::testing::Test {
-    protected:
-       std::filesystem::path temp_dir;
+namespace valuascript::compiler::test
+{
+    using E = ProjectResolverErrorCode;
 
-        void SetUp() override {
+    class ProjectResolverTest : public ::testing::Test
+    {
+    protected:
+        std::filesystem::path temp_dir;
+
+        void SetUp() override
+        {
             temp_dir = generate_test_workspace("vs_test", reinterpret_cast<uintptr_t>(this));
         }
 
-        void TearDown() override {
+        void TearDown() override
+        {
             cleanup_test_workspace(temp_dir);
         }
 
-        std::string create_file(const std::string &filename, const std::string &content) {
+        std::string create_file(const std::string& filename, const std::string& content)
+        {
             std::filesystem::path full_path = temp_dir / filename;
             std::filesystem::create_directories(full_path.parent_path());
 
@@ -35,7 +42,8 @@ namespace valuascript::compiler::test {
         }
     };
 
-    TEST_F(ProjectResolverTest, ResolvesLinearDependencyChain) {
+    TEST_F(ProjectResolverTest, ResolvesLinearDependencyChain)
+    {
         std::string c_path = create_file("c.vs", "let c_val = 30");
         std::string b_path = create_file("b.vs", "import \"c.vs\"\nlet b_val = 20");
         std::string a_path = create_file("a.vs", "import \"b.vs\"\nlet a_val = 10");
@@ -50,7 +58,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(project.topological_order[2], a_path);
     }
 
-    TEST_F(ProjectResolverTest, ResolvesDiamondDependencyGraph) {
+    TEST_F(ProjectResolverTest, ResolvesDiamondDependencyGraph)
+    {
         /*
         //     A
         //    / \
@@ -77,7 +86,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(project.topological_order[3], a_path);
     }
 
-    TEST_F(ProjectResolverTest, ResolvesRelativePathsAcrossDirectories) {
+    TEST_F(ProjectResolverTest, ResolvesRelativePathsAcrossDirectories)
+    {
         // Tests std::filesystem path normalization
         // main.vs imports "utils/math.vs"
         // utils/math.vs imports "../constants.vs"
@@ -94,61 +104,80 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(project.topological_order[2], main_path);
     }
 
-    TEST_F(ProjectResolverTest, ThrowsOnDirectCircularDependency) {
+    TEST_F(ProjectResolverTest, ThrowsOnDirectCircularDependency)
+    {
         // A -> B -> A
         std::string b_path = create_file("b.vs", "import \"a.vs\"");
         std::string a_path = create_file("a.vs", "import \"b.vs\"");
 
-        try {
+        try
+        {
             test::run_resolver(a_path);
             FAIL() << "Expected ValuaScriptException for circular import, but no exception was thrown.";
-        } catch (const ValuaScriptException &e) {
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
-        } catch (...) {
+        }
+        catch (const ValuaScriptException& e)
+        {
+            EXPECT_TRUE(e.is_error(E::CircularImportDetected));
+        }
+        catch (...)
+        {
             FAIL() << "Expected ValuaScriptException, but a different exception was thrown.";
         }
     }
 
-    TEST_F(ProjectResolverTest, ThrowsOnSelfImport) {
+    TEST_F(ProjectResolverTest, ThrowsOnSelfImport)
+    {
         // A -> A
         std::string a_path = create_file("a.vs", "import \"a.vs\"");
 
-        try {
+        try
+        {
             test::run_resolver(a_path);
             FAIL() << "Expected ValuaScriptException for self import, but no exception was thrown.";
-        } catch (const ValuaScriptException &e) {
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
+        }
+        catch (const ValuaScriptException& e)
+        {
+            EXPECT_TRUE(e.is_error(E::CircularImportDetected));
         }
     }
 
-    TEST_F(ProjectResolverTest, ThrowsOnDeepCircularDependency) {
+    TEST_F(ProjectResolverTest, ThrowsOnDeepCircularDependency)
+    {
         // A -> B -> C -> D -> B
         std::string d_path = create_file("d.vs", "import \"b.vs\"");
         std::string c_path = create_file("c.vs", "import \"d.vs\"");
         std::string b_path = create_file("b.vs", "import \"c.vs\"");
         std::string a_path = create_file("a.vs", "import \"b.vs\"");
 
-        try {
+        try
+        {
             test::run_resolver(a_path);
             FAIL() << "Expected ValuaScriptException for deep circular import, but no exception was thrown.";
-        } catch (const ValuaScriptException &e) {
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::CircularImportDetected);
+        }
+        catch (const ValuaScriptException& e)
+        {
+            EXPECT_TRUE(e.is_error(E::CircularImportDetected));
         }
     }
 
-    TEST_F(ProjectResolverTest, ThrowsOnMissingFile) {
+    TEST_F(ProjectResolverTest, ThrowsOnMissingFile)
+    {
         // A -> NonExistent
         std::string a_path = create_file("a.vs", "import \"ghost.vs\"");
 
-        try {
+        try
+        {
             test::run_resolver(a_path);
             FAIL() << "Expected ValuaScriptException for missing file, but no exception was thrown.";
-        } catch (const ValuaScriptException &e) {
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::ImportFileNotFound);
+        }
+        catch (const ValuaScriptException& e)
+        {
+            EXPECT_TRUE(e.is_error(E::ImportFileNotFound));
         }
     }
 
-    TEST_F(ProjectResolverTest, ResolvesComplexRelativePathBacktracking) {
+    TEST_F(ProjectResolverTest, ResolvesComplexRelativePathBacktracking)
+    {
         // Structure:
         // root/
         //   main.vs
@@ -172,7 +201,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(project.topological_order[2], main_path);
     }
 
-    TEST_F(ProjectResolverTest, NormalizesRedundantPathsToSameModule) {
+    TEST_F(ProjectResolverTest, NormalizesRedundantPathsToSameModule)
+    {
         // main.vs imports both "utils.vs" and "./utils.vs"
         // The resolver must realize these are the exact same physical file.
 
@@ -189,7 +219,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(project.topological_order[1], main_path);
     }
 
-    TEST_F(ProjectResolverTest, ResolvesMassiveStarTopology) {
+    TEST_F(ProjectResolverTest, ResolvesMassiveStarTopology)
+    {
         // main -> [mod1, mod2, mod3, mod4, mod5] -> core
 
         std::string core_path = create_file("core.vs", "let core_val = 100");
@@ -198,7 +229,8 @@ namespace valuascript::compiler::test {
         std::string main_content;
 
         // Generate 5 intermediate files that all import core.vs
-        for (int i = 1; i <= 5; ++i) {
+        for (int i = 1; i <= 5; ++i)
+        {
             std::string mod_name = "mod" + std::to_string(i) + ".vs";
             std::string mod_content = "import \"core.vs\"\nlet m" + std::to_string(i) + " = core_val";
 

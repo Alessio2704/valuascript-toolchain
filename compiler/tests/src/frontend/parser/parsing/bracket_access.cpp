@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 
@@ -11,7 +11,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class BracketAccessSadPathTest : public AstBaseTest,
@@ -32,7 +32,7 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -41,17 +41,17 @@ namespace valuascript::compiler::test
         ParserStageTest,
         BracketAccessSadPathTest,
         testing::Values(
-            BracketAccessSadParam{"unclosed_vector_access", "vec[0", ValuascriptErrorCode::
+            BracketAccessSadParam{"unclosed_vector_access", "vec[0", E::
             UnmatchedBracketAfterTensorIndex},
-            BracketAccessSadParam{"missing_operator_1", "vec[1 2]", ValuascriptErrorCode::
+            BracketAccessSadParam{"missing_operator_1", "vec[1 2]", E::
             MissingOperatorOrExpectedColonOrBracketInTensor},
-            BracketAccessSadParam{"missing_operator_2", "vec[1 + 2 3]", ValuascriptErrorCode::
+            BracketAccessSadParam{"missing_operator_2", "vec[1 + 2 3]", E::
             MissingOperatorOrExpectedColonOrBracketInTensor},
-            BracketAccessSadParam{"missing_operator_3", "vec[1 + (2 3)]", ValuascriptErrorCode::
+            BracketAccessSadParam{"missing_operator_3", "vec[1 + (2 3)]", E::
             MissingOperatorInsideGrouping},
-            BracketAccessSadParam{"missing_operator_4", "vec[1  (2 + 3)]", ValuascriptErrorCode::
+            BracketAccessSadParam{"missing_operator_4", "vec[1  (2 + 3)]", E::
             MissingOperatorOrArgumentName},
-            BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", ValuascriptErrorCode::
+            BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", E::
             MissingOperatorOrExpectedColonOrBracketInTensor}
         ),
         [](const testing::TestParamInfo<BracketAccessSadParam>& test_info) {

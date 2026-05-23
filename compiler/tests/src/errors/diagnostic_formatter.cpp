@@ -5,26 +5,37 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    class DiagnosticFormatterTest : public ::testing::Test {
+namespace valuascript::compiler::test
+{
+    using E = ParserErrorCode;
+
+    class DiagnosticFormatterTest : public ::testing::Test
+    {
     protected:
-        static std::string strip_ansi(const std::string &input) {
+        static std::string strip_ansi(const std::string& input)
+        {
             std::string result;
             result.reserve(input.size());
-            for (size_t i = 0; i < input.size(); ++i) {
-                if (input[i] == '\033' && i + 1 < input.size() && input[i + 1] == '[') {
-                    while (i < input.size() && input[i] != 'm') {
+            for (size_t i = 0; i < input.size(); ++i)
+            {
+                if (input[i] == '\033' && i + 1 < input.size() && input[i + 1] == '[')
+                {
+                    while (i < input.size() && input[i] != 'm')
+                    {
                         i++;
                     }
-                } else {
+                }
+                else
+                {
                     result += input[i];
                 }
             }
             return result;
         }
 
-        static ValuaScriptException create_dummy_error(ValuascriptErrorCode code, size_t line, size_t col_start,
-                                                       size_t col_end) {
+        static ValuaScriptException create_dummy_error(E code, size_t line, size_t col_start,
+                                                       size_t col_end)
+        {
             SourceSpan span;
             span.file_path = "test.vs";
             span.line_start = line;
@@ -36,9 +47,10 @@ namespace valuascript::compiler::test {
         }
     };
 
-    TEST_F(DiagnosticFormatterTest, AlignsSquigglesCorrectly) {
+    TEST_F(DiagnosticFormatterTest, AlignsSquigglesCorrectly)
+    {
         std::string source = "let x = 100 + 200";
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidExpression, 1, 9, 12);
+        auto err = create_dummy_error(E::InvalidExpression, 1, 9, 12);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -54,9 +66,10 @@ namespace valuascript::compiler::test {
         << "Squiggle alignment is off.\nOutput:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, HandlesMissingSourceLineGracefully) {
+    TEST_F(DiagnosticFormatterTest, HandlesMissingSourceLineGracefully)
+    {
         std::string source = "let a = 10\nlet b = 20";
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 5, 1, 1);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 5, 1, 1);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -64,9 +77,10 @@ namespace valuascript::compiler::test {
         EXPECT_TRUE(clean_output.find("<source line not available>") != std::string::npos);
     }
 
-    TEST_F(DiagnosticFormatterTest, HandlesColumnOneCorrectly) {
+    TEST_F(DiagnosticFormatterTest, HandlesColumnOneCorrectly)
+    {
         std::string source = "} stray brace";
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 1, 1, 1);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -78,11 +92,12 @@ namespace valuascript::compiler::test {
         << "Output:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, AdaptsMarginWidthForLargeLineNumbers) {
+    TEST_F(DiagnosticFormatterTest, AdaptsMarginWidthForLargeLineNumbers)
+    {
         std::string source = "let a = 1\n";
         for (int i = 2; i <= 100; i++) source += "let x = " + std::to_string(i) + "\n";
 
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidExpression, 100, 5, 6);
+        auto err = create_dummy_error(E::InvalidExpression, 100, 5, 6);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -96,11 +111,12 @@ namespace valuascript::compiler::test {
         << "Squiggle failed to align with a 3-digit line number margin.\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, SurvivesInvertedOrCorruptedSpans) {
+    TEST_F(DiagnosticFormatterTest, SurvivesInvertedOrCorruptedSpans)
+    {
         std::string source = "let bad_span = 10";
 
         // Parser bug simulation: column_end < column_start
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 10, 5);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 1, 10, 5);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -112,9 +128,10 @@ namespace valuascript::compiler::test {
         << "Output:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, DrawsSingleCaretForLengthOneSpans) {
+    TEST_F(DiagnosticFormatterTest, DrawsSingleCaretForLengthOneSpans)
+    {
         std::string source = "func test()";
-        auto err = create_dummy_error(ValuascriptErrorCode::MissingArrowInFunction, 1, 11, 11);
+        auto err = create_dummy_error(E::MissingArrowInFunction, 1, 11, 11);
 
         std::string raw_output = DiagnosticFormatter::format_error(err, source);
         std::string clean_output = strip_ansi(raw_output);
@@ -126,9 +143,10 @@ namespace valuascript::compiler::test {
         EXPECT_TRUE(clean_output.find(expected_squiggle) != std::string::npos);
     }
 
-    TEST_F(DiagnosticFormatterTest, MathematicallyProvesSingleCharacterSpan) {
+    TEST_F(DiagnosticFormatterTest, MathematicallyProvesSingleCharacterSpan)
+    {
         std::string source = "let a = 1;";
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 7, 7);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 1, 7, 7);
 
         std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 
@@ -141,9 +159,10 @@ namespace valuascript::compiler::test {
         << "Failed single character span math.\nOutput:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, MathematicallyProvesMultiCharacterSpan) {
+    TEST_F(DiagnosticFormatterTest, MathematicallyProvesMultiCharacterSpan)
+    {
         std::string source = "let invalid_var = 10;";
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidIdentifier, 1, 5, 16);
+        auto err = create_dummy_error(E::ExpectedIdentifier, 1, 5, 16);
 
         std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 
@@ -156,10 +175,11 @@ namespace valuascript::compiler::test {
         << "Failed multi-character span math. Expected length 11.\nOutput:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, FormatsMultiLineSpansCorrectly) {
+    TEST_F(DiagnosticFormatterTest, FormatsMultiLineSpansCorrectly)
+    {
         std::string source = "let obj = {\n  key: 1\n}";
 
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 2);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 1, 11, 2);
         auto span = err.get_span();
         span.line_end = 3;
         ValuaScriptException multi_line_err(err.get_category(), err.get_code(), span, "Test");
@@ -176,12 +196,13 @@ namespace valuascript::compiler::test {
         << "Failed multi-line pointer formatting.\nOutput:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, TruncatesExtremelyLongMultiLineSpans) {
+    TEST_F(DiagnosticFormatterTest, TruncatesExtremelyLongMultiLineSpans)
+    {
         std::string source = "func test() {\n";
         for (int i = 2; i <= 10; i++) source += "  let x" + std::to_string(i) + " = " + std::to_string(i) + "\n";
         source += "}";
 
-        auto err = create_dummy_error(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1);
+        auto err = create_dummy_error(E::InvalidStandaloneStatement, 1, 1, 1);
         auto span = err.get_span();
         span.line_end = 11;
         ValuaScriptException multi_line_err(err.get_category(), err.get_code(), span, "Test");
@@ -202,11 +223,12 @@ namespace valuascript::compiler::test {
         << "Failed long multi-line truncation formatting.\nOutput:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, FormatsSingleLineNestedFunction) {
+    TEST_F(DiagnosticFormatterTest, FormatsSingleLineNestedFunction)
+    {
         std::string source = "func test() -> void {\n    func test_inside() -> void {}\n}";
 
         // Error on line 2, from col 5 to col 34 (length of "func test_inside() -> void {}")
-        auto err = create_dummy_error(ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 2, 5, 34);
+        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 34);
 
         std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 
@@ -220,15 +242,16 @@ namespace valuascript::compiler::test {
             << "Output did not match expected single-line format:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, FormatsShortMultiLineNestedFunction) {
+    TEST_F(DiagnosticFormatterTest, FormatsShortMultiLineNestedFunction)
+    {
         std::string source =
-                "func test() -> void {\n"
-                "    func test_inside() -> void {\n"
-                "        let a = 1\n"
-                "    }\n"
-                "}";
+            "func test() -> void {\n"
+            "    func test_inside() -> void {\n"
+            "        let a = 1\n"
+            "    }\n"
+            "}";
 
-        auto err = create_dummy_error(ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
+        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
         auto span = err.get_span();
         span.line_end = 4;
         span.column_end = 6;
@@ -249,26 +272,27 @@ namespace valuascript::compiler::test {
             << "Output did not match expected short multi-line format:\n" << clean_output;
     }
 
-    TEST_F(DiagnosticFormatterTest, FormatsLongMultiLineNestedFunctionWithTruncation) {
+    TEST_F(DiagnosticFormatterTest, FormatsLongMultiLineNestedFunctionWithTruncation)
+    {
         std::string source =
-                "func test() -> void {\n"
-                "    func test_inside() -> void {\n"
-                "        let a = 1\n"
-                "        let b = 1\n"
-                "        let c = 1\n"
-                "        let d = 1\n"
-                "        let e = 1\n"
-                "        let f = 1\n"
-                "        let g = 1\n"
-                "        let h = 1\n"
-                "        let i = 1\n"
-                "        let l = 1\n"
-                "        let m = 1\n"
-                "        let n = 1\n"
-                "    }\n"
-                "}";
+            "func test() -> void {\n"
+            "    func test_inside() -> void {\n"
+            "        let a = 1\n"
+            "        let b = 1\n"
+            "        let c = 1\n"
+            "        let d = 1\n"
+            "        let e = 1\n"
+            "        let f = 1\n"
+            "        let g = 1\n"
+            "        let h = 1\n"
+            "        let i = 1\n"
+            "        let l = 1\n"
+            "        let m = 1\n"
+            "        let n = 1\n"
+            "    }\n"
+            "}";
 
-        auto err = create_dummy_error(ValuascriptErrorCode::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
+        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
         auto span = err.get_span();
         span.line_end = 15;
         span.column_end = 6;

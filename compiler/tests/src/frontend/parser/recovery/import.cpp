@@ -7,6 +7,8 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -17,31 +19,31 @@ namespace valuascript::compiler::test
             };
 
             reg("MissingImportKeyword", "file_path.vs",
-                {{ValuascriptErrorCode::InvalidStandaloneStatement, 1, 11, 1, 13}},
+                {{E::InvalidStandaloneStatement, 1, 11, 1, 13}},
                 IsNull());
 
             reg("MissingImportStringPath", "import ",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 7, 1, 8}},
+                {{E::MissingImportPathString, 1, 7, 1, 8}},
                 IsImport("<error>"));
 
             reg("ImportWithDocStringPath", R"(import """file_path.vs""")",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 26}},
+                {{E::MissingImportPathString, 1, 8, 1, 26}},
                 IsImport("<error>"));
 
             reg("ImportInvalidStringPath1", "import 1",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9}},
+                {{E::MissingImportPathString, 1, 8, 1, 9}},
                 IsImport("<error>"));
 
             reg("ImportInvalidStringPath2", "import identifier",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 18}},
+                {{E::MissingImportPathString, 1, 8, 1, 18}},
                 IsImport("<error>"));
 
             reg("ImportInvalidStringPath3", "import if a then b else c",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 10}},
+                {{E::MissingImportPathString, 1, 8, 1, 10}},
                 IsImport("<error>"));
 
             reg("ImportInvalidStringPath4", "import a()",
-                {{ValuascriptErrorCode::MissingImportPathString, 1, 8, 1, 9}},
+                {{E::MissingImportPathString, 1, 8, 1, 9}},
                 IsImport("<error>"));
 
             return true;

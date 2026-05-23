@@ -1,15 +1,19 @@
 #include <gtest/gtest.h>
 #include "frontend/lexer/lexer_stage.h"
 #include "token/token.h"
-#include "core/valuascript_exception.h"
+#include "frontend/lexer/lexer_error_code.h"
 #include "frontend/lexer/lexer_tests_utils.h"
 #include <string>
 #include <vector>
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    TEST(LexerStageTest, TokenizesValuaScriptCorrectly) {
+namespace valuascript::compiler::test
+{
+    using E = LexerErrorCode;
+
+    TEST(LexerStageTest, TokenizesValuaScriptCorrectly)
+    {
         LexerStage lexer_stage;
 
         std::string source_code = "let a = 1_000.50\nfunc main() { return a } // A comment\n@directive \"math\"";
@@ -23,7 +27,8 @@ namespace valuascript::compiler::test {
 
         ASSERT_EQ(tokens.size(), 16);
 
-        for (const auto &a: tokens) {
+        for (const auto& a : tokens)
+        {
             std::cout << a.lexeme << std::endl;
         }
 
@@ -39,7 +44,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[14].type, TokenType::String);
     }
 
-    TEST(LexerStageTest, TokenizesSingleCharacterOperators) {
+    TEST(LexerStageTest, TokenizesSingleCharacterOperators)
+    {
         auto tokens = tokenize_code("()[]{},:@ +-*/^.#");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -62,7 +68,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[15].type, TokenType::Hash);
     }
 
-    TEST(LexerStageTest, TokenizesMultiCharacterOperators) {
+    TEST(LexerStageTest, TokenizesMultiCharacterOperators)
+    {
         const auto tokens = tokenize_code("= == != > >= < <= ->");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -77,7 +84,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[7].type, TokenType::Arrow);
     }
 
-    TEST(LexerStageTest, TokenizesKeywords) {
+    TEST(LexerStageTest, TokenizesKeywords)
+    {
         auto tokens = tokenize_code(
             "let if then else true false and or not func struct return import enum switch case default mod self typealias");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
@@ -105,7 +113,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[19].type, TokenType::Typealias);
     }
 
-    TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers) {
+    TEST(LexerStageTest, DistinguishesKeywordsFromIdentifiers)
+    {
         const auto tokens = tokenize_code("let letter = format");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -118,7 +127,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[3].lexeme, "format");
     }
 
-    TEST(LexerStageTest, DistinguishesKeywordsInsideStrings) {
+    TEST(LexerStageTest, DistinguishesKeywordsInsideStrings)
+    {
         const auto tokens = tokenize_code("let letter = \"bool\"");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -131,7 +141,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[3].lexeme, "\"bool\"");
     }
 
-    TEST(LexerStageTest, TokenizesNumbersWithSeparators) {
+    TEST(LexerStageTest, TokenizesNumbersWithSeparators)
+    {
         const auto tokens = tokenize_code("123 45.67 1_000_000 0.000_1");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -141,12 +152,14 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[2].lexeme, "1_000_000");
         EXPECT_EQ(tokens[3].lexeme, "0.000_1");
 
-        for (size_t i = 0; i < 4; ++i) {
+        for (size_t i = 0; i < 4; ++i)
+        {
             EXPECT_EQ(tokens[i].type, TokenType::Number);
         }
     }
 
-    TEST(LexerStageTest, TokenizesNumbersWithPercentage) {
+    TEST(LexerStageTest, TokenizesNumbersWithPercentage)
+    {
         const auto tokens = tokenize_code("4% 4.54% 0.54%");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -155,12 +168,14 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[1].lexeme, "4.54%");
         EXPECT_EQ(tokens[2].lexeme, "0.54%");
 
-        for (size_t i = 0; i < 3; ++i) {
+        for (size_t i = 0; i < 3; ++i)
+        {
             EXPECT_EQ(tokens[i].type, TokenType::PercentageLiteral);
         }
     }
 
-    TEST(LexerStageTest, TokenizesStringsAndDocStrings) {
+    TEST(LexerStageTest, TokenizesStringsAndDocStrings)
+    {
         const auto tokens = tokenize_code("\"hello world\" \"\"\"This is a\nmultiline docstring\"\"\"");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -172,11 +187,12 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[1].lexeme, "\"\"\"This is a\nmultiline docstring\"\"\"");
     }
 
-    TEST(LexerStageTest, IgnoresWhitespaceAndComments) {
+    TEST(LexerStageTest, IgnoresWhitespaceAndComments)
+    {
         const std::string code =
-                "let a = 5\n"
-                "// This is a comment\n"
-                "    \t return a";
+            "let a = 5\n"
+            "// This is a comment\n"
+            "    \t return a";
 
         const auto tokens = tokenize_code(code);
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
@@ -190,10 +206,11 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[5].type, TokenType::Identifier);
     }
 
-    TEST(LexerStageTest, TracksLineAndColumnAccurately) {
+    TEST(LexerStageTest, TracksLineAndColumnAccurately)
+    {
         const std::string code =
-                "let a\n" // Line 1: 'let' at col 1, 'a' at col 5
-                "  return\n"; // Line 2: 'return' at col 3
+            "let a\n" // Line 1: 'let' at col 1, 'a' at col 5
+            "  return\n"; // Line 2: 'return' at col 3
 
         const auto tokens = tokenize_code(code);
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
@@ -208,7 +225,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[2].column, 3);
     }
 
-    TEST(LexerStageTest, HandlesEmptyFile) {
+    TEST(LexerStageTest, HandlesEmptyFile)
+    {
         const auto tokens = tokenize_code("");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 
@@ -218,7 +236,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[0].column, 1);
     }
 
-    TEST(LexerStageTest, TokenizesComplexIdentifiers) {
+    TEST(LexerStageTest, TokenizesComplexIdentifiers)
+    {
         const auto tokens = tokenize_code("let _privateVar123 = 0");
 
         ASSERT_EQ(tokens.size(), 5);
@@ -226,7 +245,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[1].lexeme, "_privateVar123");
     }
 
-    TEST(LexerStageTest, DocStringContainsRegularQuotes) {
+    TEST(LexerStageTest, DocStringContainsRegularQuotes)
+    {
         const auto tokens = tokenize_code(R"("""This docstring has "quotes" inside""")");
 
         ASSERT_EQ(tokens.size(), 2);
@@ -235,7 +255,8 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[0].lexeme, "\"\"\"This docstring has \"quotes\" inside\"\"\"");
     }
 
-    TEST(LexerStageTest, HandlesConsecutiveOperatorsWithoutSpaces) {
+    TEST(LexerStageTest, HandlesConsecutiveOperatorsWithoutSpaces)
+    {
         const auto tokens = tokenize_code("if(a==-1)");
 
         ASSERT_EQ(tokens.size(), 8);
@@ -244,13 +265,18 @@ namespace valuascript::compiler::test {
         EXPECT_EQ(tokens[5].type, TokenType::Number);
     }
 
-    TEST(LexerStageTest, CatchesInvalidCharacterWithDetail) {
-        try {
+    TEST(LexerStageTest, CatchesInvalidCharacterWithDetail)
+    {
+        try
+        {
             tokenize_code("let a = $;");
             FAIL() << "Lexer should have caught the invalid '$' character.";
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::InvalidCharacter);
+            EXPECT_TRUE(e.is_error(E::InvalidCharacter));
+
 
             const std::string expected_msg = "Syntax Error: Invalid character '$' found.";
 
@@ -260,13 +286,17 @@ namespace valuascript::compiler::test {
         }
     }
 
-    TEST(LexerStageTest, CatchesUnclosedStringWithDetail) {
-        try {
+    TEST(LexerStageTest, CatchesUnclosedStringWithDetail)
+    {
+        try
+        {
             tokenize_code("let greeting = \"Hello World");
             FAIL() << "Lexer should have caught the unclosed string.";
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::UnclosedString);
+            EXPECT_TRUE(e.is_error(E::UnclosedString));
 
             const std::string expected_msg = "Syntax Error: Unclosed string literal.";
             const std::string actual_full_msg = e.what();
@@ -276,13 +306,17 @@ namespace valuascript::compiler::test {
         }
     }
 
-    TEST(LexerStageTest, CatchesUnclosedDocStringWithDetail) {
-        try {
+    TEST(LexerStageTest, CatchesUnclosedDocStringWithDetail)
+    {
+        try
+        {
             tokenize_code(R"(func main() { """This docstring never ends })");
             FAIL() << "Lexer should have caught the unclosed docstring.";
-        } catch (const ValuaScriptException &e) {
+        }
+        catch (const ValuaScriptException& e)
+        {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical);
-            EXPECT_EQ(e.get_code(), ValuascriptErrorCode::UnclosedString);
+            EXPECT_TRUE(e.is_error(E::UnclosedString));
 
             const std::string expected_msg = "Syntax Error: Unclosed string literal.";
             const std::string actual_full_msg = e.what();
@@ -292,7 +326,8 @@ namespace valuascript::compiler::test {
         }
     }
 
-    TEST(LexerStageTest, TokenizesFunctionWithExplicitTypes) {
+    TEST(LexerStageTest, TokenizesFunctionWithExplicitTypes)
+    {
         auto tokens = tokenize_code("func test(a: scalar, b: vector) { return a + b }");
         ASSERT_EQ(tokens[tokens.size() - 1].type, TokenType::EndOfFile);
 

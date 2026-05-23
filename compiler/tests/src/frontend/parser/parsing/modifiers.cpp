@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class ModifierSadPathTest : public AstBaseTest,
@@ -29,7 +29,7 @@ namespace valuascript::compiler::test
         catch (const ValuaScriptException& e)
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax);
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -38,34 +38,34 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{"ModifierOnReturn", "func foo() -> void { @export return 1 }", ValuascriptErrorCode::
+            ModifierSadParam{"ModifierOnReturn", "func foo() -> void { @export return 1 }", E::
             ModifiersAttachedToInvalidDeclaration},
-            ModifierSadParam{"ModifierOnStandaloneExpression", "@export 10 * 5", ValuascriptErrorCode::
+            ModifierSadParam{"ModifierOnStandaloneExpression", "@export 10 * 5", E::
             ModifiersAttachedToInvalidDeclaration},
-            ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", ValuascriptErrorCode::
+            ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", E::
             ModifiersAttachedToInvalidDeclaration},
-            ModifierSadParam{"MissingModifierName", "@ let x = 1", ValuascriptErrorCode::ExpectedModifierName},
-            ModifierSadParam{"MissingColonInArg", "@bind(ui \"slider\") let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"MissingModifierName", "@ let x = 1", E::ExpectedModifierName},
+            ModifierSadParam{"MissingColonInArg", "@bind(ui \"slider\") let x = 1", E::
             MissingColonAfterArgument},
-            ModifierSadParam{"MissingArgumentName", "@bind(: \"slider\") let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"MissingArgumentName", "@bind(: \"slider\") let x = 1", E::
             MissingArgumentNameInModifier},
-            ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", E::
             UnmatchedParenthesisAfterModifierArgs},
-            ModifierSadParam{"DoubleAtSign", "@@export let x = 1", ValuascriptErrorCode::ExpectedModifierName},
-            ModifierSadParam{"missing_comma_in_param", "@export(a: 1 b: 2) let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"DoubleAtSign", "@@export let x = 1", E::ExpectedModifierName},
+            ModifierSadParam{"missing_comma_in_param", "@export(a: 1 b: 2) let x = 1", E::
             MissingCommaSeparatorForArgumentsInModifier},
-            ModifierSadParam{"missing_operator_1", "@export(a: 1 2) let x = 1", ValuascriptErrorCode::MissingOperator},
-            ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"missing_operator_1", "@export(a: 1 2) let x = 1", E::MissingOperator},
+            ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", E::
             MissingOperator},
-            ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", E::
             MissingOperatorInsideGrouping},
-            ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", E::
             MissingOperatorOrArgumentName},
-            ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", ValuascriptErrorCode::
+            ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", E::
             MissingOperator},
-            ModifierSadParam{"ModifierOnStructFieldType", "struct S { name: @mut string }", ValuascriptErrorCode::
+            ModifierSadParam{"ModifierOnStructFieldType", "struct S { name: @mut string }", E::
             MissingTypeAnnotation},
-            ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", ValuascriptErrorCode::
+            ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", E::
             ExpectedModifierName}
         ),
         [](const testing::TestParamInfo<ModifierSadParam>& test_info) {

@@ -1,6 +1,7 @@
 #include "lexer.h"
 #include "core/error_formatter.h"
 #include "token/reserved_keyword_lookup.h"
+#include "lexer_error_code.h"
 
 using namespace valuascript::shared;
 
@@ -43,7 +44,7 @@ namespace valuascript::compiler
 
                 if (peek() == '\n' || peek() == '\r')
                 {
-                    report_error(ValuascriptErrorCode::UnclosedString);
+                    report_error(LexerErrorCode::UnclosedString);
                     add_token(TokenType::String);
                     return;
                 }
@@ -58,7 +59,7 @@ namespace valuascript::compiler
             advance();
         }
 
-        report_error(ValuascriptErrorCode::UnclosedString);
+        report_error(LexerErrorCode::UnclosedString);
         add_token(is_docstring ? TokenType::DocString : TokenType::String);
     }
 
@@ -71,7 +72,7 @@ namespace valuascript::compiler
                 if (!std::isdigit(static_cast<unsigned char>(peek_next())))
                 {
                     advance();
-                    report_error(ValuascriptErrorCode::TrailingSeparatorInNumberLiteral);
+                    report_error(LexerErrorCode::TrailingSeparatorInNumberLiteral);
                     break;
                 }
             }
@@ -105,7 +106,7 @@ namespace valuascript::compiler
             else
             {
                 advance();
-                report_error(ValuascriptErrorCode::UnterminatedDecimal);
+                report_error(LexerErrorCode::UnterminatedDecimal);
             }
         }
         finalize_number();
@@ -172,7 +173,7 @@ namespace valuascript::compiler
             }
             else
             {
-                report_error(ValuascriptErrorCode::InvalidCharacter, c);
+                report_error(LexerErrorCode::InvalidCharacter, c);
             }
             break;
         case '.':
@@ -215,7 +216,7 @@ namespace valuascript::compiler
             }
             else
             {
-                report_error(ValuascriptErrorCode::InvalidCharacter, c);
+                report_error(LexerErrorCode::InvalidCharacter, c);
             }
             break;
         }

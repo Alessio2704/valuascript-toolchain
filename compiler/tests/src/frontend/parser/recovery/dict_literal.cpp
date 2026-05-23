@@ -2,6 +2,8 @@
 
 namespace valuascript::compiler::test
 {
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -13,7 +15,7 @@ namespace valuascript::compiler::test
 
             reg("DictMissingKey", "{ : 1, y: 2 }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
                 IsDict({
                     {"<error>", {}, IsNumber("1")},
@@ -23,7 +25,7 @@ namespace valuascript::compiler::test
 
             reg("DictMissingComma", "{ x: 1 y: 2 }",
                 {
-                    {ValuascriptErrorCode::ExpectedCommaSeparatorInDictionaryLiteral, 1, 8, 1, 9}
+                    {E::ExpectedCommaSeparatorInDictionaryLiteral, 1, 8, 1, 9}
                 },
                 IsDict({
                     {"x", {}, IsNumber("1")},
@@ -33,7 +35,7 @@ namespace valuascript::compiler::test
 
             reg("DictMissingExpressionValue", "{ x: , y: 2 }",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 6, 1, 7}
+                    {E::InvalidExpression, 1, 6, 1, 7}
                 },
                 IsDict({
                     {"x", {}, IsNull()},
@@ -43,7 +45,7 @@ namespace valuascript::compiler::test
 
             reg("DictBrokenExpressionValue", "{ x: *, y: 2 }",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 6, 1, 7}
+                    {E::InvalidExpression, 1, 6, 1, 7}
                 },
                 IsDict({
                     {"x", {}, IsNull()},
@@ -53,7 +55,7 @@ namespace valuascript::compiler::test
 
             reg("GarbageBetweenPairs", "{ x: 1, +, y: 2 }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 9, 1, 10}
+                    {E::ExpectedDictionaryKey, 1, 9, 1, 10}
                 },
                 IsDict({
                     {"x", {}, IsNumber("1")},
@@ -64,7 +66,7 @@ namespace valuascript::compiler::test
 
             reg("DictEmptyComma", "{ , }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
                 IsDict({
                     {"<error>", {}, IsNull()}
@@ -73,10 +75,10 @@ namespace valuascript::compiler::test
 
             reg("MissingBothKeyAndValue", "{ :, :, z: 3}",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 3, 1, 4},
-                    {ValuascriptErrorCode::InvalidExpression, 1, 4, 1, 5},
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 6, 1, 7},
-                    {ValuascriptErrorCode::InvalidExpression, 1, 7, 1, 8},
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 4},
+                    {E::InvalidExpression, 1, 4, 1, 5},
+                    {E::ExpectedDictionaryKey, 1, 6, 1, 7},
+                    {E::InvalidExpression, 1, 7, 1, 8},
                 },
                 IsDict({
                     {"<error>", {}, IsNull()},
@@ -91,10 +93,10 @@ namespace valuascript::compiler::test
                 ":,\n"
                 "z: 3\n}",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 2, 1, 2, 2},
-                    {ValuascriptErrorCode::InvalidExpression, 2, 2, 2, 3},
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 3, 1, 3, 2},
-                    {ValuascriptErrorCode::InvalidExpression, 3, 2, 3, 3},
+                    {E::ExpectedDictionaryKey, 2, 1, 2, 2},
+                    {E::InvalidExpression, 2, 2, 2, 3},
+                    {E::ExpectedDictionaryKey, 3, 1, 3, 2},
+                    {E::InvalidExpression, 3, 2, 3, 3},
                 },
                 IsDict({
                     {"<error>", {}, IsNull()},
@@ -105,7 +107,7 @@ namespace valuascript::compiler::test
 
             reg("DoubleCommaBetweenPairs", "{ x: 1,, y: 2 }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 8, 1, 9}
+                    {E::ExpectedDictionaryKey, 1, 8, 1, 9}
                 },
                 IsDict({
                     {"x", {}, IsNumber("1")},
@@ -116,7 +118,7 @@ namespace valuascript::compiler::test
 
             reg("DictKeyIsString", "{ \"x\": 1 }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 3, 1, 6}
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 6}
                 },
                 IsDict({
                     {"<error>", {}, IsNumber("1")},
@@ -125,7 +127,7 @@ namespace valuascript::compiler::test
 
             reg("DictKeyIsNumber", "{ 1: 1 }",
                 {
-                    {ValuascriptErrorCode::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
                 IsDict({
                     {"<error>", {}, IsNumber("1")},

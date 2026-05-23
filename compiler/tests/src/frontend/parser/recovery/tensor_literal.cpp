@@ -2,6 +2,8 @@
 
 namespace valuascript::compiler::test
 {
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -13,7 +15,7 @@ namespace valuascript::compiler::test
 
             reg("TensorDoubleComma", "[1,, 2]",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 4, 1, 5}
+                    {E::InvalidExpression, 1, 4, 1, 5}
                 },
                 IsTensor({
                     IsNumber("1"), IsNumber("2")

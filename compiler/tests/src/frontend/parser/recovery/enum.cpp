@@ -7,6 +7,8 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     namespace
     {
         const bool _ = []()
@@ -17,29 +19,29 @@ namespace valuascript::compiler::test
             };
 
             // reg("OnlyEnumKeyword", "enum",
-            //     {{ValuascriptErrorCode::ExpectedEnumName, 1, 5, 1, 6}},
+            //     {{E::ExpectedEnumName, 1, 5, 1, 6}},
             //     IsEnumDef("<error>"));
             //
             // reg("MissingColon", "enum Test",
-            //     {{ValuascriptErrorCode::ExpectedColonAfterEnumName, 1, 10, 1, 11}},
+            //     {{E::ExpectedColonAfterEnumName, 1, 10, 1, 11}},
             //     IsEnumDef("Test"));
             //
             // reg("MissingUnderlyingType", "enum Test :",
-            //     {{ValuascriptErrorCode::ExpectedColonAfterEnumName, 1, 12, 1, 13}},
+            //     {{E::ExpectedColonAfterEnumName, 1, 12, 1, 13}},
             //     IsEnumDef("Test"));
 
             // reg("MissingLeftBrace", "enum Test: int ",
-            //     {{ValuascriptErrorCode::ExpectedLeftBraceBeforeEnumBody, 1, 15, 1, 16}},
+            //     {{E::ExpectedLeftBraceBeforeEnumBody, 1, 15, 1, 16}},
             //     IsEnumDef("Test", {}, IsType("int")));
 
             // On Windows because of a sentinel it fails (the sentinel is dot access on multiline reassignment) -> maybe generate all sentinels paths not just random...
             // reg("MissingRightBrace", "enum Test: int {",
-            //     {{ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 17, 1, 18}},
+            //     {{E::ExpectedRightBraceAfterEnumBody, 1, 17, 1, 18}},
             //     IsEnumDef("Test", {}, IsType("int")));
 
             reg("EnumMissingName", "enum : int { A }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumName, 1, 6, 1, 7}
+                    {E::ExpectedEnumName, 1, 6, 1, 7}
                 },
                 IsEnumDef("<error>", {}, IsType("int"), {
                               {"A"}
@@ -49,7 +51,7 @@ namespace valuascript::compiler::test
 
             // reg("EnumMissingColon", "enum Test int { A }",
             //     {
-            //         {ValuascriptErrorCode::ExpectedColonAfterEnumName, 1, 11, 1, 14}
+            //         {E::ExpectedColonAfterEnumName, 1, 11, 1, 14}
             //     },
             //     IsEnumDef("Test", {}, IsType("int"), {
             //                   {"A"}
@@ -59,7 +61,7 @@ namespace valuascript::compiler::test
 
             reg("EnumMissingTypeAnnotation", "enum Test: { A }",
                 {
-                    {ValuascriptErrorCode::MissingTypeAnnotation, 1, 12, 1, 13}
+                    {E::MissingTypeAnnotation, 1, 12, 1, 13}
                 },
                 IsEnumDef("Test", {}, IsNullType(), {
                               {"A"}
@@ -69,8 +71,8 @@ namespace valuascript::compiler::test
 
             reg("NoCommasASTAllCases", "enum Test: int { A B C }",
                 {
-                    {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 1, 20, 1, 21},
-                    {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 1, 22, 1, 23}
+                    {E::ExpectedCommaSeparatorInEnum, 1, 20, 1, 21},
+                    {E::ExpectedCommaSeparatorInEnum, 1, 22, 1, 23}
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -82,8 +84,8 @@ namespace valuascript::compiler::test
 
             reg("NoCommasASTAllCasesWithDefault", "enum Test: int { A = 1 B = a() C = 2 }",
                 {
-                    {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 1, 24, 1, 25},
-                    {ValuascriptErrorCode::ExpectedCommaSeparatorInEnum, 1, 32, 1, 33}
+                    {E::ExpectedCommaSeparatorInEnum, 1, 24, 1, 25},
+                    {E::ExpectedCommaSeparatorInEnum, 1, 32, 1, 33}
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A", {}, IsNumber("1")},
@@ -95,7 +97,7 @@ namespace valuascript::compiler::test
 
             reg("NumberCaseName", "enum Test: int { 1 }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 18, 1, 19}
+                    {E::ExpectedEnumCaseName, 1, 18, 1, 19}
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"<error>"},
@@ -105,7 +107,7 @@ namespace valuascript::compiler::test
 
             reg("StringCaseName", "enum Test: int { \"A\" }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 18, 1, 21}
+                    {E::ExpectedEnumCaseName, 1, 18, 1, 21}
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"<error>"},
@@ -115,7 +117,7 @@ namespace valuascript::compiler::test
 
             reg("CasesGarbageStart", "enum Test: int { +-*/, B, C }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 18, 1, 19},
+                    {E::ExpectedEnumCaseName, 1, 18, 1, 19},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"<error>"},
@@ -127,7 +129,7 @@ namespace valuascript::compiler::test
 
             reg("CasesGarbageMiddle", "enum Test: int { A, +-*/, C }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 21, 1, 22},
+                    {E::ExpectedEnumCaseName, 1, 21, 1, 22},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -139,7 +141,7 @@ namespace valuascript::compiler::test
 
             reg("CasesGarbageEnd", "enum Test: int { A, B, +-*/ }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 24, 1, 25},
+                    {E::ExpectedEnumCaseName, 1, 24, 1, 25},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -151,7 +153,7 @@ namespace valuascript::compiler::test
 
             reg("CasesSkip", "enum Test: int { A, , C }",
                 {
-                    {ValuascriptErrorCode::ExpectedEnumCaseName, 1, 21, 1, 22},
+                    {E::ExpectedEnumCaseName, 1, 21, 1, 22},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -163,7 +165,7 @@ namespace valuascript::compiler::test
 
             reg("MissingDefault", "enum Test: int { A =, B }",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 21, 1, 22},
+                    {E::InvalidExpression, 1, 21, 1, 22},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -174,7 +176,7 @@ namespace valuascript::compiler::test
 
             reg("MissingDefaultLast", "enum Test: int { A, B = }",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 25, 1, 26},
+                    {E::InvalidExpression, 1, 25, 1, 26},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},
@@ -185,9 +187,9 @@ namespace valuascript::compiler::test
 
             reg("MissingDefaultMultiple", "enum Test: int { A =, B = 1, C =, D = 1, E =, F = 1}",
                 {
-                    {ValuascriptErrorCode::InvalidExpression, 1, 21, 1, 22},
-                    {ValuascriptErrorCode::InvalidExpression, 1, 33, 1, 34},
-                    {ValuascriptErrorCode::InvalidExpression, 1, 45, 1, 46},
+                    {E::InvalidExpression, 1, 21, 1, 22},
+                    {E::InvalidExpression, 1, 33, 1, 34},
+                    {E::InvalidExpression, 1, 45, 1, 46},
                 },
                 IsEnumDef("Test", {}, IsType("int"), {
                               {"A"},

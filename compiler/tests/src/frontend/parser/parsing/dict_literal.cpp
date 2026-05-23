@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "ast_base_test.h"
 #include "core/valuascript_exception.h"
 
 using namespace valuascript::compiler;
@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     {
         std::string test_name;
         std::string source_code;
-        ValuascriptErrorCode expected_error;
+        E expected_error;
     };
 
     class DictLiteralSadPathTest : public AstBaseTest,
@@ -31,7 +31,7 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Syntax)
                 << "Category mismatch on test: " << param.test_name;
-            EXPECT_EQ(e.get_code(), param.expected_error)
+            EXPECT_TRUE(e.is_error(param.expected_error))
                 << "Error code mismatch on test: " << param.test_name;
         }
     }
@@ -40,25 +40,25 @@ namespace valuascript::compiler::test
         ParserStageTest,
         DictLiteralSadPathTest,
         testing::Values(
-            DictLiteralSadParam{"dict_missing_brace", "{a: 1", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_missing_brace", "{a: 1", E::
             UnmatchedBraceInDictionaryLiteral},
-            DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", E::
             ExpectedCommaSeparatorInDictionaryLiteral},
-            DictLiteralSadParam{"dict_missing_key", "{1}", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_missing_key", "{1}", E::
             ExpectedDictionaryKey},
-            DictLiteralSadParam{"dict_missing_colon", "{a 1}", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_missing_colon", "{a 1}", E::
             ExpectedColonAfterDictionaryKey},
-            DictLiteralSadParam{"dict_empty", "{a}", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_empty", "{a}", E::
             ExpectedColonAfterDictionaryKey},
-            DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", ValuascriptErrorCode::ExpectedDictionaryKey
+            DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", E::ExpectedDictionaryKey
             },
-            DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", ValuascriptErrorCode
+            DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", E
             ::MissingOperator},
-            DictLiteralSadParam{"dict_self_missing_property_name", "{ a: 1, b: self. }", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_self_missing_property_name", "{ a: 1, b: self. }", E::
             ExpectedPropertyName},
-            DictLiteralSadParam{"dict_self_empty_bracket", "{ a: 1, b: self[] }", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_self_empty_bracket", "{ a: 1, b: self[] }", E::
             EmptyBracketAccess},
-            DictLiteralSadParam{"dict_self_missing_operator", "{ a: 1, b: self.a 5 }", ValuascriptErrorCode::
+            DictLiteralSadParam{"dict_self_missing_operator", "{ a: 1, b: self.a 5 }", E::
             MissingOperator}
         ),
         [](const testing::TestParamInfo<DictLiteralSadParam>& test_info) {
