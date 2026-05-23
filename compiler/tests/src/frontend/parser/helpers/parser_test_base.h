@@ -26,9 +26,14 @@ namespace valuascript::compiler::test
         static std::string format_source_with_lines(const std::string& code);
         static std::shared_ptr<Program> run_parser(const std::string& code, CompilerContext& context);
 
-        static void expand_to_top_level_stream(ProcessingItem&& item,
+        static void expand_to_top_level_stream(std::vector<ProcessingItem> items,
                                                const ExpansionCallback& callback,
                                                bool inject_sentinels = false);
+
+        static std::vector<ProcessingItem> apply_context_augmentations(InjectableType type,
+                                                                const std::string& snippet,
+                                                                const UniversalVerifier& verifier,
+                                                                const std::string& group_name);
 
         static ConstructedRecoveryProgram BuildRecoveryProgram(std::string inner_code,
                                                                ProgramSpec inner_spec,
@@ -101,62 +106,28 @@ namespace valuascript::compiler::test
         static void ExpectReturnErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                        OneOf<ReturnVerifier> v);
 
+        static void ExpectValidUnified(InjectableType type, std::vector<ProcessingItem> items,
+                                       const std::string& group_name);
+
         template <typename Verifier>
         static void ExpectValidUnified(InjectableType type, const std::string& snippet,
                                        const Verifier& verifier, const std::string& group_name)
         {
-            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
-            size_t actual_expansions = 0;
-
-            expand_to_top_level_stream(
-                {type, snippet, verifier, group_name, "", 0, 0},
-                [&](ProcessingItem&& item)
-                {
-                    actual_expansions++;
-                    ProgramSpec spec;
-                    std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
-
-                    SCOPED_TRACE("Context: " + item.path_name);
-                    ExpectValidParse(item.code, spec);
-                },
-                false
-            );
-
-            if (!HasFailure())
-            {
-                EXPECT_EQ(actual_expansions, expected_expansions)
-                    << "Expansion count mismatch for " << group_name << " (Valid Parse).";
-            }
+            auto items = apply_context_augmentations(type, snippet, verifier, group_name);
+            ExpectValidUnified(type, std::move(items), group_name);
         }
+
+        static void ExpectParseErrorsUnified(InjectableType type, std::vector<ProcessingItem> items,
+                                             const std::vector<ParserExpectedError>& errors,
+                                             const std::string& group_name);
 
         template <typename Verifier>
         static void ExpectParseErrorsUnified(InjectableType type, const std::string& snippet,
                                              const std::vector<ParserExpectedError>& errors,
                                              const Verifier& verifier, const std::string& group_name)
         {
-            auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-            std::string test_name = test_info ? test_info->name() : "fallback";
-            size_t base_seed = std::hash<std::string>{}(test_name);
-
-            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
-            size_t actual_expansions = 0;
-            size_t scenario_index = 0;
-
-            expand_to_top_level_stream(
-                {type, snippet, verifier, group_name, "", 0, 0},
-                [&](ProcessingItem&& item)
-                {
-                    actual_expansions++;
-                    RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));
-                },
-                true
-            );
-
-            if (!HasFailure())
-            {
-                EXPECT_EQ(actual_expansions, expected_expansions)
-                    << "Expansion count mismatch for " << group_name << " (Error Recovery).";
-            }
+            auto items = apply_context_augmentations(type, snippet, verifier, group_name);
+            ExpectParseErrorsUnified(type, std::move(items), errors, group_name);
         }
     };
 }

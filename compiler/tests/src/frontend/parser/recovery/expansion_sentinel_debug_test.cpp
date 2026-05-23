@@ -26,7 +26,9 @@ namespace valuascript::compiler::test
             size_t scenario_index = 0;
             size_t base_seed = std::hash<std::string>{}(label);
 
-            expand_to_top_level_stream({type, snippet, verifier, label, "", 0, 0}, [&](ProcessingItem&& item)
+            auto items = apply_context_augmentations(type, snippet, verifier, label);
+
+            expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
             {
                 ProgramSpec item_spec;
                 std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);

@@ -88,9 +88,9 @@ namespace valuascript::compiler::test
         const auto& [start_type, snippet, verifier, test_name] = GetParam();
 
         std::vector<ProcessingItem> results;
-        expand_to_top_level_stream(
-            {start_type, snippet, verifier, test_name, "", 0, 0},
-            [&](ProcessingItem&& item)
+        auto items = apply_context_augmentations(start_type, snippet, verifier, test_name);
+
+        expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
             {
                 results.push_back(std::move(item));
             },
@@ -165,9 +165,9 @@ namespace valuascript::compiler::test
         size_t base_seed = 0x1337;
         size_t scenario_index = 0;
 
-        expand_to_top_level_stream(
-            {start_type, snippet, verifier, test_name, "", 0, 0},
-            [&](ProcessingItem&& item)
+        auto items = apply_context_augmentations(start_type, snippet, verifier, test_name);
+
+        expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
             {
                 SCOPED_TRACE("Checking Scenario: " + item.path_name);
 

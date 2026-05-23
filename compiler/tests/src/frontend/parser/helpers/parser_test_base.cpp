@@ -7,6 +7,7 @@
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
 #include "context_tree_walker.h"
+#include "modifier_context_augmentation_manager.h"
 
 namespace valuascript::compiler::test
 {
@@ -42,79 +43,140 @@ namespace valuascript::compiler::test
         return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
     }
 
-    void ParserTestBase::expand_to_top_level_stream(ProcessingItem&& initial_item,
+    std::vector<ProcessingItem> ParserTestBase::apply_context_augmentations(InjectableType type,
+                                                                     const std::string& snippet,
+                                                                     const UniversalVerifier& verifier,
+                                                                     const std::string& group_name)
+    {
+        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0};
+
+        switch (type)
+        {
+        case InjectableType::Modifier:
+            return ModifierContextAugmentationManager::generate_variations(base_item);
+
+        case InjectableType::Import:
+        case InjectableType::Directive:
+        case InjectableType::Function:
+        case InjectableType::Struct:
+        case InjectableType::Enum:
+        case InjectableType::TypeAlias:
+        case InjectableType::Expression:
+        case InjectableType::TypeAnnotation:
+        case InjectableType::WeakStatement:
+        case InjectableType::StrongStatement:
+        case InjectableType::TopLevel:
+        default:
+            return {base_item};
+        }
+    }
+
+    void ParserTestBase::expand_to_top_level_stream(std::vector<ProcessingItem> items,
                                                     const ExpansionCallback& callback,
                                                     bool inject_sentinels)
     {
-        ContextTreeWalker<ProcessingItem>::Callbacks cb;
-
-        cb.get_type = [](const ProcessingItem& item) { return item.type; };
-
-        cb.on_terminal = [&](ProcessingItem item)
+        for (auto& var_item : items)
         {
-            callback(std::move(item));
-        };
-
-        cb.on_promotion = [&](const ProcessingItem& item)
-        {
-            callback({
-                InjectableType::TopLevel, item.code, item.verifier,
-                item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
-                item.depth + 1, item.recursion_depth
-            });
-        };
-
-        cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
-        {
-            std::string next_path = item.path_name + " -> " +
-                (next_rec_depth > item.recursion_depth ? ctx.name + "(Recurse)" : ctx.name);
-
-            return ProcessingItem{
-                ctx.output_type,
-                ctx.prefix + item.code + ctx.suffix,
-                ctx.transform_verifier(item.verifier),
-                next_path,
-                ctx.prefix + item.cumulative_prefix,
-                item.depth + 1,
-                next_rec_depth
-            };
-        };
-
-        cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
-        {
-            std::vector<RecoveryBlock> pre, post;
-            std::string inner_code = item.code;
-            std::string inner_prefix = item.cumulative_prefix;
-
-            std::string next_path = item.path_name + " -> " +
-                (next_rec_depth > item.recursion_depth ? ctx.name + "(Recurse)" : ctx.name);
-
-            if (inject_sentinels)
+            ContextTreeWalker<ProcessingItem>::Callbacks cb;
+            cb.get_type = [](const ProcessingItem& item) { return item.type; };
+            cb.on_terminal = [&](ProcessingItem item) { callback(std::move(item)); };
+            cb.on_promotion = [&](const ProcessingItem& item)
             {
-                size_t seed = std::hash<std::string>{}(item.path_name + ctx.name);
-                pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
-                post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
-                inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
-                inner_prefix = pre[0].source + "\n  " + inner_prefix;
-            }
-
-            return ProcessingItem{
-                ctx.output_type,
-                ctx.prefix + inner_code + ctx.suffix,
-                ctx.transform_verifier_block(item.verifier, pre, post),
-                next_path,
-                ctx.prefix + inner_prefix,
-                item.depth + 1,
-                next_rec_depth
+                callback({
+                    InjectableType::TopLevel, item.code, item.verifier,
+                    item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
+                    item.depth + 1, item.recursion_depth
+                });
             };
-        };
+            cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
+            {
+                return ProcessingItem{
+                    ctx.output_type, ctx.prefix + item.code + ctx.suffix,
+                    ctx.transform_verifier(item.verifier),
+                    item.path_name + " -> " + (next_rec_depth > item.recursion_depth
+                                                   ? ctx.name + "(Recurse)"
+                                                   : ctx.name),
+                    ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth
+                };
+            };
+            cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
+            {
+                std::vector<RecoveryBlock> pre, post;
+                std::string inner_code = item.code;
+                std::string inner_prefix = item.cumulative_prefix;
 
-        cb.should_abort = [] { return HasFailure(); };
+                if (inject_sentinels)
+                {
+                    size_t seed = std::hash<std::string>{}(item.path_name + ctx.name);
+                    pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
+                    post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
+                    inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
+                    inner_prefix = pre[0].source + "\n  " + inner_prefix;
+                }
 
-        int start_depth = initial_item.depth;
-        int start_rec_depth = initial_item.recursion_depth;
+                return ProcessingItem{
+                    ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
+                    ctx.transform_verifier_block(item.verifier, pre, post),
+                    item.path_name + " -> " + (next_rec_depth > item.recursion_depth
+                                                   ? ctx.name + "(Recurse)"
+                                                   : ctx.name),
+                    ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth
+                };
+            };
+            cb.should_abort = [] { return HasFailure(); };
 
-        ContextTreeWalker<ProcessingItem>::walk(std::move(initial_item), start_depth, start_rec_depth, cb);
+            int start_depth = var_item.depth;
+            int start_rec_depth = var_item.recursion_depth;
+            ContextTreeWalker<ProcessingItem>::walk(std::move(var_item), start_depth, start_rec_depth, cb);
+        }
+    }
+
+    void ParserTestBase::ExpectValidUnified(InjectableType type, std::vector<ProcessingItem> items,
+                                            const std::string& group_name)
+    {
+        size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
+        size_t expected_total = expected_expansions * items.size();
+        size_t actual_expansions = 0;
+
+        expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
+        {
+            actual_expansions++;
+            ProgramSpec spec;
+            std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
+            SCOPED_TRACE("Context: " + item.path_name);
+            ExpectValidParse(item.code, spec);
+        }, false);
+
+        if (!HasFailure())
+        {
+            EXPECT_EQ(actual_expansions, expected_total) << "Expansion count mismatch for " << group_name <<
+ " (Valid Parse).";
+        }
+    }
+
+    void ParserTestBase::ExpectParseErrorsUnified(InjectableType type, std::vector<ProcessingItem> items,
+                                                  const std::vector<ParserExpectedError>& errors,
+                                                  const std::string& group_name)
+    {
+        auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+        size_t base_seed = std::hash<std::string>{}(test_info ? test_info->name() : "fallback");
+
+        size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
+        size_t expected_total = expected_expansions * items.size();
+        size_t actual_expansions = 0;
+        size_t scenario_index = 0;
+
+        expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
+        {
+            actual_expansions++;
+            RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));
+        }, true);
+
+        if (!HasFailure())
+        {
+            EXPECT_EQ(actual_expansions, expected_total) << "Expansion count mismatch for " << group_name <<
+ " (Error Recovery).";
+        }
     }
 
 
