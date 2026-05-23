@@ -10,8 +10,33 @@
 #include <utility>
 #include "frontend/parser/ast.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#include <cxxabi.h>
+#include <cstdlib>
+#endif
+
 namespace valuascript::compiler::test
 {
+    inline std::string get_demangled_name(const char* mangled_name)
+    {
+#if defined(__GNUC__) || defined(__clang__)
+        int status = 0;
+        char* demangled = abi::__cxa_demangle(mangled_name, nullptr, nullptr, &status);
+        std::string result = (status == 0 && demangled) ? demangled : mangled_name;
+        std::free(demangled);
+
+        std::string prefix = "valuascript::compiler::";
+        if (result.find(prefix) == 0)
+        {
+            result = result.substr(prefix.length());
+        }
+
+        return result;
+#else
+        return mangled_name;
+#endif
+    }
+
     struct ModifierSpec;
 
     using ExprVerifier = std::function<void(Expression*)>;
@@ -87,13 +112,15 @@ namespace valuascript::compiler::test
     {
         if (!node)
         {
-            ADD_FAILURE() << "Expected AST node of type [" << typeid(T).name() << "], but got[nullptr].";
+            ADD_FAILURE() << "Expected AST node of type [" << get_demangled_name(typeid(T).name())
+                << "], but got [nullptr].";
             return nullptr;
         }
         T* casted = dynamic_cast<T*>(node);
         if (!casted)
         {
-            ADD_FAILURE() << "Expected AST type[" << typeid(T).name() << "], but got [" << typeid(*node).name() << "].";
+            ADD_FAILURE() << "Expected AST type [" << get_demangled_name(typeid(T).name())
+                << "], but got [" << get_demangled_name(typeid(*node).name()) << "].";
             return nullptr;
         }
         return casted;
