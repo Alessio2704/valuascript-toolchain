@@ -71,7 +71,7 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             { {Err::MissingTypeAnnotation, 1, 19} },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
+            EXPECT_FALSE(ast.type_aliases.empty());
             ExpectRecoveredAssignment("a")(ast);
             }
             },
@@ -81,7 +81,7 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             { {Err::MissingTypeAnnotation, 1, 20} },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
+            EXPECT_FALSE(ast.type_aliases.empty());
             ExpectRecoveredAssignment("a")(ast);
             }
             },
@@ -174,7 +174,7 @@ namespace valuascript::compiler::test {
             {Err::ReservedKeywordAsIdentifier, 1, 20},
             },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
+            EXPECT_FALSE(ast.type_aliases.empty());
             ExpectRecoveredAssignment("a")(ast);
             }
             },
@@ -184,7 +184,7 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             { {Err::ReservedKeywordAsIdentifier, 1, 20} },
             [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
+            EXPECT_FALSE(ast.type_aliases.empty());
             ExpectRecoveredAssignment("a")(ast);
             }
             },

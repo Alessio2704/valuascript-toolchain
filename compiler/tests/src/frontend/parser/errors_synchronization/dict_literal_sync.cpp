@@ -101,20 +101,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_missing_colon",
-            "let a = { x 1, y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedColonAfterDictionaryKey, 1, 13} },
-            ExpectDict({ {"y", "2"} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_missing_comma",
-            "let a = { x: 1 y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedCommaSeparatorInDictionaryLiteral, 1, 16} },
-            ExpectDict({ {"x", "1"}, {"y", "2"} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_key_is_reserved_keyword",
             "let a = { let: 1, func: 2 }\n"
             "let recovery = 1\n",
@@ -162,22 +148,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_multiple_errors_recovers_last",
-            "let a = { x: *, y: +, z: 3 }\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 1, 14},
-            {Err::InvalidExpression, 1, 21}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 3);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_eof_after_key",
             "let a = { x\n",
             {
@@ -189,7 +159,7 @@ namespace valuascript::compiler::test
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
             ASSERT_NE(dict, nullptr);
-            EXPECT_EQ(dict->elements.size(), 0);
+            EXPECT_EQ(dict->elements.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -226,35 +196,6 @@ namespace valuascript::compiler::test
             {Err::UnmatchedBraceInDictionaryLiteral, 1, 16}
             },
             ExpectDict({{"x", "1"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_dict_with_garbage",
-            "let a = { * }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedDictionaryKey, 1, 11} },
-            ExpectDict({{"<error>", std::nullopt}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_nested_brace_overshoot_heuristic",
-            "let a = { x: { y: { z: 1 } } } let recovery = 1\n",
-            {},
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 1);
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto inner_dict = dynamic_cast<DictLiteral*>(dict->elements[0].value.get());
-            ASSERT_NE(inner_dict, nullptr);
-            ASSERT_EQ(inner_dict->elements.size(), 1);
-            EXPECT_EQ(inner_dict->elements[0].key, "y");
-            auto inner_inner_dict = dynamic_cast<DictLiteral*>(inner_dict->elements[0].value.get());
-            ASSERT_NE(inner_inner_dict, nullptr);
-            ASSERT_EQ(inner_inner_dict->elements.size(), 1);
-            EXPECT_EQ(inner_inner_dict->elements[0].key, "z");
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "dict_self_incomplete_property_access",
@@ -344,7 +285,7 @@ namespace valuascript::compiler::test
             "let a = {x self.a, y: 2 }\n"
             "let recovery = 1\n",
             { {Err::ExpectedColonAfterDictionaryKey, 1, 12} },
-            ExpectDict({ {"y", "2"} })
+            ExpectDict({{"<error>", std::nullopt}, {"y", "2"} })
             },
             ParserErrorsSynchronizationTestCase{
             "dict_self_deep_chain_interrupted",
@@ -413,7 +354,7 @@ namespace valuascript::compiler::test
             EXPECT_EQ(dict->elements[0].key, "x");
             auto tuple_expr = dynamic_cast<TupleLiteral*>(dict->elements[0].value.get());
             ASSERT_NE(tuple_expr, nullptr);
-            ASSERT_EQ(tuple_expr->elements.size(), 1) << "Tuple should contain only the successfully parsed self.a";
+            ASSERT_EQ(tuple_expr->elements.size(), 2);
 
             auto dot_access = dynamic_cast<DotAccess*>(tuple_expr->elements[0].get());
             ASSERT_NE(dot_access, nullptr);

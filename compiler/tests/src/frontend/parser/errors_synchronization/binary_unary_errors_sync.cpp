@@ -102,13 +102,13 @@ namespace valuascript::compiler::test
                     [](auto left) {
                     auto tensor_left = dynamic_cast<const TensorLiteral*>(left);
                     ASSERT_NE(tensor_left, nullptr);
-                    ASSERT_EQ(tensor_left->elements.size(), 1);
-                    ExpectNumber(tensor_left->elements[0].get(), "1");
+                    ASSERT_EQ(tensor_left->elements.size(), 2);
+                    ExpectNumber(tensor_left->elements[1].get(), "1");
                     },
                     [](auto right) {
                     auto tensor_right = dynamic_cast<const TensorLiteral*>(right);
                     ASSERT_NE(tensor_right, nullptr);
-                    ASSERT_EQ(tensor_right->elements.size(), 1);
+                    ASSERT_EQ(tensor_right->elements.size(), 2);
                     ExpectNumber(tensor_right->elements[0].get(), "2");
                     });
                 })

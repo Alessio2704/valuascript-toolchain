@@ -411,23 +411,34 @@ namespace valuascript::compiler
             TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type));
 
         if (cursor.is_at_end() || next_is_newline_stmt)
-            cursor.report_error(cursor.peek(), E::MissingTypeAnnotation, false);
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, false);
+            return AstFactory::make_node<
+                TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
+        }
 
         if (is_reserved_keyword(cursor.peek()))
         {
             cursor.report_error_no_panic(cursor.peek(), E::ReservedKeywordAsIdentifier, true);
             cursor.advance();
-            throw ParseSyncException();
+            return AstFactory::make_node<
+                TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
         if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen))
         {
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, true);
             cursor.advance();
-            throw ParseSyncException();
+            return AstFactory::make_node<
+                TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
-        auto target_type = parser.parse_type_annotation();
+        auto target_type = ErrorRecovery::attempt_parse<TypeAnnPtr>(
+            ctx, [&]() { return parser.parse_type_annotation(); },
+            RecoveryConfig::StopAtNewline(),
+            nullptr
+        );
+
         if (target_type) parser.verify_statement_end();
         return AstFactory::make_node<TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme,
                                                           std::move(target_type));

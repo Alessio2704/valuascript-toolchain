@@ -18,36 +18,107 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 4, 1, 5}
                 },
                 IsTensor({
+                    IsNumber("1"), IsNull(), IsNumber("2")
+                })
+            );
+
+            reg("TensorTrailingCommaGarbage", "[1, 2, , ]",
+                {
+                    {E::InvalidExpression, 1, 8, 1, 9}
+                },
+                IsTensor({
+                    IsNumber("1"), IsNumber("2"), IsNull()
+                })
+            );
+
+            reg("TensorEmptyElementsStress", "[ , , 1, , ]",
+                {
+                    {E::InvalidExpression, 1, 3, 1, 4},
+                    {E::InvalidExpression, 1, 5, 1, 6},
+                    {E::InvalidExpression, 1, 10, 1, 11}
+                },
+                IsTensor({
+                    IsNull(), IsNull(), IsNumber("1"), IsNull()
+                })
+            );
+
+            reg("TensorMissingComma", "[1 2]",
+                {
+                    {E::MissingCommaOrOperatorBetweenExpressions, 1, 4, 1, 5}
+                },
+                IsTensor({
                     IsNumber("1"), IsNumber("2")
                 })
             );
 
-            // reg("MissingClosingBracket", "[1, 2",
-            //     {
-            //         {ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 5, 1, 6}
-            //     },
-            //     IsTensor({
-            //         IsNumber("1"), IsNumber("2")
-            //     })
-            // );
+            reg("EmptyGarbageElement", "[*]",
+                {
+                    {E::InvalidExpression, 1, 2, 1, 3}
+                },
+                IsTensor({
+                    IsNull()
+                })
+            );
 
-            // reg("InvalidExpressionAsFirst", "[*, 1]",
-            //     {
-            //         {ValuascriptErrorCode::InvalidExpression, 1, 2, 1, 3}
-            //     },
-            //     IsTensor({
-            //         IsNull(), IsNumber("1")
-            //     })
-            // );
-            //
-            // reg("InvalidExpressionAsSecond", "[1, *]",
-            //     {
-            //         {ValuascriptErrorCode::InvalidExpression, 1, 4, 1, 5}
-            //     },
-            //     IsTensor({
-            //         IsNumber("1"), IsNull()
-            //     })
-            // );
+            reg("GarbageElement", "[1, *, 3]",
+                {
+                    {E::InvalidExpression, 1, 5, 1, 6}
+                },
+                IsTensor({
+                    IsNumber("1"), IsNull(), IsNumber("3")
+                })
+            );
+
+            reg("InvalidExpressionAsFirst", "[*, 1]",
+                {
+                    {E::InvalidExpression, 1, 2, 1, 3}
+                },
+                IsTensor({
+                    IsNull(), IsNumber("1")
+                })
+            );
+
+            reg("InvalidExpressionAsSecond", "[1, *]",
+                {
+                    {E::InvalidExpression, 1, 5, 1, 6}
+                },
+                IsTensor({
+                    IsNumber("1"), IsNull()
+                })
+            );
+
+            reg("TensorBrokenMultiline",
+                "[\n"
+                "1,\n"
+                "*,\n"
+                "3\n"
+                "]",
+                {
+                    {E::InvalidExpression, 3, 1, 3, 2}
+                },
+                IsTensor({
+                    IsNumber("1"),
+                    IsNull(),
+                    IsNumber("3")
+                })
+            );
+
+            reg("TensorRegressionComparison",
+                "[ (x > 0), * ]",
+                {
+                    {E::InvalidExpression, 1, 12, 1, 13}
+                },
+                IsTensor({
+                    IsGrouping(
+                        IsBinary(
+                            TokenType::Greater,
+                            IsIdentifier("x"),
+                            IsNumber("0")
+                        )
+                    ),
+                    IsNull()
+                })
+            );
 
             return true;
         }();

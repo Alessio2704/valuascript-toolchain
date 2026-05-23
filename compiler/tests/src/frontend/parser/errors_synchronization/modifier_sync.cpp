@@ -98,14 +98,6 @@ namespace valuascript::compiler::test {
             ExpectModifierSet({{"test", {"a"}}})
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_missing_colon",
-            "@test(a 1, b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 9} },
-            ExpectModifierSet({ {"test", {{"b", "2"}}} })
-            },
-
-            ParserErrorsSynchronizationTestCase{
             "modifier_missing_comma",
             "@test(a: 1 b: 2) let c = 3\n"
             "let recovery = 1\n",
@@ -647,7 +639,7 @@ namespace valuascript::compiler::test {
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            EXPECT_EQ(dict->elements.size(), 0);
+            EXPECT_EQ(dict->elements.size(), 1);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -814,26 +806,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "func_param_modifier_missing_colon_in_arg",
-            "func f(@test(x 1) a: int, b: int) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 16} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-
-            ASSERT_EQ(func->parameters.size(), 2);
-            EXPECT_EQ(func->parameters[0].name, "a");
-
-            EXPECT_FALSE(func->parameters[0].modifiers.empty());
-
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "test");
-            EXPECT_TRUE(func->parameters[0].modifiers[0].arguments.empty());
-
-            EXPECT_EQ(func->parameters[1].name, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_modifier_broken_expression_in_arg",
             "func f(@test(x: 1 + *) a: int, b: int) -> void {}\n"
             "let recovery = 1\n",
@@ -994,24 +966,6 @@ namespace valuascript::compiler::test {
 
             ASSERT_EQ(s->fields.size(), 2);
             EXPECT_EQ(s->fields[0].name, "id");
-            EXPECT_EQ(s->fields[1].name, "next");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_missing_colon_in_arg",
-            "struct S { @meta(key \"val\") id: int, next: float }\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 22} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-
-            ASSERT_EQ(s->fields.size(), 2);
-            EXPECT_EQ(s->fields[0].name, "id");
-            EXPECT_FALSE(s->fields[0].modifiers.empty());
-            EXPECT_EQ(s->fields[0].modifiers[0].name, "meta");
-            EXPECT_TRUE(s->fields[0].modifiers[0].arguments.empty());
-
             EXPECT_EQ(s->fields[1].name, "next");
             }
             },

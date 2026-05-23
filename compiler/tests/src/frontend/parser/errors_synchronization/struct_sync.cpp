@@ -90,13 +90,6 @@ namespace valuascript::compiler::test {
             ExpectStruct("Test", {{"id", "int"}})
             },
             ParserErrorsSynchronizationTestCase{
-            "no_colon_empty_struct_in_ast",
-            "struct Test { id int } \n"
-            "let a = 1\n",
-            { {Err::ExpectedColonAfterStructFieldName, 1, 18} },
-            ExpectStruct("Test")
-            },
-            ParserErrorsSynchronizationTestCase{
             "no_field_name_empty_struct_in_ast",
             "struct Test {  : int } \n"
             "let a = 1\n",
@@ -134,35 +127,6 @@ namespace valuascript::compiler::test {
                 {"port", "int"},
                 {"speed", "int"},
                 {"mode", std::nullopt}
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "no_colon_all_other_fields_struct_in_ast",
-            "struct Test { host: string port: int speed int mode: string }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInStruct, 1, 28},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 38},
-            {Err::ExpectedColonAfterStructFieldName, 1, 44}
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"}
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "no_colon_plus_second_last_comma_all_other_fields_struct_in_ast",
-            "struct Test { host: string port: int speed int, mode: string }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInStruct, 1, 28},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 38},
-            {Err::ExpectedColonAfterStructFieldName, 1, 44}
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"mode", "string"}
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -219,6 +183,7 @@ namespace valuascript::compiler::test {
             ExpectStruct("Test", {
                 {"host", "string"},
                 {"port", "int"},
+                {"<error>", std::nullopt},
                 })
             }
         ),

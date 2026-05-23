@@ -153,7 +153,7 @@ namespace valuascript::compiler::test
             "f(a 1, b: 2)\n"
             "let recovery = 1\n",
             { {Err::MissingColonAfterArgument, 1, 5} },
-            ExpectFunctionCall("f", {{"b", "2"}})
+            ExpectFunctionCall("f", {{"<error>", std::nullopt}, {"b", "2"}})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_colon_2",

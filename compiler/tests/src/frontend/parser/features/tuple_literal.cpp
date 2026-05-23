@@ -43,7 +43,7 @@ namespace valuascript::compiler::test
                     IsNumber("3")
                 }));
 
-            reg("TupleDifferenciateFromGrouping",
+            reg("TupleDifferentiateFromGrouping",
                 "((1 + 2), 3)",
                 IsTuple({
                     IsGrouping(
@@ -74,6 +74,17 @@ namespace valuascript::compiler::test
             reg("DistinctionFromGrouping",
                 "(1)",
                 IsGrouping(IsNumber("1")));
+
+            reg("TupleComplexRegression",
+                "(( ( 1 ) ))",
+                IsGrouping(
+                    IsGrouping(
+                        IsGrouping(
+                            IsNumber("1")
+                        )
+                    )
+                )
+            );
 
             return true;
         }();

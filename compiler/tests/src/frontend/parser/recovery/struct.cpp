@@ -43,7 +43,10 @@ namespace valuascript::compiler::test
 
             reg("MissingStructColumn", "struct Test { id int }",
                 {{E::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
-                IsStructDef("Test", {}, {})
+                IsStructDef("Test", {}, {
+                                {"<error>", {}, IsNullType()}
+                            }
+                )
             );
 
             reg("MissingStructFieldType", "struct Test { id: }",
@@ -63,6 +66,20 @@ namespace valuascript::compiler::test
             reg("MissingStructLeftBrace", "struct Test id: int }",
                 {{E::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
                 IsNull()
+            );
+
+            reg("NoColonRecoversOtherFields", "struct Test { host: string port: int speed int mode: string }",
+                {
+                    {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
+                    {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
+                    {E::ExpectedColonAfterStructFieldName, 1, 44, 1, 47}
+                },
+                IsStructDef("Test", {}, {
+                                {"host", {}, IsType("string")},
+                                {"port", {}, IsType("int")},
+                                {"<error>", {}, IsNullType()},
+                            }
+                )
             );
 
             return true;

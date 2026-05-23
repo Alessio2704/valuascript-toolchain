@@ -22,7 +22,7 @@ namespace valuascript::compiler
 
             auto elements = ListParser<TypeAnnPtr>(ctx)
                             .stop_at(TokenType::RightParen)
-                            .on_trailing_comma(E::SingleElementTuplesNotAllowed)
+                            .on_trailing_comma(E::TrailingCommaInTuple)
                             .on_missing_comma(E::ExpectedCommaSeparatorInTupleType)
                             .is_at_parent_boundary(is_at_parent_boundary)
                             .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });

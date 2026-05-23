@@ -95,6 +95,7 @@ namespace valuascript::compiler
             {
                 if (is_at_parent_boundary_ && is_at_parent_boundary_(0)) break;
 
+                bool element_pushed = false;
                 try
                 {
                     const Token& tok = ctx_.cursor.peek();
@@ -115,6 +116,7 @@ namespace valuascript::compiler
                     }
 
                     elements.push_back(parse_element());
+                    element_pushed = true;
                     if (is_at_parent_boundary_ && is_at_parent_boundary_(0)) break;
 
                     if (ctx_.cursor.check(TokenType::Comma))
@@ -143,6 +145,8 @@ namespace valuascript::compiler
                 }
                 catch (const ParseSyncException&)
                 {
+                    if (!element_pushed) elements.push_back(ElementType{});
+
                     ErrorRecovery::synchronize_with(
                         ctx_, {
                             .stop_tokens = {TokenType::Comma, closing_token_},

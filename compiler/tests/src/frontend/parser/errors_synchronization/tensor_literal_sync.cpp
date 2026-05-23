@@ -62,27 +62,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_missing_comma",
-            "let a =[ 1 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::MissingCommaOrOperatorBetweenExpressions, 1, 12} },
-            ExpectTensor({"1", "2"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_garbage_element",
-            "let a = [ 1, *, 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 14} },
-            ExpectTensor({"1", "3"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_tensor_with_garbage",
-            "let a = [ * ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 11} },
-            ExpectTensor({})
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_closed_with_wrong_brace",
             "let a =[ 1, 2 }\n"
             "let recovery = 1\n",
@@ -90,56 +69,6 @@ namespace valuascript::compiler::test
             {Err::UnmatchedBracketAfterTensorElements, 1, 15}
             },
             ExpectTensor({"1", "2"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_nested_recovery",
-            "let a = [ 1, [ 2, * ], 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 19} },
-            ExpectTensor({"1", "", "3"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_broken_inside_function_call",
-            "let a = f(a: [ 1, * ], b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 19} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto func_call = dynamic_cast<FunctionCall*>(assign->value.get());
-            ASSERT_NE(func_call, nullptr);
-            ASSERT_EQ(func_call->arguments.size(), 2);
-            EXPECT_EQ(func_call->arguments[1].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_broken_with_postfix_access",
-            "let a = [ 1, * ][0]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 14} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto bracket_access = dynamic_cast<BracketAccess*>(assign->value.get());
-            ASSERT_NE(bracket_access, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_multiple_garbage_elements",
-            "let a = [ *, *, 3 ]\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 1, 11},
-            {Err::InvalidExpression, 1, 14}
-            },
-            ExpectTensor({ "3" })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_dict_inside_broken",
-            "let a = [ { x: * }, 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 16} },
-            ExpectTensor({ "", "2" }) // Empty string represents the failed dict node
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_switch_inside_broken",
@@ -218,54 +147,11 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_multi_line_recovery",
-            "let a = [\n"
-            "  1,\n"
-            "  *,\n"
-            "  3\n"
-            "]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 3, 3} },
-            ExpectTensor({ "1", "3" })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_in_multi_assignment_failure",
-            "let a, b = [ 1, * ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 17} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            EXPECT_EQ(assign->targets.size(), 2);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->targets[1].first, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_with_comparison_no_confusion",
-            "let a = [ (x > 0), * ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 20} },
-            ExpectTensor({ "" })
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_deep_nested_barrier_failure",
             "let a = [ { key: f(a: [1, *]) }, 2 ]\n"
             "let recovery = 1\n",
             { {Err::InvalidExpression, 1, 27} },
             ExpectTensor({ "", "2" })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_consecutive_operators",
-            "let a = [ 1 + * 2, 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            EXPECT_EQ(assign->targets.size(), 1);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_missing_comma_and_bracket",
@@ -281,24 +167,6 @@ namespace valuascript::compiler::test
             auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
             EXPECT_EQ(tensor->elements.size(), 2);
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_trailing_comma_garbage",
-            "let a = [ 1, 2, , ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 17} },
-            ExpectTensor({ "1", "2" })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_empty_elements_stress",
-            "let a = [ , , 1, , ]\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 1, 11},
-            {Err::InvalidExpression, 1, 13},
-            {Err::InvalidExpression, 1, 18}
-            },
-            ExpectTensor({ "1" })
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_with_unclosed_string_element",
@@ -320,7 +188,7 @@ namespace valuascript::compiler::test
             "let a = [ func f() -> void {},  1]\n"
             "let recovery = 1\n",
             { {Err::TopLevelDeclarationNotAllowedHere, 1, 11} },
-            ExpectTensor({ "1" })
+            ExpectTensor({ "", "1" })
             },
             ParserErrorsSynchronizationTestCase{
             "tensor_with_illegal_statement_inside_new_line",
@@ -352,49 +220,6 @@ namespace valuascript::compiler::test
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
             EXPECT_EQ(tensor->elements.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_multiple_broken_statements_sequential",
-            "let a =[\n"
-            "  1,\n"
-            "  +,\n"
-            "  2\n"
-            "]\n"
-            "let b =[\n"
-            "  3,\n"
-            "  *,\n"
-            "  4,\n"
-            "  /\n"
-            "]\n"
-            "let recovery = [ 5, 6 ]\n",
-            {
-            {Err::InvalidExpression, 3, 4},
-            {Err::InvalidExpression, 8, 3},
-            {Err::InvalidExpression, 10, 3}
-            },[](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 3) << "AST must have exactly 3 statements.";
-
-            auto* assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_a, nullptr);
-            EXPECT_EQ(assign_a->targets[0].first, "a");
-            auto* tensor_a = dynamic_cast<TensorLiteral*>(assign_a->value.get());
-            ASSERT_NE(tensor_a, nullptr);
-            EXPECT_EQ(tensor_a->elements.size(), 3);
-
-            auto* assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
-            auto* tensor_b = dynamic_cast<TensorLiteral*>(assign_b->value.get());
-            ASSERT_NE(tensor_b, nullptr);
-            EXPECT_EQ(tensor_b->elements.size(), 2);
-
-            auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
-            ASSERT_NE(assign_rec, nullptr);
-            EXPECT_EQ(assign_rec->targets[0].first, "recovery");
-            auto* tensor_rec = dynamic_cast<TensorLiteral*>(assign_rec->value.get());
-            ASSERT_NE(tensor_rec, nullptr);
-            EXPECT_EQ(tensor_rec->elements.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -433,7 +258,7 @@ namespace valuascript::compiler::test
 
             auto* inner_tensor = dynamic_cast<TensorLiteral*>(tensor_b->elements[0].get());
             ASSERT_NE(inner_tensor, nullptr) << "First element of b should be a TensorLiteral";
-            EXPECT_EQ(inner_tensor->elements.size(), 1) << "Inner tensor should have recovered element '2'";
+            EXPECT_EQ(inner_tensor->elements.size(), 2);
 
             auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
             ASSERT_NE(assign_rec, nullptr);

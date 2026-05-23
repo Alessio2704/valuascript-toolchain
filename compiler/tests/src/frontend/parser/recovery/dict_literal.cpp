@@ -43,13 +43,15 @@ namespace valuascript::compiler::test
                 })
             );
 
-            reg("DictBrokenExpressionValue", "{ x: *, y: 2 }",
+            reg("DictBrokenExpressionValues", "{ x: *, y: *, z: 3 }",
                 {
-                    {E::InvalidExpression, 1, 6, 1, 7}
+                    {E::InvalidExpression, 1, 6, 1, 7},
+                    {E::InvalidExpression, 1, 12, 1, 13},
                 },
                 IsDict({
                     {"x", {}, IsNull()},
-                    {"y", {}, IsNumber("2")}
+                    {"y", {}, IsNull()},
+                    {"z", {}, IsNumber("3")}
                 })
             );
 
@@ -65,6 +67,15 @@ namespace valuascript::compiler::test
             );
 
             reg("DictEmptyComma", "{ , }",
+                {
+                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
+                },
+                IsDict({
+                    {"<error>", {}, IsNull()}
+                })
+            );
+
+            reg("DictEmptyGarbage", "{ * }",
                 {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
@@ -131,6 +142,16 @@ namespace valuascript::compiler::test
                 },
                 IsDict({
                     {"<error>", {}, IsNumber("1")},
+                })
+            );
+
+            reg("DictMissingColon", "{ x 1, y: 2 }",
+                {
+                    {E::ExpectedColonAfterDictionaryKey, 1, 5, 1, 6}
+                },
+                IsDict({
+                    {"<error>", {}, IsNull()},
+                    {"y", {}, IsNumber("2")},
                 })
             );
 

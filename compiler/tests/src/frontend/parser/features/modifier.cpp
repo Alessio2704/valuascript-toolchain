@@ -18,20 +18,23 @@ namespace valuascript::compiler::test
                 "@simple",
                 std::vector<ModifierSpec>{
                     {"simple"}
-                });
+                }
+            );
 
             reg("SingleModifierWithEmptyParens",
                 "@simple()",
                 std::vector<ModifierSpec>{
                     {"simple"}
-                });
+                }
+            );
 
             reg("MultipleModifiers",
                 "@first @second",
                 std::vector<ModifierSpec>{
                     {"first"},
                     {"second"}
-                });
+                }
+            );
 
             reg("ModifierWithOneArgument",
                 "@meta(version: 1)",
@@ -41,7 +44,8 @@ namespace valuascript::compiler::test
                             {"version", IsNumber("1")}
                         }
                     }
-                });
+                }
+            );
 
             reg("ModifierWithMultipleArguments",
                 "@config(active: true, retries: 3, strategy: \"fast\")",
@@ -53,7 +57,8 @@ namespace valuascript::compiler::test
                             {"strategy", IsString("\"fast\"")}
                         }
                     }
-                });
+                }
+            );
 
             reg("MixedModifiers",
                 "@inline @deprecated(msg: \"old\") @export",
@@ -65,7 +70,8 @@ namespace valuascript::compiler::test
                         }
                     },
                     {"export"}
-                });
+                }
+            );
 
             reg("MultilineModifiers",
                 "@export\n@meta(version: 2)\n",
@@ -76,7 +82,8 @@ namespace valuascript::compiler::test
                             {"version", IsNumber("2")}
                         }
                     }
-                });
+                }
+            );
 
             return true;
         }();

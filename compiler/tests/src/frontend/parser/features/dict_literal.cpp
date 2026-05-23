@@ -64,6 +64,21 @@ namespace valuascript::compiler::test
                     {"age", {}, IsNumber("30")}
                 }));
 
+            reg("DictComplexRegression",
+                "{ x: { y: { z: 1 } } }",
+                IsDict({
+                    {
+                        "x", {}, IsDict({
+                                {
+                                    "y", {}, IsDict({
+                                        {"z", {}, IsNumber("1")}
+                                    })
+                                }
+                            }
+                        )
+                    }
+                }));
+
             return true;
         }();
     }

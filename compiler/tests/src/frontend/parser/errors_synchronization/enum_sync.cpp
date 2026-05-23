@@ -155,7 +155,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {
             {Err::MissingTypeAnnotation, 1, 20},
-            {Err::EmptyGenericTypeAnnotation, 1, 21}
             },
             ExpectEnum("Test", "vector", {"A"})
             },
@@ -305,7 +304,7 @@ namespace valuascript::compiler::test
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.enum_definitions.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 0);
+            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
             },

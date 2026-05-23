@@ -252,19 +252,6 @@ namespace valuascript::compiler::test {
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "bracket_tensor_literal_index_partial_ast",
-            "let a = arr[ [1, *] ]\n",
-            { {Err::InvalidExpression, 1, 18} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
-                    auto tensor = dynamic_cast<const TensorLiteral*>(i);
-                    ASSERT_NE(tensor, nullptr) << "Expected inner expression to be a TensorLiteral";
-                    ASSERT_EQ(tensor->elements.size(), 1);
-                    ExpectNumber(tensor->elements[0].get(), "1");
-                    });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "dot_successive_reserved_keywords_as_properties",
             "let a = obj.let.if.else\n",
             {

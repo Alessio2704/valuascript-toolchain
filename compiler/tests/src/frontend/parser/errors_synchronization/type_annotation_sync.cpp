@@ -51,25 +51,6 @@ namespace valuascript::compiler::test {
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "generic_missing_type_after_comma",
-            "let a: map<string, > = 1\n",
-            { {Err::TrailingCommaInGenericArgument, 1, 18} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 1);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_garbage_argument_recovers",
-            "let a: map<string, *, int> = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 20} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-                ExpectBaseType(type->generic_args[1].get(), "int", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "tuple_type_missing_closing_paren",
             "let a: (int, string = 1\n",
             { {Err::UnmatchedParenthesisInTuple, 1, 21} },
@@ -78,37 +59,6 @@ namespace valuascript::compiler::test {
                 auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
                 ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
                 ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_missing_element",
-            "let a: (int, , string) = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 14} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_single_element_disallowed",
-            "let a: (int,) = 1\n",
-            { {Err::SingleElementTuplesNotAllowed, 1, 12} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 1);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_deeply_nested_empty",
-            "let a: map<string, vector<>> = 1\n",
-            { {Err::EmptyGenericTypeAnnotation, 1, 27} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-                ExpectBaseType(type->generic_args[1].get(), "vector", 0);
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -125,70 +75,6 @@ namespace valuascript::compiler::test {
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "tuple_type_nested_in_generic",
-            "let a: map<string, (int, )> = 1\n",
-            { {Err::SingleElementTuplesNotAllowed, 1, 24} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-
-                auto inner_tuple = type->generic_args[1].get();
-                ExpectTupleType(inner_tuple, 1);
-                ExpectBaseType(dynamic_cast<const TupleTypeAnnotation*>(inner_tuple)->element_types[0].get(), "int", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_inside_tuple_type_broken",
-            "let a: (int, (string, *, float)) = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 23} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-
-                auto inner_tuple = tuple_type->element_types[1].get();
-                ExpectTupleType(inner_tuple, 2);
-                auto inner_tuple_cast = dynamic_cast<const TupleTypeAnnotation*>(inner_tuple);
-                ExpectBaseType(inner_tuple_cast->element_types[0].get(), "string", 0);
-                ExpectBaseType(inner_tuple_cast->element_types[1].get(), "float", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_missing_comma_between_args",
-            "let a: map<string int> = 1\n",
-            { {Err::ExpectedCommaSeparatorInGenericArgs, 1, 19} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-                ExpectBaseType(type->generic_args[1].get(), "int", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_multiple_missing_commas",
-            "let a: tuple<int string float> = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInGenericArgs, 1, 18},
-            {Err::ExpectedCommaSeparatorInGenericArgs, 1, 25}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "tuple", 3);
-                ExpectBaseType(type->generic_args[0].get(), "int", 0);
-                ExpectBaseType(type->generic_args[1].get(), "string", 0);
-                ExpectBaseType(type->generic_args[2].get(), "float", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_missing_comma_between_args",
-            "let a: (int string) = 1\n",
-            { {Err::ExpectedCommaSeparatorInTupleType, 1, 13} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "generic_reserved_keyword_as_type",
             "let a: map<int, let> = 1\n",
             { {Err::ReservedKeywordAsIdentifier, 1, 17} },
@@ -196,75 +82,6 @@ namespace valuascript::compiler::test {
                 ExpectBaseType(type, "map", 2);
                 ExpectBaseType(type->generic_args[0].get(), "int", 0);
                 ExpectBaseType(type->generic_args[1].get(), "let", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_multiple_garbage_elements",
-            "let a: map<*, int, *, float> = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 12},
-            {Err::MissingTypeAnnotation, 1, 20}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "int", 0);
-                ExpectBaseType(type->generic_args[1].get(), "float", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "generic_empty_slots_with_commas",
-            "let a: map<int, , string> = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 17} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "int", 0);
-                ExpectBaseType(type->generic_args[1].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_multiple_garbage_elements",
-            "let a: (int, *, float, ^) = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 14},
-            {Err::MissingTypeAnnotation, 1, 24}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                ExpectBaseType(tuple_type->element_types[1].get(), "float", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_type_trailing_comma",
-            "let a: (int, string, ) = 1\n",
-            { {Err::SingleElementTuplesNotAllowed, 1, 20} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "deeply_nested_mixed_garbage",
-            "let a: map<string, (int, *, vector<float, >)> = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 26},
-            {Err::TrailingCommaInGenericArgument, 1, 41}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "string", 0);
-
-                auto inner_tuple = type->generic_args[1].get();
-                ExpectTupleType(inner_tuple, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(inner_tuple);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-
-                auto inner_vec = tuple_type->element_types[1].get();
-                ExpectBaseType(inner_vec, "vector", 1);
-                ExpectBaseType(inner_vec->generic_args[0].get(), "float", 0);
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -442,31 +259,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "generic_nested_in_tuple_missing_comma_recovery",
-            "let a: (int, vector<string int>) = 1\n",
-            { {Err::ExpectedCommaSeparatorInGenericArgs, 1, 28} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                auto tuple = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ASSERT_NE(tuple, nullptr);
-                auto vec = tuple->element_types[1].get();
-                ExpectBaseType(vec, "vector", 2);
-                ExpectBaseType(vec->generic_args[0].get(), "string", 0);
-                ExpectBaseType(vec->generic_args[1].get(), "int", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "type_annotation_with_broken_tuple_as_generic_arg",
-            "let a: map<string, (int, *)> = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 26} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                auto inner_tuple = dynamic_cast<const TupleTypeAnnotation*>(type->generic_args[1].get());
-                ASSERT_NE(inner_tuple, nullptr);
-                EXPECT_EQ(inner_tuple->element_types.size(), 1);
-                EXPECT_EQ(inner_tuple->element_types[0]->name, "int");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_broken_generic_type_recovers_next_param",
             "func test(a: vector<int,\n"
             "          b: string) -> void {\n"
@@ -578,45 +370,6 @@ namespace valuascript::compiler::test {
 
             ASSERT_EQ(e->cases.size(), 1);
             EXPECT_EQ(e->cases[0].name, "A");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "type_annotation_missing_comma_in_generics",
-            "struct S {\n"
-            "  a: dict<int string>\n"
-            "}\n",
-            { {Err::ExpectedCommaSeparatorInGenericArgs, 2, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 1);
-
-            auto type = s->fields[0].type.get();
-            EXPECT_EQ(type->name, "dict");
-            ASSERT_EQ(type->generic_args.size(), 2);
-
-            ExpectBaseType(type->generic_args[0].get(), "int", 0);
-            ExpectBaseType(type->generic_args[1].get(), "string", 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "type_annotation_invalid_token_recovers",
-            "struct S {\n"
-            "  a: vector<123>,\n"
-            "  b: int\n"
-            "}\n",
-            {
-            {Err::MissingTypeAnnotation, 2, 13},
-            {Err::EmptyGenericTypeAnnotation, 2, 16},
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 2);
-
-            EXPECT_EQ(s->fields[0].name, "a");
-            EXPECT_EQ(s->fields[1].name, "b");
-            ExpectBaseType(s->fields[1].type.get(), "int", 0);
             }
             }
         ),

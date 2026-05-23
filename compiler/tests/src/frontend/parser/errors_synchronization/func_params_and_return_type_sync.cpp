@@ -1,69 +1,93 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        const FunctionDefinition *ExpectRecoveredFunction(const Program &ast, const std::string &expected_name) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        const FunctionDefinition* ExpectRecoveredFunction(const Program& ast, const std::string& expected_name)
+        {
             EXPECT_EQ(ast.execution_steps.size(), 1) << "Expected 'let a = 1' to survive.";
 
             if (ast.function_definitions.empty()) return nullptr;
 
             auto it = std::find_if(ast.function_definitions.begin(), ast.function_definitions.end(),
-                                   [&](const auto &f) { return f->name == expected_name; });
+                                   [&](const auto& f) { return f->name == expected_name; });
 
             if (it == ast.function_definitions.end()) return nullptr;
             return it->get();
         }
 
-        void ExpectFunctionSignature(const FunctionDefinition *func,
-                                     const std::vector<std::pair<std::string, std::optional<std::string> > > &
+        void ExpectFunctionSignature(const FunctionDefinition* func,
+                                     const std::vector<std::pair<std::string, std::optional<std::string>>>&
                                      expected_params,
-                                     const std::vector<std::string> &expected_returns) {
+                                     const std::vector<std::string>& expected_returns)
+        {
             ASSERT_NE(func, nullptr) << "Function definition was null!";
 
             ASSERT_EQ(func->parameters.size(), expected_params.size()) << "Parameter count mismatch!";
-            for (size_t i = 0; i < expected_params.size(); ++i) {
+            for (size_t i = 0; i < expected_params.size(); ++i)
+            {
                 EXPECT_EQ(func->parameters[i].name, expected_params[i].first) << "Param name mismatch at index " << i;
-                if (expected_params[i].second.has_value()) {
+                if (expected_params[i].second.has_value())
+                {
                     ASSERT_NE(func->parameters[i].type, nullptr);
                     EXPECT_EQ(func->parameters[i].type->name,
                               expected_params[i].second) << "Param type mismatch at index "
          <<
                                  i;
-                } else {
+                }
+                else
+                {
                     EXPECT_EQ(func->parameters[i].type.get(), nullptr);
                 }
             }
 
             ASSERT_EQ(func->return_types.size(), expected_returns.size()) << "Return type count mismatch!";
-            for (size_t i = 0; i < expected_returns.size(); ++i) {
+            for (size_t i = 0; i < expected_returns.size(); ++i)
+            {
                 ASSERT_NE(func->return_types[i], nullptr);
-                EXPECT_EQ(func->return_types[i]->name, expected_returns[i]) << "Return type mismatch at index " << i;
+                if (expected_returns[i].empty())
+                {
+                    EXPECT_EQ(func->return_types[i], nullptr);
+
+                }
+                else
+                {
+                    EXPECT_EQ(func->return_types[i]->name, expected_returns[i]) << "Return type mismatch at index " <<
+ i;
+                }
             }
         }
 
-        auto ExpectNoFunctions() {
-            return [](const Program &ast) {
+        auto ExpectNoFunctions()
+        {
+            return [](const Program& ast)
+            {
                 ASSERT_EQ(ast.function_definitions.size(), 0);
                 ASSERT_EQ(ast.execution_steps.size(), 1);
             };
         }
 
         auto ExpectFunction(std::string name,
-                            std::vector<std::pair<std::string, std::optional<std::string> > > params = {},
-                            std::vector<std::string> returns = {"void"}) {
+                            std::vector<std::pair<std::string, std::optional<std::string>>> params = {},
+                            std::vector<std::string> returns = {"void"})
+        {
             return [n = std::move(name), par = std::move(params), ret = std::move(returns)](
-                const Program &ast) {
+                const Program& ast)
+            {
                 auto f = ExpectRecoveredFunction(ast, n);
                 ExpectFunctionSignature(f, par, ret);
             };
         }
     }
 
-    class FunctionParametersAndReturnTypeParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class FunctionParametersAndReturnTypeParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(FunctionParametersAndReturnTypeParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(FunctionParametersAndReturnTypeParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -153,7 +177,7 @@ namespace valuascript::compiler::test {
             "func test(a int, b: string) -> int {}\n"
             "let a = 1\n",
             {{Err::MissingColonAfterParameter, 1, 13}},
-            ExpectFunction("test", {{"b", "string"}}, {"int"})
+            ExpectFunction("test", {{"<error>", std::nullopt}, {"b", "string"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "garbage_in_params_discards_and_recovers",
@@ -168,13 +192,6 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             {{Err::ExpectedCommaSeparatorInReturnTypeList, 1, 20}},
             ExpectFunction("test", {}, {"int", "string"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_type_after_arrow_discards_and_continues",
-            "func test() -> , int {}\n"
-            "let a = 1\n",
-            {{Err::MissingTypeAnnotation, 1, 16}},
-            ExpectFunction("test", {}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
             "error_in_params_preserves_docstring",
@@ -250,7 +267,7 @@ namespace valuascript::compiler::test {
             "error_inside_return_tuple_recovers",
             "func test() -> (int, ) {}\n"
             "let a = 1\n",
-            { {Err::SingleElementTuplesNotAllowed, 1, 20} },
+            { {Err::TrailingCommaInTuple, 1, 20} },
             ExpectFunction("test", {}, {"tuple"})
             },
             ParserErrorsSynchronizationTestCase{

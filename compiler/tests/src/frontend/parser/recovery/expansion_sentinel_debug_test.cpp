@@ -83,5 +83,23 @@ namespace valuascript::compiler::test
             {
             })
         );
+
+        DumpRecoveryExpansion(
+            InjectableType::TypeAnnotation,
+            "map<string, *, int>",
+            {ParserExpectedError(ParserErrorCode::MissingTypeAnnotation, 1, 13)},
+            "BrokenTypeAnnotation",
+            TypeVerifier([](TypeAnnotation*)
+            {
+            })
+        );
+
+        DumpRecoveryExpansion(
+            InjectableType::Modifier,
+            "@test(a 1, b: 2)",
+            {ParserExpectedError(ParserErrorCode::MissingColonAfterArgument, 1, 9)},
+            "BrokenModifier",
+            std::vector<ModifierSpec>{}
+        );
     }
 }
