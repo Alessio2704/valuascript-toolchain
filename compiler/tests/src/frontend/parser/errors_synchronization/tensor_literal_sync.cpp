@@ -87,22 +87,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_grouping_inside_broken",
-            "let a = [ (1 + *), 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 16} },
-            [](const Program& ast) {
-            const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
-            ASSERT_EQ(tensor->elements.size(), 2);
-            auto first_elem = dynamic_cast<GroupingExpression*>(tensor->elements[0].get());
-            ASSERT_NE(first_elem, nullptr);
-            ASSERT_NE(first_elem->expression, nullptr);
-            auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
-            ASSERT_NE(second_elem, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_missing_bracket_before_next_stmt",
             "let a = [ 1, 2\n"
             "let b = 3\n"

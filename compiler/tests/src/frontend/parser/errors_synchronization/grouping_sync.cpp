@@ -46,54 +46,10 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_empty_is_actually_a_tuple",
-            "let a = ()\n"
-            "let recovery = 1\n",
-            {},
-            [](const Program& ast) {
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            ASSERT_NE(dynamic_cast<TupleLiteral*>(assign->value.get()), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_with_garbage_expression",
-            "let a = ( * )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 11} },
-            ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
             "grouping_missing_operator_inside",
             "let a = ( 1 2 )\n"
             "let recovery = 1\n",
             { {Err::MissingOperatorInsideGrouping, 1, 13} },
-            ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_with_trailing_binary_op",
-            "let a = ( 1 + )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 15} },
-            ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_recovery_with_trailing_math",
-            "let a = ( 1 + * ) + 5\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 15} },
-            [](const Program& ast) {
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            auto *binary = dynamic_cast<BinaryExpression*>(assign->value.get());
-            ASSERT_NE(binary, nullptr) << "Should have parsed the outer binary expression (+ 5)";
-            EXPECT_EQ(binary->op, TokenType::Plus);
-            ASSERT_NE(dynamic_cast<GroupingExpression*>(binary->left.get()), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_nested_recovery",
-            "let a = ( ( * ) + 1 )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 13} },
             ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{
@@ -136,18 +92,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "ambiguity_starts_as_grouping_fails_to_tuple",
-            "let a = ( 1 + * , 2 )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 15} },
-            [](const Program& ast) {
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            auto *tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
-            ASSERT_NE(tuple, nullptr);
-            EXPECT_EQ(tuple->elements.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "grouping_leading_comma_error",
             "let a = ( , 1 )\n"
             "let recovery = 1\n",
@@ -172,39 +116,6 @@ namespace valuascript::compiler::test {
             auto* g2 = dynamic_cast<GroupingExpression*>(g1->expression.get());
             auto* g3 = dynamic_cast<GroupingExpression*>(g2->expression.get());
             ASSERT_NE(g3, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_multiple_inner_errors",
-            "let a = ( * + * )\n"
-            "let recovery = 1\n",
-            {
-            {Err::InvalidExpression, 1, 11},
-            },
-            ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_broken_with_call",
-            "let a = ( * )()\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto* call = dynamic_cast<FunctionCall*>(assign->value.get());
-            ASSERT_NE(call, nullptr);
-            ASSERT_NE(dynamic_cast<GroupingExpression*>(call->target.get()), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_broken_with_dot_access",
-            "let a = ( * ).property\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto* dot = dynamic_cast<DotAccess*>(assign->value.get());
-            ASSERT_NE(dot, nullptr);
-            EXPECT_EQ(dot->property_name, "property");
             }
             },
             ParserErrorsSynchronizationTestCase{

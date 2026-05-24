@@ -73,15 +73,15 @@ namespace valuascript::compiler::test
                 }
             );
 
-            reg("MultilineModifiers",
-                "@export\n@meta(version: 2)\n",
+            reg("ModifierWhitespaceAndCommentsCondensed",
+                "@test1 // line comment\n"
+                "( \n a: 1 // end \n ) "
+                "@\n test2(b: 2) "
+                "@test3\n\n\n(c: 3) ",
                 std::vector<ModifierSpec>{
-                    {"export"},
-                    {
-                        "meta", {
-                            {"version", IsNumber("2")}
-                        }
-                    }
+                    {"test1", {{"a", IsNumber("1")}}},
+                    {"test2", {{"b", IsNumber("2")}}},
+                    {"test3", {{"c", IsNumber("3")}}}
                 }
             );
 

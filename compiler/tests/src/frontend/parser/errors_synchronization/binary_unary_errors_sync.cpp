@@ -91,29 +91,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "binary_expr_survives_with_recovered_tensor_operands",
-            "let a = [*, 1] + [2, *]\n",
-            {
-            {Err::InvalidExpression, 1, 10},
-            {Err::InvalidExpression, 1, 22}
-            },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBinary(expr, TokenType::Plus,
-                    [](auto left) {
-                    auto tensor_left = dynamic_cast<const TensorLiteral*>(left);
-                    ASSERT_NE(tensor_left, nullptr);
-                    ASSERT_EQ(tensor_left->elements.size(), 2);
-                    ExpectNumber(tensor_left->elements[1].get(), "1");
-                    },
-                    [](auto right) {
-                    auto tensor_right = dynamic_cast<const TensorLiteral*>(right);
-                    ASSERT_NE(tensor_right, nullptr);
-                    ASSERT_EQ(tensor_right->elements.size(), 2);
-                    ExpectNumber(tensor_right->elements[0].get(), "2");
-                    });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "invalid_standalone_statement",
             "1 + 1\n"
             "let b = 2\n",

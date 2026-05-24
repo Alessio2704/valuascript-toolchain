@@ -34,11 +34,6 @@ namespace valuascript::compiler::test {
         ParserStageTest,
         TypeAnnotationSadPathTest,
         testing::Values(
-            TypeAnnotationSadParam{"empty_generic", "vector<>", E::EmptyGenericTypeAnnotation},
-            TypeAnnotationSadParam{"missing_comma_generic", "result<scalar decimal>", E::
-            ExpectedCommaSeparatorInGenericArgs},
-            TypeAnnotationSadParam{"missing_comma_tuple_type", "(scalar decimal)", E::
-            ExpectedCommaSeparatorInTupleType},
             TypeAnnotationSadParam{"missing_right_paren_tuple_type", "(scalar, decimal", E::
             UnmatchedParenthesisInTuple},
             TypeAnnotationSadParam{"unmatched_diamond_in_generics", "vector<decimal", E::

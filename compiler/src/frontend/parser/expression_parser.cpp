@@ -321,9 +321,12 @@ namespace valuascript::compiler
     {
         Token property_token = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedPropertyName,
                                                                      RecoveryConfig::ForceStopAtBoundary({
-                                                                         TokenType::Assign, TokenType::Comma,
-                                                                         TokenType::RightParen, TokenType::RightBracket,
-                                                                         TokenType::RightBrace
+                                                                         TokenType::Assign,
+                                                                         TokenType::Comma,
+                                                                         TokenType::Dot,
+                                                                         TokenType::LeftParen,
+                                                                         TokenType::LeftBracket,
+                                                                         TokenType::LeftBrace
                                                                      }), true, true);
         return AstFactory::make_node_with_span<DotAccess>(
             cursor.combine_spans(target->span, cursor.make_span(property_token, property_token)), std::move(target),

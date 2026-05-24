@@ -45,10 +45,6 @@ namespace valuascript::compiler::test
             ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", E::
             ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"MissingModifierName", "@ let x = 1", E::ExpectedModifierName},
-            ModifierSadParam{"MissingColonInArg", "@bind(ui \"slider\") let x = 1", E::
-            MissingColonAfterArgument},
-            ModifierSadParam{"MissingArgumentName", "@bind(: \"slider\") let x = 1", E::
-            MissingArgumentNameInModifier},
             ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", E::
             UnmatchedParenthesisAfterModifierArgs},
             ModifierSadParam{"DoubleAtSign", "@@export let x = 1", E::ExpectedModifierName},

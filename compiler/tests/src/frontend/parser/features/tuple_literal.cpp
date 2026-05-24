@@ -73,7 +73,8 @@ namespace valuascript::compiler::test
 
             reg("DistinctionFromGrouping",
                 "(1)",
-                IsGrouping(IsNumber("1")));
+                IsGrouping(IsNumber("1"))
+            );
 
             reg("TupleComplexRegression",
                 "(( ( 1 ) ))",

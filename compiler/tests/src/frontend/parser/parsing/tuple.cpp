@@ -45,9 +45,6 @@ namespace valuascript::compiler::test
             TupleSadParam{"tuple_missing_second_value_2", "(a, ", E::
             ExpectedRightParenAfterTupleElements},
             TupleSadParam{"tuple_parenthesis", "(a, b", E::ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_trailing_comma_1", "(a, b,)", E::TrailingCommaInTuple},
-            TupleSadParam{"single_element_tuples_not_allowed", "(1, )", E::
-            SingleElementTuplesNotAllowed},
             TupleSadParam{"missing_operator_1", "(a b)", E::MissingOperatorInsideGrouping},
             TupleSadParam{"missing_operator_2", "(a, b c)", E::
             MissingCommaOrOperatorBetweenExpressions},

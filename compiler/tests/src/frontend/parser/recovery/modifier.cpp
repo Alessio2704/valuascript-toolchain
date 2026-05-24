@@ -19,12 +19,24 @@ namespace valuascript::compiler::test
                 ErrorRegistry::add(n, c, errs, v);
             };
 
-            reg("ModifierMissingColon", "@test(a 1, b: 2)",
+            reg("ModifierMissingArgColon", "@test(a 1, b: 2)",
                 {{E::MissingColonAfterArgument, 1, 9, 1, 10}},
                 std::vector<ModifierSpec>{
                     {
                         "test", {
                             {"<error>", IsNull()},
+                            {"b", IsNumber("2")},
+                        }
+                    }
+                }
+            );
+
+            reg("ModifierMissingArgName", "@test(:1, b: 2)",
+                {{E::MissingArgumentNameInModifier, 1, 7, 1, 8}},
+                std::vector<ModifierSpec>{
+                    {
+                        "test", {
+                            {"<error>", IsNumber("1")},
                             {"b", IsNumber("2")},
                         }
                     }

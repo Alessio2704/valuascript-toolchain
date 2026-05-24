@@ -98,13 +98,6 @@ namespace valuascript::compiler::test {
             ExpectModifierSet({{"test", {"a"}}})
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_missing_comma",
-            "@test(a: 1 b: 2) let c = 3\n"
-            "let recovery = 1\n",
-            { {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 12} },
-            ExpectModifierSet({ {"test", {{"a", "1"}, {"b", "2"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_on_invalid_statement",
             "@test\n"
             "f()\n"
@@ -217,13 +210,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_separated_by_newlines",
-            "@test\n\n\n(a: 1)\nlet a = 1\n"
-            "let recovery = 1\n",
-            {},
-            ExpectModifierSet({ {"test", {{"a", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_on_directive",
             "@test #version = 1\n"
             "let recovery = 1\n",
@@ -327,13 +313,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_newline_between_at_and_name",
-            "@\n  test(a: 1) let a = 1\n"
-            "let recovery = 1\n",
-            {},
-            ExpectModifierSet({ {"test", {{"a", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_eof_after_at",
             "let a = 1\n@",
             {
@@ -364,13 +343,6 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.directives.size(), 1);
             ASSERT_EQ(ast.execution_steps.size(), 2);
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_name_is_combined_keywords",
-            "@let_var let a = 1\n"
-            "let recovery = 1\n",
-            {},
-            ExpectModifierSet({ {"let_var", {}} })
             },
             ParserErrorsSynchronizationTestCase{
             "modifier_with_deeply_nested_sync_fail",
@@ -413,14 +385,6 @@ namespace valuascript::compiler::test {
             auto arg_value = dynamic_cast<IdentifierAccess*>(step->modifiers[0].arguments[0].second.get());
             ASSERT_EQ(arg_value->name, "let");
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_with_comments_and_whitespace",
-            "@test // line comment\n"
-            "( \n a: 1 // end \n ) let a = 1\n"
-            "let recovery = 1\n",
-            {},
-            ExpectModifierSet({ {"test", {{"a", "1"}}} })
             },
             ParserErrorsSynchronizationTestCase{
             "dict_modifier_missing_name_and_dict_key",
@@ -569,24 +533,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "func_param_stacked_modifiers_one_broken",
-            "func f(@valid @broken(x: *) @ok p: int) -> void {}\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 26} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 1);
-
-            EXPECT_EQ(func->parameters[0].name, "p");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 3);
-
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "valid");
-            EXPECT_EQ(func->parameters[0].modifiers[1].name, "broken");
-            EXPECT_EQ(func->parameters[0].modifiers[2].name, "ok");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_modifier_missing_param_name",
             "func f(@test(a: 1) : int, b: int) -> void {}\n"
             "let recovery = 1\n",
@@ -640,25 +586,6 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(s->fields[1].name, "next");
             ASSERT_EQ(s->fields[1].modifiers.size(), 1);
             EXPECT_EQ(s->fields[1].modifiers[0].name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_stacked_modifiers_one_broken",
-            "struct S { @valid @broken(x: *) @last field: int }\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 30} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 1);
-
-            const auto& f = s->fields[0];
-            EXPECT_EQ(f.name, "field");
-            ASSERT_EQ(f.modifiers.size(), 3);
-
-            EXPECT_EQ(f.modifiers[0].name, "valid");
-            EXPECT_EQ(f.modifiers[1].name, "broken");
-            EXPECT_EQ(f.modifiers[2].name, "last");
             }
             },
             ParserErrorsSynchronizationTestCase{

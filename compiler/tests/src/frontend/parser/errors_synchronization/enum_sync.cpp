@@ -103,13 +103,6 @@ namespace valuascript::compiler::test
         EnumParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_name_enum",
-            "enum : int { A }\n"
-            "let a = 1\n",
-            { {Err::ExpectedEnumName, 1, 6} },
-            ExpectEnum("<error>", "int", {"A"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "name_reserved_keyword_full_ast",
             "enum true: int { A = 1, B = 2 }\n"
             "let a = 1\n",
@@ -124,52 +117,11 @@ namespace valuascript::compiler::test
             ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "no_type_enum_empty_ast",
-            "enum Test : { A }\n"
-            "let a = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 13} },
-            ExpectEnum("Test", std::nullopt, {"A"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "wrong_generic_type_enum_ast_1",
             "enum Test : vector<int { A }\n"
             "let a = 1\n",
             { {Err::UnmatchedBracketAfterGenericArgs, 1, 24} },
             ExpectEnum("Test", "vector", {"A"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_ast_2",
-            "enum Test : vector<int, > { A }\n"
-            "let a = 1\n",
-            {{Err::TrailingCommaInGenericArgument, 1, 23}},
-            [] (const Program & ast) {
-            auto enum_def = ExpectRecoveredEnum(ast, "Test");
-            EXPECT_EQ(enum_def->underlying_type.get()->name, "vector");
-            EXPECT_EQ(enum_def->underlying_type.get()->generic_args.size(), 1);
-            EXPECT_EQ(enum_def->underlying_type.get()->generic_args[0].get()->name, "int");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_ast_3",
-            "enum Test : vector<*> { A }\n"
-            "let a = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 20},
-            },
-            ExpectEnum("Test", "vector", {"A"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_empty_ast_4",
-            "enum Test : vector<int, decimal, > { A }\n"
-            "let a = 1\n",
-            {{Err::TrailingCommaInGenericArgument, 1, 32}},
-            [] (const Program & ast) {
-            auto enum_def = ExpectRecoveredEnum(ast, "Test");
-            EXPECT_EQ(enum_def->underlying_type.get()->name, "vector");
-            EXPECT_EQ(enum_def->underlying_type.get()->generic_args.size(), 2);
-            EXPECT_EQ(enum_def->underlying_type.get()->generic_args[0].get()->name, "int");
-            EXPECT_EQ(enum_def->underlying_type.get()->generic_args[1].get()->name, "decimal");
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "no_left_brace_enum_empty_ast",

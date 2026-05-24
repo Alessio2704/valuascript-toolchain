@@ -83,53 +83,6 @@ namespace valuascript::compiler::test {
             ExpectNoStructs()
             },
             ParserErrorsSynchronizationTestCase{
-            "no_right_brace_struct",
-            "struct Test { id: int \n"
-            "let a = 1\n",
-            { {Err::ExpectedRightBraceAfterStructBody, 1, 22} },
-            ExpectStruct("Test", {{"id", "int"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "no_field_name_empty_struct_in_ast",
-            "struct Test {  : int } \n"
-            "let a = 1\n",
-            { {Err::ExpectedStructFieldName, 1, 16} },
-            ExpectStruct("Test", {{"<error>", "int"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "no_commas_all_fields_struct_in_ast",
-            "struct Test { host: string port: int speed: int mode: string }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInStruct, 1, 28},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 38},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 49},
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"speed", "int"},
-                {"mode", "string"}
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "no_type_all_other_fields_struct_in_ast",
-            "struct Test { host: string port: int speed: int mode: }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInStruct, 1, 28},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 38},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 49},
-            {Err::MissingTypeAnnotation, 1, 55},
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"speed", "int"},
-                {"mode", std::nullopt}
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "reserved_keyword_1",
             "struct Test { host: string, port: int, let: int }\n"
             "let a = 1\n",

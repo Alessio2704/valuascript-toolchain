@@ -82,6 +82,38 @@ namespace valuascript::compiler::test
                 )
             );
 
+            reg("NoRightBraceStruct",
+                "struct Test { id: int ",
+                {{E::ExpectedRightBraceAfterStructBody, 1, 22, 1, 23}},
+                IsStructDef("Test", {}, {
+                                {"id", {}, IsType("int")}
+                            })
+            );
+
+            reg("NoFieldNameInStruct",
+                "struct Test { : int }",
+                {{E::ExpectedStructFieldName, 1, 15, 1, 16}},
+                IsStructDef("Test", {}, {
+                                {"<error>", {}, IsType("int")}
+                            })
+            );
+
+            reg("MissingCommasAndTrailingTypeInStruct",
+                "struct Test { host: string port: int speed: int mode: }",
+                {
+                    {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
+                    {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
+                    {E::ExpectedCommaSeparatorInStruct, 1, 49, 1, 53},
+                    {E::MissingTypeAnnotation, 1, 55, 1, 56}
+                },
+                IsStructDef("Test", {}, {
+                                {"host", {}, IsType("string")},
+                                {"port", {}, IsType("int")},
+                                {"speed", {}, IsType("int")},
+                                {"mode", {}, IsNullType()}
+                            })
+            );
+
             return true;
         }();
     }

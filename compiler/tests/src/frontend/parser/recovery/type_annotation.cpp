@@ -57,7 +57,7 @@ namespace valuascript::compiler::test
                 })
             );
 
-            reg("Empty", "map<>",
+            reg("EmptyGeneric", "map<>",
                 {{E::EmptyGenericTypeAnnotation, 1, 5, 1, 6}},
                 IsType("map", {})
             );
