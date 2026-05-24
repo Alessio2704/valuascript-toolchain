@@ -13,7 +13,7 @@
       "binaryDir": "${sourceDir}/cmake-build-${presetName}",
       "environment": {
         "FUZZ_ITERATIONS": "10000",
-        "EXPANSION_DEPTH": "5",
+        "EXPANSION_DEPTH": "4",
         "EXPANSION_RECURSION": "3"
       }
     },
