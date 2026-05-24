@@ -14,8 +14,6 @@ namespace valuascript::compiler
         case ParserErrorCode::MissingDirectiveName: return "Syntax Error: Expected directive name after '#'.";
         case ParserErrorCode::ModifiersAttachedToInvalidDeclaration: return
                 "Syntax Error: Modifiers must be attached to a declaration";
-        case ParserErrorCode::ModifiersAttachedToMultiAssignmentSingleElements: return
-                "Syntax Error: Modifiers for multi assignment must be attached before the overall statement.";
         case ParserErrorCode::ExpectedModifierName: return "Syntax Error: Expected modifier name after '@'.";
         case ParserErrorCode::MissingArgumentNameInModifier: return "Expected argument name in modifier.";
         case ParserErrorCode::MissingColonAfterArgument: return "Expected ':' after argument name.";

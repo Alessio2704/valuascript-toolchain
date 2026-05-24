@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
                 "assignment_target", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
                 "let ctx_assign: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({}, {{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}},
+                    return UniversalVerifier(IsAssignment({{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}},
                                                           IsNumber("1")));
                 }
             },
@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 "let ctx_m1: ", ", ctx_m2 = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
-                        IsAssignment({}, {{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
+                        IsAssignment({{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
                 }
             },
             {
@@ -27,7 +27,7 @@ namespace valuascript::compiler::test
                 "let ctx_m1, ctx_m2: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
-                        IsAssignment({}, {{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                        IsAssignment({{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
             {

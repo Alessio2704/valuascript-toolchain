@@ -74,8 +74,8 @@ namespace valuascript::compiler
             switch (token_type)
             {
             case TokenType::Import:
-                ctx.reject_modifiers(modifiers);
-                if (program) program->import_statements.push_back(decl_parser->parse_import_statement());
+                if (program)
+                    program->import_statements.push_back(decl_parser->parse_import_statement(std::move(modifiers)));
                 break;
             case TokenType::Hash:
                 ctx.reject_modifiers(modifiers);
@@ -103,22 +103,22 @@ namespace valuascript::compiler
                 break;
             case TokenType::Let:
                 {
-                    auto assign = stmt_parser->parse_assignment(std::move(modifiers));
+                    ctx.reject_modifiers(modifiers);
+                    auto assign = stmt_parser->parse_assignment();
                     if (program) program->execution_steps.push_back(std::move(assign));
                     else block.push_back(std::move(assign));
                     break;
                 }
             case TokenType::Return:
-                ctx.reject_modifiers(modifiers);
                 if (parse_ctx == ParseContextType::TopLevel)
                 {
                     const Token& ret_start = ctx.cursor.peek();
-                    auto ret = stmt_parser->parse_return_statement();
+                    auto ret = stmt_parser->parse_return_statement(std::move(modifiers));
                     ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
                                                      E::ReturnUsedInToplevel);
                     if (program) program->execution_steps.push_back(std::move(ret));
                 }
-                else { block.push_back(stmt_parser->parse_return_statement()); }
+                else { block.push_back(stmt_parser->parse_return_statement(std::move(modifiers))); }
                 break;
             default:
                 ctx.reject_modifiers(modifiers);

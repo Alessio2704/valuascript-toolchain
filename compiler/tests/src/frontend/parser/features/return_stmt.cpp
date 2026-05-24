@@ -16,28 +16,29 @@ namespace valuascript::compiler::test
 
             reg("ReturnSingleValue",
                 "return 1",
-                IsReturn({IsNumber("1")}));
+                IsReturn({}, {IsNumber("1")}));
 
             reg("ReturnMultipleValues",
                 "return 1, true, \"success\"",
-                IsReturn({
-                    IsNumber("1"),
-                    IsBoolean(true),
-                    IsString("\"success\"")
-                }));
+                IsReturn({}, {
+                             IsNumber("1"),
+                             IsBoolean(true),
+                             IsString("\"success\"")
+                         }));
 
             reg("ReturnWithIdentifier",
                 "return result",
-                IsReturn({IsIdentifier("result")}));
+                IsReturn({}, {IsIdentifier("result")}));
 
             reg("MultilineFormatting",
                 "return \n"
                 "  1, \n"
                 "  2",
-                IsReturn({
-                    IsNumber("1"),
-                    IsNumber("2")
-                }));
+                IsReturn({},
+                         {
+                             IsNumber("1"),
+                             IsNumber("2")
+                         }));
 
             return true;
         }();

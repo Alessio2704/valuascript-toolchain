@@ -32,8 +32,8 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(p.function_definitions[0]->body.size(), 1);
                 auto assign = dynamic_cast<Assignment *>(p.function_definitions[0]->body.front().get());
                 ASSERT_NE(assign, nullptr);
-                EXPECT_EQ(assign->modifiers.size(), 0);
-                EXPECT_EQ(assign->targets[0].first, "a");
+                EXPECT_EQ(assign->targets[0].name, "a");
+                EXPECT_EQ(assign->targets[0].modifiers.size(), 0);
                 auto value = dynamic_cast<NumberLiteral *>(assign->value.get());
                 EXPECT_EQ(value->value, "1");
             }
@@ -122,12 +122,12 @@ namespace valuascript::compiler::test {
                 auto assign1 = dynamic_cast<const Assignment *>(p.execution_steps[0].get());
                 ASSERT_NE(assign1, nullptr);
                 EXPECT_EQ(assign1->targets.size(), 1);
-                EXPECT_EQ(assign1->targets[0].first, "a");
+                EXPECT_EQ(assign1->targets[0].name, "a");
 
                 auto assign2 = dynamic_cast<const Assignment *>(p.execution_steps[1].get());
                 ASSERT_NE(assign2, nullptr);
                 EXPECT_EQ(assign2->targets.size(), 1);
-                EXPECT_EQ(assign2->targets[0].first, "a");
+                EXPECT_EQ(assign2->targets[0].name, "a");
             }
         };
 

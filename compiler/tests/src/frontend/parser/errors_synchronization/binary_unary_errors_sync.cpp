@@ -79,7 +79,7 @@ namespace valuascript::compiler::test
             ASSERT_EQ(ast.execution_steps.size(), 1);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -99,7 +99,7 @@ namespace valuascript::compiler::test
             ASSERT_EQ(ast.execution_steps.size(), 1);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "b");
+            EXPECT_EQ(assign->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -112,7 +112,7 @@ namespace valuascript::compiler::test
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
+            EXPECT_EQ(assign_b->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{

@@ -2,40 +2,48 @@
 #include "parser_errors_synchronization_base.h"
 #include "frontend/parser/ast.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        void ExpectBaseType(const TypeAnnotation *type, const std::string &expected_name,
-                            size_t expected_generics = 0) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        void ExpectBaseType(const TypeAnnotation* type, const std::string& expected_name,
+                            size_t expected_generics = 0)
+        {
             ASSERT_NE(type, nullptr) << "Expected a TypeAnnotation, but got nullptr";
             EXPECT_EQ(type->name, expected_name);
             EXPECT_EQ(type->generic_args.size(), expected_generics);
         }
 
-        void ExpectTupleType(const TypeAnnotation *type, size_t expected_elements) {
+        void ExpectTupleType(const TypeAnnotation* type, size_t expected_elements)
+        {
             ASSERT_NE(type, nullptr) << "Expected a TypeAnnotation, but got nullptr";
             EXPECT_EQ(type->name, "tuple");
-            auto tuple_type = dynamic_cast<const TupleTypeAnnotation *>(type);
+            auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
             ASSERT_NE(tuple_type, nullptr) << "TypeAnnotation is not a TupleTypeAnnotation";
             EXPECT_EQ(tuple_type->element_types.size(), expected_elements);
         }
 
-        auto ExpectRecoveredAssignment(const std::string &expected_target_name = "a") {
-            return [expected_target_name](const Program &ast) {
+        auto ExpectRecoveredAssignment(const std::string& expected_target_name = "a")
+        {
+            return [expected_target_name](const Program& ast)
+            {
                 ASSERT_FALSE(
                     ast.execution_steps.empty(
                     )) << "Expected at least one execution step indicating successful recovery";
-                auto assign = dynamic_cast<Assignment *>(ast.execution_steps[0].get());
+                auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
                 ASSERT_NE(assign, nullptr) << "Expected first step to be an Assignment";
                 ASSERT_FALSE(assign->targets.empty()) << "Expected at least one assignment target";
-                EXPECT_EQ(assign->targets[0].first, expected_target_name);
+                EXPECT_EQ(assign->targets[0].name, expected_target_name);
             };
         }
     }
 
-    class TypeAliasParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class TypeAliasParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(TypeAliasParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(TypeAliasParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -238,7 +246,7 @@ namespace valuascript::compiler::test {
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

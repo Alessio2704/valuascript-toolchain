@@ -19,7 +19,7 @@ namespace valuascript::compiler::test {
                 [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "a" &&
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
                                dynamic_cast<GroupingExpression *>(assignment->value.get()) != nullptr;
                     });
                     EXPECT_NE(target_stmt, nullptr) << "Failed to recover grouping assignment 'a'";
@@ -30,7 +30,7 @@ namespace valuascript::compiler::test {
                 [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "a" &&
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
                                dynamic_cast<TupleLiteral *>(assignment->value.get()) != nullptr;
                     });
                     EXPECT_NE(target_stmt, nullptr) << "Failed to recover tuple assignment 'a'";
@@ -41,7 +41,7 @@ namespace valuascript::compiler::test {
                 [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "a" &&
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
                                dynamic_cast<TensorLiteral *>(assignment->value.get()) != nullptr;
                     });
                     EXPECT_NE(target_stmt, nullptr) << "Failed to recover tensor assignment 'a'";
@@ -52,7 +52,7 @@ namespace valuascript::compiler::test {
                 [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].first == "a" &&
+                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
                                dynamic_cast<DictLiteral *>(assignment->value.get()) != nullptr;
                     });
                     EXPECT_NE(target_stmt, nullptr) << "Failed to recover dict assignment 'a'";

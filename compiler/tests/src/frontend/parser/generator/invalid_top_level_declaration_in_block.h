@@ -63,7 +63,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            return a && !a->targets.empty() && a->targets[0].first == "valid_stmt_2";
+                            return a && !a->targets.empty() && a->targets[0].name == "valid_stmt_2";
                         });
                         EXPECT_NE(s, nullptr) << "Recovery statement 'valid_stmt_2' not found in function body.";
                     }
@@ -111,7 +111,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            if (a && !a->targets.empty() && a->targets[0].first == "a")
+                            if (a && !a->targets.empty() && a->targets[0].name == "a")
                             {
                                 auto tuple = dynamic_cast<const TupleLiteral*>(a->value.get());
                                 if (tuple && tuple->elements.size() >= 2) return true;
@@ -131,7 +131,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            if (a && !a->targets.empty() && a->targets[0].first == "a")
+                            if (a && !a->targets.empty() && a->targets[0].name == "a")
                             {
                                 auto tensor = dynamic_cast<const TensorLiteral*>(a->value.get());
                                 if (tensor && tensor->elements.size() >= 2) return true;
@@ -150,7 +150,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            if (a && !a->targets.empty() && a->targets[0].first == "a")
+                            if (a && !a->targets.empty() && a->targets[0].name == "a")
                             {
                                 auto sw = dynamic_cast<const SwitchExpression*>(a->value.get());
                                 if (sw && sw->default_case != nullptr) return true;
@@ -169,7 +169,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            if (a && !a->targets.empty() && a->targets[0].first == "a")
+                            if (a && !a->targets.empty() && a->targets[0].name == "a")
                             {
                                 auto sw = dynamic_cast<const SwitchExpression*>(a->value.get());
                                 if (sw && sw->default_case != nullptr) return true;
@@ -188,7 +188,7 @@ namespace valuascript::compiler::test
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            return a && !a->targets.empty() && a->targets[0].first == "valid_stmt_2";
+                            return a && !a->targets.empty() && a->targets[0].name == "valid_stmt_2";
                         });
                         EXPECT_NE(s, nullptr) << "Recovered next statement 'valid_stmt_2' not found.";
                     },

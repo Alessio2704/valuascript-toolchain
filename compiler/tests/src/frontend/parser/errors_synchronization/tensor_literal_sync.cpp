@@ -83,7 +83,7 @@ namespace valuascript::compiler::test
             auto const switch_expr = dynamic_cast<SwitchExpression*>(tensor->elements[0].get());
             EXPECT_NE(switch_expr, nullptr);
             EXPECT_EQ(switch_expr->cases.size(), 1);
-            EXPECT_EQ(switch_expr->cases[0].second.get(), nullptr);
+            EXPECT_EQ(switch_expr->cases[0].result.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -96,7 +96,7 @@ namespace valuascript::compiler::test
             ASSERT_EQ(ast.execution_steps.size(), 3);
             auto* b_assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(b_assign, nullptr);
-            EXPECT_EQ(b_assign->targets[0].first, "a");
+            EXPECT_EQ(b_assign->targets[0].name, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -234,7 +234,7 @@ namespace valuascript::compiler::test
 
             auto* assign_rec = dynamic_cast<Assignment*>(ast.execution_steps[2].get());
             ASSERT_NE(assign_rec, nullptr);
-            EXPECT_EQ(assign_rec->targets[0].first, "recovery");
+            EXPECT_EQ(assign_rec->targets[0].name, "recovery");
             ASSERT_NE(dynamic_cast<NumberLiteral*>(assign_rec->value.get()), nullptr);
             }
             },

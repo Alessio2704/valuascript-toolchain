@@ -1,38 +1,48 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        const SwitchExpression *ExpectRecoveredSwitch(const Program &ast) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        const SwitchExpression* ExpectRecoveredSwitch(const Program& ast)
+        {
             EXPECT_GE(ast.execution_steps.size(), 1) << "Expected an assignment at the top level.";
             if (ast.execution_steps.empty()) return nullptr;
 
-            auto assign = dynamic_cast<const Assignment *>(ast.execution_steps[0].get());
+            auto assign = dynamic_cast<const Assignment*>(ast.execution_steps[0].get());
             if (!assign) return nullptr;
 
-            auto switch_expr = dynamic_cast<const SwitchExpression *>(assign->value.get());
+            auto switch_expr = dynamic_cast<const SwitchExpression*>(assign->value.get());
             return switch_expr;
         }
 
-        auto ExpectSwitchCases(size_t expected_cases, bool expected_has_default) {
-            return [expected_cases, expected_has_default](const Program &ast) {
+        auto ExpectSwitchCases(size_t expected_cases, bool expected_has_default)
+        {
+            return [expected_cases, expected_has_default](const Program& ast)
+            {
                 auto sw = ExpectRecoveredSwitch(ast);
                 ASSERT_NE(sw, nullptr) << "Switch expression not found in the first statement!";
                 EXPECT_EQ(sw->cases.size(), expected_cases) << "Switch case count mismatch!";
 
-                if (expected_has_default) {
+                if (expected_has_default)
+                {
                     EXPECT_NE(sw->default_case, nullptr) << "Expected default case, but got nullptr!";
-                } else {
+                }
+                else
+                {
                     EXPECT_EQ(sw->default_case, nullptr) << "Expected no default case, but got one!";
                 }
             };
         }
     }
 
-    class SwitchParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class SwitchParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(SwitchParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(SwitchParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -164,9 +174,9 @@ namespace valuascript::compiler::test {
             ASSERT_NE(sw, nullptr);
             EXPECT_EQ(sw->cases.size(), 3);
 
-            EXPECT_EQ(sw->cases[0].first[0], "A");
-            EXPECT_EQ(sw->cases[1].first[0], "B");
-            EXPECT_EQ(sw->cases[2].first[0], "C");
+            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
+            EXPECT_EQ(sw->cases[1].identifiers[0], "B");
+            EXPECT_EQ(sw->cases[2].identifiers[0], "C");
 
             EXPECT_NE(sw->default_case, nullptr);
             }
@@ -198,10 +208,10 @@ namespace valuascript::compiler::test {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
             EXPECT_EQ(sw->cases.size(), 1);
-            EXPECT_EQ(sw->cases[0].first.size(), 3);
-            EXPECT_EQ(sw->cases[0].first[0], "A");
-            EXPECT_EQ(sw->cases[0].first[1], "B");
-            EXPECT_EQ(sw->cases[0].first[2], "C");
+            EXPECT_EQ(sw->cases[0].identifiers.size(), 3);
+            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
+            EXPECT_EQ(sw->cases[0].identifiers[1], "B");
+            EXPECT_EQ(sw->cases[0].identifiers[2], "C");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -235,7 +245,7 @@ namespace valuascript::compiler::test {
             ASSERT_NE(sw, nullptr);
             EXPECT_EQ(sw->cases.size(), 1) << "Outer switch should only have 1 case.";
 
-            auto inner_sw = dynamic_cast<const SwitchExpression*>(sw->cases[0].second.get());
+            auto inner_sw = dynamic_cast<const SwitchExpression*>(sw->cases[0].result.get());
             ASSERT_NE(inner_sw, nullptr);
             EXPECT_EQ(inner_sw->cases.size(), 2) << "Inner switch should have stolen the second case.";
             }
@@ -293,7 +303,7 @@ namespace valuascript::compiler::test {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
             EXPECT_EQ(sw->cases.size(), 2);
-            ASSERT_NE(sw->cases[0].second.get(), nullptr);
+            ASSERT_NE(sw->cases[0].result.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -332,18 +342,6 @@ namespace valuascript::compiler::test {
             "let a = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 3, 5}
-            },
-            ExpectSwitchCases(2, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_before_case_in_closed_switch",
-            "let x = switch(v) {\n"
-            "    @modifier case A -> 1\n"
-            "    case B -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 2, 5}
             },
             ExpectSwitchCases(2, false)
             },
@@ -545,7 +543,7 @@ namespace valuascript::compiler::test {
             EXPECT_GE(ast.execution_steps.size(), 1);
             auto last_stmt = dynamic_cast<const Assignment*>(ast.execution_steps.back().get());
             ASSERT_NE(last_stmt, nullptr);
-            EXPECT_EQ(last_stmt->targets[0].first, "a");
+            EXPECT_EQ(last_stmt->targets[0].name, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -559,9 +557,9 @@ namespace valuascript::compiler::test {
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
-            EXPECT_EQ(sw->cases[0].first.size(), 2);
-            EXPECT_EQ(sw->cases[0].first[0], "A");
-            EXPECT_EQ(sw->cases[0].first[1], "B");
+            EXPECT_EQ(sw->cases[0].identifiers.size(), 2);
+            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
+            EXPECT_EQ(sw->cases[0].identifiers[1], "B");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -589,7 +587,7 @@ namespace valuascript::compiler::test {
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

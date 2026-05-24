@@ -254,26 +254,36 @@ namespace valuascript::compiler
         }
     };
 
+    struct SwitchCase
+    {
+        std::vector<Modifier> modifiers;
+        std::vector<std::string> identifiers;
+        ExprPtr result;
+    };
+
     class SwitchExpression : public Expression
     {
     public:
         ExprPtr target;
-        std::vector<std::pair<std::vector<std::string>, ExprPtr>> cases;
+        std::vector<SwitchCase> cases;
+        std::vector<Modifier> default_modifiers;
         ExprPtr default_case;
 
         SwitchExpression(ExprPtr t,
-                         std::vector<std::pair<std::vector<std::string>, ExprPtr>> c,
+                         std::vector<SwitchCase> c,
+                         std::vector<Modifier> def_mods,
                          ExprPtr def)
-            : target(std::move(t)), cases(std::move(c)), default_case(std::move(def))
+            : target(std::move(t)), cases(std::move(c)), default_modifiers(std::move(def_mods)),
+              default_case(std::move(def))
         {
         }
 
         [[nodiscard]] bool is_complete() const override
         {
             if (!target || !target->is_complete()) return false;
-            for (const auto& [ids, result] : cases)
+            for (const auto& c : cases)
             {
-                if (!result || !result->is_complete()) return false;
+                if (!c.result || !c.result->is_complete()) return false;
             }
             if (default_case && !default_case->is_complete()) return false;
             return true;

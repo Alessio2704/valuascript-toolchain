@@ -17,7 +17,7 @@ namespace valuascript::compiler
 
         using ParentBoundaryPredicate = std::function<bool(int lookahead)>;
 
-        ImportPtr parse_import_statement();
+        ImportPtr parse_import_statement(std::vector<Modifier> modifiers);
         DirectivePtr parse_directive();
         std::vector<Modifier> parse_modifiers(bool is_statement_context = false);
         StructDefPtr parse_struct_definition(std::vector<Modifier> modifiers);

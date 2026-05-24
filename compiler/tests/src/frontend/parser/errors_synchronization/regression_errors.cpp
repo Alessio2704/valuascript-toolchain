@@ -15,12 +15,12 @@ namespace valuascript::compiler::test {
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
             "VariableDeclarationErrors",
-            "@ let a = 10\n"
+            "let @* a = 10\n"
             "let = 20\n"
             "let struct = 30\n"
             "let d",
             {
-            {Err::ExpectedModifierName, 1, 3},
+            {Err::ExpectedModifierName, 1, 6},
             {Err::ExpectedIdentifier, 2, 5},
             {Err::ReservedKeywordAsIdentifier, 3, 5},
             {Err::IncompleteAssignment, 4, 6}

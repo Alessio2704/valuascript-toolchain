@@ -196,7 +196,7 @@ namespace valuascript::compiler::test {
         auto ast = parse_code("let pair: (int, int) = (1, 2)");
         auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
 
-        auto tuple_ann = dynamic_cast<TupleTypeAnnotation *>(assign_node->targets[0].second.get());
+        auto tuple_ann = dynamic_cast<TupleTypeAnnotation *>(assign_node->targets[0].type.get());
         ASSERT_NE(tuple_ann, nullptr);
 
         // '(int, int)' starts at 11, ends at 20 -> ends at 21
@@ -223,7 +223,7 @@ namespace valuascript::compiler::test {
         assert_span(switch_expr->target->span, 1, 16, 1, 17);
 
         // Case 0 value '1' is at 31 -> ends at 32
-        assert_span(switch_expr->cases[0].second->span, 1, 31, 1, 32);
+        assert_span(switch_expr->cases[0].result->span, 1, 31, 1, 32);
 
         // Default value '2' is at 44 -> ends at 45
         assert_span(switch_expr->default_case->span, 1, 44, 1, 45);
@@ -379,7 +379,7 @@ namespace valuascript::compiler::test {
         auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
 
         // Outermost type annotation 'matrix<int>'
-        auto outer_type = assign_node->targets[0].second.get();
+        auto outer_type = assign_node->targets[0].type.get();
         ASSERT_NE(outer_type, nullptr);
         assert_span(outer_type->span, 1, 13, 1, 24);
 

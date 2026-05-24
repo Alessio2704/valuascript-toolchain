@@ -97,14 +97,36 @@ namespace valuascript::compiler::test
 
     struct SwitchCaseSpec
     {
+        std::vector<ModifierSpec> modifiers = {};
         std::vector<std::string> labels;
         ExprVerifier result_v = nullptr;
+
+        SwitchCaseSpec(std::vector<std::string> l, ExprVerifier r = nullptr)
+            : labels(std::move(l)), result_v(std::move(r))
+        {
+        }
+
+        SwitchCaseSpec(std::vector<ModifierSpec> m, std::vector<std::string> l, ExprVerifier r = nullptr)
+            : modifiers(std::move(m)), labels(std::move(l)), result_v(std::move(r))
+        {
+        }
     };
 
     struct AssignmentTargetSpec
     {
+        std::vector<ModifierSpec> modifiers = {};
         std::string name;
         TypeVerifier type_v = nullptr;
+
+        AssignmentTargetSpec(std::string n, TypeVerifier t = nullptr)
+            : name(std::move(n)), type_v(std::move(t))
+        {
+        }
+
+        AssignmentTargetSpec(std::vector<ModifierSpec> m, std::string n, TypeVerifier t = nullptr)
+            : modifiers(std::move(m)), name(std::move(n)), type_v(std::move(t))
+        {
+        }
     };
 
     template <typename T>
@@ -320,6 +342,7 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectSwitch(AstNode* node, const ExprVerifier& target_v, const std::vector<SwitchCaseSpec>& cases,
+                             const std::vector<ModifierSpec>& default_mods,
                              const ExprVerifier& def_v)
     {
         if (auto sw = ExpectNode<SwitchExpression>(node))
@@ -330,9 +353,12 @@ namespace valuascript::compiler::test
             }
             for (size_t i = 0; i < cases.size(); i++)
             {
-                EXPECT_EQ(sw->cases[i].first, cases[i].labels) << "Switch case labels mismatch at index " << i << ".";
-                if (cases[i].result_v) cases[i].result_v(sw->cases[i].second.get());
+                ExpectModifiers(sw->cases[i].modifiers, cases[i].modifiers);
+                EXPECT_EQ(sw->cases[i].identifiers, cases[i].labels) << "Switch case labels mismatch at index " << i <<
+ ".";
+                if (cases[i].result_v) cases[i].result_v(sw->cases[i].result.get());
             }
+            ExpectModifiers(sw->default_modifiers, default_mods);
             if (def_v) def_v(sw->default_case.get());
         }
     }
@@ -400,18 +426,18 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectAssignment(Statement* stmt, const std::vector<ModifierSpec>& modifiers,
-                                 const std::vector<AssignmentTargetSpec>& targets, const ExprVerifier& val_v)
+    inline void ExpectAssignment(Statement* stmt, const std::vector<AssignmentTargetSpec>& targets,
+                                 const ExprVerifier& val_v)
     {
         if (auto a = ExpectNode<Assignment>(stmt))
         {
-            ExpectModifiers(a->modifiers, modifiers);
             ASSERT_EQ(a->targets.size(), targets.size()) << "Assignment targets count mismatch.";
             for (size_t i = 0; i < targets.size(); i++)
             {
-                EXPECT_EQ(a->targets[i].first, targets[i].name) << "Assignment target name mismatch at index " << i <<
+                ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
+                EXPECT_EQ(a->targets[i].name, targets[i].name) << "Assignment target name mismatch at index " << i <<
  ".";
-                if (targets[i].type_v) targets[i].type_v(a->targets[i].second.get());
+                if (targets[i].type_v) targets[i].type_v(a->targets[i].type.get());
             }
             if (val_v) val_v(a->value.get());
         }
@@ -426,10 +452,13 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectReturn(Statement* stmt, const std::vector<ExprVerifier>& values)
+    inline void ExpectReturn(Statement* stmt,
+                             const std::vector<ModifierSpec>& modifiers,
+                             const std::vector<ExprVerifier>& values)
     {
         if (auto r = ExpectNode<ReturnStatement>(stmt))
         {
+            ExpectModifiers(r->modifiers, modifiers);
             ASSERT_EQ(r->values.size(), values.size()) << "Return values count mismatch.";
             for (size_t i = 0; i < values.size(); i++)
             {
@@ -437,6 +466,7 @@ namespace valuascript::compiler::test
             }
         }
     }
+
 
     inline void ExpectExprStmt(Statement* stmt, const ExprVerifier& expr_v)
     {
@@ -528,9 +558,12 @@ namespace valuascript::compiler::test
         if (target_v) target_v(a->target_type.get());
     }
 
-    inline void ExpectImport(ImportStatement* imp, std::string_view path)
+    inline void ExpectImport(ImportStatement* imp,
+                             const std::vector<ModifierSpec>& modifiers,
+                             std::string_view path)
     {
         ASSERT_NE(imp, nullptr) << "Expected ImportStatement node, but got nullptr.";
+        ExpectModifiers(imp->modifiers, modifiers);
         EXPECT_EQ(imp->path, path) << "ImportStatement path mismatch.";
     }
 
@@ -664,12 +697,20 @@ namespace valuascript::compiler::test
     }
 
     inline ExprVerifier IsSwitch(ExprVerifier t, std::vector<SwitchCaseSpec> cases,
+                                 std::vector<ModifierSpec> default_mods,
                                  ExprVerifier default_expr = nullptr)
     {
-        return [target = std::move(t), c = std::move(cases), d = std::move(default_expr)](Expression* node)
+        return [target = std::move(t), c = std::move(cases), mods = std::move(default_mods), d = std::move(default_expr)
+            ](Expression* node)
         {
-            ExpectSwitch(node, target, c, d);
+            ExpectSwitch(node, target, c, mods, d);
         };
+    }
+
+    inline ExprVerifier IsSwitch(ExprVerifier t, std::vector<SwitchCaseSpec> cases,
+                                 ExprVerifier default_expr = nullptr)
+    {
+        return IsSwitch(std::move(t), std::move(cases), {}, std::move(default_expr));
     }
 
     inline ExprVerifier IsTensor(std::vector<ExprVerifier> elements = {})
@@ -697,13 +738,12 @@ namespace valuascript::compiler::test
         return [e = std::move(elements)](TypeAnnotation* t) { ExpectTupleType(t, e); };
     }
 
-    inline AssignmentVerifier IsAssignment(std::vector<ModifierSpec> modifiers,
-                                           std::vector<AssignmentTargetSpec> targets,
+    inline AssignmentVerifier IsAssignment(std::vector<AssignmentTargetSpec> targets,
                                            ExprVerifier value = nullptr)
     {
-        return [m = std::move(modifiers), t = std::move(targets), v = std::move(value)](Statement* s)
+        return [t = std::move(targets), v = std::move(value)](Statement* s)
         {
-            ExpectAssignment(s, m, t, v);
+            ExpectAssignment(s, t, v);
         };
     }
 
@@ -712,9 +752,15 @@ namespace valuascript::compiler::test
         return [t = std::move(target), v = std::move(value)](Statement* s) { ExpectReassignment(s, t, v); };
     }
 
+    inline ReturnVerifier IsReturn(std::vector<ModifierSpec> modifiers = {},
+                                   std::vector<ExprVerifier> values = {})
+    {
+        return [m = std::move(modifiers), v = std::move(values)](Statement* s) { ExpectReturn(s, m, v); };
+    }
+
     inline ReturnVerifier IsReturn(std::vector<ExprVerifier> values = {})
     {
-        return [v = std::move(values)](Statement* s) { ExpectReturn(s, v); };
+        return IsReturn({}, std::move(values));
     }
 
     inline ExprStmtVerifier IsExprStmt(ExprVerifier expr = nullptr)
@@ -766,9 +812,9 @@ namespace valuascript::compiler::test
         };
     }
 
-    inline ImportVerifier IsImport(std::string path)
+    inline ImportVerifier IsImport(std::string path, std::vector<ModifierSpec> modifiers = {})
     {
-        return [p = std::move(path)](ImportStatement* i) { ExpectImport(i, p); };
+        return [p = std::move(path), m = std::move(modifiers)](ImportStatement* i) { ExpectImport(i, m, p); };
     }
 
     inline DirectiveVerifier IsDirective(std::string name, ExprVerifier value = nullptr)

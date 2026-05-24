@@ -7,12 +7,59 @@ namespace valuascript::compiler::test
     {
         static const std::vector<Context> contexts = {
             {
-                "assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "", " let ctx_assign = 1\n",
-                [
-                ](const UniversalVerifier& v) -> UniversalVerifier
+                "assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "let ", " ctx_assign = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment(SpecAdder::get_v<ModifierVerifier>(v), {{"ctx_assign"}},
+                    return UniversalVerifier(IsAssignment({{SpecAdder::get_v<ModifierVerifier>(v), "ctx_assign"}},
                                                           IsNumber("1")));
+                }
+            },
+            {
+                "multi_assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "let ctx_a, ",
+                " ctx_b = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsAssignment({
+                                                              AssignmentTargetSpec("ctx_a"),
+                                                              AssignmentTargetSpec(
+                                                                  SpecAdder::get_v<ModifierVerifier>(v), "ctx_b")
+                                                          }, IsNumber("1")));
+                }
+            },
+            {
+                "import_statement", {InjectableType::Modifier}, InjectableType::TopLevel, "",
+                " import \"ctx_lib.vs\"\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsImport("\"ctx_lib.vs\"", SpecAdder::get_v<ModifierVerifier>(v)));
+                }
+            },
+            {
+                "return_statement", {InjectableType::Modifier}, InjectableType::WeakStatement, "", " return 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        ReturnVerifier(IsReturn(SpecAdder::get_v<ModifierVerifier>(v), {IsNumber("1")})));
+                }
+            },
+            {
+                "switch_case", {InjectableType::Modifier}, InjectableType::Expression, "switch(1) { ", " case A -> 1 }",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"), {
+                                                          SwitchCaseSpec(
+                                                              SpecAdder::get_v<ModifierVerifier>(v), {"A"},
+                                                              IsNumber("1"))
+                                                      }));
+                }
+            },
+            {
+                "switch_default", {InjectableType::Modifier}, InjectableType::Expression, "switch(1) { ",
+                " default -> 1 }",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"), {}, SpecAdder::get_v<ModifierVerifier>(v),
+                                                      IsNumber("1")));
                 }
             },
             {
@@ -37,7 +84,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "function_parameter_with_default", {InjectableType::Modifier}, InjectableType::TopLevel, "func ctx_param(",
+                "function_parameter_with_default", {InjectableType::Modifier}, InjectableType::TopLevel,
+                "func ctx_param(",
                 " p: int = 1) -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_param", {},

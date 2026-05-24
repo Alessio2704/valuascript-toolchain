@@ -22,10 +22,11 @@ namespace valuascript::compiler
     class ImportStatement : public AstNode
     {
     public:
+        std::vector<Modifier> modifiers;
         std::string path;
 
-        explicit ImportStatement(std::string p)
-            : path(std::move(p))
+        explicit ImportStatement(std::vector<Modifier> mods, std::string p)
+            : modifiers(std::move(mods)), path(std::move(p))
         {
         }
     };

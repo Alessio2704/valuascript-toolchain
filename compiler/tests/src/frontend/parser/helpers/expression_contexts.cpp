@@ -10,14 +10,14 @@ namespace valuascript::compiler::test
                 "single_assignment", {InjectableType::Expression}, InjectableType::StrongStatement, "let ctx_single = ",
                 "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({}, {{"ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
+                    return UniversalVerifier(IsAssignment({{"ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
                 "multi_assignment", {InjectableType::Expression}, InjectableType::StrongStatement,
                 "let ctx_m1, ctx_m2 = ", "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({}, {{"ctx_m1"}, {"ctx_m2"}},
+                    return UniversalVerifier(IsAssignment({{"ctx_m1"}, {"ctx_m2"}},
                                                           SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },

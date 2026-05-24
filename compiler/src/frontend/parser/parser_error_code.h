@@ -11,7 +11,6 @@ namespace valuascript::compiler
         ExpectedHashToken,
         MissingDirectiveName,
         ModifiersAttachedToInvalidDeclaration,
-        ModifiersAttachedToMultiAssignmentSingleElements,
         ExpectedModifierName,
         MissingArgumentNameInModifier,
         MissingColonAfterArgument,

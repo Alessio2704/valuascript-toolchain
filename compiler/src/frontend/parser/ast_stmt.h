@@ -5,17 +5,22 @@
 
 namespace valuascript::compiler
 {
+    struct AssignmentTarget
+    {
+        std::vector<Modifier> modifiers;
+        std::string name;
+        TypeAnnPtr type;
+    };
+
     class Assignment : public Statement
     {
     public:
-        std::vector<Modifier> modifiers;
-        std::vector<std::pair<std::string, TypeAnnPtr>> targets;
+        std::vector<AssignmentTarget> targets;
         ExprPtr value;
 
-        Assignment(std::vector<Modifier> mods,
-                   std::vector<std::pair<std::string, TypeAnnPtr>> tar,
+        Assignment(std::vector<AssignmentTarget> tar,
                    ExprPtr val)
-            : modifiers(std::move(mods)), targets(std::move(tar)), value(std::move(val))
+            : targets(std::move(tar)), value(std::move(val))
         {
         }
     };
@@ -46,10 +51,11 @@ namespace valuascript::compiler
     class ReturnStatement : public Statement
     {
     public:
+        std::vector<Modifier> modifiers;
         std::vector<ExprPtr> values;
 
-        explicit ReturnStatement(std::vector<ExprPtr> return_values)
-            : values(std::move(return_values))
+        explicit ReturnStatement(std::vector<Modifier> mods, std::vector<ExprPtr> return_values)
+            : modifiers(std::move(mods)), values(std::move(return_values))
         {
         }
     };

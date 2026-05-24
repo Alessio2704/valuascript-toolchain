@@ -22,16 +22,15 @@ namespace valuascript::compiler
         }
     }
 
-    std::unique_ptr<Assignment> StatementParser::parse_assignment(std::vector<Modifier> modifiers)
+    std::unique_ptr<Assignment> StatementParser::parse_assignment()
     {
         const Token& start = cursor.peek();
         cursor.consume(TokenType::Let, E::ExpectedLetToken);
 
-        std::vector<std::pair<std::string, TypeAnnPtr>> targets;
+        std::vector<AssignmentTarget> targets;
         do
         {
             auto inner_mods = parser.parse_modifiers();
-            ctx.reject_modifiers(inner_mods, E::ModifiersAttachedToMultiAssignmentSingleElements);
 
             Token target = ErrorRecovery::try_consume_identifier(
                 ctx,
@@ -48,7 +47,7 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.emplace_back(target.lexeme, std::move(type_annotation));
+            targets.push_back({std::move(inner_mods), target.lexeme, std::move(type_annotation)});
 
             if (!cursor.match({TokenType::Comma}))
             {
@@ -96,8 +95,8 @@ namespace valuascript::compiler
         }
 
         if (value) verify_statement_end();
-        return AstFactory::make_node<Assignment>(cursor, start, std::move(modifiers), std::move(targets),
-                                                 std::move(value));
+
+        return AstFactory::make_node<Assignment>(cursor, start, std::move(targets), std::move(value));
     }
 
     StmtPtr StatementParser::parse_expression_statement()
@@ -148,7 +147,7 @@ namespace valuascript::compiler
         return AstFactory::make_node_with_span<ExpressionStatement>(start_span, std::move(expr));
     }
 
-    std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement()
+    std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement(std::vector<Modifier> modifiers)
     {
         const Token& start = cursor.advance();
         std::vector<ExprPtr> return_values;
@@ -163,6 +162,6 @@ namespace valuascript::compiler
         while (cursor.match({TokenType::Comma}));
 
         verify_statement_end();
-        return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(return_values));
+        return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(modifiers), std::move(return_values));
     }
 }

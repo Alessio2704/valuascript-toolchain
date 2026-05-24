@@ -98,7 +98,7 @@ namespace valuascript::compiler::test {
             auto const switch_expr = dynamic_cast<SwitchExpression*>(tuple->elements[1].get());
             EXPECT_NE(switch_expr, nullptr);
             EXPECT_EQ(switch_expr->cases.size(), 1);
-            EXPECT_EQ(switch_expr->cases[0].second.get(), nullptr);
+            EXPECT_EQ(switch_expr->cases[0].result.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{

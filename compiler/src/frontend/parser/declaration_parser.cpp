@@ -14,14 +14,14 @@ namespace valuascript::compiler
     {
     }
 
-    ImportPtr DeclarationParser::parse_import_statement()
+    ImportPtr DeclarationParser::parse_import_statement(std::vector<Modifier> modifiers)
     {
         const Token& start = cursor.consume(TokenType::Import, E::ExpectedImportToken);
         Token path = ErrorRecovery::try_consume(
             ctx, TokenType::String, E::MissingImportPathString,
             RecoveryConfig::StopAtBoundary({TokenType::Comma})
         );
-        return AstFactory::make_node<ImportStatement>(cursor, start, path.lexeme);
+        return AstFactory::make_node<ImportStatement>(cursor, start, std::move(modifiers), path.lexeme);
     }
 
     DirectivePtr DeclarationParser::parse_directive()

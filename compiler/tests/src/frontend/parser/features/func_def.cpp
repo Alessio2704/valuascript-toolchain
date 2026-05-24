@@ -58,8 +58,8 @@ namespace valuascript::compiler::test
                 "  return x\n"
                 "}",
                 IsFunctionDef("f", {}, {}, {IsType("void")}, {
-                                  IsAssignment({}, {{"x"}}, IsNumber("1")),
-                                  IsReturn({IsIdentifier("x")})
+                                  IsAssignment({{{}, "x"}}, IsNumber("1")),
+                                  IsReturn({}, {IsIdentifier("x")})
                               }));
 
             reg("MultilineFormatting",

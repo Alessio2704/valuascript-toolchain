@@ -35,7 +35,7 @@ namespace valuascript::compiler::test
 
         std::string code = "let deep_val = " + expr_code;
         ProgramSpec spec;
-        spec.execution_steps.emplace_back(IsAssignment({}, {{"deep_val"}}, expr_ver));
+        spec.execution_steps.emplace_back(IsAssignment({{{}, "deep_val"}}, expr_ver));
         ExpectValidParse(code, spec);
     }
 }

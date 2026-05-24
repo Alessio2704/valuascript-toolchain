@@ -484,25 +484,27 @@ namespace valuascript::compiler
         cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeSwitchBody);
         CloserTracker tracker(ctx, TokenType::RightBrace);
 
-        std::vector<std::pair<std::vector<std::string>, ExprPtr>> cases;
+        std::vector<SwitchCase> cases;
+        std::vector<Modifier> default_mods;
         ExprPtr default_case = nullptr;
-        parse_switch_body(cases, default_case);
+        parse_switch_body(cases, default_mods, default_case);
 
         try
         {
             const Token& end = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterSwitchBody);
             return AstFactory::make_node_with_span<SwitchExpression>(cursor.make_span(start, end), std::move(target),
-                                                                     std::move(cases), std::move(default_case));
+                                                                     std::move(cases), std::move(default_mods),
+                                                                     std::move(default_case));
         }
         catch (const ParseSyncException&)
         {
             ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
             return AstFactory::make_node<SwitchExpression>(cursor, start, std::move(target), std::move(cases),
-                                                           std::move(default_case));
+                                                           std::move(default_mods), std::move(default_case));
         }
     }
 
-    std::pair<std::vector<std::string>, ExprPtr> ExpressionParser::parse_switch_case()
+    SwitchCase ExpressionParser::parse_switch_case(std::vector<Modifier> modifiers)
     {
         std::vector<std::string> identifiers;
 
@@ -544,7 +546,7 @@ namespace valuascript::compiler
         conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
         conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
         auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
-        return {std::move(identifiers), std::move(result)};
+        return {std::move(modifiers), std::move(identifiers), std::move(result)};
     }
 
     ExprPtr ExpressionParser::parse_switch_default()
@@ -609,7 +611,7 @@ namespace valuascript::compiler
         return target;
     }
 
-    void ExpressionParser::parse_switch_body(std::vector<std::pair<std::vector<std::string>, ExprPtr>>& cases,
+    void ExpressionParser::parse_switch_body(std::vector<SwitchCase>& cases, std::vector<Modifier>& default_mods,
                                              ExprPtr& default_case)
     {
         SyncSetTracker tracker(ctx, {TokenType::Case, TokenType::Default});
@@ -627,16 +629,20 @@ namespace valuascript::compiler
             conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
             ErrorRecovery::attempt_parse_void(ctx, [&]()
             {
-                if (cursor.match({TokenType::Case})) cases.push_back(parse_switch_case());
+                auto modifiers = parser.parse_modifiers();
+
+                if (cursor.match({TokenType::Case})) cases.push_back(parse_switch_case(std::move(modifiers)));
                 else if (cursor.match({TokenType::Default}))
                 {
                     if (default_case != nullptr)
                         cursor.report_error_no_panic(
                             cursor.previous(), E::MultipleDefaultCasesInSwitch);
+                    default_mods = std::move(modifiers);
                     default_case = parse_switch_default();
                 }
                 else
                 {
+                    ctx.reject_modifiers(modifiers);
                     if (TokenTraits::is_top_level_token(cursor.peek().type))
                     {
                         const Token& start_tok = cursor.peek();

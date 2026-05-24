@@ -93,7 +93,7 @@ namespace valuascript::compiler::test {
 
             auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
+            EXPECT_EQ(assign_b->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -121,7 +121,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
+            EXPECT_EQ(assign->targets[0].name, "a");
             ExpectBracketAccess(assign->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
             }
             },
@@ -134,7 +134,7 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
+            EXPECT_EQ(assign->targets[0].name, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -176,7 +176,7 @@ namespace valuascript::compiler::test {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
 
-            EXPECT_EQ(assign->targets[0].first, "a");
+            EXPECT_EQ(assign->targets[0].name, "a");
             }
             },
             ParserErrorsSynchronizationTestCase{

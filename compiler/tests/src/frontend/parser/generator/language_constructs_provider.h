@@ -78,10 +78,16 @@ namespace valuascript::compiler::test
     struct LanguageConstructDefinition
     {
         std::string name;
+        std::string prefix;
         std::string source;
         bool supports_modifiers;
         bool is_top_level_only;
         std::function<void(const Program&, int)> verify;
+
+        [[nodiscard]] std::string build(const std::string& mods = "") const
+        {
+            return prefix + mods + source;
+        }
     };
 
     struct TestConstruct
@@ -110,7 +116,7 @@ namespace valuascript::compiler::test
         {
             return {
                 {
-                    "func", "func rec_func() -> void {}\n", true, true,
+                    "func", "", "func rec_func() -> void {}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.function_definitions.begin(), p.function_definitions.end(),
@@ -120,7 +126,7 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "struct", "struct RecStruct {}\n", true, true,
+                    "struct", "", "struct RecStruct {}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.struct_definitions.begin(), p.struct_definitions.end(),
@@ -130,7 +136,7 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "enum", "enum RecEnum: int {}\n", true, true,
+                    "enum", "", "enum RecEnum: int {}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.enum_definitions.begin(), p.enum_definitions.end(),
@@ -140,7 +146,7 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "typealias", "typealias RecAlias = int\n", true, true,
+                    "typealias", "", "typealias RecAlias = int\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.type_aliases.begin(), p.type_aliases.end(),
@@ -150,23 +156,27 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "import", "import \"lib\"\n", false, true,
-                    [](const Program& p, int) { EXPECT_FALSE(p.import_statements.empty()); }
+                    "import", "", "import \"lib\"\n", true, true,
+                    [](const Program& p, int m)
+                    {
+                        ASSERT_FALSE(p.import_statements.empty());
+                        EXPECT_EQ(p.import_statements[0]->modifiers.size(), m);
+                    }
                 },
                 {
-                    "directive_no_value", "#dir\n", false, true,
+                    "directive_no_value", "", "#dir\n", false, true,
                     [](const Program& p, int) { EXPECT_FALSE(p.directives.empty()); }
                 },
                 {
-                    "directive_value_equals", "#dir = directive_value\n", false, true,
+                    "directive_value_equals", "", "#dir = directive_value\n", false, true,
                     [](const Program& p, int) { EXPECT_FALSE(p.directives.empty()); }
                 },
                 {
-                    "directive_value_no_equals", "#dir directive_value\n", false, true,
+                    "directive_value_no_equals", "", "#dir directive_value\n", false, true,
                     [](const Program& p, int) { EXPECT_FALSE(p.directives.empty()); }
                 },
                 {
-                    "func_multi", "func rec_func_multi() -> void {\n    let x = 1\n}\n", true, true,
+                    "func_multi", "", "func rec_func_multi() -> void {\n    let x = 1\n}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.function_definitions.begin(), p.function_definitions.end(),
@@ -177,7 +187,7 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "struct_multi", "struct RecStructMulti {\n    x: int,\n    y: float\n}\n", true, true,
+                    "struct_multi", "", "struct RecStructMulti {\n    x: int,\n    y: float\n}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.struct_definitions.begin(), p.struct_definitions.end(),
@@ -188,7 +198,7 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "enum_multi", "enum RecEnumMulti: int {\n    A,\n    B\n}\n", true, true,
+                    "enum_multi", "", "enum RecEnumMulti: int {\n    A,\n    B\n}\n", true, true,
                     [](const Program& p, int m)
                     {
                         auto it = std::find_if(p.enum_definitions.begin(), p.enum_definitions.end(),
@@ -199,20 +209,20 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "let", "let rec_let = 1\n", true, false,
+                    "let", "let ", "rec_let = 1\n", true, false,
                     [](const Program& p, int m)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
                             auto a = dynamic_cast<const Assignment*>(st);
-                            return a && !a->targets.empty() && a->targets[0].first == "rec_let";
+                            return a && !a->targets.empty() && a->targets[0].name == "rec_let";
                         });
                         ASSERT_NE(s, nullptr);
-                        EXPECT_EQ(dynamic_cast<const Assignment*>(s)->modifiers.size(), m);
+                        EXPECT_EQ(dynamic_cast<const Assignment*>(s)->targets[0].modifiers.size(), m);
                     }
                 },
                 {
-                    "call", "rec_call()\n", false, false, [](const Program& p, int)
+                    "call", "", "rec_call()\n", false, false, [](const Program& p, int)
                     {
                         EXPECT_NE(find_statement(p,[](const Statement* st) {
                                       auto e = dynamic_cast<const ExpressionStatement*>(st);
@@ -221,23 +231,23 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "reassign_id", "rec_x = 1\n", false, false,
+                    "reassign_id", "", "rec_x = 1\n", false, false,
                     [](const Program& p, int) { verify_reassignment<IdentifierAccess, void>(p); }
                 },
                 {
-                    "self_dot", "self.prop = 1\n", false, false,
+                    "self_dot", "", "self.prop = 1\n", false, false,
                     [](const Program& p, int) { verify_reassignment<DotAccess, SelfExpression>(p); }
                 },
                 {
-                    "self_bracket", "self[0] = 1\n", false, false,
+                    "self_bracket", "", "self[0] = 1\n", false, false,
                     [](const Program& p, int) { verify_reassignment<BracketAccess, SelfExpression>(p); }
                 },
                 {
-                    "id_dot", "obj.prop = 1\n", false, false,
+                    "id_dot", "", "obj.prop = 1\n", false, false,
                     [](const Program& p, int) { verify_reassignment<DotAccess, IdentifierAccess>(p); }
                 },
                 {
-                    "id_bracket", "arr[0] = 1\n", false, false,
+                    "id_bracket", "", "arr[0] = 1\n", false, false,
                     [](const Program& p, int) { verify_reassignment<BracketAccess, IdentifierAccess>(p); }
                 }
             };
@@ -249,13 +259,13 @@ namespace valuascript::compiler::test
             {
             };
             return {
-                {"func_broken", "func b() -> void {\n    let a = *\n}\n", true, true, no_op},
-                {"struct_broken", "struct A {\n    a\n}\n", true, true, no_op},
-                {"enum_broken", "enum A {\n    *,\n    B\n}\n", true, true, no_op},
-                {"typealias_broken", "typealias A = *\n", true, true, no_op},
-                {"import_broken", "import *\n", false, true, no_op},
-                {"directive_broken_no_name", "#*\n", false, true, no_op},
-                {"directive_broken_value", "#dir = *\n", false, true, no_op}
+                {"func_broken", "", "func b() -> void {\n    let a = *\n}\n", true, true, no_op},
+                {"struct_broken", "", "struct A {\n    a\n}\n", true, true, no_op},
+                {"enum_broken", "", "enum A {\n    *,\n    B\n}\n", true, true, no_op},
+                {"typealias_broken", "", "typealias A = *\n", true, true, no_op},
+                {"import_broken", "", "import *\n", true, true, no_op},
+                {"directive_broken_no_name", "", "#*\n", false, true, no_op},
+                {"directive_broken_value", "", "#dir = *\n", false, true, no_op}
             };
         }
 
@@ -267,22 +277,22 @@ namespace valuascript::compiler::test
             for (const auto& core : get_raw_definitions())
             {
                 variants.push_back({
-                    core.name + "_mod0", core.source, core.is_top_level_only,
+                    core.name + "_mod0", core.build(), core.is_top_level_only,
                     [=](const Program& p) { core.verify(p, 0); }
                 });
 
                 if (core.supports_modifiers)
                 {
                     variants.push_back({
-                        core.name + "_mod1", mod_samples[0] + core.source, core.is_top_level_only,
+                        core.name + "_mod1", core.build(mod_samples[0]), core.is_top_level_only,
                         [=](const Program& p) { core.verify(p, 1); }
                     });
                     variants.push_back({
-                        core.name + "_mod2", mod_samples[0] + mod_samples[1] + core.source, core.is_top_level_only,
+                        core.name + "_mod2", core.build(mod_samples[0] + mod_samples[1]), core.is_top_level_only,
                         [=](const Program& p) { core.verify(p, 2); }
                     });
                     variants.push_back({
-                        core.name + "_mod3", mod_samples[0] + mod_samples[1] + mod_samples[2] + core.source,
+                        core.name + "_mod3", core.build(mod_samples[0] + mod_samples[1] + mod_samples[2]),
                         core.is_top_level_only, [=](const Program& p) { core.verify(p, 3); }
                     });
                 }
@@ -298,22 +308,22 @@ namespace valuascript::compiler::test
             for (const auto& core : get_raw_broken_definitions())
             {
                 variants.push_back({
-                    core.name + "_mod0", core.source, core.is_top_level_only,
+                    core.name + "_mod0", core.build(), core.is_top_level_only,
                     [=](const Program& p) { core.verify(p, 0); }
                 });
 
                 if (core.supports_modifiers)
                 {
                     variants.push_back({
-                        core.name + "_mod1", mod_samples[0] + core.source, core.is_top_level_only,
+                        core.name + "_mod1", core.build(mod_samples[0]), core.is_top_level_only,
                         [=](const Program& p) { core.verify(p, 1); }
                     });
                     variants.push_back({
-                        core.name + "_mod2", mod_samples[0] + mod_samples[1] + core.source, core.is_top_level_only,
+                        core.name + "_mod2", core.build(mod_samples[0] + mod_samples[1]), core.is_top_level_only,
                         [=](const Program& p) { core.verify(p, 2); }
                     });
                     variants.push_back({
-                        core.name + "_mod3", mod_samples[0] + mod_samples[1] + mod_samples[2] + core.source,
+                        core.name + "_mod3", core.build(mod_samples[0] + mod_samples[1] + mod_samples[2]),
                         core.is_top_level_only, [=](const Program& p) { core.verify(p, 3); }
                     });
                 }

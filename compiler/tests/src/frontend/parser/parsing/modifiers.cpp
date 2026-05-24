@@ -38,8 +38,6 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{"ModifierOnReturn", "func foo() -> void { @export return 1 }", E::
-            ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"ModifierOnStandaloneExpression", "@export 10 * 5", E::
             ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", E::
@@ -59,8 +57,6 @@ namespace valuascript::compiler::test
             MissingOperatorOrArgumentName},
             ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", E::
             MissingOperator},
-            ModifierSadParam{"ModifierOnStructFieldType", "struct S { name: @mut string }", E::
-            MissingTypeAnnotation},
             ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", E::
             ExpectedModifierName}
         ),

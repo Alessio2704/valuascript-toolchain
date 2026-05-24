@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
 
     enum class ReassignTargetFlavor { Id, Dot, Bracket, SelfDot };
 
-    enum class ExpressionType { Binary, Unary, Dot, Bracket, Call, Grouping };
+    enum class ExpressionType { Binary, Unary, Dot, Bracket, Call, Grouping, Switch, Dict, Tuple, Tensor };
 
     enum class HarvestStatementType { Assignment, Reassignment, ExprStmt };
 
@@ -58,6 +58,10 @@ namespace valuascript::compiler::test
             std::pair<int, int> struct_fields = {1, 3};
             std::pair<int, int> enum_cases = {1, 3};
             std::pair<int, int> multi_assign_targets = {2, 5};
+            std::pair<int, int> switch_cases = {1, 3};
+            std::pair<int, int> dict_elements = {1, 3};
+            std::pair<int, int> tuple_elements = {2, 4};
+            std::pair<int, int> tensor_elements = {1, 3};
         } sizes;
 
         struct Weights
@@ -101,6 +105,10 @@ namespace valuascript::compiler::test
                 double bracket = 1.0;
                 double call = 1.0;
                 double grouping = 1.0;
+                double switch_expr = 1.0;
+                double dict_expr = 1.0;
+                double tuple_expr = 1.0;
+                double tensor_expr = 1.0;
             } expression_types;
 
             struct
@@ -147,7 +155,12 @@ namespace valuascript::compiler::test
             out << " *   Struct Fields: [" << sizes.struct_fields.first << "," << sizes.struct_fields.second <<
                 "] | Enum Cases: [" << sizes.enum_cases.first << "," << sizes.enum_cases.second << "]\n";
             out << " *   Multi-Let Targets: [" << sizes.multi_assign_targets.first << "," << sizes.multi_assign_targets.
-                second << "]\n\n";
+                second << "]\n";
+            out << " *   Switch Cases: [" << sizes.switch_cases.first << "," << sizes.switch_cases.second <<
+                "] | Dict Elements: [" << sizes.dict_elements.first << "," << sizes.dict_elements.second << "]\n";
+            out << " *   Tuple Elements: [" << sizes.tuple_elements.first << "," << sizes.tuple_elements.second <<
+                "] | Tensor Elements: [" << sizes.tensor_elements.first << "," << sizes.tensor_elements.second <<
+                "]\n\n";
 
             out << " * [TOP-LEVEL WEIGHTS (Stochastic distribution)]\n";
             out << " *   Expr: " << weights.top_level_constructs.expression << " | Type: " << weights.
@@ -170,7 +183,9 @@ namespace valuascript::compiler::test
                 unary << ", Dot: " << weights.expression_types
                                              .dot << ", Brk: " << weights.expression_types.bracket << ", Call: " <<
                 weights.expression_types.call <<
-                ", Grp: " << weights.expression_types.grouping << "]\n";
+                ", Grp: " << weights.expression_types.grouping << ", Sw: " << weights.expression_types.switch_expr <<
+                ", Dict: " << weights.expression_types.dict_expr << ", Tup: " << weights.expression_types.tuple_expr <<
+                ", Ten: " << weights.expression_types.tensor_expr << "]\n";
             out << " *   Harvest Ratio: [Let: " << weights.harvest_statement_types.assignment << ", Re: " << weights.
                 harvest_statement_types.reassignment << ", Call: " << weights.harvest_statement_types.expr_stmt <<
                 "]\n";

@@ -9,20 +9,25 @@
 
 using namespace valuascript::compiler;
 
-namespace valuascript::compiler::test {
-    class ProjectResolverTest : public ::testing::Test {
+namespace valuascript::compiler::test
+{
+    class ProjectResolverTest : public ::testing::Test
+    {
     protected:
         std::filesystem::path temp_dir;
 
-        void SetUp() override {
+        void SetUp() override
+        {
             temp_dir = generate_test_workspace("vs_test", reinterpret_cast<uintptr_t>(this));
         }
 
-        void TearDown() override {
+        void TearDown() override
+        {
             cleanup_test_workspace(temp_dir);
         }
 
-        std::string create_file(const std::string &filename, const std::string &content) {
+        std::string create_file(const std::string& filename, const std::string& content)
+        {
             std::filesystem::path full_path = temp_dir / filename;
             std::filesystem::create_directories(full_path.parent_path());
 
@@ -62,8 +67,7 @@ struct Segment {
 // 1. SEGMENT ASSUMPTIONS
 // ==========================================
 
-@scenario(type: "base")
-let gcp_segment: Segment = {
+let @scenario(type: "base") gcp_segment: Segment = {
     market_share: 11%,
     target_market_share: Uniform(min: 10%, max: 15%),
     market_size: 13_624 / self.market_share * 4,
@@ -76,8 +80,7 @@ let gcp_segment: Segment = {
     target_sales_to_capital: 100%
 }
 
-@scenario(type: "base")
-let yt_segment: Segment = {
+let @scenario(type: "base") yt_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 9_796 * 4,
@@ -90,8 +93,7 @@ let yt_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-@scenario(type: "base")
-let google_network_segment: Segment = {
+let @scenario(type: "base") google_network_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 7_354 * 4,
@@ -103,8 +105,7 @@ let google_network_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-@scenario(type: "base")
-let google_subscriptions_segment: Segment = {
+let @scenario(type: "base") google_subscriptions_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 11_203 * 4,
@@ -117,8 +118,7 @@ let google_subscriptions_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-@scenario(type: "base")
-let google_search_segment: Segment = {
+let @scenario(type: "base") google_search_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 54_190 * 4,
@@ -295,50 +295,64 @@ import "wacc.vs"
 )";
 
     const std::string assumptions_file = R"(
+let
 @export
-let periods = 10
+periods = 10
 
+let
 @export
 @correlated(with: [ { name: erp, direction: CorrelationDirection.Negative } ])
-let rf = 4.5%
+rf = 4.5%
 
+let
 @export
 @correlated(with: [ { name: rf, direction: CorrelationDirection.Negative } ])
-let erp = 5%
+erp = 5%
 
+let
 @export
-let beta = 1.05
+beta = 1.05
 
+let
 @export
-let bond_spread = 0.74%
+bond_spread = 0.74%
 
+let
 @export
-let marginal_tax_rate = 21%
+marginal_tax_rate = 21%
 
+let
 @export
-let effective_tax_rate = 17%
+effective_tax_rate = 17%
 
+let
 @export
-let share_price = 220
+share_price = 220
 
+let
 @export
-let shares_outstanding = 11_000_000
+shares_outstanding = 11_000_000
 
+let
 @export
-let book_value_of_equity = 300_000
+book_value_of_equity = 300_000
 
+let
 @export
-let book_value_of_debt = 50_000
+book_value_of_debt = 50_000
 
+let
 @export
-let cash_and_marketable_securities = 120_000
+cash_and_marketable_securities = 120_000
 
+let
 @export
-let equity_value = shares_outstanding * share_price
+equity_value = shares_outstanding * share_price
 )";
 
 
-    TEST_F(ProjectResolverTest, ResolvesAlphabetValuationIntegrationProject) {
+    TEST_F(ProjectResolverTest, ResolvesAlphabetValuationIntegrationProject)
+    {
         // 1. Create assumptions.vs (The Leaf Node)
         std::string assumptions_path = create_file("assumptions/assumptions.vs", assumptions_file);
 

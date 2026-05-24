@@ -1,38 +1,46 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        void ExpectBaseType(const TypeAnnotation *type, const std::string &expected_name,
-                            size_t expected_generics = 0) {
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        void ExpectBaseType(const TypeAnnotation* type, const std::string& expected_name,
+                            size_t expected_generics = 0)
+        {
             ASSERT_NE(type, nullptr) << "Expected a TypeAnnotation, but got nullptr";
             EXPECT_EQ(type->name, expected_name);
             EXPECT_EQ(type->generic_args.size(), expected_generics);
         }
 
-        void ExpectTupleType(const TypeAnnotation *type, size_t expected_elements) {
+        void ExpectTupleType(const TypeAnnotation* type, size_t expected_elements)
+        {
             ASSERT_NE(type, nullptr) << "Expected a TypeAnnotation, but got nullptr";
             EXPECT_EQ(type->name, "tuple");
-            auto tuple_type = dynamic_cast<const TupleTypeAnnotation *>(type);
+            auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
             ASSERT_NE(tuple_type, nullptr) << "TypeAnnotation is not a TupleTypeAnnotation";
             EXPECT_EQ(tuple_type->element_types.size(), expected_elements);
         }
 
-        auto ExpectAssignmentType(std::function<void(const TypeAnnotation *)> verifier) {
-            return [v = std::move(verifier)](const Program &ast) {
+        auto ExpectAssignmentType(std::function<void(const TypeAnnotation*)> verifier)
+        {
+            return [v = std::move(verifier)](const Program& ast)
+            {
                 ASSERT_FALSE(ast.execution_steps.empty()) << "Expected at least one execution step";
-                auto assign = dynamic_cast<Assignment *>(ast.execution_steps[0].get());
+                auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
                 ASSERT_NE(assign, nullptr) << "Expected first step to be an Assignment";
                 ASSERT_FALSE(assign->targets.empty()) << "Expected at least one assignment target";
-                v(assign->targets[0].second.get());
+                v(assign->targets[0].type.get());
             };
         }
     }
 
-    class TypeAnnotationParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class TypeAnnotationParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(TypeAnnotationParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(TypeAnnotationParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -97,7 +105,7 @@ namespace valuascript::compiler::test {
             ASSERT_NE(assign, nullptr);
             ASSERT_EQ(assign->targets.size(), 1);
 
-            auto type = assign->targets[0].second.get();
+            auto type = assign->targets[0].type.get();
             ExpectBaseType(type, "vector", 1);
             ExpectBaseType(type->generic_args[0].get(), "int", 0);
             }
@@ -115,7 +123,7 @@ namespace valuascript::compiler::test {
             ASSERT_NE(assign, nullptr);
             ASSERT_EQ(assign->targets.size(), 1);
 
-            auto type = assign->targets[0].second.get();
+            auto type = assign->targets[0].type.get();
             ExpectTupleType(type, 1);
             auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
             ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
@@ -132,11 +140,11 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectBaseType(assign_a->targets[0].second.get(), "vector", 1);
+            ExpectBaseType(assign_a->targets[0].type.get(), "vector", 1);
 
             auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
+            EXPECT_EQ(assign_b->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -150,11 +158,11 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectTupleType(assign_a->targets[0].second.get(), 1);
+            ExpectTupleType(assign_a->targets[0].type.get(), 1);
 
             auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_b, nullptr);
-            EXPECT_EQ(assign_b->targets[0].first, "b");
+            EXPECT_EQ(assign_b->targets[0].name, "b");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -192,8 +200,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].first, "a");
-            EXPECT_EQ(assign->targets[0].second.get(), nullptr);
+            EXPECT_EQ(assign->targets[0].name, "a");
+            EXPECT_EQ(assign->targets[0].type.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -374,7 +382,7 @@ namespace valuascript::compiler::test {
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

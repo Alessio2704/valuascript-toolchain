@@ -26,9 +26,9 @@ namespace valuascript::compiler::test
 
         std::pair<std::string, ProgramSpec> generate_program(int piece_count);
 
-        std::pair<std::string, std::vector<ModifierSpec>> synth_modifiers(int count);
+        std::pair<std::string, std::vector<ModifierSpec>> synth_modifiers(int count, int depth = 0);
         std::pair<std::string, TypeVerifier> synth_type(int depth = 0);
-        std::pair<std::string, ExprVerifier> synth_expression(int depth = 0, int max_depth = 3);
+        std::pair<std::string, ExprVerifier> synth_expression(int depth = 0, int max_depth = EXPANSION_DEPTH);
         std::pair<std::string, StmtVerifier> synth_statement();
 
         std::pair<std::string, ParamSpec> synth_parameter(bool allow_default);

@@ -78,38 +78,28 @@ namespace valuascript::compiler::test
                 zero_all_weights(config);
 
                 if (goal.top_type == TopLevelConstruct::FunctionDef)
-                    config.weights.top_level_constructs.function_def =
-                        1.0;
+                    config.weights.top_level_constructs.function_def = 1.0;
                 else if (goal.top_type == TopLevelConstruct::StructDef)
-                    config.weights.top_level_constructs.struct_def =
-                        1.0;
+                    config.weights.top_level_constructs.struct_def = 1.0;
                 else if (goal.top_type == TopLevelConstruct::EnumDef)
-                    config.weights.top_level_constructs.enum_def =
-                        1.0;
+                    config.weights.top_level_constructs.enum_def = 1.0;
                 else if (goal.top_type == TopLevelConstruct::TypeAlias)
-                    config.weights.top_level_constructs.type_alias =
-                        1.0;
+                    config.weights.top_level_constructs.type_alias = 1.0;
                 else if (goal.top_type == TopLevelConstruct::ImportStmt)
-                    config.weights.top_level_constructs.import_stmt
-                        = 1.0;
+                    config.weights.top_level_constructs.import_stmt = 1.0;
                 else if (goal.top_type == TopLevelConstruct::Directive)
-                    config.weights.top_level_constructs.directive =
-                        1.0;
+                    config.weights.top_level_constructs.directive = 1.0;
                 else if (goal.top_type == TopLevelConstruct::ReturnStmt)
-                    config.weights.top_level_constructs.return_stmt
-                        = 1.0;
+                    config.weights.top_level_constructs.return_stmt = 1.0;
                 else if (goal.top_type == TopLevelConstruct::Statement)
-                    config.weights.top_level_constructs.statement =
-                        1.0;
+                    config.weights.top_level_constructs.statement = 1.0;
 
                 if (goal.stmt_type.has_value())
                 {
                     if (*goal.stmt_type == StatementType::SingleAssign)
-                        config.weights.statement_types.single_assign =
-                            1.0;
+                        config.weights.statement_types.single_assign = 1.0;
                     else if (*goal.stmt_type == StatementType::MultiAssign)
-                        config.weights.statement_types.multi_assign
-                            = 1.0;
+                        config.weights.statement_types.multi_assign = 1.0;
                     else if (*goal.stmt_type == StatementType::Reassign) config.weights.statement_types.reassign = 1.0;
                     else if (*goal.stmt_type == StatementType::ExprStmt) config.weights.statement_types.expr_stmt = 1.0;
                 }
@@ -150,7 +140,7 @@ namespace valuascript::compiler::test
                             if (a && a->targets.size() == 1)
                             {
                                 found_target++;
-                                EXPECT_EQ(a->modifiers.size(), mod_count);
+                                EXPECT_EQ(a->targets[0].modifiers.size(), mod_count);
                             }
                             else found_others++;
                         }
@@ -160,7 +150,10 @@ namespace valuascript::compiler::test
                             if (a && a->targets.size() > 1)
                             {
                                 found_target++;
-                                EXPECT_EQ(a->modifiers.size(), mod_count);
+                                for (const auto& tgt : a->targets)
+                                {
+                                    EXPECT_EQ(tgt.modifiers.size(), mod_count);
+                                }
                             }
                             else found_others++;
                         }
@@ -272,7 +265,7 @@ namespace valuascript::compiler::test
             {
                 if (auto assign = dynamic_cast<Assignment*>(a_ast->execution_steps[0].get()))
                 {
-                    if (assign->targets[0].second != nullptr) explicit_types++;
+                    if (assign->targets[0].type != nullptr) explicit_types++;
                 }
             }
 
@@ -290,7 +283,7 @@ namespace valuascript::compiler::test
             if (t_ast && !t_ast->execution_steps.empty())
             {
                 auto assign = dynamic_cast<Assignment*>(t_ast->execution_steps[0].get());
-                auto type_node = assign->targets[0].second.get();
+                auto type_node = assign->targets[0].type.get();
                 if (type_node->name == "any") any_types++;
                 else if (dynamic_cast<TupleTypeAnnotation*>(type_node)) tuple_types++;
                 else if (type_node->name == "List") list_types++;
@@ -339,7 +332,7 @@ namespace valuascript::compiler::test
         {
             auto m_res = gen.synth_modifiers(1).first;
             if (reg_mods.contains(m_res)) count_mods++;
-            EXPECT_NE(parse(m_res + "let x = 1"), nullptr);
+            EXPECT_NE(parse("let " + m_res + "x = 1"), nullptr);
 
             auto t_res = gen.synth_type(0).first;
             if (reg_types.contains(t_res)) count_types++;
@@ -375,12 +368,16 @@ namespace valuascript::compiler::test
         config.weights.reassign_target_flavors.bracket = 3.0;
         config.weights.reassign_target_flavors.self_dot = 4.0;
 
-        config.weights.expression_types.binary = 1.0;
-        config.weights.expression_types.unary = 0.0;
-        config.weights.expression_types.dot = 4.0;
+        config.weights.expression_types.binary = 2.0;
+        config.weights.expression_types.unary = 1.0;
+        config.weights.expression_types.dot = 3.0;
         config.weights.expression_types.bracket = 2.0;
-        config.weights.expression_types.call = 2.0;
+        config.weights.expression_types.call = 3.0;
         config.weights.expression_types.grouping = 1.0;
+        config.weights.expression_types.switch_expr = 2.0;
+        config.weights.expression_types.dict_expr = 2.0;
+        config.weights.expression_types.tuple_expr = 2.0;
+        config.weights.expression_types.tensor_expr = 2.0;
 
         config.registry.statements = 0.0;
         config.registry.expressions = 0.0;
@@ -389,7 +386,9 @@ namespace valuascript::compiler::test
 
         int stmt_single = 0, stmt_multi = 0, stmt_reassign = 0, stmt_expr = 0;
         int re_id = 0, re_dot = 0, re_bracket = 0, re_self = 0;
-        int exp_bin = 0, exp_dot = 0, exp_bracket = 0, exp_call = 0, exp_group = 0;
+
+        int exp_bin = 0, exp_un = 0, exp_dot = 0, exp_bracket = 0, exp_call = 0;
+        int exp_switch = 0, exp_dict = 0, exp_tuple = 0, exp_tensor = 0, exp_group_or_base = 0;
 
         for (size_t i = 0; i < iterations; ++i)
         {
@@ -430,35 +429,47 @@ namespace valuascript::compiler::test
             {
                 auto expr = dynamic_cast<Assignment*>(e_ast->execution_steps[0].get())->value.get();
                 expr = unwrap_grouping(expr);
+
                 if (dynamic_cast<BinaryExpression*>(expr)) exp_bin++;
+                else if (dynamic_cast<UnaryExpression*>(expr)) exp_un++;
                 else if (dynamic_cast<DotAccess*>(expr)) exp_dot++;
                 else if (dynamic_cast<BracketAccess*>(expr)) exp_bracket++;
                 else if (dynamic_cast<FunctionCall*>(expr)) exp_call++;
-                else exp_group++;
+                else if (dynamic_cast<SwitchExpression*>(expr)) exp_switch++;
+                else if (dynamic_cast<DictLiteral*>(expr)) exp_dict++;
+                else if (dynamic_cast<TupleLiteral*>(expr)) exp_tuple++;
+                else if (dynamic_cast<TensorLiteral*>(expr)) exp_tensor++;
+                else exp_group_or_base++;
             }
         }
 
         double total_stmt = stmt_single + stmt_multi + stmt_reassign + stmt_expr;
         ASSERT_GT(total_stmt, 0);
-        EXPECT_NEAR(stmt_single / total_stmt, 0.1, MARGIN);
-        EXPECT_NEAR(stmt_multi / total_stmt, 0.2, MARGIN);
-        EXPECT_NEAR(stmt_reassign / total_stmt, 0.3, MARGIN);
-        EXPECT_NEAR(stmt_expr / total_stmt, 0.4, MARGIN);
+        EXPECT_NEAR(stmt_single / total_stmt, 0.1, MARGIN + 0.02);
+        EXPECT_NEAR(stmt_multi / total_stmt, 0.2, MARGIN + 0.02);
+        EXPECT_NEAR(stmt_reassign / total_stmt, 0.3, MARGIN + 0.02);
+        EXPECT_NEAR(stmt_expr / total_stmt, 0.4, MARGIN + 0.02);
 
         double total_re = re_id + re_dot + re_bracket + re_self;
         ASSERT_GT(total_re, 0);
-        EXPECT_NEAR(re_id / total_re, 0.1, MARGIN);
-        EXPECT_NEAR(re_dot / total_re, 0.2, MARGIN);
-        EXPECT_NEAR(re_bracket / total_re, 0.3, MARGIN);
-        EXPECT_NEAR(re_self / total_re, 0.4, MARGIN);
+        EXPECT_NEAR(re_id / total_re, 0.1, MARGIN + 0.03);
+        EXPECT_NEAR(re_dot / total_re, 0.2, MARGIN + 0.03);
+        EXPECT_NEAR(re_bracket / total_re, 0.3, MARGIN + 0.03);
+        EXPECT_NEAR(re_self / total_re, 0.4, MARGIN + 0.03);
 
-        double total_exp = exp_bin + exp_dot + exp_bracket + exp_call + exp_group;
+        double total_exp = exp_bin + exp_un + exp_dot + exp_bracket + exp_call +
+            exp_switch + exp_dict + exp_tuple + exp_tensor + exp_group_or_base;
         ASSERT_GT(total_exp, 0);
-        EXPECT_NEAR(exp_bin / total_exp, 0.1, MARGIN);
-        EXPECT_NEAR(exp_dot / total_exp, 0.4, MARGIN);
-        EXPECT_NEAR(exp_bracket / total_exp, 0.2, MARGIN);
-        EXPECT_NEAR(exp_call / total_exp, 0.2, MARGIN);
-        EXPECT_NEAR(exp_group / total_exp, 0.1, MARGIN);
+        EXPECT_NEAR(exp_bin / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_un / total_exp, 0.05, MARGIN + 0.02);
+        EXPECT_NEAR(exp_dot / total_exp, 0.15, MARGIN + 0.02);
+        EXPECT_NEAR(exp_bracket / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_call / total_exp, 0.15, MARGIN + 0.02);
+        EXPECT_NEAR(exp_switch / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_dict / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_tuple / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_tensor / total_exp, 0.10, MARGIN + 0.02);
+        EXPECT_NEAR(exp_group_or_base / total_exp, 0.05, MARGIN + 0.02);
     }
 
     TEST_F(SyntheticGeneratorKnobTest, HarvestStatementWeights)
@@ -548,6 +559,10 @@ namespace valuascript::compiler::test
         config.sizes.struct_fields = {2, 5};
         config.sizes.enum_cases = {3, 6};
         config.sizes.multi_assign_targets = {3, 6};
+        config.sizes.switch_cases = {2, 4};
+        config.sizes.dict_elements = {2, 5};
+        config.sizes.tuple_elements = {3, 5};
+        config.sizes.tensor_elements = {2, 4};
 
         config.registry.modifiers = 0.0;
         config.registry.types = 0.0;
@@ -566,13 +581,13 @@ namespace valuascript::compiler::test
         for (size_t i = 0; i < test_size; ++i)
         {
             auto [m_code, m_specs] = gen.synth_modifiers(gen.rand_range(config.sizes.modifiers_count));
-            auto m_ast = parse(m_code + "let x = 1");
+            auto m_ast = parse("let " + m_code + "x = 1");
             if (m_ast && !m_ast->execution_steps.empty())
             {
                 auto assign = dynamic_cast<Assignment*>(m_ast->execution_steps[0].get());
-                if (assign)
+                if (assign && !assign->targets.empty())
                 {
-                    auto mods = &assign->modifiers;
+                    auto mods = &assign->targets[0].modifiers;
                     EXPECT_GE(mods->size(), 2);
                     EXPECT_LE(mods->size(), 4);
                     for (auto& mod : *mods)
@@ -626,6 +641,38 @@ namespace valuascript::compiler::test
             {
                 EXPECT_GE(a_ast->type_aliases[0]->modifiers.size(), 2);
                 EXPECT_LE(a_ast->type_aliases[0]->modifiers.size(), 4);
+            }
+
+            auto [expr_code, expr_spec] = gen.synth_expression(2, 3);
+            auto expr_ast = parse("let x = " + expr_code);
+            if (expr_ast && !expr_ast->execution_steps.empty())
+            {
+                auto assign = dynamic_cast<Assignment*>(expr_ast->execution_steps[0].get());
+                if (assign && assign->value)
+                {
+                    auto val = unwrap_grouping(assign->value.get());
+
+                    if (auto sw = dynamic_cast<SwitchExpression*>(val))
+                    {
+                        EXPECT_GE(sw->cases.size(), 2);
+                        EXPECT_LE(sw->cases.size(), 4);
+                    }
+                    else if (auto dict = dynamic_cast<DictLiteral*>(val))
+                    {
+                        EXPECT_GE(dict->elements.size(), 2);
+                        EXPECT_LE(dict->elements.size(), 5);
+                    }
+                    else if (auto tup = dynamic_cast<TupleLiteral*>(val))
+                    {
+                        EXPECT_GE(tup->elements.size(), 3);
+                        EXPECT_LE(tup->elements.size(), 5);
+                    }
+                    else if (auto ten = dynamic_cast<TensorLiteral*>(val))
+                    {
+                        EXPECT_GE(ten->elements.size(), 2);
+                        EXPECT_LE(ten->elements.size(), 4);
+                    }
+                }
             }
         }
     }

@@ -114,8 +114,9 @@ namespace valuascript::compiler::test
         std::vector<AssignmentTargetSpec> specs;
         for (int i = 0; i < count; ++i)
         {
+            auto [m_code, m_specs] = synth_modifiers(rand_range(config_.sizes.modifiers_count));
             std::string target_name = "multi_var_" + next_id();
-            std::string target_code = target_name;
+            std::string target_code = m_code + target_name;
             TypeVerifier t_v = nullptr;
             if (roll_prob(config_.features.assignment_has_explicit_type))
             {
@@ -124,7 +125,7 @@ namespace valuascript::compiler::test
                 t_v = t_verifier;
             }
             code += target_code;
-            specs.push_back({target_name, t_v});
+            specs.emplace_back(m_specs, target_name, t_v);
             if (i < count - 1) code += ", ";
         }
         return {code, specs};
@@ -139,20 +140,19 @@ namespace valuascript::compiler::test
                                                           config_.weights.statement_types.expr_stmt
                                                       }, StatementType::SingleAssign);
 
-        auto [m_code, m_specs] = synth_modifiers(rand_range(config_.sizes.modifiers_count));
-
         if (stmt_type == StatementType::SingleAssign)
         {
+            auto [m_code, m_specs] = synth_modifiers(rand_range(config_.sizes.modifiers_count));
             auto [e_c, e_v] = synth_expression();
             std::string var_name = "single_var_" + next_id();
-            return {m_code + "let " + var_name + " = " + e_c, IsAssignment(m_specs, {{var_name}}, e_v)};
+            return {"let " + m_code + var_name + " = " + e_c, IsAssignment({{m_specs, var_name, nullptr}}, e_v)};
         }
         if (stmt_type == StatementType::MultiAssign)
         {
             int count = rand_range(config_.sizes.multi_assign_targets);
             auto [targets_c, targets_s] = synth_assignment_targets(count);
             auto [e_c, e_v] = synth_expression();
-            return {m_code + "let " + targets_c + " = " + e_c, IsAssignment(m_specs, targets_s, e_v)};
+            return {"let " + targets_c + " = " + e_c, IsAssignment(targets_s, e_v)};
         }
         if (stmt_type == StatementType::Reassign)
         {
@@ -287,8 +287,9 @@ namespace valuascript::compiler::test
 
     std::pair<std::string, ImportVerifier> SyntheticGenerator::logic_synth_import()
     {
+        auto [m_code, m_specs] = synth_modifiers(rand_range(config_.sizes.modifiers_count));
         std::string path = R"("lib_)" + next_id() + R"(.vs")";
-        return {"import " + path, IsImport(path)};
+        return {m_code + "import " + path, IsImport(path, m_specs)};
     }
 
     std::pair<std::string, DirectiveVerifier> SyntheticGenerator::logic_synth_directive()
@@ -328,7 +329,7 @@ namespace valuascript::compiler::test
         return logic_synth_statement();
     }
 
-    std::pair<std::string, std::vector<ModifierSpec>> SyntheticGenerator::synth_modifiers(int count)
+    std::pair<std::string, std::vector<ModifierSpec>> SyntheticGenerator::synth_modifiers(int count, int depth)
     {
         const auto& pool = ConstructRegistry::modifiers();
         if (!pool.empty() && roll_prob(config_.registry.modifiers))
@@ -353,7 +354,7 @@ namespace valuascript::compiler::test
                 for (int j = 0; j < arg_count; ++j)
                 {
                     std::string arg_label = "arg_" + next_id();
-                    auto [e_c, e_v] = synth_expression();
+                    auto [e_c, e_v] = synth_expression(depth + 1, EXPANSION_DEPTH);
                     arg_code += arg_label + ": " + e_c;
                     args.push_back({arg_label, e_v});
                     if (j < arg_count - 1) arg_code += ", ";
@@ -402,7 +403,11 @@ namespace valuascript::compiler::test
                                                           config_.weights.expression_types.dot,
                                                           config_.weights.expression_types.bracket,
                                                           config_.weights.expression_types.call,
-                                                          config_.weights.expression_types.grouping
+                                                          config_.weights.expression_types.grouping,
+                                                          config_.weights.expression_types.switch_expr,
+                                                          config_.weights.expression_types.dict_expr,
+                                                          config_.weights.expression_types.tuple_expr,
+                                                          config_.weights.expression_types.tensor_expr
                                                       }, ExpressionType::Grouping);
 
         switch (type_idx)
@@ -437,6 +442,74 @@ namespace valuascript::compiler::test
             {
                 std::string fn_name = "call_" + next_id();
                 return {fn_name + "(arg: " + inner_c + ")", IsCall(IsIdentifier(fn_name), {{"arg", inner_v}})};
+            }
+        case ExpressionType::Switch:
+            {
+                std::string code = "switch (" + inner_c + ") {\n";
+                std::vector<SwitchCaseSpec> case_specs;
+                int cases_count = rand_range(config_.sizes.switch_cases);
+                for (int i = 0; i < cases_count; ++i)
+                {
+                    auto [m_c, m_v] = synth_modifiers(rand_range(config_.sizes.modifiers_count), depth + 1);
+                    auto [case_expr_c, case_expr_v] = synth_expression(depth + 1, max_depth);
+                    std::string label = "switch_case_" + next_id();
+                    code += "  " + m_c + "case " + label + " -> " + case_expr_c + "\n";
+                    case_specs.emplace_back(m_v, std::vector<std::string>{label}, case_expr_v);
+                }
+                auto [def_m_c, def_m_v] = synth_modifiers(rand_range(config_.sizes.modifiers_count), depth + 1);
+                auto [def_expr_c, def_expr_v] = synth_expression(depth + 1, max_depth);
+                code += "  " + def_m_c + "default -> " + def_expr_c + "\n}";
+
+                return {code, IsSwitch(inner_v, case_specs, def_m_v, def_expr_v)};
+            }
+        case ExpressionType::Dict:
+            {
+                std::string code = "{";
+                std::vector<DictItemSpec> dict_specs;
+                int item_count = rand_range(config_.sizes.dict_elements);
+                if (item_count > 0) code += " ";
+                for (int i = 0; i < item_count; ++i)
+                {
+                    auto [m_c, m_v] = synth_modifiers(rand_range(config_.sizes.modifiers_count), depth + 1);
+                    auto [val_c, val_v] = synth_expression(depth + 1, max_depth);
+                    std::string key = "key_" + next_id();
+                    code += m_c + key + ": " + val_c;
+                    dict_specs.push_back({key, m_v, val_v});
+                    if (i < item_count - 1) code += ", ";
+                }
+                if (item_count > 0) code += " ";
+                code += "}";
+                return {code, IsDict(dict_specs)};
+            }
+        case ExpressionType::Tuple:
+            {
+                std::string code = "(";
+                std::vector<ExprVerifier> elements;
+                int elem_count = rand_range(config_.sizes.tuple_elements);
+                for (int i = 0; i < elem_count; ++i)
+                {
+                    auto [val_c, val_v] = synth_expression(depth + 1, max_depth);
+                    code += val_c;
+                    elements.push_back(val_v);
+                    if (i < elem_count - 1) code += ", ";
+                }
+                code += ")";
+                return {code, IsTuple(elements)};
+            }
+        case ExpressionType::Tensor:
+            {
+                std::string code = "[";
+                std::vector<ExprVerifier> elements;
+                int elem_count = rand_range(config_.sizes.tensor_elements);
+                for (int i = 0; i < elem_count; ++i)
+                {
+                    auto [val_c, val_v] = synth_expression(depth + 1, max_depth);
+                    code += val_c;
+                    elements.push_back(val_v);
+                    if (i < elem_count - 1) code += ", ";
+                }
+                code += "]";
+                return {code, IsTensor(elements)};
             }
         case ExpressionType::Grouping:
         default:
@@ -533,10 +606,11 @@ namespace valuascript::compiler::test
             config_.registry.returns,
             ConstructRegistry::returns(), [this]
             {
+                auto [m_code, m_specs] = synth_modifiers(rand_range(config_.sizes.modifiers_count));
                 auto [e_code, e_verifier] = synth_expression();
                 return std::make_pair(
-                    "return " + e_code + "\n",
-                    ReturnVerifier(IsReturn({e_verifier}))
+                    m_code + "return " + e_code + "\n",
+                    ReturnVerifier(IsReturn(m_specs, {e_verifier}))
                 );
             }
         );

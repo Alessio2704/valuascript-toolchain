@@ -50,9 +50,10 @@ namespace valuascript::compiler::test
                 IsSwitch(
                     IsIdentifier("x"),
                     {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")},
-                        SwitchCaseSpec{{"B"}, IsNumber("2")}
+                        SwitchCaseSpec{{}, {"A"}, IsNumber("1")},
+                        SwitchCaseSpec{{}, {"B"}, IsNumber("2")}
                     },
+                    {},
                     IsNumber("0")
                 ));
 
@@ -62,16 +63,19 @@ namespace valuascript::compiler::test
                     IsIdentifier("x"),
                     {
                         SwitchCaseSpec{
+                            {},
                             {"A"},
                             IsSwitch(
                                 IsIdentifier("y"),
                                 {
-                                    SwitchCaseSpec{{"B"}, IsNumber("1")}
+                                    SwitchCaseSpec{{}, {"B"}, IsNumber("1")}
                                 },
+                                {},
                                 IsNumber("2")
                             )
                         }
                     },
+                    {},
                     IsNumber("3")
                 ));
 

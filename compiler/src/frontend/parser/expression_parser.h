@@ -47,9 +47,9 @@ namespace valuascript::compiler
         ExprPtr parse_conditional_expression();
         ExprPtr parse_switch_expression();
         ExprPtr parse_switch_target();
-        void parse_switch_body(std::vector<std::pair<std::vector<std::string>, ExprPtr>>& cases,
+        void parse_switch_body(std::vector<SwitchCase>& cases, std::vector<Modifier>& default_mods,
                                ExprPtr& default_case);
-        std::pair<std::vector<std::string>, ExprPtr> parse_switch_case();
+        SwitchCase parse_switch_case(std::vector<Modifier> modifiers);
         ExprPtr parse_switch_default();
         ExprPtr parse_switch_result();
 

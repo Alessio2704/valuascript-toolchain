@@ -365,17 +365,6 @@ namespace valuascript::compiler::test
             ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_on_return_statement_recovers_without_panic",
-            "func test() -> int {\n"
-            "    @modifier return 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ModifiersAttachedToInvalidDeclaration, 2, 5}
-            },
-            ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
             "broken_function_call_recovers_to_next_statement",
             "func test() -> int {\n"
             "    foo(a: 1 b: 2)\n"
@@ -407,9 +396,9 @@ namespace valuascript::compiler::test
             auto switch_expr = dynamic_cast<SwitchExpression*>(switch_expr_assignment->value.get());
             ASSERT_NE(switch_expr, nullptr);
             ASSERT_EQ(switch_expr->cases.size(), 1);
-            ASSERT_EQ(switch_expr->cases[0].first.size(), 1);
-            ASSERT_EQ(switch_expr->cases[0].first[0], "A");
-            ASSERT_EQ(switch_expr->cases[0].second, nullptr);
+            ASSERT_EQ(switch_expr->cases[0].identifiers.size(), 1);
+            ASSERT_EQ(switch_expr->cases[0].identifiers[0], "A");
+            ASSERT_EQ(switch_expr->cases[0].result, nullptr);
             ASSERT_EQ(switch_expr->default_case, nullptr);
             }
             },
@@ -511,9 +500,9 @@ namespace valuascript::compiler::test
             auto assign3 = dynamic_cast<Assignment*>(f->body[3].get());
 
             ASSERT_NE(assign1, nullptr);
-            EXPECT_EQ(assign1->targets[0].first, "a");
+            EXPECT_EQ(assign1->targets[0].name, "a");
             ASSERT_NE(assign2, nullptr);
-            EXPECT_EQ(assign2->targets[0].first, "b");
+            EXPECT_EQ(assign2->targets[0].name, "b");
             ASSERT_NE(func_call_expr, nullptr);
             auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
             ASSERT_NE(func_call, nullptr);
@@ -522,7 +511,7 @@ namespace valuascript::compiler::test
             ASSERT_NE(func_call_id, nullptr);
             EXPECT_EQ(func_call_id->name, "foo");
             ASSERT_NE(assign3, nullptr);
-            EXPECT_EQ(assign3->targets[0].first, "c");
+            EXPECT_EQ(assign3->targets[0].name, "c");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -550,9 +539,9 @@ namespace valuascript::compiler::test
             auto assign3 = dynamic_cast<Assignment*>(f->body[3].get());
 
             ASSERT_NE(assign1, nullptr);
-            EXPECT_EQ(assign1->targets[0].first, "a");
+            EXPECT_EQ(assign1->targets[0].name, "a");
             ASSERT_NE(assign2, nullptr);
-            EXPECT_EQ(assign2->targets[0].first, "b");
+            EXPECT_EQ(assign2->targets[0].name, "b");
             ASSERT_NE(func_call_expr, nullptr);
             auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
             ASSERT_NE(func_call, nullptr);
@@ -561,7 +550,7 @@ namespace valuascript::compiler::test
             ASSERT_NE(func_call_id, nullptr);
             EXPECT_EQ(func_call_id->name, "foo");
             ASSERT_NE(assign3, nullptr);
-            EXPECT_EQ(assign3->targets[0].first, "c");
+            EXPECT_EQ(assign3->targets[0].name, "c");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -577,7 +566,7 @@ namespace valuascript::compiler::test
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

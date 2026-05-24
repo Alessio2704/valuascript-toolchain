@@ -83,16 +83,16 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"t"}
-                                 },
-                                 IsTuple(
-                                     {
-                                         IsString("\"first\""),
-                                         IsString("\"unclosed)")
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            {"t"}
+                        },
+                        IsTuple(
+                            {
+                                IsString("\"first\""),
+                                IsString("\"unclosed)")
+                            }
+                        )
                     )
                 }
             }
@@ -109,15 +109,15 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"d"}
-                                 },
-                                 IsDict(
-                                     {
-                                         {"key", {}, IsString("\"unclosed_val }")}
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            {"d"}
+                        },
+                        IsDict(
+                            {
+                                {"key", {}, IsString("\"unclosed_val }")}
+                            }
+                        )
                     )
                 }
             }
@@ -134,16 +134,16 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"v"}
-                                 },
-                                 IsTensor(
-                                     {
-                                         IsString("\"val1\""),
-                                         IsString("\"val2]")
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            {"v"}
+                        },
+                        IsTensor(
+                            {
+                                IsString("\"val1\""),
+                                IsString("\"val2]")
+                            }
+                        )
                     )
                 }
             }
@@ -174,28 +174,29 @@ namespace valuascript::compiler::test
     TEST_F(UnclosedStringErrorTest, ModifierArgumentWithUnclosedString)
     {
         ExpectParseErrorsWithRecovery(
-            "@deprecated(reason: \"not_safe)\n"
-            "let x = 1",
+            "let @deprecated(reason: \"not_safe)\n"
+            "x = 1",
             {
-                {LexerErrorCode::UnclosedString, 1, 21, 1, 31},
-                {E::UnmatchedParenthesisAfterModifierArgs, 1, 31, 1, 32}
+                {LexerErrorCode::UnclosedString, 1, 25, 1, 35},
+                {E::UnmatchedParenthesisAfterModifierArgs, 1, 35, 1, 36}
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment(
-                        {
-                            {
-                                "deprecated", {
-                                    {
-                                        "reason", IsString("\"not_safe)")
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            {"x"}
-                        },
-                        IsNumber("1")
+                    IsAssignment({
+                                     {
+                                         {
+                                             {
+                                                 "deprecated", {
+                                                     {
+                                                         "reason", IsString("\"not_safe)")
+                                                     }
+                                                 }
+                                             }
+                                         },
+                                         "x"
+                                     }
+                                 },
+                                 IsNumber("1")
                     )
                 }
             }
