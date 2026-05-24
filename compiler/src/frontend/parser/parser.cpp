@@ -103,8 +103,7 @@ namespace valuascript::compiler
                 break;
             case TokenType::Let:
                 {
-                    ctx.reject_modifiers(modifiers);
-                    auto assign = stmt_parser->parse_assignment();
+                    auto assign = stmt_parser->parse_assignment(std::move(modifiers));
                     if (program) program->execution_steps.push_back(std::move(assign));
                     else block.push_back(std::move(assign));
                     break;

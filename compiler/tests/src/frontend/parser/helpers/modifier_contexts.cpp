@@ -7,6 +7,82 @@ namespace valuascript::compiler::test
     {
         static const std::vector<Context> contexts = {
             {
+                "modifier_before_let_single", {InjectableType::Modifier}, InjectableType::StrongStatement, "",
+                " let ctx_assign = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                {SpecAdder::get_v<ModifierVerifier>(v), "ctx_assign"}
+                            },
+                            IsNumber("1")
+                        )
+                    );
+                }
+            },
+            {
+                "modifier_before_let_multiple", {InjectableType::Modifier}, InjectableType::StrongStatement, "",
+                " let ctx_a, ctx_b = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec(
+                                    SpecAdder::get_v<ModifierVerifier>(v), "ctx_a"),
+                                AssignmentTargetSpec(
+                                    SpecAdder::get_v<ModifierVerifier>(v), "ctx_b")
+                            }, IsNumber("1")
+                        )
+                    );
+                }
+            },
+            {
+                "modifier_before_let_multiple_with_inner", {InjectableType::Modifier}, InjectableType::StrongStatement,
+                "",
+                " let ctx_a, @test ctx_b = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    auto mods_a = SpecAdder::get_v<ModifierVerifier>(v);
+                    auto mods_b = mods_a;
+                    mods_b.push_back({"test"});
+
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec(mods_a, "ctx_a"),
+                                AssignmentTargetSpec(mods_b, "ctx_b")
+                            }, IsNumber("1")
+                        )
+                    );
+                }
+            },
+            {
+                "modifier_before_let_multiple_with_both_inner", {InjectableType::Modifier},
+                InjectableType::StrongStatement, "",
+                " let @test1 ctx_a, @test2 ctx_b = 1\n",
+                [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    auto injected_mods = SpecAdder::get_v<ModifierVerifier>(v);
+
+                    auto mods_a = injected_mods;
+                    mods_a.push_back({"test1"});
+
+                    auto mods_b = injected_mods;
+                    mods_b.push_back({"test2"});
+
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec(mods_a, "ctx_a"),
+                                AssignmentTargetSpec(mods_b, "ctx_b")
+                            }, IsNumber("1")
+                        )
+                    );
+                }
+            },
+            {
                 "assignment", {InjectableType::Modifier}, InjectableType::StrongStatement, "let ", " ctx_assign = 1\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {

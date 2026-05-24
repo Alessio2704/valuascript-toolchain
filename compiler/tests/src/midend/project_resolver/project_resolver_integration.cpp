@@ -67,7 +67,8 @@ struct Segment {
 // 1. SEGMENT ASSUMPTIONS
 // ==========================================
 
-let @scenario(type: "base") gcp_segment: Segment = {
+@scenario(type: "base")
+let gcp_segment: Segment = {
     market_share: 11%,
     target_market_share: Uniform(min: 10%, max: 15%),
     market_size: 13_624 / self.market_share * 4,
@@ -80,7 +81,8 @@ let @scenario(type: "base") gcp_segment: Segment = {
     target_sales_to_capital: 100%
 }
 
-let @scenario(type: "base") yt_segment: Segment = {
+@scenario(type: "base")
+let yt_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 9_796 * 4,
@@ -93,7 +95,8 @@ let @scenario(type: "base") yt_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-let @scenario(type: "base") google_network_segment: Segment = {
+@scenario(type: "base")
+let google_network_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 7_354 * 4,
@@ -105,7 +108,8 @@ let @scenario(type: "base") google_network_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-let @scenario(type: "base") google_subscriptions_segment: Segment = {
+@scenario(type: "base")
+let google_subscriptions_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 11_203 * 4,
@@ -118,7 +122,8 @@ let @scenario(type: "base") google_subscriptions_segment: Segment = {
     target_sales_to_capital: 200%
 }
 
-let @scenario(type: "base") google_search_segment: Segment = {
+@scenario(type: "base")
+let google_search_segment: Segment = {
     market_share: 100%,
     target_market_share: 100%,
     market_size: 54_190 * 4,
@@ -295,59 +300,35 @@ import "wacc.vs"
 )";
 
     const std::string assumptions_file = R"(
-let
-@export
-periods = 10
+@export let periods = 10
 
-let
 @export
 @correlated(with: [ { name: erp, direction: CorrelationDirection.Negative } ])
-rf = 4.5%
+let rf = 4.5%
 
-let
 @export
 @correlated(with: [ { name: rf, direction: CorrelationDirection.Negative } ])
-erp = 5%
+let erp = 5%
 
-let
-@export
-beta = 1.05
+@export let beta = 1.05
 
-let
-@export
-bond_spread = 0.74%
+@export let bond_spread = 0.74%
 
-let
-@export
-marginal_tax_rate = 21%
+@export let marginal_tax_rate = 21%
 
-let
-@export
-effective_tax_rate = 17%
+@export let effective_tax_rate = 17%
 
-let
-@export
-share_price = 220
+@export let share_price = 220
 
-let
-@export
-shares_outstanding = 11_000_000
+@export let shares_outstanding = 11_000_000
 
-let
-@export
-book_value_of_equity = 300_000
+@export let book_value_of_equity = 300_000
 
-let
-@export
-book_value_of_debt = 50_000
+@export let book_value_of_debt = 50_000
 
-let
-@export
-cash_and_marketable_securities = 120_000
+@export let cash_and_marketable_securities = 120_000
 
-let
-@export
-equity_value = shares_outstanding * share_price
+@export let equity_value = shares_outstanding * share_price
 )";
 
 

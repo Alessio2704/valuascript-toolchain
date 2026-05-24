@@ -14,7 +14,7 @@ namespace valuascript::compiler
 
         explicit StatementParser(Parser& p);
 
-        std::unique_ptr<Assignment> parse_assignment();
+        std::unique_ptr<Assignment> parse_assignment(const std::vector<Modifier>& modifiers);
         StmtPtr parse_expression_statement();
         std::unique_ptr<ReturnStatement> parse_return_statement(std::vector<Modifier> modifiers);
 
