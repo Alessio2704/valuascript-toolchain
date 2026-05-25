@@ -7,8 +7,7 @@ namespace valuascript::compiler::test
     class ExpansionDebugger : public ParserTestBase
     {
     public:
-        static void DumpExpansion(InjectableType type, const std::string& snippet,
-                                  const std::string& label, const UniversalVerifier& verifier)
+        static void DumpExpansion(InjectableType type, const std::string& snippet, const std::string& label)
         {
             DumpWriter writer("expansion_features_debug_" + label + ".txt");
             if (!writer.is_open()) return;
@@ -20,7 +19,7 @@ namespace valuascript::compiler::test
             out << "============================================================\n\n";
 
             size_t count = 0;
-            auto items = apply_context_augmentations(type, snippet, verifier, label);
+            auto items = apply_context_augmentations(type, snippet, NullVerifier{}, label);
 
             expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
             {
@@ -32,31 +31,16 @@ namespace valuascript::compiler::test
                 out << "------------------------------------------------------------\n\n";
             }, false);
 
-            out << "[DEBUG] Recovery expansion dump finished (" << count
-                << " variations)";
+            out << "[DEBUG] Recovery expansion dump finished (" << count << " variations)";
         }
     };
 
     TEST_F(ExpansionDebugger, GenerateExpressionReport)
     {
-        DumpExpansion(InjectableType::Expression, "1 + 1", "BasicArithmetic", ExprVerifier([](Expression*)
-        {
-        }));
-
-        DumpExpansion(InjectableType::TypeAnnotation, "int", "BasicType", TypeVerifier([](TypeAnnotation*)
-        {
-        }));
-
-        DumpExpansion(InjectableType::Modifier, "@modifier", "BasicModifier", ModifierVerifier
-                      {
-                      });
-
-        DumpExpansion(InjectableType::WeakStatement, "return 1", "BasicReturn", ReturnVerifier([](ReturnStatement*)
-        {
-        }));
-
-        DumpExpansion(InjectableType::StrongStatement, "let res = 1", "BasicAssign", AssignmentVerifier([](Assignment*)
-        {
-        }));
+        DumpExpansion(InjectableType::Expression, "1 + 1", "BasicArithmetic");
+        DumpExpansion(InjectableType::TypeAnnotation, "int", "BasicType");
+        DumpExpansion(InjectableType::Modifier, "@modifier", "BasicModifier");
+        DumpExpansion(InjectableType::WeakStatement, "return 1", "BasicReturn");
+        DumpExpansion(InjectableType::StrongStatement, "let res = 1", "BasicAssign");
     }
 }

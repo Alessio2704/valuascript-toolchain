@@ -1,9 +1,11 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include <set>
 #include <vector>
+#include <random>
 
 #include "frontend/parser/helpers/context_registry.h"
-#include "frontend/parser/helpers/expansion_policy.h"
+#include "context_tree_walker.h"
+#include "expansion_policy.h"
 #include "frontend/parser/helpers/recovery_sentinel.h"
 
 namespace valuascript::compiler::test
@@ -12,38 +14,17 @@ namespace valuascript::compiler::test
     {
         InjectableType start_type;
         std::string snippet;
-        UniversalVerifier verifier;
         std::string test_name;
     };
 
     static std::vector<IntegritySample> GetIntegritySamples()
     {
         return {
-            {
-                InjectableType::Expression, "1", ExprVerifier([](Expression*)
-                {
-                }),
-                "Expression"
-            },
-            {
-                InjectableType::TypeAnnotation, "int", TypeVerifier([](TypeAnnotation*)
-                {
-                }),
-                "TypeAnnotation"
-            },
-            {InjectableType::Modifier, "@meta", ModifierVerifier({{"meta"}}), "Modifier"},
-            {
-                InjectableType::StrongStatement, "let x = 1", StmtVerifier([](Statement*)
-                {
-                }),
-                "StrongStatement"
-            },
-            {
-                InjectableType::WeakStatement, "return 1", StmtVerifier([](Statement*)
-                {
-                }),
-                "WeakStatement"
-            }
+            {InjectableType::Expression, "1", "Expression"},
+            {InjectableType::TypeAnnotation, "int", "TypeAnnotation"},
+            {InjectableType::Modifier, "@meta", "Modifier"},
+            {InjectableType::StrongStatement, "let x = 1", "StrongStatement"},
+            {InjectableType::WeakStatement, "return 1", "WeakStatement"}
         };
     }
 
@@ -83,19 +64,17 @@ namespace valuascript::compiler::test
         }
     }
 
-    TEST_P(ContextExpansionFrameworkIntegrityTest, VerifyExpansionLogic)
+    TEST_P(ContextExpansionFrameworkIntegrityTest, VerifyExhaustiveExpansionLogic)
     {
-        const auto& [start_type, snippet, verifier, test_name] = GetParam();
+        const auto& [start_type, snippet, test_name] = GetParam();
 
         std::vector<ProcessingItem> results;
-        auto items = apply_context_augmentations(start_type, snippet, verifier, test_name);
+        auto items = apply_context_augmentations(start_type, snippet, NullVerifier{}, test_name);
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
-            {
-                results.push_back(std::move(item));
-            },
-            false
-        );
+        {
+            results.push_back(std::move(item));
+        }, false);
 
         ASSERT_FALSE(results.empty()) << "Expansion logic produced zero terminal programs.";
 
@@ -107,7 +86,6 @@ namespace valuascript::compiler::test
             EXPECT_TRUE(is_terminal_type(item.type))
                 << "Logic Error: Intermediate type " << static_cast<int>(item.type)
                 << " leaked into final results via path: " << item.path_name;
-
 
             EXPECT_EQ(CountTransitions(item.path_name), static_cast<size_t>(item.depth))
                 << "Logic Error: Depth tracking mismatch in path: " << item.path_name;
@@ -146,6 +124,60 @@ namespace valuascript::compiler::test
         }
     }
 
+    TEST_P(ContextExpansionFrameworkIntegrityTest, VerifyRandomWalkStrategyTerminates)
+    {
+        const auto& [start_type, snippet, test_name] = GetParam();
+
+        struct WalkState
+        {
+            InjectableType type;
+            int depth;
+        };
+
+        ContextTreeWalker<WalkState>::Callbacks cb;
+        cb.get_type = [](const WalkState& s) { return s.type; };
+
+        bool reached_terminal = false;
+        cb.on_terminal = [&](WalkState) { reached_terminal = true; };
+
+        cb.on_promotion = [&](const WalkState& s)
+        {
+            cb.on_terminal({InjectableType::TopLevel, s.depth + 1});
+        };
+
+        cb.on_normal_branch = [](const WalkState& s, const Context& ctx, int)
+        {
+            return WalkState{ctx.output_type, s.depth + 1};
+        };
+
+        cb.on_block_branch = [](const WalkState& s, const Context& ctx, int)
+        {
+            return WalkState{ctx.output_type, s.depth + 1};
+        };
+
+        std::mt19937 rng(42);
+        cb.strategy = [&](const std::vector<NextStep>& steps, int, int) -> std::vector<NextStep>
+        {
+            if (steps.empty()) return {};
+            std::uniform_int_distribution<size_t> dist(0, steps.size() - 1);
+            return {steps[dist(rng)]};
+        };
+
+        bool ever_reached = false;
+        for (int i = 0; i < 50; ++i)
+        {
+            reached_terminal = false;
+            ContextTreeWalker<WalkState>::walk({start_type, 0}, 0, 0, cb, ExpansionPolicy{20, 5});
+            if (reached_terminal)
+            {
+                ever_reached = true;
+                break;
+            }
+        }
+
+        EXPECT_TRUE(ever_reached) << "Random Walk Strategy failed to ever reach TopLevel after 50 attempts!";
+    }
+
     INSTANTIATE_TEST_SUITE_P(
         ContextExpansionFrameworkIntegrityTest,
         ContextExpansionFrameworkIntegrityTest,
@@ -160,62 +192,58 @@ namespace valuascript::compiler::test
 
     TEST_P(RecoveryExpansionIntegrityTest, VerifySentinelInjectionInAllContexts)
     {
-        const auto& [start_type, snippet, verifier, test_name] = GetParam();
+        const auto& [start_type, snippet, test_name] = GetParam();
 
         size_t base_seed = 0x1337;
         size_t scenario_index = 0;
 
-        auto items = apply_context_augmentations(start_type, snippet, verifier, test_name);
+        auto items = apply_context_augmentations(start_type, snippet, NullVerifier{}, test_name);
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
+        {
+            SCOPED_TRACE("Checking Scenario: " + item.path_name);
+
+            ProgramSpec item_spec;
+            auto prog = BuildRecoveryProgram(
+                std::move(item.code),
+                std::move(item_spec),
+                std::move(item.cumulative_prefix),
+                base_seed + (scenario_index++ * 2)
+            );
+
+            CompilerContext context;
+
+            auto ast = run_parser(prog.full_code, context);
+            ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << prog.full_code;
+
+            size_t total_top_level_items =
+                ast->import_statements.size() +
+                ast->directives.size() +
+                ast->function_definitions.size() +
+                ast->struct_definitions.size() +
+                ast->enum_definitions.size() +
+                ast->type_aliases.size() +
+                ast->execution_steps.size();
+
+            EXPECT_EQ(total_top_level_items, 3)
+                << "Top-level sentinel injection missing in path: " << item.path_name;
+
+            if (item.path_name.find("wrapper") != std::string::npos)
             {
-                SCOPED_TRACE("Checking Scenario: " + item.path_name);
-
-                ProgramSpec item_spec;
-                std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
-
-                auto prog = BuildRecoveryProgram(
-                    std::move(item.code),
-                    std::move(item_spec),
-                    std::move(item.cumulative_prefix),
-                    base_seed + (scenario_index++ * 2)
-                );
-
-                CompilerContext context;
-
-                auto ast = run_parser(prog.full_code, context);
-                ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << prog.full_code;
-
-                size_t total_top_level_items =
-                    ast->import_statements.size() +
-                    ast->directives.size() +
-                    ast->function_definitions.size() +
-                    ast->struct_definitions.size() +
-                    ast->enum_definitions.size() +
-                    ast->type_aliases.size() +
-                    ast->execution_steps.size();
-
-                EXPECT_EQ(total_top_level_items, 3)
-                    << "Top-level sentinel injection missing in path: " << item.path_name;
-
-                if (item.path_name.find("wrapper") != std::string::npos)
+                bool wrapper_found = false;
+                for (const auto& f : ast->function_definitions)
                 {
-                    bool wrapper_found = false;
-                    for (const auto& f : ast->function_definitions)
+                    if (f->name == "ctx_wrapper")
                     {
-                        if (f->name == "ctx_wrapper")
-                        {
-                            wrapper_found = true;
-                            EXPECT_EQ(f->body.size(), 3)
-                                << "Block-level sentinels missing inside ctx_wrapper for path: " << item.path_name
-                                << "\nBody size was: " << f->body.size();
-                        }
+                        wrapper_found = true;
+                        EXPECT_EQ(f->body.size(), 3)
+                            << "Block-level sentinels missing inside ctx_wrapper for path: " << item.path_name
+                            << "\nBody size was: " << f->body.size();
                     }
-                    EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
                 }
-            },
-            true
-        );
+                EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
+            }
+        }, true);
     }
 
     INSTANTIATE_TEST_SUITE_P(

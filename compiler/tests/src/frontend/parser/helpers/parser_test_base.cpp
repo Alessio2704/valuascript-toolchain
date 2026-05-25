@@ -6,7 +6,7 @@
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
-#include "context_tree_walker.h"
+#include "../expansion_and_sentinels/context_tree_walker.h"
 #include "modifier_context_augmentation_manager.h"
 
 namespace valuascript::compiler::test

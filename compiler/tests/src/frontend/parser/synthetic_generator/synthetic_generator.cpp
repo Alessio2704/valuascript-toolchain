@@ -56,50 +56,78 @@ namespace valuascript::compiler::test
         return static_cast<TopLevelConstruct>(result + 1);
     }
 
-    std::pair<std::string, SyntheticGenerator::SpecAdderFn> SyntheticGenerator::apply_nesting_pyramid(
-        const Context& inner_ctx,
+    std::pair<std::string, SyntheticGenerator::SpecAdderFn> SyntheticGenerator::walk_to_top_level(
+        InjectableType start_type,
         const std::string& atom_code,
         const UniversalVerifier& atom_verifier)
     {
-        std::string snippet = inner_ctx.prefix + atom_code + inner_ctx.suffix;
-        UniversalVerifier transformed_verifier = inner_ctx.transform_verifier(atom_verifier);
-
-        bool should_wrap = inner_ctx.output_type == InjectableType::WeakStatement ||
-            (inner_ctx.output_type == InjectableType::StrongStatement && roll_prob(0.5));
-
-        if (!should_wrap)
+        struct FuzzState
         {
-            return {
-                snippet,
-                [transformed_verifier](ProgramSpec& s)
-                {
-                    std::visit([&](auto&& v) { SpecAdder::add(s, v); }, transformed_verifier);
-                }
-            };
-        }
+            InjectableType type;
+            std::string code;
+            UniversalVerifier verifier;
+        };
 
-        auto wrappers = ContextRegistry::get_block_contexts();
-        auto wrapper_ctx = pick_random(wrappers);
-
-        std::string wrapped_code = wrapper_ctx.prefix + snippet + wrapper_ctx.suffix;
-        UniversalVerifier final_verifier;
-
-        if (wrapper_ctx.is_block_context)
-        {
-            std::vector<RecoveryBlock> empty_blocks;
-            final_verifier = wrapper_ctx.transform_verifier_block(transformed_verifier, empty_blocks, empty_blocks);
-        }
-        else
-        {
-            final_verifier = wrapper_ctx.transform_verifier(transformed_verifier);
-        }
-
-        return {
-            wrapped_code, [final_verifier](ProgramSpec& s)
+        std::pair<std::string, SpecAdderFn> result = {
+            "", [](ProgramSpec&)
             {
-                std::visit([&](auto&& v) { SpecAdder::add(s, v); }, final_verifier);
             }
         };
+
+        while (result.first.empty())
+        {
+            FuzzState current{start_type, atom_code, atom_verifier};
+
+            ContextTreeWalker<FuzzState>::Callbacks cb;
+            cb.get_type = [](const FuzzState& s) { return s.type; };
+
+            cb.on_terminal = [&](FuzzState s)
+            {
+                result = {
+                    s.code,
+                    [v = s.verifier](ProgramSpec& spec)
+                    {
+                        std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, v);
+                    }
+                };
+            };
+
+            cb.on_promotion = [&](const FuzzState& s)
+            {
+                FuzzState promoted{InjectableType::TopLevel, s.code, s.verifier};
+                cb.on_terminal(promoted);
+            };
+
+            cb.on_normal_branch = [](const FuzzState& s, const Context& ctx, int)
+            {
+                return FuzzState{
+                    ctx.output_type,
+                    ctx.prefix + s.code + ctx.suffix,
+                    ctx.transform_verifier(s.verifier)
+                };
+            };
+
+            cb.on_block_branch = [](const FuzzState& s, const Context& ctx, int)
+            {
+                std::vector<RecoveryBlock> empty_blocks;
+                return FuzzState{
+                    ctx.output_type,
+                    ctx.prefix + s.code + ctx.suffix,
+                    ctx.transform_verifier_block(s.verifier, empty_blocks, empty_blocks)
+                };
+            };
+
+            cb.strategy = [this](const std::vector<NextStep>& steps, int, int) -> std::vector<NextStep>
+            {
+                if (steps.empty()) return {};
+                size_t idx = static_cast<size_t>(this->rand_range(0, static_cast<int>(steps.size()) - 1));
+                return {steps[idx]};
+            };
+
+            ContextTreeWalker<FuzzState>::walk(std::move(current), 0, 0, cb, ExpansionPolicy{20, 5});
+        }
+
+        return result;
     }
 
     std::pair<std::string, ProgramSpec> SyntheticGenerator::generate_program(int piece_count)

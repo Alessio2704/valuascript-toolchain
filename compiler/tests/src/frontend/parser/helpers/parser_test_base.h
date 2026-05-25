@@ -5,7 +5,7 @@
 #include "recovery_sentinel.h"
 #include "test_structures.h"
 #include "core/compiler_context.h"
-#include "expansion_calculator.h"
+#include "../expansion_and_sentinels/expansion_calculator.h"
 
 #include "utils/parametrised_test_name_helper.h"
 

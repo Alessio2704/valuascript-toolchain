@@ -571,6 +571,26 @@ namespace valuascript::compiler::test
         }
     }
 
+    TEST_F(SyntheticGeneratorKnobTest, Determinism)
+    {
+        SyntheticGeneratorConfig cfg;
+        SyntheticGenerator gen1(12345, cfg);
+        SyntheticGenerator gen2(12345, cfg);
+
+        auto [code1, spec1] = gen1.generate_program(50);
+        auto [code2, spec2] = gen2.generate_program(50);
+
+        EXPECT_EQ(code1, code2);
+    }
+
+    TEST_F(SyntheticGeneratorKnobTest, ForcedLeafOnDepth)
+    {
+        SyntheticGeneratorConfig cfg;
+        SyntheticGenerator gen(1, cfg);
+        auto [code, verifier] = gen.generate_raw_expression(999);
+        EXPECT_EQ(code, "0");
+    }
+
     TEST_F(SyntheticGeneratorKnobTest, AllKnobsToZeroEmptyAST)
     {
         SyntheticGeneratorConfig config;

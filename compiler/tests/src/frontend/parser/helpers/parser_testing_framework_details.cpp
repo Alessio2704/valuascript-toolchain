@@ -11,8 +11,8 @@
 #include "error_registry.h"
 #include "context_registry.h"
 #include "test_structures.h"
-#include "expansion_calculator.h"
-#include "expansion_policy.h"
+#include "frontend/parser/expansion_and_sentinels/expansion_calculator.h"
+#include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
 
 namespace valuascript::compiler::test
 {

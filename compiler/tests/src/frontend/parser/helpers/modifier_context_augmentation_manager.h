@@ -6,6 +6,7 @@
 
 #include "test_structures.h"
 #include "node_matchers.h"
+#include "spec_adder.h"
 
 namespace valuascript::compiler::test
 {
@@ -18,7 +19,7 @@ namespace valuascript::compiler::test
 
             items.push_back(initial_item);
 
-            auto base_v = std::get<ModifierVerifier>(initial_item.verifier);
+            auto base_v = SpecAdder::get_v<ModifierVerifier>(initial_item.verifier);
 
             struct ModifierAtom
             {

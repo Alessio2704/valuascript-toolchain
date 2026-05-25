@@ -10,8 +10,7 @@ namespace valuascript::compiler::test
         static void DumpRecoveryExpansion(InjectableType type,
                                           const std::string& snippet,
                                           const std::vector<ParserExpectedError>& errors,
-                                          const std::string& label,
-                                          const UniversalVerifier& verifier)
+                                          const std::string& label)
         {
             DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt");
             if (!writer.is_open()) return;
@@ -26,13 +25,11 @@ namespace valuascript::compiler::test
             size_t scenario_index = 0;
             size_t base_seed = std::hash<std::string>{}(label);
 
-            auto items = apply_context_augmentations(type, snippet, verifier, label);
+            auto items = apply_context_augmentations(type, snippet, NullVerifier{}, label);
 
             expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
             {
                 ProgramSpec item_spec;
-                std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
-
                 auto prog = BuildRecoveryProgram(
                     std::move(item.code),
                     std::move(item_spec),
@@ -59,8 +56,7 @@ namespace valuascript::compiler::test
                 out << "------------------------------------------------------------\n\n";
             }, true);
 
-            out << "[DEBUG] Recovery expansion dump finished (" << scenario_index
-                << " variations)";
+            out << "[DEBUG] Recovery expansion dump finished (" << scenario_index << " variations)";
         }
     };
 
@@ -70,38 +66,28 @@ namespace valuascript::compiler::test
             InjectableType::StrongStatement,
             "let x = ",
             {ParserExpectedError(ParserErrorCode::MissingValueAfterEquals, 1, 7)},
-            "BrokenAssignment",
-            AssignmentVerifier([](Assignment*)
-            {
-            })
+            "BrokenAssignment"
         );
 
         DumpRecoveryExpansion(
             InjectableType::Expression,
             "1 + ",
             {ParserExpectedError(ParserErrorCode::InvalidExpression, 1, 5)},
-            "MalformedBinary",
-            ExprVerifier([](Expression*)
-            {
-            })
+            "MalformedBinary"
         );
 
         DumpRecoveryExpansion(
             InjectableType::TypeAnnotation,
             "map<string, *, int>",
             {ParserExpectedError(ParserErrorCode::MissingTypeAnnotation, 1, 13)},
-            "BrokenTypeAnnotation",
-            TypeVerifier([](TypeAnnotation*)
-            {
-            })
+            "BrokenTypeAnnotation"
         );
 
         DumpRecoveryExpansion(
             InjectableType::Modifier,
             "@test(a 1, b: 2)",
             {ParserExpectedError(ParserErrorCode::MissingColonAfterArgument, 1, 9)},
-            "BrokenModifier",
-            std::vector<ModifierSpec>{}
+            "BrokenModifier"
         );
     }
 }

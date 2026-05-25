@@ -1,6 +1,6 @@
 #pragma once
 
-#include "context_infrastructure.h"
+#include "frontend/parser/helpers/context_infrastructure.h"
 
 namespace valuascript::compiler::test
 {

@@ -13,6 +13,7 @@
 #include "frontend/parser/helpers/construct_registry.h"
 #include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/helpers/spec_adder.h"
+#include "../expansion_and_sentinels/context_tree_walker.h"
 #include "synthetic_generator_config.h"
 
 namespace valuascript::compiler::test
@@ -409,9 +410,9 @@ namespace valuascript::compiler::test
         void build_grammar();
         void setup_generators();
 
-        std::pair<std::string, SpecAdderFn> apply_nesting_pyramid(const Context& inner_ctx,
-                                                                  const std::string& atom_code,
-                                                                  const UniversalVerifier& atom_verifier);
+        std::pair<std::string, SpecAdderFn> walk_to_top_level(InjectableType start_type,
+                                                              const std::string& atom_code,
+                                                              const UniversalVerifier& atom_verifier);
 
         template <typename VerifierType>
         void register_top_level(TopLevelConstruct construct,
@@ -436,11 +437,8 @@ namespace valuascript::compiler::test
         {
             generators_[static_cast<size_t>(construct)] = [=, this]()
             {
-                auto contexts = ContextRegistry::get_container_contexts_for(type);
-                auto ctx = pick_random(contexts);
-
                 auto [code, verifier] = rule_fn();
-                return apply_nesting_pyramid(ctx, code, UniversalVerifier(verifier));
+                return walk_to_top_level(type, code, UniversalVerifier(verifier));
             };
         }
     };
