@@ -1,5 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "frontend/parser/helpers/synthetic_generator.h"
+#include "synthetic_generator.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include <fstream>
 #include <iostream>

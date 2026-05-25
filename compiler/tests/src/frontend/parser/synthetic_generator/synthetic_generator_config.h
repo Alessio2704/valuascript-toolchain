@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
 
     enum class ReassignTargetFlavor { Id, Dot, Bracket, SelfDot };
 
-    enum class ExpressionType { Binary, Unary, Dot, Bracket, Call, Grouping, Switch, Dict, Tuple, Tensor };
+    enum class ExpressionType { Binary, Unary, Dot, Bracket, Call, Grouping, Switch, Dict, Tuple, Tensor, Conditional };
 
     enum class HarvestStatementType { Assignment, Reassignment, ExprStmt };
 
@@ -42,6 +42,7 @@ namespace valuascript::compiler::test
         {
             double enum_case_has_value = 0.5;
             double assignment_has_explicit_type = 0.3;
+            double assignment_has_let_modifiers = 0.5;
             double func_has_docstring = 0.3;
             double directive_has_value = 0.5;
             double type_fallback_to_any = 0.333333;
@@ -109,6 +110,7 @@ namespace valuascript::compiler::test
                 double dict_expr = 1.0;
                 double tuple_expr = 1.0;
                 double tensor_expr = 1.0;
+                double conditional = 1.0;
             } expression_types;
 
             struct
@@ -139,9 +141,11 @@ namespace valuascript::compiler::test
             out << " * [FEATURE PROBABILITIES (Coin flips)]\n";
             out << " *   Enum Vals: " << features.enum_case_has_value << " | Explicit Let Type: " << features.
                 assignment_has_explicit_type << "\n";
-            out << " *   Docstrings: " << features.func_has_docstring << " | Directive Vals: " << features.
-                directive_has_value << "\n";
-            out << " *   Fallback (any): " << features.type_fallback_to_any << " | Tuple vs Generic Type: " << features.
+            out << " *   Let Modifiers: " << features.assignment_has_let_modifiers << " | Docstrings: " << features.
+                func_has_docstring << "\n";
+            out << " *   Directive Vals: " << features.directive_has_value << " | Fallback (any): " << features.
+                type_fallback_to_any << "\n";
+            out << " *   Tuple vs Generic Type: " << features.
                 type_is_tuple_vs_generic << "\n\n";
 
             out << " * [SIZE RANGES {min, max}]\n";
@@ -185,7 +189,8 @@ namespace valuascript::compiler::test
                 weights.expression_types.call <<
                 ", Grp: " << weights.expression_types.grouping << ", Sw: " << weights.expression_types.switch_expr <<
                 ", Dict: " << weights.expression_types.dict_expr << ", Tup: " << weights.expression_types.tuple_expr <<
-                ", Ten: " << weights.expression_types.tensor_expr << "]\n";
+                ", Ten: " << weights.expression_types.tensor_expr << ", Cond: " << weights.expression_types.conditional
+                << "]\n";
             out << " *   Harvest Ratio: [Let: " << weights.harvest_statement_types.assignment << ", Re: " << weights.
                 harvest_statement_types.reassignment << ", Call: " << weights.harvest_statement_types.expr_stmt <<
                 "]\n";
