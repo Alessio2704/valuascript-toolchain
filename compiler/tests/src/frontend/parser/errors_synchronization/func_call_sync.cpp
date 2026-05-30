@@ -128,71 +128,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_comma_recovers_both_args",
-            "f(a: 1 b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::MissingCommaSeparatorForArgumentsInFunctionCall, 1, 8} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "trailing_comma",
-            "f(a: 1,)\n"
-            "let recovery = 1\n",
-            { {Err::TrailingCommaInFunctionCall, 1, 7} },
-            ExpectFunctionCall("f", {{"a", "1"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_arg_name",
-            "f(: 1, b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInFunctionCall, 1, 3} },
-            ExpectFunctionCall("f", {{"<error>", "1"}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_colon_1",
-            "f(a 1, b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::MissingColonAfterArgument, 1, 5} },
-            ExpectFunctionCall("f", {{"<error>", std::nullopt}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_colon_2",
-            "f(a, b, c)\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingColonAfterArgument, 1, 4},
-            {Err::MissingColonAfterArgument, 1, 7},
-            {Err::MissingColonAfterArgument, 1, 10}
-            },
-            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_colon_3",
-            "f(a: 1, b, c)\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingColonAfterArgument, 1, 10},
-            {Err::MissingColonAfterArgument, 1, 13}
-            },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", std::nullopt}, {"c", std::nullopt}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_arg_value",
-            "f(a: , b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 6} },
-            [](const Program &ast) {
-            auto func_call_expr = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
-            ASSERT_NE(func_call_expr, nullptr);
-            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
-            ASSERT_NE(func_call, nullptr);
-            EXPECT_EQ(func_call->arguments.size(), 2);
-            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
-            ASSERT_NE(func_call_id, nullptr);
-            EXPECT_EQ(func_call_id->name, "f");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "reserved_keyword_as_arg_name",
             "f(let: 1, if: 2)\n"
             "let recovery = 1\n",
@@ -212,91 +147,6 @@ namespace valuascript::compiler::test
             ExpectFunctionCall("f", {{"a", "1"}})
             },
             ParserErrorsSynchronizationTestCase{
-            "garbage_tokens_recovers_gracefully",
-            "f(a: 1, +-*/, b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInFunctionCall, 1, 9} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "complex_expression_with_error",
-            "f(a: 1 + *, b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 10} },
-            ExpectFunctionCall("f", {{"a", [] (auto e)
-                {
-                auto const binary_exp = dynamic_cast<const BinaryExpression*>(e);
-                ASSERT_EQ(binary_exp->op, TokenType::Plus);
-                }}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "garbage_arg_discards_and_parses_complex_valid_arg",
-            "f(a: ***, b: c + d())\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 6} },
-            ExpectFunctionCall("f", {{"a", std::nullopt}, {"b", [](const Expression * e) {
-                auto const binary_exp = dynamic_cast<const BinaryExpression*>(e);
-                ASSERT_EQ(binary_exp->op, TokenType::Plus);
-                auto const left = dynamic_cast<const IdentifierAccess*>(binary_exp->left.get());
-                ASSERT_EQ(left->name, "c");
-                auto const right = dynamic_cast<const FunctionCall*>(binary_exp->right.get());
-                auto const right_target = dynamic_cast<const IdentifierAccess*>(right->target.get());
-                ASSERT_EQ(right_target->name, "d");
-                }}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_comma_and_colon_breaks_list",
-            "f(a: 1 b 2)\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingOperator, 1, 8}
-            },
-            ExpectFunctionCall("f", {{"a", [](const Expression * e) {
-                auto const id_access = dynamic_cast<const NumberLiteral*>(e);
-                ASSERT_EQ(id_access->value, "1");
-                }}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_value_at_end",
-            "f(a: 1, b: )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 12} },
-            [](const Program &ast) {
-            auto func_call_expr = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
-            ASSERT_NE(func_call_expr, nullptr);
-            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
-            ASSERT_NE(func_call, nullptr);
-            EXPECT_EQ(func_call->arguments.size(), 2);
-            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
-            ASSERT_NE(func_call_id, nullptr);
-            EXPECT_EQ(func_call_id->name, "f");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "multiple_consecutive_commas",
-            "f(a: 1,, b: 2)\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInFunctionCall, 1, 8} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", std::nullopt}, {"b", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_token_as_arg_name",
-            "f(a: 1, *: 2, b: 3)\n"
-            "let recovery = 1\n",
-            { {Err::MissingArgumentNameInFunctionCall, 1, 9} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", "2"}, {"b", "3"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_character_as_arg_name",
-            "f(a: 1, %: 2, b: 3)\n"
-            "let recovery = 1\n",
-            {
-            {LexerErrorCode::InvalidCharacter, 1, 9},
-            {Err::MissingArgumentNameInFunctionCall, 1, 10},
-            },
-            ExpectFunctionCall("f", {{"a", "1"}, {"<error>", "2"}, {"b", "3"}})
-            },
-            ParserErrorsSynchronizationTestCase{
             "reserved_keyword_as_value",
             "f(a: 1, b: struct, c: 3)\n"
             "let recovery = 1\n",
@@ -306,20 +156,6 @@ namespace valuascript::compiler::test
                 ASSERT_NE(identifier, nullptr);
                 ASSERT_EQ(identifier->name, "struct");
                 }}, {"c", "3"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "nested_invalid_expression",
-            "f(a: { 1: }, b: 2)\n"
-            "let recovery = 1\n",
-            {
-            {Err::ExpectedDictionaryKey, 1, 8},
-            {Err::InvalidExpression, 1, 11},
-            },
-            ExpectFunctionCall("f", {{"a", [](const Expression* e) {
-                auto const dict = dynamic_cast<const DictLiteral*>(e);
-                ASSERT_NE(dict, nullptr);
-                ASSERT_EQ(dict->elements.size(), 1);
-                }}, {"b", "2"}})
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

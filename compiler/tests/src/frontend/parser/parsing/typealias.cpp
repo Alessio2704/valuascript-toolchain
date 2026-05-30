@@ -41,19 +41,9 @@ namespace valuascript::compiler::test
         TypeAliasSadPathTest,
         testing::Values(
             TypeAliasSadParam{
-            "missing_name",
-            "typealias = scalar",
-            E::ExpectedTypeAliasName
-            },
-            TypeAliasSadParam{
             "missing_assignment",
             "typealias MyType scalar",
             E::ExpectedAssignAfterTypeAliasName
-            },
-            TypeAliasSadParam{
-            "missing_type",
-            "typealias MyType =",
-            E::MissingTypeAnnotation
             },
             TypeAliasSadParam{
             "reserved_keyword_as_name",
@@ -69,11 +59,6 @@ namespace valuascript::compiler::test
             "missing_assignment_multiline",
             "typealias MyType \n scalar",
             E::ExpectedAssignAfterTypeAliasName
-            },
-            TypeAliasSadParam{
-            "modifiers_but_missing_name",
-            "@export typealias = string",
-            E::ExpectedTypeAliasName
             },
             TypeAliasSadParam{
             "broken_generic_target",

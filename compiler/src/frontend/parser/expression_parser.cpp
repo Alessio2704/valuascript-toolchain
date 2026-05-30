@@ -523,6 +523,8 @@ namespace valuascript::compiler
             else
             {
                 cursor.report_error_no_panic(tok, E::ExpectedEnumCaseNameAfterCase, true);
+                identifiers.emplace_back("<error>");
+
                 if (!cursor.check(TokenType::Comma) && !cursor.check(TokenType::Arrow) && !cursor.check(
                     TokenType::RightBrace))
                 {

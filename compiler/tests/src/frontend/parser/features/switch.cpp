@@ -18,6 +18,10 @@ namespace valuascript::compiler::test
                     }
                 ));
 
+            reg("EmptySwitch",
+                "switch (x) { }",
+                IsSwitch(IsIdentifier("x"), {}));
+
             reg("MultipleLabelsInOneCase",
                 "switch (x) { case A, B, C -> 1 }",
                 IsSwitch(

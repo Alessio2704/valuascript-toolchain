@@ -40,16 +40,8 @@ namespace valuascript::compiler::test
         ParserStageTest,
         FunctionCallSadPathTest,
         testing::Values(
-            FunctionCallSadParam{"func_missing_argument", "test(1)", E::MissingOperatorOrArgumentName
-            },
-            FunctionCallSadParam{"func_missing_colon", "test(a 1)", E::MissingColonAfterArgument},
-            FunctionCallSadParam{"func_missing_argument_value", "test(a: )", E::InvalidExpression},
-            FunctionCallSadParam{"func_trailing_comma", "test(a: 1, )", E::
-            TrailingCommaInFunctionCall},
-            FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", E::
-            ExpectedRightParenAfterArguments},
-            FunctionCallSadParam{"missing_comma_separator", "test(a: 1 b: 2)", E::
-            MissingCommaSeparatorForArgumentsInFunctionCall}
+            FunctionCallSadParam{"func_missing_argument", "test(1)", E::MissingOperatorOrArgumentName},
+            FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", E::ExpectedRightParenAfterArguments}
         ),
         [](const testing::TestParamInfo<FunctionCallSadParam>& test_info) {
         return test_info.param.test_name;

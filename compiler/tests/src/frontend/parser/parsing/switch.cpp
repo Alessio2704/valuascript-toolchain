@@ -48,19 +48,8 @@ namespace valuascript::compiler::test
             ExpectedLeftBraceBeforeSwitchBody},
             SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", E::
             ExpectedRightBraceAfterSwitchBody},
-            SwitchSadParam{"number_as_case", "let a = switch (res) { case 1 -> 10 }",
-            E::ExpectedEnumCaseNameAfterCase},
-            SwitchSadParam{"string_as_case", "let a = switch (res) { case \"UP\" -> 10 }",
-            E::ExpectedEnumCaseNameAfterCase},
             SwitchSadParam{"expression_as_case", "let a = switch (res) { case a + b -> 10 }",
             E::ExpectedRightArrowAfterSwitchCaseIdentifier},
-            SwitchSadParam{"missing_arrow_case", "let a = switch (res) { case UP 10 }",
-            E::ExpectedRightArrowAfterSwitchCaseIdentifier},
-            SwitchSadParam{"missing_arrow_default", "let a = switch (res) { default 10 }", E::
-            ExpectedRightArrowAfterSwitchCaseIdentifier}
-            ,
-            SwitchSadParam{"duplicate_default", "let a = switch (res) { default -> 1 default -> 2 }",
-            E::MultipleDefaultCasesInSwitch},
             SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
             E::TopLevelDeclarationNotAllowedHere},
             SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", E::

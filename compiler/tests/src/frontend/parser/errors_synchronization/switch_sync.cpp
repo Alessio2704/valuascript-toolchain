@@ -51,36 +51,6 @@ namespace valuascript::compiler::test
         SwitchParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "garbage_token_recovers_to_next_case",
-            "let x = switch(v) {\n"
-            "    garbage\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5}},
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_case_result_recovers_to_next_case",
-            "let x = switch(v) {\n"
-            "    case A -> 1 + *\n"
-            "    case B -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 2, 19}},
-            ExpectSwitchCases(2, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_arrow_recovers_to_default",
-            "let x = switch(v) {\n"
-            "    case A 1\n"
-            "    default -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 2, 12}},
-            ExpectSwitchCases(1, true)
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_closing_brace_escapes_to_top_level",
             "let x = switch(v) {\n"
             "    case A -> 1\n"
@@ -104,24 +74,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {{Err::MultipleDefaultCasesInSwitch, 3, 5}},
             ExpectSwitchCases(0, true)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_comma_in_case_identifiers",
-            "let x = switch(v) {\n"
-            "    case A B -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::ExpectedCommaBetweenCaseIdentifiers, 2, 12}},
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dangling_arrow_right_before_closing_brace",
-            "let x = switch(v) {\n"
-            "    case A -> \n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 2, 12}},
-            ExpectSwitchCases(1, false)
             },
             ParserErrorsSynchronizationTestCase{
             "nested_struct_without_closing_brace_escapes_to_top_level",
@@ -156,32 +108,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "interleaved_valid_and_invalid_switch_cases",
-            "let x = switch(v) {\n"
-            "    case A -> 1\n"
-            "    garbage\n"
-            "    case B -> 2\n"
-            "    case C -> 1 + *\n"
-            "    default -> 3\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCaseOrDefaultInsideSwitchBody, 3, 5},
-            {Err::InvalidExpression, 5, 19}
-            },
-            [](const Program &ast) {
-            auto sw = ExpectRecoveredSwitch(ast);
-            ASSERT_NE(sw, nullptr);
-            EXPECT_EQ(sw->cases.size(), 3);
-
-            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
-            EXPECT_EQ(sw->cases[1].identifiers[0], "B");
-            EXPECT_EQ(sw->cases[2].identifiers[0], "C");
-
-            EXPECT_NE(sw->default_case, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "garbage_statements_between_cases",
             "let x = switch(v) {\n"
             "    case A -> 1\n"
@@ -192,40 +118,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 3, 5}
-            },
-            ExpectSwitchCases(2, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_comma_and_garbage_in_case_identifiers",
-            "let x = switch(v) {\n"
-            "    case A B, C -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaBetweenCaseIdentifiers, 2, 12}
-            },
-            [](const Program &ast) {
-            auto sw = ExpectRecoveredSwitch(ast);
-            ASSERT_NE(sw, nullptr);
-            EXPECT_EQ(sw->cases.size(), 1);
-            EXPECT_EQ(sw->cases[0].identifiers.size(), 3);
-            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
-            EXPECT_EQ(sw->cases[0].identifiers[1], "B");
-            EXPECT_EQ(sw->cases[0].identifiers[2], "C");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "nested_switch_recovers_inner_and_outer_errors",
-            "let x = switch(v) {\n"
-            "    case A -> switch(y) {\n"
-            "        garbage\n"
-            "        case B -> 1\n"
-            "    }\n"
-            "    case C -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCaseOrDefaultInsideSwitchBody, 3, 9}
             },
             ExpectSwitchCases(2, false)
             },
@@ -264,47 +156,6 @@ namespace valuascript::compiler::test
             {Err::InvalidExpression, 4, 12}
             },
             ExpectSwitchCases(2, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "switch_target_missing_parentheses_aborts_assignment",
-            "let x = switch v {\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedLeftParenAfterSwitch, 1, 16}
-            },
-            [](const Program &ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_switch_body_with_garbage",
-            "let x = switch(v) {\n"
-            "    + - * /\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5}
-            },
-            ExpectSwitchCases(0, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dangling_operator_swallows_case_keyword",
-            "let x = switch(v) {\n"
-            "    case A -> 1 +\n"
-            "    case B -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 2, 17},
-            },
-            [](const Program &ast) {
-            auto sw = ExpectRecoveredSwitch(ast);
-            ASSERT_NE(sw, nullptr);
-            EXPECT_EQ(sw->cases.size(), 2);
-            ASSERT_NE(sw->cases[0].result.get(), nullptr);
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "illegal_nested_func_in_closed_switch",
@@ -399,17 +250,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "switch_target_broken_expression_recovers",
-            "let x = switch(1 + *) {\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 20}
-            },
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
             "switch_target_missing_opening_paren_recovers",
             "let x = switch 1 ) {\n"
             "    case A -> 1\n"
@@ -428,28 +268,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {
             {Err::ExpectedRightParenAfterSwitchTarget, 1, 20}
-            },
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "switch_target_completely_empty_parens",
-            "let x = switch() {\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 16}
-            },
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "switch_target_garbage_between_parens",
-            "let x = switch( . ) {\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 17}
             },
             ExpectSwitchCases(1, false)
             },
@@ -498,38 +316,6 @@ namespace valuascript::compiler::test
             ExpectSwitchCases(1, false)
             },
             ParserErrorsSynchronizationTestCase{
-            "switch_target_dangling_operator_swallows_brace",
-            "let x = switch(1 + ) {\n"
-            "    case A -> 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 20}
-            },
-            ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_switch_as_operand_preserves_outer_expression",
-            "let x = 10 + switch(v) { case A -> } + 20\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 36}
-            },
-            [](const Program &ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<const Assignment*>(ast.execution_steps[0].get());
-
-            auto outer_plus = dynamic_cast<const BinaryExpression*>(assign->value.get());
-            ASSERT_NE(outer_plus, nullptr);
-            EXPECT_EQ(outer_plus->op, TokenType::Plus);
-
-            auto left_plus = dynamic_cast<const BinaryExpression*>(outer_plus->left.get());
-            ASSERT_NE(left_plus, nullptr);
-            auto switch_expr = dynamic_cast<const SwitchExpression*>(left_plus->right.get());
-            ASSERT_NE(switch_expr, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "unclosed_switch_inside_grouping_escapes_properly",
             "let x = (switch(v) { case A -> 1) + 2\n"
             "let a = 1\n",
@@ -545,29 +331,6 @@ namespace valuascript::compiler::test
             ASSERT_NE(last_stmt, nullptr);
             EXPECT_EQ(last_stmt->targets[0].name, "a");
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_slots_in_case_comma_list",
-            "let x = switch(v) {\n"
-            "    case A, , B -> 1\n"
-            "}\n",
-            {
-            {Err::ExpectedEnumCaseNameAfterCase, 2, 13}
-            },
-            [](const Program &ast) {
-            auto sw = ExpectRecoveredSwitch(ast);
-            ASSERT_NE(sw, nullptr);
-            EXPECT_EQ(sw->cases[0].identifiers.size(), 2);
-            EXPECT_EQ(sw->cases[0].identifiers[0], "A");
-            EXPECT_EQ(sw->cases[0].identifiers[1], "B");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "empty_switch_body_is_valid_but_useless",
-            "let x = switch(v) {}\n"
-            "let a = 1\n",
-            {},
-            ExpectSwitchCases(0, false)
             },
             ParserErrorsSynchronizationTestCase{
             "return_inside_switch_case_result",

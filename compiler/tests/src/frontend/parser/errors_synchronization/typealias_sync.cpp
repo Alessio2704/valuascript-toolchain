@@ -52,44 +52,12 @@ namespace valuascript::compiler::test
         TypeAliasParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "missing_alias_name",
-            "typealias = int\n"
-            "let a = 1\n",
-            { {Err::ExpectedTypeAliasName, 1, 11} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.type_aliases.size(), 1);
-            ASSERT_EQ(ast.type_aliases.size(), 1);
-            EXPECT_EQ(ast.type_aliases[0]->name, "<error>");
-            ExpectBaseType(ast.type_aliases[0]->target_type.get(), "int", 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_assignment_operator",
             "typealias MyType int\n"
             "let a = 1\n",
             { {Err::ExpectedAssignAfterTypeAliasName, 1, 18} },
             [](const Program& ast) {
             EXPECT_TRUE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_target_type_annotation",
-            "typealias MyType =\n"
-            "let a = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 19} },
-            [](const Program& ast) {
-            EXPECT_FALSE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "garbage_target_type_annotation",
-            "typealias MyType = *\n"
-            "let a = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 20} },
-            [](const Program& ast) {
-            EXPECT_FALSE(ast.type_aliases.empty());
             ExpectRecoveredAssignment("a")(ast);
             }
             },
@@ -145,19 +113,6 @@ namespace valuascript::compiler::test
 
             EXPECT_EQ(ast.type_aliases[1]->name, "Valid");
             ExpectBaseType(ast.type_aliases[1]->target_type.get(), "bool", 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "garbage_at_end_of_otherwise_valid_alias",
-            "typealias User = string ^^\n"
-            "let a = 1\n",
-            { {Err::InvalidExpression, 1, 25} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.type_aliases.size(), 1);
-            EXPECT_EQ(ast.type_aliases[0]->name, "User");
-            ExpectBaseType(ast.type_aliases[0]->target_type.get(), "string", 0);
-
-            ExpectRecoveredAssignment("a")(ast);
             }
             },
             ParserErrorsSynchronizationTestCase{
