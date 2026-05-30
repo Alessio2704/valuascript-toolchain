@@ -32,10 +32,29 @@ namespace valuascript::compiler::test
         {
             auto [m_c, m_v] = this->rule_modifiers(env, depth + 1);
             auto [case_expr_c, case_expr_v] = this->rule_expression(env, depth + 1);
-            std::string label = "switch_case_" + env.next_id();
+
+            int label_count = 1;
+            if (env.roll_prob(env.get_config().features.switch_case_has_multiple_labels))
+            {
+                label_count = env.rand_range(env.get_config().sizes.switch_case_labels);
+            }
+
+            env.stats().expressions.total_switch_cases++;
+            if (label_count > 1) env.stats().expressions.cases_with_multiple_labels++;
+
+            std::string labels_code;
+            std::vector<std::string> labels;
+            for (int i = 0; i < label_count; ++i)
+            {
+                std::string label = "switch_case_" + env.next_id();
+                labels.push_back(label);
+                labels_code += label;
+                if (i < label_count - 1) labels_code += ", ";
+            }
+
             return {
-                "  " + m_c + "case " + label + " -> " + case_expr_c + "\n",
-                SwitchCaseSpec{m_v, std::vector<std::string>{label}, case_expr_v}
+                "  " + m_c + "case " + labels_code + " -> " + case_expr_c + "\n",
+                SwitchCaseSpec{m_v, labels, case_expr_v}
             };
         };
 
@@ -60,7 +79,13 @@ namespace valuascript::compiler::test
             [this, dict_elements_list, switch_cases_list, expr_list_tuple, expr_list_tensor]
         (SyntheticGenerator& env, int depth) -> std::pair<std::string, ExprVerifier>
             {
-                if (depth >= EXPANSION_DEPTH) return {"0", IsNumber("0")};
+                if (depth >= env.get_config().sizes.max_ast_depth)
+                {
+                    env.stats().expressions.leaf_fallback++;
+                    return {"0", IsNumber("0")};
+                }
+
+                env.stats().max_ast_depth = std::max(env.stats().max_ast_depth, depth);
 
                 auto type_idx = env.roll_weighted<ExpressionType>(
                     {
@@ -69,18 +94,12 @@ namespace valuascript::compiler::test
                         env.get_config().weights.expression_types.dot,
                         env.get_config().weights.expression_types.bracket,
                         env.get_config().weights.expression_types.call,
-                        env.get_config().weights.expression_types.
-                            grouping,
-                        env.get_config().weights.expression_types.
-                            switch_expr,
-                        env.get_config().weights.expression_types.
-                            dict_expr,
-                        env.get_config().weights.expression_types.
-                            tuple_expr,
-                        env.get_config().weights.expression_types.
-                            tensor_expr,
-                        env.get_config().weights.expression_types.
-                            conditional
+                        env.get_config().weights.expression_types.grouping,
+                        env.get_config().weights.expression_types.switch_expr,
+                        env.get_config().weights.expression_types.dict_expr,
+                        env.get_config().weights.expression_types.tuple_expr,
+                        env.get_config().weights.expression_types.tensor_expr,
+                        env.get_config().weights.expression_types.conditional
                     }, ExpressionType::Grouping);
 
                 auto [inner_c, inner_v] = this->rule_expression(env, depth + 1);
@@ -89,6 +108,7 @@ namespace valuascript::compiler::test
                 {
                 case ExpressionType::Binary:
                     {
+                        env.stats().expressions.binary++;
                         auto [leaf_c, leaf_v] = this->rule_expression(env, depth + 1);
                         const auto& op = env.pick_random(get_fuzzer_binary_ops());
                         return {
@@ -98,25 +118,32 @@ namespace valuascript::compiler::test
                     }
                 case ExpressionType::Unary:
                     {
+                        env.stats().expressions.unary++;
                         const auto& op = env.pick_random(get_fuzzer_unary_ops());
                         return {op.second + " (" + inner_c + ")", IsUnary(op.first, IsGrouping(inner_v))};
                     }
                 case ExpressionType::Dot:
                     {
+                        env.stats().expressions.dot++;
                         std::string prop = "prop_" + env.next_id();
                         return {"(" + inner_c + ")." + prop, IsDot(IsGrouping(inner_v), prop)};
                     }
                 case ExpressionType::Bracket:
                     {
-                        return {"(" + inner_c + ")[0]", IsBracket(IsGrouping(inner_v), IsNumber("0"))};
+                        env.stats().expressions.bracket++;
+                        auto [idx_c, idx_v] = this->rule_expression(env, depth + 1);
+                        return {"(" + inner_c + ")[" + idx_c + "]", IsBracket(IsGrouping(inner_v), idx_v)};
                     }
                 case ExpressionType::Call:
                     {
+                        env.stats().expressions.call++;
                         std::string fn_name = "call_" + env.next_id();
                         return {fn_name + "(arg: " + inner_c + ")", IsCall(IsIdentifier(fn_name), {{"arg", inner_v}})};
                     }
                 case ExpressionType::Switch:
                     {
+                        env.stats().expressions.switch_expr++;
+                        env.stats().expressions.switch_defaults++;
                         std::string code = "switch (" + inner_c + ") {\n";
                         auto [cases_c, cases_v] = switch_cases_list(env, depth);
                         code += cases_c;
@@ -128,22 +155,26 @@ namespace valuascript::compiler::test
                     }
                 case ExpressionType::Dict:
                     {
+                        env.stats().expressions.dict_expr++;
                         auto [items_c, items_v] = dict_elements_list(env, depth);
                         std::string pad = items_v.empty() ? "" : " ";
                         return {"{" + pad + items_c + pad + "}", IsDict(items_v)};
                     }
                 case ExpressionType::Tuple:
                     {
+                        env.stats().expressions.tuple_expr++;
                         auto [elems_c, elems_v] = expr_list_tuple(env, depth);
                         return {"(" + elems_c + ")", IsTuple(elems_v)};
                     }
                 case ExpressionType::Tensor:
                     {
+                        env.stats().expressions.tensor_expr++;
                         auto [elems_c, elems_v] = expr_list_tensor(env, depth);
                         return {"[" + elems_c + "]", IsTensor(elems_v)};
                     }
                 case ExpressionType::Conditional:
                     {
+                        env.stats().expressions.conditional++;
                         auto [then_c, then_v] = this->rule_expression(env, depth + 1);
                         auto [else_c, else_v] = this->rule_expression(env, depth + 1);
                         return {
@@ -153,6 +184,7 @@ namespace valuascript::compiler::test
                     }
                 case ExpressionType::Grouping:
                 default:
+                    env.stats().expressions.grouping++;
                     return {"(" + inner_c + ")", IsGrouping(inner_v)};
                 }
             },
@@ -174,8 +206,14 @@ namespace valuascript::compiler::test
         auto single_mod_rule = [mod_args_list](SyntheticGenerator& env,
                                                int depth) -> std::pair<std::string, ModifierSpec>
         {
+            env.stats().modifiers.total_generated++;
             std::string name = "mod_" + env.next_id();
             auto [args_c, args_v] = mod_args_list(env, depth);
+
+            if (!args_v.empty())
+            {
+                env.stats().modifiers.with_arguments++;
+            }
 
             std::string code = "@" + name;
             if (!args_v.empty())
@@ -221,16 +259,20 @@ namespace valuascript::compiler::test
         rule_type = WithRegistryFallback<TypeVerifier>(
             [this](SyntheticGenerator& env, int depth) -> std::pair<std::string, TypeVerifier>
             {
-                if (depth >= 2 || env.roll_prob(env.get_config().features.type_fallback_to_any))
+                if (depth >= env.get_config().sizes.max_type_depth || env.roll_prob(
+                    env.get_config().features.type_fallback_to_any))
                 {
+                    env.stats().types.fallback_to_any++;
                     return {"any", IsType("any")};
                 }
                 if (env.roll_prob(env.get_config().features.type_is_tuple_vs_generic))
                 {
+                    env.stats().types.tuple_types++;
                     auto [t1_c, t1_v] = this->rule_type(env, depth + 1);
                     auto [t2_c, t2_v] = this->rule_type(env, depth + 1);
                     return {"(" + t1_c + ", " + t2_c + ")", IsTupleType({t1_v, t2_v})};
                 }
+                env.stats().types.list_types++;
                 auto [inner_c, inner_v] = this->rule_type(env, depth + 1);
                 return {"List<" + inner_c + ">", IsType("List", {inner_v})};
             },
@@ -246,7 +288,16 @@ namespace valuascript::compiler::test
         auto rule_target = [this, opt_target_type](SyntheticGenerator& env,
                                                    int depth) -> std::pair<std::string, AssignmentTargetSpec>
         {
-            auto [mods_c, mods_v] = this->rule_modifiers(env, depth);
+            std::string mods_c;
+            std::vector<ModifierSpec> mods_v;
+
+            if (env.roll_prob(env.get_config().features.assignment_target_has_modifiers))
+            {
+                auto res = this->rule_modifiers(env, depth);
+                mods_c = res.first;
+                mods_v = res.second;
+            }
+
             std::string name = "multi_var_" + env.next_id();
             auto [t_c, t_v] = opt_target_type(env, depth);
 
@@ -266,40 +317,41 @@ namespace valuascript::compiler::test
             ", "
         );
 
-        GenRule<std::pair<ExprVerifier, ReassignTargetFlavor>> rule_reassign_target = [](
-            SyntheticGenerator& env, int)
+        GenRule<std::pair<ExprVerifier, ReassignTargetFlavor>> rule_reassign_target = [this](
+            SyntheticGenerator& env, int depth)
             -> std::pair<std::string, std::pair<ExprVerifier, ReassignTargetFlavor>>
         {
             auto flavor = env.roll_weighted<ReassignTargetFlavor>(
                 {
-                    env.get_config().weights.reassign_target_flavors.
-                        id,
-                    env.get_config().weights.reassign_target_flavors.
-                        dot,
-                    env.get_config().weights.reassign_target_flavors.
-                        bracket,
-                    env.get_config().weights.reassign_target_flavors.
-                        self_dot
+                    env.get_config().weights.reassign_target_flavors.id,
+                    env.get_config().weights.reassign_target_flavors.dot,
+                    env.get_config().weights.reassign_target_flavors.bracket,
+                    env.get_config().weights.reassign_target_flavors.self_dot
                 }, ReassignTargetFlavor::Id);
 
             if (flavor == ReassignTargetFlavor::Id)
             {
+                env.stats().statements.reassignments_id++;
                 std::string id = "reassign_id_" + env.next_id();
                 return {id, {IsIdentifier(id), flavor}};
             }
             else if (flavor == ReassignTargetFlavor::Dot)
             {
+                env.stats().statements.reassignments_dot++;
                 std::string id = "reassign_obj_" + env.next_id();
                 std::string prop = "reassign_prop_" + env.next_id();
                 return {id + "." + prop, {IsDot(IsIdentifier(id), prop), flavor}};
             }
             else if (flavor == ReassignTargetFlavor::Bracket)
             {
+                env.stats().statements.reassignments_bracket++;
                 std::string id = "reassign_arr_" + env.next_id();
-                return {id + "[0]", {IsBracket(IsIdentifier(id), IsNumber("0")), flavor}};
+                auto [idx_c, idx_v] = this->rule_expression(env, depth + 1);
+                return {id + "[" + idx_c + "]", {IsBracket(IsIdentifier(id), idx_v), flavor}};
             }
             else
             {
+                env.stats().statements.reassignments_self++;
                 std::string prop = "reassign_field_" + env.next_id();
                 return {"self." + prop, {IsDot(IsSelf(), prop), flavor}};
             }
@@ -318,6 +370,7 @@ namespace valuascript::compiler::test
 
             if (stmt_type == StatementType::SingleAssign)
             {
+                env.stats().statements.single_assignments++;
                 std::string stmt_m_code;
                 std::vector<ModifierSpec> stmt_m_specs;
                 if (env.roll_prob(env.get_config().features.assignment_has_let_modifiers))
@@ -327,11 +380,31 @@ namespace valuascript::compiler::test
                     stmt_m_specs = res.second;
                 }
 
-                auto [target_m_code, target_m_specs] = this->rule_modifiers(env, depth);
+                std::string target_m_code;
+                std::vector<ModifierSpec> target_m_specs;
+                if (env.roll_prob(env.get_config().features.assignment_target_has_modifiers))
+                {
+                    auto res = this->rule_modifiers(env, depth);
+                    target_m_code = res.first;
+                    target_m_specs = res.second;
+                }
+
                 auto [e_c, e_v] = this->rule_expression(env, depth);
                 std::string var_name = "single_var_" + env.next_id();
 
                 auto [t_c, t_v] = opt_target_type(env, depth);
+
+                bool has_outside = !stmt_m_specs.empty();
+                bool has_inside = !target_m_specs.empty();
+
+                if (has_outside && has_inside) env.stats().modifiers.attached_to_assignments_both++;
+                else if (has_outside) env.stats().modifiers.attached_to_assignments_outside++;
+                else if (has_inside) env.stats().modifiers.attached_to_assignments_inside++;
+
+                if (t_v.has_value())
+                {
+                    env.stats().statements.explicit_type_annotations++;
+                }
 
                 std::vector<ModifierSpec> combined_mods = stmt_m_specs;
                 combined_mods.insert(combined_mods.end(), target_m_specs.begin(), target_m_specs.end());
@@ -351,6 +424,7 @@ namespace valuascript::compiler::test
             }
             if (stmt_type == StatementType::MultiAssign)
             {
+                env.stats().statements.multi_assignments++;
                 std::string stmt_m_code;
                 std::vector<ModifierSpec> stmt_m_specs;
                 if (env.roll_prob(env.get_config().features.assignment_has_let_modifiers))
@@ -363,12 +437,22 @@ namespace valuascript::compiler::test
                 auto [targets_c, targets_s] = this->rule_assignment_targets(env, depth);
                 auto [e_c, e_v] = this->rule_expression(env, depth);
 
+                bool has_outside = !stmt_m_specs.empty();
+                bool has_inside = false;
+
                 for (auto& target : targets_s)
                 {
+                    if (!target.modifiers.empty()) has_inside = true;
+                    if (target.type_v != nullptr) env.stats().statements.explicit_type_annotations++;
+
                     std::vector<ModifierSpec> combined = stmt_m_specs;
                     combined.insert(combined.end(), target.modifiers.begin(), target.modifiers.end());
                     target.modifiers = combined;
                 }
+
+                if (has_outside && has_inside) env.stats().modifiers.attached_to_assignments_both++;
+                else if (has_outside) env.stats().modifiers.attached_to_assignments_outside++;
+                else if (has_inside) env.stats().modifiers.attached_to_assignments_inside++;
 
                 return {stmt_m_code + "let " + targets_c + " = " + e_c, IsAssignment(targets_s, e_v)};
             }
@@ -379,6 +463,7 @@ namespace valuascript::compiler::test
                 return {tgt_c + " = " + val_c, IsReassignment(tgt_pair.first, val_v)};
             }
 
+            env.stats().statements.expression_statements++;
             auto [e_c, e_v] = this->rule_expression(env, depth);
             std::string fn_name = "stmt_call_" + env.next_id();
             return {fn_name + "(arg: " + e_c + ")", IsExprStmt(IsCall(IsIdentifier(fn_name), {{"arg", e_v}}))};
@@ -387,34 +472,36 @@ namespace valuascript::compiler::test
         rule_statement = [logic_stmt_rule](SyntheticGenerator& env,
                                            int depth) -> std::pair<std::string, StmtVerifier>
         {
+            env.stats().total_nodes_generated++;
             if (env.roll_prob(env.get_config().registry.statements))
             {
                 auto p = env.roll_weighted<HarvestStatementType>(
                     {
-                        env.get_config().weights.harvest_statement_types.
-                            assignment,
-                        env.get_config().weights.harvest_statement_types.
-                            reassignment,
-                        env.get_config().weights.harvest_statement_types.
-                            expr_stmt
+                        env.get_config().weights.harvest_statement_types.assignment,
+                        env.get_config().weights.harvest_statement_types.reassignment,
+                        env.get_config().weights.harvest_statement_types.expr_stmt
                     }, HarvestStatementType::Assignment);
 
                 if (p == HarvestStatementType::Assignment && !ConstructRegistry::assignments().empty())
                 {
+                    env.stats().registry_fallbacks++;
                     auto& item = env.pick_random(ConstructRegistry::assignments());
                     return {item.code, StmtVerifier(item.verifier)};
                 }
                 else if (p == HarvestStatementType::Reassignment && !ConstructRegistry::reassignments().empty())
                 {
+                    env.stats().registry_fallbacks++;
                     auto& item = env.pick_random(ConstructRegistry::reassignments());
                     return {item.code, StmtVerifier(item.verifier)};
                 }
                 else if (p == HarvestStatementType::ExprStmt && !ConstructRegistry::expr_stmts().empty())
                 {
+                    env.stats().registry_fallbacks++;
                     auto& item = env.pick_random(ConstructRegistry::expr_stmts());
                     return {item.code, StmtVerifier(item.verifier)};
                 }
             }
+            env.stats().synthesized_from_scratch++;
             return logic_stmt_rule(env, depth);
         };
 
@@ -424,11 +511,18 @@ namespace valuascript::compiler::test
             auto [t_c, t_v] = this->rule_type(env, depth);
             std::string name = "param_" + env.next_id();
             std::string code = mods_c + name + ": " + t_c;
+
+            if (!mods_v.empty())
+            {
+                env.stats().modifiers.attached_to_parameters++;
+            }
+
             return {code, {name, mods_v, t_v, nullptr}};
         };
 
         auto logic_function_rule = [this](SyntheticGenerator& env, int depth) -> std::pair<std::string, FuncVerifier>
         {
+            env.stats().functions.total++;
             std::string name = "func_" + env.next_id();
 
             std::string body_code;
@@ -437,12 +531,14 @@ namespace valuascript::compiler::test
             std::optional<std::string> doc_str = std::nullopt;
             if (env.roll_prob(env.get_config().features.func_has_docstring))
             {
+                env.stats().functions.with_docstrings++;
                 std::string content = "Synthetic docstring " + std::to_string(env.get_unique_id());
                 doc_str = R"(""")" + content + R"(""")";
                 body_code += "  " + *doc_str + "\n";
             }
 
             int stmt_count = env.rand_range(env.get_config().sizes.function_statements);
+            env.stats().functions.total_body_statements += stmt_count;
             for (int i = 0; i < stmt_count; ++i)
             {
                 auto [s_c, s_v] = this->rule_statement(env, depth);
@@ -454,6 +550,9 @@ namespace valuascript::compiler::test
             std::vector<ParamSpec> param_specs;
             int param_count = env.rand_range(env.get_config().sizes.function_parameters);
             int default_start = env.rand_range(0, param_count);
+
+            env.stats().functions.total_parameters += param_count;
+            env.stats().functions.parameters_with_defaults += (param_count - default_start);
 
             for (int i = 0; i < param_count; ++i)
             {
@@ -470,6 +569,11 @@ namespace valuascript::compiler::test
             }
 
             auto [mods_code, mods_specs] = this->rule_modifiers(env, depth);
+            if (!mods_specs.empty())
+            {
+                env.stats().modifiers.attached_to_functions++;
+            }
+
             std::string func_code = mods_code + "func " + name + "(" + params_code + ") -> void {\n" + body_code +
                 "}\n";
 
@@ -487,6 +591,12 @@ namespace valuascript::compiler::test
             auto [mods_c, mods_v] = this->rule_modifiers(env, depth);
             std::string f_name = "struct_field_" + env.next_id();
             auto [t_c, t_v] = this->rule_type(env, depth);
+
+            if (!mods_v.empty())
+            {
+                env.stats().modifiers.attached_to_struct_fields++;
+            }
+
             return {
                 mods_c + f_name + ": " + t_c,
                 FieldSpec{f_name, mods_v, t_v}
@@ -502,9 +612,16 @@ namespace valuascript::compiler::test
         auto logic_struct_rule = [this, struct_fields_list](SyntheticGenerator& env,
                                                             int depth) -> std::pair<std::string, StructVerifier>
         {
+            env.stats().data_structures.total_structs++;
             auto [mods_c, mods_v] = this->rule_modifiers(env, depth);
             std::string name = "Struct_" + env.next_id();
             auto [fields_c, fields_v] = struct_fields_list(env, depth);
+
+            env.stats().data_structures.total_fields += fields_v.size();
+            if (!mods_v.empty())
+            {
+                env.stats().modifiers.attached_to_structs++;
+            }
 
             std::string code = mods_c + "struct " + name + " {\n";
             if (!fields_v.empty()) code += "  " + fields_c + "\n";
@@ -531,10 +648,16 @@ namespace valuascript::compiler::test
             std::string name = "enum_case_" + env.next_id();
             auto [val_c, val_v] = opt_enum_value(env, depth);
 
+            if (!mods_v.empty())
+            {
+                env.stats().modifiers.attached_to_enum_cases++;
+            }
+
             std::string code = mods_c + name;
             ExprVerifier v = nullptr;
             if (val_v.has_value())
             {
+                env.stats().data_structures.cases_with_values++;
                 code += " = " + val_c;
                 v = val_v.value();
             }
@@ -550,10 +673,17 @@ namespace valuascript::compiler::test
         auto logic_enum_rule = [this, enum_cases_list](SyntheticGenerator& env,
                                                        int depth) -> std::pair<std::string, EnumVerifier>
         {
+            env.stats().data_structures.total_enums++;
             auto [mods_c, mods_v] = this->rule_modifiers(env, depth);
             std::string name = "Enum_" + env.next_id();
             auto [t_c, t_v] = this->rule_type(env, depth);
             auto [cases_c, cases_v] = enum_cases_list(env, depth);
+
+            env.stats().data_structures.total_cases += cases_v.size();
+            if (!mods_v.empty())
+            {
+                env.stats().modifiers.attached_to_enums++;
+            }
 
             std::string code = mods_c + "enum " + name + ": " + t_c + " {\n";
             if (!cases_v.empty()) code += "  " + cases_c + "\n";
@@ -628,10 +758,30 @@ namespace valuascript::compiler::test
         auto logic_return_rule = [this](SyntheticGenerator& env, int depth) -> std::pair<std::string, ReturnVerifier>
         {
             auto [m_code, m_specs] = this->rule_standalone_modifiers(env, depth);
-            auto [e_code, e_verifier] = this->rule_expression(env, depth);
+
+            int count = 1;
+            if (env.roll_prob(env.get_config().features.return_has_multiple_values))
+            {
+                count = env.rand_range(env.get_config().sizes.return_values);
+            }
+
+            env.stats().statements.total_returns++;
+            env.stats().statements.total_return_values += count;
+            if (count > 1) env.stats().statements.multi_returns++;
+
+            std::string expr_code;
+            std::vector<ExprVerifier> expr_verifiers;
+            for (int i = 0; i < count; ++i)
+            {
+                auto [e_code, e_verifier] = this->rule_expression(env, depth);
+                expr_code += e_code;
+                expr_verifiers.push_back(e_verifier);
+                if (i < count - 1) expr_code += ", ";
+            }
+
             return {
-                m_code + "return " + e_code + "\n",
-                ReturnVerifier(IsReturn(m_specs, {e_verifier}))
+                m_code + "return " + expr_code + "\n",
+                ReturnVerifier(IsReturn(m_specs, expr_verifiers))
             };
         };
 

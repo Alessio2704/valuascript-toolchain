@@ -124,7 +124,13 @@ namespace valuascript::compiler::test
                 return {steps[idx]};
             };
 
-            ContextTreeWalker<FuzzState>::walk(std::move(current), 0, 0, cb, ExpansionPolicy{20, 5});
+            ContextTreeWalker<FuzzState>::walk(
+                std::move(current), 0, 0, cb,
+                ExpansionPolicy{
+                    config_.sizes.expansion_policy_max_steps_retries.first,
+                    config_.sizes.expansion_policy_max_steps_retries.second
+                }
+            );
         }
 
         return result;
@@ -139,6 +145,34 @@ namespace valuascript::compiler::test
         {
             TopLevelConstruct choice = roll_top_level_construct();
             if (choice == TopLevelConstruct::None) continue;
+
+            switch (choice)
+            {
+            case TopLevelConstruct::Expression: stats_.pieces_rolled.expressions++;
+                break;
+            case TopLevelConstruct::TypeAnnotation: stats_.pieces_rolled.type_annotations++;
+                break;
+            case TopLevelConstruct::Statement: stats_.pieces_rolled.statements++;
+                break;
+            case TopLevelConstruct::ReturnStmt: stats_.pieces_rolled.return_stmts++;
+                break;
+            case TopLevelConstruct::Modifier: stats_.pieces_rolled.modifiers++;
+                break;
+            case TopLevelConstruct::FunctionDef: stats_.pieces_rolled.functions++;
+                break;
+            case TopLevelConstruct::StructDef: stats_.pieces_rolled.structs++;
+                break;
+            case TopLevelConstruct::EnumDef: stats_.pieces_rolled.enums++;
+                break;
+            case TopLevelConstruct::TypeAlias: stats_.pieces_rolled.type_aliases++;
+                break;
+            case TopLevelConstruct::ImportStmt: stats_.pieces_rolled.imports++;
+                break;
+            case TopLevelConstruct::Directive: stats_.pieces_rolled.directives++;
+                break;
+            default: break;
+            }
+
             pieces.push_back(generators_[static_cast<size_t>(choice)]());
         }
 

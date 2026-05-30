@@ -26,53 +26,11 @@ namespace valuascript::compiler::test
                 return nullptr;
             }
         }
-
-        static void zero_all_weights(SyntheticGeneratorConfig& config)
-        {
-            config.weights.top_level_constructs.expression = 0.0;
-            config.weights.top_level_constructs.type_annotation = 0.0;
-            config.weights.top_level_constructs.statement = 0.0;
-            config.weights.top_level_constructs.return_stmt = 0.0;
-            config.weights.top_level_constructs.modifier = 0.0;
-            config.weights.top_level_constructs.function_def = 0.0;
-            config.weights.top_level_constructs.struct_def = 0.0;
-            config.weights.top_level_constructs.enum_def = 0.0;
-            config.weights.top_level_constructs.type_alias = 0.0;
-            config.weights.top_level_constructs.import_stmt = 0.0;
-            config.weights.top_level_constructs.directive = 0.0;
-
-            config.weights.statement_types.single_assign = 0.0;
-            config.weights.statement_types.multi_assign = 0.0;
-            config.weights.statement_types.reassign = 0.0;
-            config.weights.statement_types.expr_stmt = 0.0;
-        }
-
-        static SyntheticGeneratorConfig strict_config()
-        {
-            SyntheticGeneratorConfig c;
-            c.registry.modifiers = 0.0;
-            c.registry.types = 0.0;
-            c.registry.expressions = 0.0;
-            c.registry.returns = 0.0;
-            c.registry.statements = 0.0;
-            c.registry.functions = 0.0;
-            c.registry.structs = 0.0;
-            c.registry.enums = 0.0;
-            c.registry.type_aliases = 0.0;
-            c.registry.imports = 0.0;
-            c.registry.directives = 0.0;
-
-            c.sizes.modifiers_count = {0, 0};
-            c.sizes.standalone_modifiers_count = {0, 0};
-            c.features.assignment_has_let_modifiers = false;
-
-            return c;
-        }
     };
 
     TEST_F(SyntheticGeneratorKnobTest, ExhaustiveGrammarValidation)
     {
-        SyntheticGeneratorConfig config = strict_config();
+        SyntheticGeneratorConfig config;
 
         config.sizes.modifiers_count = {2, 4};
         config.sizes.standalone_modifiers_count = {2, 4};
@@ -87,6 +45,8 @@ namespace valuascript::compiler::test
         config.sizes.tuple_elements = {3, 5};
         config.sizes.tensor_elements = {2, 4};
         config.features.assignment_has_let_modifiers = true;
+        config.sizes.max_ast_depth = 2;
+        config.sizes.max_type_depth = 2;
 
         SyntheticGenerator gen(42, config);
 
@@ -111,63 +71,127 @@ namespace valuascript::compiler::test
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
 
+        auto assert_prob = [&](const std::string& label, double expected, auto gen_func, auto check_func)
         {
-            SyntheticGeneratorConfig c = strict_config();
-            c.features.enum_case_has_value = 0.7;
-            SyntheticGenerator gen(1, c);
             int hits = 0;
             for (size_t i = 0; i < iterations; ++i)
             {
-                auto [code, spec] = gen.generate_raw_enum_case(0);
-                if (spec.value_v != nullptr) hits++;
+                if (check_func(gen_func(i))) hits++;
             }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.7, MARGIN);
+            EXPECT_NEAR(static_cast<double>(hits)/iterations, expected, MARGIN) << "Failed on label: " << label;
+        };
+
+        {
+            SyntheticGeneratorConfig c;
+            c.features.enum_case_has_value = 0.7;
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(1, c);
+            assert_prob("EnumCaseHasValue", 0.7,
+                        [&](size_t) { return gen.generate_raw_enum_case(0).second; },
+                        [&](const EnumCaseSpec& spec) { return spec.value_v != nullptr; });
         }
 
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.features.assignment_has_explicit_type = 0.2;
             c.sizes.multi_assign_targets = {1, 1};
+            c.sizes.max_type_depth = 2;
+            c.sizes.max_ast_depth = 1;
             SyntheticGenerator gen(2, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                auto [code, specs] = gen.generate_raw_assignment_targets(0);
-                if (!specs.empty() && specs[0].type_v != nullptr) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.2, MARGIN);
+            assert_prob("AssignmentHasExplicitType", 0.2,
+                        [&](size_t) { return gen.generate_raw_assignment_targets(0).second; },
+                        [&](const std::vector<AssignmentTargetSpec>& specs)
+                        {
+                            return !specs.empty() && specs[0].type_v != nullptr;
+                        });
         }
 
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.features.func_has_docstring = 0.8;
+            c.sizes.max_ast_depth = 1;
             SyntheticGenerator gen(3, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                auto code = gen.generate_raw_function(0).first;
-                if (code.find("\"\"\"") != std::string::npos) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.8, MARGIN);
+            assert_prob("FuncHasDocstring", 0.8,
+                        [&](size_t) { return gen.generate_raw_function(0).first; },
+                        [&](const std::string& code) { return code.find("\"\"\"") != std::string::npos; });
         }
 
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.features.directive_has_value = 0.6;
+            c.sizes.max_ast_depth = 1;
             SyntheticGenerator gen(4, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                auto code = gen.generate_raw_directive(0).first;
-                if (code.find("=") != std::string::npos) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.6, MARGIN);
+            assert_prob("DirectiveHasValue", 0.6,
+                        [&](size_t) { return gen.generate_raw_directive(0).first; },
+                        [&](const std::string& code) { return code.find("=") != std::string::npos; });
         }
 
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
+            c.features.assignment_has_let_modifiers = 0.45;
+            c.sizes.modifiers_count = {1, 1};
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(10, c);
+            assert_prob("AssignmentHasLetModifiers", 0.45,
+                        [&](size_t) { return gen.generate_raw_statement(0).first; },
+                        [&](const std::string& code)
+                        {
+                            return code.find("let ") != std::string::npos && code.find("@mod_") != std::string::npos;
+                        }
+            );
+        }
+
+        {
+            SyntheticGeneratorConfig c;
+            c.features.assignment_target_has_modifiers = 0.55;
+            c.sizes.multi_assign_targets = {1, 1};
+            c.sizes.modifiers_count = {1, 1};
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(11, c);
+            assert_prob("AssignmentTargetHasModifiers", 0.55,
+                        [&](size_t) { return gen.generate_raw_assignment_targets(0).second; },
+                        [&](const std::vector<AssignmentTargetSpec>& specs)
+                        {
+                            return !specs.empty() && !specs[0].modifiers.empty();
+                        }
+            );
+        }
+
+        {
+            SyntheticGeneratorConfig c;
+            c.features.switch_case_has_multiple_labels = 0.65;
+            c.sizes.switch_case_labels = {3, 3};
+            c.sizes.switch_cases = {1, 1};
+            c.weights.expression_types.switch_expr = 1.0;
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(12, c);
+            assert_prob("SwitchCaseHasMultipleLabels", 0.65,
+                        [&](size_t) { return gen.generate_raw_expression(0).first; },
+                        [&](const std::string& code)
+                        {
+                            return code.find("case switch_case_") != std::string::npos && code.find(",") !=
+                                std::string::npos;
+                        }
+            );
+        }
+
+        {
+            SyntheticGeneratorConfig c;
+            c.features.return_has_multiple_values = 0.75;
+            c.sizes.return_values = {2, 2};
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(13, c);
+            assert_prob("ReturnHasMultipleValues", 0.75,
+                        [&](size_t) { return gen.generate_raw_return(0).first; },
+                        [&](const std::string& code) { return code.find(",") != std::string::npos; }
+            );
+        }
+
+        {
+            SyntheticGeneratorConfig c;
             c.features.type_fallback_to_any = 0.4;
             c.features.type_is_tuple_vs_generic = 0.7;
+            c.sizes.max_type_depth = 2;
             SyntheticGenerator gen(5, c);
 
             int any_types = 0, tuple_types = 0, list_types = 0;
@@ -179,79 +203,133 @@ namespace valuascript::compiler::test
                 else if (code.find("List") == 0) list_types++;
             }
 
-            EXPECT_NEAR(static_cast<double>(any_types) / iterations, 0.4, MARGIN);
+            EXPECT_NEAR(static_cast<double>(any_types) / iterations, 0.4, MARGIN) <<
+ "Failed on label: TypeFallbackToAny";
 
             int non_any_types = static_cast<int>(iterations) - any_types;
             ASSERT_GT(non_any_types, 0);
-            EXPECT_NEAR(static_cast<double>(tuple_types) / non_any_types, 0.7, MARGIN);
-            EXPECT_NEAR(static_cast<double>(list_types) / non_any_types, 0.3, MARGIN);
+            EXPECT_NEAR(static_cast<double>(tuple_types) / non_any_types, 0.7, MARGIN) <<
+ "Failed on label: TypeTupleVsGeneric";
+            EXPECT_NEAR(static_cast<double>(list_types) / non_any_types, 0.3, MARGIN) <<
+ "Failed on label: TypeTupleVsGeneric (List)";
         }
     }
 
     TEST_F(SyntheticGeneratorKnobTest, RegistryProbabilities)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
-        ASSERT_FALSE(ConstructRegistry::modifiers().empty());
-        ASSERT_FALSE(ConstructRegistry::type_annotations().empty());
-        ASSERT_FALSE(ConstructRegistry::expressions().empty());
-        ASSERT_FALSE(ConstructRegistry::assignments().empty());
 
         auto check_registry_hit = [](const std::string& code, const auto& registry)
         {
             std::string trimmed = code;
-            while (!trimmed.empty() && trimmed.back() == ' ') trimmed.pop_back();
+            while (!trimmed.empty() && std::isspace(trimmed.back())) trimmed.pop_back();
 
             for (const auto& item : registry)
             {
                 std::string item_trimmed = item.code;
-                while (!item_trimmed.empty() && item_trimmed.back() == ' ') item_trimmed.pop_back();
+                while (!item_trimmed.empty() && std::isspace(item_trimmed.back())) item_trimmed.pop_back();
 
                 if (trimmed == item_trimmed) return true;
             }
             return false;
         };
 
+        auto assert_registry = [&](const std::string& label, double expected, auto gen_fn, const auto& registry)
         {
-            SyntheticGeneratorConfig c = strict_config();
+            int hits = 0;
+            for (size_t i = 0; i < iterations; ++i)
+            {
+                if (check_registry_hit(gen_fn(), registry)) hits++;
+            }
+            EXPECT_NEAR(static_cast<double>(hits)/iterations, expected, MARGIN) << "Failed on label: " << label;
+        };
+
+        {
+            SyntheticGeneratorConfig c;
             c.registry.modifiers = 0.3;
             c.sizes.modifiers_count = {1, 1};
             SyntheticGenerator gen(101, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                if (check_registry_hit(gen.generate_raw_modifiers(0).first, ConstructRegistry::modifiers())) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.3, MARGIN);
+            assert_registry("Modifiers", 0.3, [&]() { return gen.generate_raw_modifiers(0).first; },
+                            ConstructRegistry::modifiers());
         }
-
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.registry.types = 0.75;
+            c.sizes.max_type_depth = 2;
             SyntheticGenerator gen(102, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                if (check_registry_hit(gen.generate_raw_type(0).first, ConstructRegistry::type_annotations())) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.75, MARGIN);
+            assert_registry("Types", 0.75, [&]() { return gen.generate_raw_type(0).first; },
+                            ConstructRegistry::type_annotations());
         }
-
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.registry.expressions = 0.25;
+            c.sizes.max_ast_depth = 2;
             SyntheticGenerator gen(103, c);
-            int hits = 0;
-            for (size_t i = 0; i < iterations; ++i)
-            {
-                if (check_registry_hit(gen.generate_raw_expression(0).first, ConstructRegistry::expressions())) hits++;
-            }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.25, MARGIN);
+            assert_registry("Expressions", 0.25, [&]() { return gen.generate_raw_expression(0).first; },
+                            ConstructRegistry::expressions());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.returns = 0.4;
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(104, c);
+            assert_registry("Returns", 0.4, [&]() { return gen.generate_raw_return(0).first; },
+                            ConstructRegistry::returns());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.functions = 0.6;
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(105, c);
+            assert_registry("Functions", 0.6, [&]() { return gen.generate_raw_function(0).first; },
+                            ConstructRegistry::functions());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.structs = 0.55;
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(106, c);
+            assert_registry("Structs", 0.55, [&]() { return gen.generate_raw_struct(0).first; },
+                            ConstructRegistry::structs());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.enums = 0.45;
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(107, c);
+            assert_registry("Enums", 0.45, [&]() { return gen.generate_raw_enum(0).first; },
+                            ConstructRegistry::enums());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.type_aliases = 0.35;
+            c.sizes.max_type_depth = 2;
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(108, c);
+            assert_registry("TypeAliases", 0.35, [&]() { return gen.generate_raw_alias(0).first; },
+                            ConstructRegistry::aliases());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.imports = 0.2;
+            SyntheticGenerator gen(109, c);
+            assert_registry("Imports", 0.2, [&]() { return gen.generate_raw_import(0).first; },
+                            ConstructRegistry::imports());
+        }
+        {
+            SyntheticGeneratorConfig c;
+            c.registry.directives = 0.8;
+            c.sizes.max_ast_depth = 1;
+            SyntheticGenerator gen(110, c);
+            assert_registry("Directives", 0.8, [&]() { return gen.generate_raw_directive(0).first; },
+                            ConstructRegistry::directives());
         }
 
         {
-            SyntheticGeneratorConfig c = strict_config();
+            SyntheticGeneratorConfig c;
             c.registry.statements = 0.6;
-            SyntheticGenerator gen(104, c);
+            c.sizes.max_ast_depth = 2;
+            SyntheticGenerator gen(200, c);
             int hits = 0;
             for (size_t i = 0; i < iterations; ++i)
             {
@@ -263,7 +341,7 @@ namespace valuascript::compiler::test
                     hits++;
                 }
             }
-            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.6, MARGIN);
+            EXPECT_NEAR(static_cast<double>(hits) / iterations, 0.6, MARGIN) << "Failed on label: Statements";
         }
     }
 
@@ -272,7 +350,7 @@ namespace valuascript::compiler::test
         constexpr size_t iterations = FUZZ_ITERATIONS;
 
         {
-            SyntheticGeneratorConfig config = strict_config();
+            SyntheticGeneratorConfig config;
 
             config.weights.statement_types.single_assign = 10.0;
             config.weights.statement_types.multi_assign = 20.0;
@@ -283,6 +361,9 @@ namespace valuascript::compiler::test
             config.weights.reassign_target_flavors.dot = 2.0;
             config.weights.reassign_target_flavors.bracket = 3.0;
             config.weights.reassign_target_flavors.self_dot = 4.0;
+
+            config.sizes.multi_assign_targets = {2, 2};
+            config.sizes.max_ast_depth = 1;
 
             SyntheticGenerator gen(999, config);
 
@@ -323,21 +404,21 @@ namespace valuascript::compiler::test
 
             double total_stmt = stmt_single + stmt_multi + stmt_reassign + stmt_expr;
             ASSERT_GT(total_stmt, 0);
-            EXPECT_NEAR(stmt_single / total_stmt, 0.1, MARGIN + 0.02);
-            EXPECT_NEAR(stmt_multi / total_stmt, 0.2, MARGIN + 0.02);
-            EXPECT_NEAR(stmt_reassign / total_stmt, 0.3, MARGIN + 0.02);
-            EXPECT_NEAR(stmt_expr / total_stmt, 0.4, MARGIN + 0.02);
+            EXPECT_NEAR(stmt_single / total_stmt, 0.1, MARGIN + 0.02) << "Failed on label: StatementSingleAssign";
+            EXPECT_NEAR(stmt_multi / total_stmt, 0.2, MARGIN + 0.02) << "Failed on label: StatementMultiAssign";
+            EXPECT_NEAR(stmt_reassign / total_stmt, 0.3, MARGIN + 0.02) << "Failed on label: StatementReassign";
+            EXPECT_NEAR(stmt_expr / total_stmt, 0.4, MARGIN + 0.02) << "Failed on label: StatementExpr";
 
             double total_re = re_id + re_dot + re_bracket + re_self;
             ASSERT_GT(total_re, 0);
-            EXPECT_NEAR(re_id / total_re, 0.1, MARGIN + 0.03);
-            EXPECT_NEAR(re_dot / total_re, 0.2, MARGIN + 0.03);
-            EXPECT_NEAR(re_bracket / total_re, 0.3, MARGIN + 0.03);
-            EXPECT_NEAR(re_self / total_re, 0.4, MARGIN + 0.03);
+            EXPECT_NEAR(re_id / total_re, 0.1, MARGIN + 0.03) << "Failed on label: ReassignId";
+            EXPECT_NEAR(re_dot / total_re, 0.2, MARGIN + 0.03) << "Failed on label: ReassignDot";
+            EXPECT_NEAR(re_bracket / total_re, 0.3, MARGIN + 0.03) << "Failed on label: ReassignBracket";
+            EXPECT_NEAR(re_self / total_re, 0.4, MARGIN + 0.03) << "Failed on label: ReassignSelf";
         }
 
         {
-            SyntheticGeneratorConfig config = strict_config();
+            SyntheticGeneratorConfig config;
             config.weights.expression_types.binary = 2.0;
             config.weights.expression_types.unary = 1.0;
             config.weights.expression_types.dot = 2.0;
@@ -349,6 +430,12 @@ namespace valuascript::compiler::test
             config.weights.expression_types.tuple_expr = 2.0;
             config.weights.expression_types.tensor_expr = 2.0;
             config.weights.expression_types.conditional = 2.0;
+
+            config.sizes.switch_cases = {1, 2};
+            config.sizes.dict_elements = {1, 2};
+            config.sizes.tuple_elements = {2, 3};
+            config.sizes.tensor_elements = {1, 2};
+            config.sizes.max_ast_depth = 1;
 
             SyntheticGenerator gen(1000, config);
 
@@ -384,31 +471,32 @@ namespace valuascript::compiler::test
             double total_exp = exp_bin + exp_un + exp_dot + exp_bracket + exp_call +
                 exp_switch + exp_dict + exp_tuple + exp_tensor + exp_cond + exp_group;
 
-            ASSERT_GT(total_exp, 0);
-            EXPECT_NEAR(exp_bin / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_un / total_exp, 0.05, MARGIN + 0.02);
-            EXPECT_NEAR(exp_dot / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_bracket / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_call / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_switch / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_dict / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_tuple / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_tensor / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_cond / total_exp, 0.10, MARGIN + 0.02);
-            EXPECT_NEAR(exp_group / total_exp, 0.05, MARGIN + 0.02);
+            ASSERT_GT(total_exp, 0) << "Failed on label: Expression Total Count (none parsed correctly)";
+            EXPECT_NEAR(exp_bin / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionBinary";
+            EXPECT_NEAR(exp_un / total_exp, 0.05, MARGIN + 0.02) << "Failed on label: ExpressionUnary";
+            EXPECT_NEAR(exp_dot / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionDot";
+            EXPECT_NEAR(exp_bracket / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionBracket";
+            EXPECT_NEAR(exp_call / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionCall";
+            EXPECT_NEAR(exp_switch / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionSwitch";
+            EXPECT_NEAR(exp_dict / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionDict";
+            EXPECT_NEAR(exp_tuple / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionTuple";
+            EXPECT_NEAR(exp_tensor / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionTensor";
+            EXPECT_NEAR(exp_cond / total_exp, 0.10, MARGIN + 0.02) << "Failed on label: ExpressionConditional";
+            EXPECT_NEAR(exp_group / total_exp, 0.05, MARGIN + 0.02) << "Failed on label: ExpressionGrouping";
         }
     }
 
     TEST_F(SyntheticGeneratorKnobTest, HarvestStatementWeights)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
-        SyntheticGeneratorConfig config = strict_config();
+        SyntheticGeneratorConfig config;
 
         config.weights.harvest_statement_types.assignment = 5.0;
         config.weights.harvest_statement_types.reassignment = 3.0;
         config.weights.harvest_statement_types.expr_stmt = 2.0;
 
         config.registry.statements = 1.0;
+        config.sizes.max_ast_depth = 1;
 
         SyntheticGenerator gen(111, config);
 
@@ -436,7 +524,7 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticGeneratorKnobTest, TopLevelConstructWeights)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
-        SyntheticGeneratorConfig config = strict_config();
+        SyntheticGeneratorConfig config;
 
         config.weights.top_level_constructs.expression = 1.0;
         config.weights.top_level_constructs.type_annotation = 2.0;
@@ -478,7 +566,7 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticGeneratorKnobTest, SizeRanges)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
-        SyntheticGeneratorConfig config = strict_config();
+        SyntheticGeneratorConfig config;
 
         config.sizes.modifiers_count = {2, 4};
         config.sizes.standalone_modifiers_count = {2, 4};
@@ -489,9 +577,15 @@ namespace valuascript::compiler::test
         config.sizes.enum_cases = {3, 6};
         config.sizes.multi_assign_targets = {3, 6};
         config.sizes.switch_cases = {2, 4};
+        config.sizes.switch_case_labels = {2, 5};
         config.sizes.dict_elements = {2, 5};
         config.sizes.tuple_elements = {3, 5};
         config.sizes.tensor_elements = {2, 4};
+        config.sizes.return_values = {2, 4};
+        config.features.switch_case_has_multiple_labels = 1.0;
+        config.features.return_has_multiple_values = 1.0;
+        config.weights.expression_types.switch_expr = 1.0;
+        config.sizes.max_ast_depth = 2;
 
         SyntheticGenerator gen(222, config);
 
@@ -550,6 +644,11 @@ namespace valuascript::compiler::test
                     {
                         EXPECT_GE(sw->cases.size(), 2);
                         EXPECT_LE(sw->cases.size(), 4);
+                        for (const auto& case_node : sw->cases)
+                        {
+                            EXPECT_GE(case_node.identifiers.size(), 2);
+                            EXPECT_LE(case_node.identifiers.size(), 5);
+                        }
                     }
                     else if (auto dict = dynamic_cast<DictLiteral*>(val))
                     {
@@ -566,6 +665,17 @@ namespace valuascript::compiler::test
                         EXPECT_GE(ten->elements.size(), 2);
                         EXPECT_LE(ten->elements.size(), 4);
                     }
+                }
+            }
+
+            auto ret_code = gen.generate_raw_return(0).first;
+            auto ret_ast = parse("func f() -> any {\n  " + ret_code + "}");
+            if (ret_ast && !ret_ast->function_definitions.empty() && !ret_ast->function_definitions[0]->body.empty())
+            {
+                if (auto r = dynamic_cast<ReturnStatement*>(ret_ast->function_definitions[0]->body[0].get()))
+                {
+                    EXPECT_GE(r->values.size(), 2);
+                    EXPECT_LE(r->values.size(), 4);
                 }
             }
         }
@@ -594,7 +704,6 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticGeneratorKnobTest, AllKnobsToZeroEmptyAST)
     {
         SyntheticGeneratorConfig config;
-        zero_all_weights(config);
 
         for (size_t seed = 0; seed < 100; ++seed)
         {

@@ -15,6 +15,7 @@
 #include "frontend/parser/helpers/spec_adder.h"
 #include "../expansion_and_sentinels/context_tree_walker.h"
 #include "synthetic_generator_config.h"
+#include "synthetic_generator_stats.h"
 
 namespace valuascript::compiler::test
 {
@@ -59,7 +60,9 @@ namespace valuascript::compiler::test
         using SpecAdderFn = std::function<void(ProgramSpec&)>;
         using PieceGenerator = std::function<std::pair<std::string, SpecAdderFn>()>;
 
-        explicit SyntheticGenerator(size_t seed, SyntheticGeneratorConfig config = {});
+        explicit SyntheticGenerator(size_t seed,
+                                    SyntheticGeneratorConfig config =
+                                        SyntheticGeneratorConfig::default_fuzzing_config());
 
         std::pair<std::string, ProgramSpec> generate_program(int piece_count);
 
@@ -132,6 +135,8 @@ namespace valuascript::compiler::test
 
         size_t get_unique_id() const { return unique_id_; }
         const SyntheticGeneratorConfig& get_config() const { return config_; }
+        SyntheticGenerationStats& stats() { return stats_; }
+        const SyntheticGenerationStats& get_stats() const { return stats_; }
 
         template <typename EnumType>
         EnumType roll_weighted(const std::initializer_list<double> weights, EnumType default_val)
@@ -388,6 +393,7 @@ namespace valuascript::compiler::test
         std::mt19937 rng_;
         size_t unique_id_ = 0;
         SyntheticGeneratorConfig config_;
+        SyntheticGenerationStats stats_;
         std::array<PieceGenerator, static_cast<int>(TopLevelConstruct::Count)> generators_;
 
         GenRule<std::vector<ModifierSpec>> rule_modifiers;
@@ -493,11 +499,14 @@ namespace valuascript::compiler::test
     {
         return [generated_rule, prob_fn, pool](SyntheticGenerator& env, int depth)
         {
+            env.stats().total_nodes_generated++;
             if (pool && !pool->empty() && env.roll_prob(prob_fn(env.get_config())))
             {
+                env.stats().registry_fallbacks++;
                 const auto& itm = env.pick_random(*pool);
                 return std::make_pair(itm.code, VerifierType(itm.verifier));
             }
+            env.stats().synthesized_from_scratch++;
             return generated_rule(env, depth);
         };
     }
