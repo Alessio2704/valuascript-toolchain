@@ -617,7 +617,7 @@ namespace valuascript::compiler::test
             std::string name = "Struct_" + env.next_id();
             auto [fields_c, fields_v] = struct_fields_list(env, depth);
 
-            env.stats().data_structures.total_fields += fields_v.size();
+            env.stats().data_structures.total_fields += static_cast<int>(fields_v.size());
             if (!mods_v.empty())
             {
                 env.stats().modifiers.attached_to_structs++;
@@ -679,7 +679,7 @@ namespace valuascript::compiler::test
             auto [t_c, t_v] = this->rule_type(env, depth);
             auto [cases_c, cases_v] = enum_cases_list(env, depth);
 
-            env.stats().data_structures.total_cases += cases_v.size();
+            env.stats().data_structures.total_cases += static_cast<int>(cases_v.size());
             if (!mods_v.empty())
             {
                 env.stats().modifiers.attached_to_enums++;

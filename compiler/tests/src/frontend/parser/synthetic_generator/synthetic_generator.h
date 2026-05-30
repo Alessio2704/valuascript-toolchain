@@ -27,20 +27,20 @@ namespace valuascript::compiler::test
     template <typename T>
     GenRule<std::vector<T>> Repeat(
         GenRule<T> rule,
-        std::function<std::pair<int, int>(const SyntheticGeneratorConfig&)> range_fn,
-        std::string separator = ""
+        const std::function<std::pair<int, int>(const SyntheticGeneratorConfig&)>& range_fn,
+        const std::string& separator = ""
     );
 
     template <typename T>
     GenRule<std::optional<T>> Opt(
         GenRule<T> rule,
-        std::function<double(const SyntheticGeneratorConfig&)> prob_fn
+        const std::function<double(const SyntheticGeneratorConfig&)>& prob_fn
     );
 
     template <typename VerifierType>
     GenRule<VerifierType> WithRegistryFallback(
         GenRule<VerifierType> generated_rule,
-        std::function<double(const SyntheticGeneratorConfig&)> prob_fn,
+        const std::function<double(const SyntheticGeneratorConfig&)>& prob_fn,
         const std::vector<RegistryEntry<VerifierType>>* pool
     );
 
@@ -133,10 +133,10 @@ namespace valuascript::compiler::test
         bool roll_prob(double p);
         TopLevelConstruct roll_top_level_construct();
 
-        size_t get_unique_id() const { return unique_id_; }
-        const SyntheticGeneratorConfig& get_config() const { return config_; }
+        [[nodiscard]] size_t get_unique_id() const { return unique_id_; }
+        [[nodiscard]] const SyntheticGeneratorConfig& get_config() const { return config_; }
         SyntheticGenerationStats& stats() { return stats_; }
-        const SyntheticGenerationStats& get_stats() const { return stats_; }
+        [[nodiscard]] const SyntheticGenerationStats& get_stats() const { return stats_; }
 
         template <typename EnumType>
         EnumType roll_weighted(const std::initializer_list<double> weights, EnumType default_val)
@@ -163,7 +163,7 @@ namespace valuascript::compiler::test
         {
             f(GrammarRule<std::vector<ModifierSpec>>{
                 "Modifiers", rule_modifiers, "let ", "x = 1\n",
-                [](Program* p, const std::vector<ModifierSpec>& v)
+                [](const Program* p, const std::vector<ModifierSpec>& v)
                 {
                     if (p && !p->execution_steps.empty())
                     {
@@ -177,7 +177,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<std::vector<ModifierSpec>>{
                 "StandaloneModifiers", rule_standalone_modifiers, "func _w() -> any {\n  ", "return 1\n}\n",
-                [](Program* p, const std::vector<ModifierSpec>& v)
+                [](const Program* p, const std::vector<ModifierSpec>& v)
                 {
                     if (p && !p->function_definitions.empty())
                     {
@@ -195,7 +195,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<TypeVerifier>{
                 "Type", rule_type, "let x: ", " = 1\n",
-                [](Program* p, const TypeVerifier& v)
+                [](const Program* p, const TypeVerifier& v)
                 {
                     if (p && !p->execution_steps.empty())
                     {
@@ -209,7 +209,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<ExprVerifier>{
                 "Expression", rule_expression, "let _x = ", "\n",
-                [](Program* p, const ExprVerifier& v)
+                [](const Program* p, const ExprVerifier& v)
                 {
                     if (p && !p->execution_steps.empty())
                     {
@@ -223,7 +223,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<StmtVerifier>{
                 "Statement", rule_statement, "", "\n",
-                [](Program* p, const StmtVerifier& v)
+                [](const Program* p, const StmtVerifier& v)
                 {
                     if (p && !p->execution_steps.empty())
                     {
@@ -234,7 +234,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<ParamSpec>{
                 "Parameter", rule_parameter, "func _f(", ") -> void {}\n",
-                [](Program* p, const ParamSpec& v)
+                [](const Program* p, const ParamSpec& v)
                 {
                     if (p && !p->function_definitions.empty())
                     {
@@ -252,7 +252,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<FieldSpec>{
                 "StructField", rule_struct_field, "struct _S { ", " }\n",
-                [](Program* p, const FieldSpec& v)
+                [](const Program* p, const FieldSpec& v)
                 {
                     if (p && !p->struct_definitions.empty())
                     {
@@ -269,7 +269,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<EnumCaseSpec>{
                 "EnumCase", rule_enum_case, "enum _E: int { ", " }\n",
-                [](Program* p, const EnumCaseSpec& v)
+                [](const Program* p, const EnumCaseSpec& v)
                 {
                     if (p && !p->enum_definitions.empty())
                     {
@@ -286,7 +286,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<std::vector<AssignmentTargetSpec>>{
                 "AssignmentTargets", rule_assignment_targets, "let ", " = 1\n",
-                [](Program* p, const std::vector<AssignmentTargetSpec>& v)
+                [](const Program* p, const std::vector<AssignmentTargetSpec>& v)
                 {
                     if (p && !p->execution_steps.empty())
                     {
@@ -306,7 +306,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<ReturnVerifier>{
                 "Return", rule_return, "func _w() -> any {\n  ", "}\n",
-                [](Program* p, const ReturnVerifier& v)
+                [](const Program* p, const ReturnVerifier& v)
                 {
                     if (p && !p->function_definitions.empty())
                     {
@@ -324,7 +324,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<FuncVerifier>{
                 "Function", rule_function, "", "",
-                [](Program* p, const FuncVerifier& v)
+                [](const Program* p, const FuncVerifier& v)
                 {
                     if (p && !p->function_definitions.empty())
                     {
@@ -335,7 +335,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<StructVerifier>{
                 "Struct", rule_struct, "", "",
-                [](Program* p, const StructVerifier& v)
+                [](const Program* p, const StructVerifier& v)
                 {
                     if (p && !p->struct_definitions.empty())
                     {
@@ -346,7 +346,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<EnumVerifier>{
                 "Enum", rule_enum, "", "",
-                [](Program* p, const EnumVerifier& v)
+                [](const Program* p, const EnumVerifier& v)
                 {
                     if (p && !p->enum_definitions.empty())
                     {
@@ -357,7 +357,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<AliasVerifier>{
                 "TypeAlias", rule_type_alias, "", "",
-                [](Program* p, const AliasVerifier& v)
+                [](const Program* p, const AliasVerifier& v)
                 {
                     if (p && !p->type_aliases.empty())
                     {
@@ -368,7 +368,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<ImportVerifier>{
                 "Import", rule_import, "", "",
-                [](Program* p, const ImportVerifier& v)
+                [](const Program* p, const ImportVerifier& v)
                 {
                     if (p && !p->import_statements.empty())
                     {
@@ -379,7 +379,7 @@ namespace valuascript::compiler::test
 
             f(GrammarRule<DirectiveVerifier>{
                 "Directive", rule_directive, "", "",
-                [](Program* p, const DirectiveVerifier& v)
+                [](const Program* p, const DirectiveVerifier& v)
                 {
                     if (p && !p->directives.empty())
                     {
@@ -452,8 +452,8 @@ namespace valuascript::compiler::test
     template <typename T>
     GenRule<std::vector<T>> Repeat(
         GenRule<T> rule,
-        std::function<std::pair<int, int>(const SyntheticGeneratorConfig&)> range_fn,
-        std::string separator
+        const std::function<std::pair<int, int>(const SyntheticGeneratorConfig&)>& range_fn,
+        const std::string& separator
     )
     {
         return [rule, range_fn, separator](SyntheticGenerator& env, int depth)
@@ -476,7 +476,7 @@ namespace valuascript::compiler::test
     template <typename T>
     GenRule<std::optional<T>> Opt(
         GenRule<T> rule,
-        std::function<double(const SyntheticGeneratorConfig&)> prob_fn
+        const std::function<double(const SyntheticGeneratorConfig&)>& prob_fn
     )
     {
         return [rule, prob_fn](SyntheticGenerator& env, int depth)
@@ -493,7 +493,7 @@ namespace valuascript::compiler::test
     template <typename VerifierType>
     GenRule<VerifierType> WithRegistryFallback(
         GenRule<VerifierType> generated_rule,
-        std::function<double(const SyntheticGeneratorConfig&)> prob_fn,
+        const std::function<double(const SyntheticGeneratorConfig&)>& prob_fn,
         const std::vector<RegistryEntry<VerifierType>>* pool
     )
     {

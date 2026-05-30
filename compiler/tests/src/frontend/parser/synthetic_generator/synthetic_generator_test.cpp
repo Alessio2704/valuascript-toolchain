@@ -113,7 +113,7 @@ namespace valuascript::compiler::test
             SyntheticGenerator gen(3, c);
             assert_prob("FuncHasDocstring", 0.8,
                         [&](size_t) { return gen.generate_raw_function(0).first; },
-                        [&](const std::string& code) { return code.find("\"\"\"") != std::string::npos; });
+                        [&](const std::string& code) { return code.find(R"(""")") != std::string::npos; });
         }
 
         {
@@ -123,7 +123,7 @@ namespace valuascript::compiler::test
             SyntheticGenerator gen(4, c);
             assert_prob("DirectiveHasValue", 0.6,
                         [&](size_t) { return gen.generate_raw_directive(0).first; },
-                        [&](const std::string& code) { return code.find("=") != std::string::npos; });
+                        [&](const std::string& code) { return code.find('=') != std::string::npos; });
         }
 
         {
@@ -169,7 +169,7 @@ namespace valuascript::compiler::test
                         [&](size_t) { return gen.generate_raw_expression(0).first; },
                         [&](const std::string& code)
                         {
-                            return code.find("case switch_case_") != std::string::npos && code.find(",") !=
+                            return code.find("case switch_case_") != std::string::npos && code.find(',') !=
                                 std::string::npos;
                         }
             );
@@ -183,7 +183,7 @@ namespace valuascript::compiler::test
             SyntheticGenerator gen(13, c);
             assert_prob("ReturnHasMultipleValues", 0.75,
                         [&](size_t) { return gen.generate_raw_return(0).first; },
-                        [&](const std::string& code) { return code.find(",") != std::string::npos; }
+                        [&](const std::string& code) { return code.find(',') != std::string::npos; }
             );
         }
 

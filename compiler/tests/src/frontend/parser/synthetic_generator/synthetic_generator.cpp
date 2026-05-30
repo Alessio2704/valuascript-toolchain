@@ -81,7 +81,7 @@ namespace valuascript::compiler::test
             ContextTreeWalker<FuzzState>::Callbacks cb;
             cb.get_type = [](const FuzzState& s) { return s.type; };
 
-            cb.on_terminal = [&](FuzzState s)
+            cb.on_terminal = [&](const FuzzState& s)
             {
                 result = {
                     s.code,
@@ -120,7 +120,7 @@ namespace valuascript::compiler::test
             cb.strategy = [this](const std::vector<NextStep>& steps, int, int) -> std::vector<NextStep>
             {
                 if (steps.empty()) return {};
-                size_t idx = static_cast<size_t>(this->rand_range(0, static_cast<int>(steps.size()) - 1));
+                auto idx = static_cast<size_t>(this->rand_range(0, static_cast<int>(steps.size()) - 1));
                 return {steps[idx]};
             };
 
