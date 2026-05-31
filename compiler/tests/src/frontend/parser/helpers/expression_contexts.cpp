@@ -1,5 +1,6 @@
 #include "context_registry.h"
 #include "spec_adder.h"
+#include "context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -7,14 +8,15 @@ namespace valuascript::compiler::test
     {
         static const std::vector<Context> contexts = {
             {
-                "single_assignment", {InjectableType::Expression}, InjectableType::StrongStatement, "let ctx_single = ",
+                ContextNames::ExprSingleAssignment, {InjectableType::Expression}, InjectableType::StrongStatement,
+                "let ctx_single = ",
                 "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment({{"ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
-                "multi_assignment", {InjectableType::Expression}, InjectableType::StrongStatement,
+                ContextNames::ExprMultiAssignment, {InjectableType::Expression}, InjectableType::StrongStatement,
                 "let ctx_m1, ctx_m2 = ", "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment({{"ctx_m1"}, {"ctx_m2"}},
@@ -22,7 +24,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "reassignment", {InjectableType::Expression}, InjectableType::StrongStatement, "ctx_reassign = ", "\n",
+                ContextNames::ExprReassignment, {InjectableType::Expression}, InjectableType::StrongStatement,
+                "ctx_reassign = ", "\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -30,14 +33,16 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "return_stmt", {InjectableType::Expression}, InjectableType::WeakStatement, "return ", "\n",
+                ContextNames::ExprReturnStmt, {InjectableType::Expression}, InjectableType::WeakStatement, "return ",
+                "\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsReturn({SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
             {
-                "func_def_default", {InjectableType::Expression}, InjectableType::TopLevel, "func ctx_func(arg: int = ",
+                ContextNames::ExprFuncDefDefault, {InjectableType::Expression}, InjectableType::TopLevel,
+                "func ctx_func(arg: int = ",
                 ") -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func", {},
@@ -50,21 +55,24 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "directive_no_eq", {InjectableType::Expression}, InjectableType::TopLevel, "#ctx_dir_no_eq ", "\n", [
+                ContextNames::ExprDirectiveNoEq, {InjectableType::Expression}, InjectableType::TopLevel,
+                "#ctx_dir_no_eq ", "\n", [
                 ](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsDirective("ctx_dir_no_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
-                "directive_eq", {InjectableType::Expression}, InjectableType::TopLevel, "#ctx_dir_eq = ", "\n", [
+                ContextNames::ExprDirectiveEq, {InjectableType::Expression}, InjectableType::TopLevel, "#ctx_dir_eq = ",
+                "\n", [
                 ](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsDirective("ctx_dir_eq", SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
-                "enum_case", {InjectableType::Expression}, InjectableType::TopLevel, "enum CtxEnum: int { A = ", " }\n",
+                ContextNames::ExprEnumCase, {InjectableType::Expression}, InjectableType::TopLevel,
+                "enum CtxEnum: int { A = ", " }\n",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("CtxEnum", {}, IsType("int"),
@@ -72,7 +80,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "modifier_arg", {InjectableType::Expression}, InjectableType::Modifier, "@ctx_mod(arg: ", ") ", [
+                ContextNames::ExprModifierArg, {InjectableType::Expression}, InjectableType::Modifier, "@ctx_mod(arg: ",
+                ") ", [
                 ](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(std::vector<ModifierSpec>{
@@ -81,42 +90,44 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "tuple_element", {InjectableType::Expression}, InjectableType::Expression, "(", ", 1)",
+                ContextNames::ExprTupleElement, {InjectableType::Expression}, InjectableType::Expression, "(", ", 1)",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsTuple({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")}));
                 }
             },
             {
-                "tensor_element", {InjectableType::Expression}, InjectableType::Expression, "[", ", 1]",
+                ContextNames::ExprTensorElement, {InjectableType::Expression}, InjectableType::Expression, "[", ", 1]",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsTensor({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")}));
                 }
             },
             {
-                "dict_value", {InjectableType::Expression}, InjectableType::Expression, "{ k: ", " }",
+                ContextNames::ExprDictValue, {InjectableType::Expression}, InjectableType::Expression, "{ k: ", " }",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsDict({{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
             {
-                "bracket_access_index", {InjectableType::Expression}, InjectableType::Expression, "arr[", "]",
+                ContextNames::ExprBracketAccessIndex, {InjectableType::Expression}, InjectableType::Expression, "arr[",
+                "]",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsBracket(IsIdentifier("arr"), SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
-                "function_call_arg", {InjectableType::Expression}, InjectableType::Expression, "f(arg: ", ")",
+                ContextNames::ExprFunctionCallArg, {InjectableType::Expression}, InjectableType::Expression, "f(arg: ",
+                ")",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsCall(IsIdentifier("f"), {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
             {
-                "binary_lhs", {InjectableType::Expression}, InjectableType::Expression, "(", ") + 100",
+                ContextNames::ExprBinaryLhs, {InjectableType::Expression}, InjectableType::Expression, "(", ") + 100",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsBinary(TokenType::Plus, IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
@@ -124,7 +135,7 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "binary_rhs", {InjectableType::Expression}, InjectableType::Expression, "100 + (", ")",
+                ContextNames::ExprBinaryRhs, {InjectableType::Expression}, InjectableType::Expression, "100 + (", ")",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsBinary(TokenType::Plus, IsNumber("100"),
@@ -132,42 +143,44 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "grouping", {InjectableType::Expression}, InjectableType::Expression, "(", ")",
+                ContextNames::ExprGrouping, {InjectableType::Expression}, InjectableType::Expression, "(", ")",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
-                "unary_grouping", {InjectableType::Expression}, InjectableType::Expression, "-(", ")",
+                ContextNames::ExprUnaryGrouping, {InjectableType::Expression}, InjectableType::Expression, "-(", ")",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsUnary(TokenType::Minus, IsGrouping(SpecAdder::get_v<ExprVerifier>(v))));
                 }
             },
             {
-                "as_call_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")()",
+                ContextNames::ExprAsCallTarget, {InjectableType::Expression}, InjectableType::Expression, "(", ")()",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsCall(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), {}));
                 }
             },
             {
-                "as_dot_target", {InjectableType::Expression}, InjectableType::Expression, "(", ").prop",
+                ContextNames::ExprAsDotTarget, {InjectableType::Expression}, InjectableType::Expression, "(", ").prop",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsDot(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), "prop"));
                 }
             },
             {
-                "as_bracket_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")[0]",
+                ContextNames::ExprAsBracketTarget, {InjectableType::Expression}, InjectableType::Expression, "(",
+                ")[0]",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)), IsNumber("0")));
                 }
             },
             {
-                "as_slice_target", {InjectableType::Expression}, InjectableType::Expression, "(", ")[0:10]",
+                ContextNames::ExprAsSliceTarget, {InjectableType::Expression}, InjectableType::Expression, "(",
+                ")[0:10]",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsBracket(IsGrouping(SpecAdder::get_v<ExprVerifier>(v)),
@@ -175,7 +188,7 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "switch_cond", {InjectableType::Expression}, InjectableType::Expression, "switch (",
+                ContextNames::ExprSwitchCond, {InjectableType::Expression}, InjectableType::Expression, "switch (",
                 ") { default -> 1 }",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
@@ -183,7 +196,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "switch_case", {InjectableType::Expression}, InjectableType::Expression, "switch (1) { case A -> ",
+                ContextNames::ExprSwitchCase, {InjectableType::Expression}, InjectableType::Expression,
+                "switch (1) { case A -> ",
                 " default -> 1 }",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
@@ -193,7 +207,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "if_cond", {InjectableType::Expression}, InjectableType::Expression, "if ", " then 1 else 2",
+                ContextNames::ExprIfCond, {InjectableType::Expression}, InjectableType::Expression, "if ",
+                " then 1 else 2",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsConditional(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1"),
@@ -201,7 +216,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "if_then", {InjectableType::Expression}, InjectableType::Expression, "if 1 then ", " else 2",
+                ContextNames::ExprIfThen, {InjectableType::Expression}, InjectableType::Expression, "if 1 then ",
+                " else 2",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsConditional(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v),
@@ -209,7 +225,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "if_else", {InjectableType::Expression}, InjectableType::Expression, "if 1 then 2 else ", "",
+                ContextNames::ExprIfElse, {InjectableType::Expression}, InjectableType::Expression, "if 1 then 2 else ",
+                "",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsConditional(IsNumber("1"), IsNumber("2"),

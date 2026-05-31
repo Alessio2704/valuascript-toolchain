@@ -124,6 +124,11 @@ namespace valuascript::compiler
 
             bool should_shift = token.type == TokenType::EndOfFile;
 
+            if (!should_shift && (code == E::MissingThenToken || code == E::MissingElseToken))
+            {
+                should_shift = true;
+            }
+
             if (!should_shift && token.line > prev.line)
             {
                 if (TokenTraits::is_newline_statement_boundary(prev, token, peek(1).type))

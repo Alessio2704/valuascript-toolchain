@@ -1,5 +1,6 @@
 #include "context_registry.h"
 #include "recovery_sentinel.h"
+#include "context_names.h"
 #include <utility>
 
 namespace valuascript::compiler::test
@@ -8,14 +9,15 @@ namespace valuascript::compiler::test
     {
         StmtVerifier extract_stmt_v(const UniversalVerifier& v)
         {
-            return std::visit(overloaded{
-                [](const StmtVerifier& ver) { return ver; },
-                [](const AssignmentVerifier& ver) { return StmtVerifier(ver); },
-                [](const ReassignmentVerifier& ver) { return StmtVerifier(ver); },
-                [](const ReturnVerifier& ver) { return StmtVerifier(ver); },
-                [](const ExprStmtVerifier& ver) { return StmtVerifier(ver); },
-                [](const auto&) { return StmtVerifier(); }
-            }, v);
+            return std::visit(
+                overloaded{
+                    [](const StmtVerifier& ver) { return ver; },
+                    [](const AssignmentVerifier& ver) { return StmtVerifier(ver); },
+                    [](const ReassignmentVerifier& ver) { return StmtVerifier(ver); },
+                    [](const ReturnVerifier& ver) { return StmtVerifier(ver); },
+                    [](const ExprStmtVerifier& ver) { return StmtVerifier(ver); },
+                    [](const auto&) { return StmtVerifier(); }
+                }, v);
         }
 
         std::vector<StmtVerifier> build_block_body(const UniversalVerifier& v,
@@ -71,7 +73,7 @@ namespace valuascript::compiler::test
     const std::vector<Context>& ContextRegistry::get_block_contexts_impl()
     {
         static const std::vector<Context> contexts = {
-            make_block_context("function_body_wrapper", "func ctx_wrapper() -> void {\n  ", "\n}\n",
+            make_block_context(ContextNames::FunctionBodyWrapper, "func ctx_wrapper() -> void {\n  ", "\n}\n",
                                [](auto body)
                                {
                                    return UniversalVerifier(

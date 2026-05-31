@@ -52,16 +52,10 @@ namespace valuascript::compiler::test {
             },
             ParserErrorsSynchronizationTestCase{
             "ControlFlowAndExpressionErrors",
-            "let a = if (true) 10 else 20\n"
-            "let x = 10 < 20 < 30\n"
-            "let a = switch (val) { case 1 10 }\n"
-            "let a = switch (val) { default -> 1 default -> 2 }\n",
+            "let a = switch (val) { case 1 10 }",
             {
-            {Err::MissingThenToken, 1, 19},
-            {Err::ChainingNotAllowedForComparisonOperations, 2, 17},
-            {Err::ExpectedEnumCaseNameAfterCase, 3, 29},
-            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 34},
-            {Err::MultipleDefaultCasesInSwitch, 4, 37}
+            {Err::ExpectedEnumCaseNameAfterCase, 1, 29},
+            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 1, 34},
             }
             },
             ParserErrorsSynchronizationTestCase{

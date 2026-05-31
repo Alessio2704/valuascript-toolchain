@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <string_view>
 #include <vector>
 #include "node_matchers.h"
 #include "error_registry.h"
@@ -32,6 +33,8 @@ namespace valuascript::compiler::test
         std::string cumulative_prefix;
         int depth;
         int recursion_depth;
+        std::vector<std::string_view> skip_contexts;
+        bool is_skipped;
     };
 
     struct RecoveryScenario

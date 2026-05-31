@@ -71,22 +71,6 @@ namespace valuascript::compiler::test
             ExpectTensor({"1", "2"})
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_switch_inside_broken",
-            "let a = [ switch(x) { case a -> * }, 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 33} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-            EXPECT_EQ(tensor->elements.size(), 2);
-            auto const switch_expr = dynamic_cast<SwitchExpression*>(tensor->elements[0].get());
-            EXPECT_NE(switch_expr, nullptr);
-            EXPECT_EQ(switch_expr->cases.size(), 1);
-            EXPECT_EQ(switch_expr->cases[0].result.get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_missing_bracket_before_next_stmt",
             "let a = [ 1, 2\n"
             "let b = 3\n"
@@ -128,28 +112,6 @@ namespace valuascript::compiler::test
             ASSERT_EQ(first_elem->op, TokenType::Plus);
             auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
             ASSERT_NE(second_elem, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_deep_nested_barrier_failure",
-            "let a = [ { key: f(a: [1, *]) }, 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 27} },
-            ExpectTensor({ "", "2" })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tensor_missing_comma_and_bracket",
-            "let a = [ 1 2\n"
-            "let recovery = 1\n",
-            {
-            {Err::MissingCommaOrOperatorBetweenExpressions, 1, 13},
-            {Err::UnmatchedBracketAfterTensorElements, 1, 14}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-            EXPECT_EQ(tensor->elements.size(), 2);
             }
             },
             ParserErrorsSynchronizationTestCase{

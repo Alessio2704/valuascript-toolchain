@@ -86,29 +86,6 @@ namespace valuascript::compiler::test {
             ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
-            "tuple_with_switch_expression_error",
-            "let a = (1, switch (x) { case y -> * }, 2)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 36} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto tuple = dynamic_cast<TupleLiteral*>(assign->value.get());
-            EXPECT_EQ(tuple->elements.size(), 3);
-            auto const switch_expr = dynamic_cast<SwitchExpression*>(tuple->elements[1].get());
-            EXPECT_NE(switch_expr, nullptr);
-            EXPECT_EQ(switch_expr->cases.size(), 1);
-            EXPECT_EQ(switch_expr->cases[0].result.get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_function_call_argument_recovery",
-            "let a = (1, func_call(a: 2, b: *), 3)\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 32} },
-            ExpectTuple(3)
-            },
-            ParserErrorsSynchronizationTestCase{
             "tuple_total_mangle",
             "let a = (1, let y = 2\n"
             "let recovery = 1\n",

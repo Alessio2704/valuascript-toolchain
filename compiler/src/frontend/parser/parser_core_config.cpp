@@ -37,6 +37,7 @@ namespace valuascript::compiler
     {
         if (current.line <= prev.line) return false;
         if (is_statement_start(current, next)) return true;
+        if (current.type == TokenType::Return) return true;
         if (is_expression_statement_start(current, next))
         {
             if (is_dangling_operator(prev.type) || is_grouping_opener(prev.type)) return false;

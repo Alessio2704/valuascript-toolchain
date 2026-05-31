@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <functional>
 
@@ -42,6 +43,7 @@ namespace valuascript::compiler::test
         std::string code;
         std::vector<ParserExpectedError> errors;
         OneOf<T> verifier;
+        std::vector<std::string_view> skip_contexts;
     };
 
     class ErrorRegistry
@@ -62,81 +64,81 @@ namespace valuascript::compiler::test
         static std::vector<ErrorRegistryEntry<TypeVerifier>>& type_annotations();
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ImportVerifier> v)
+                        const OneOf<ImportVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            imports().emplace_back(n, c, errs, v);
+            imports().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<DirectiveVerifier> v)
+                        const OneOf<DirectiveVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            directives().emplace_back(n, c, errs, v);
+            directives().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<FuncVerifier> v)
+                        const OneOf<FuncVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            functions().emplace_back(n, c, errs, v);
+            functions().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<StructVerifier> v)
+                        const OneOf<StructVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            structs().emplace_back(n, c, errs, v);
+            structs().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<EnumVerifier> v)
+                        const OneOf<EnumVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            enums().emplace_back(n, c, errs, v);
+            enums().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<AliasVerifier> v)
+                        const OneOf<AliasVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            aliases().emplace_back(n, c, errs, v);
+            aliases().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<AssignmentVerifier> v)
+                        const OneOf<AssignmentVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            assignments().emplace_back(n, c, errs, v);
+            assignments().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ReassignmentVerifier> v)
+                        const OneOf<ReassignmentVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            reassignments().emplace_back(n, c, errs, v);
+            reassignments().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ReturnVerifier> v)
+                        const OneOf<ReturnVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            returns().emplace_back(n, c, errs, v);
+            returns().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ExprStmtVerifier> v)
+                        const OneOf<ExprStmtVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            expr_stmts().emplace_back(n, c, errs, v);
+            expr_stmts().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ExprVerifier> v)
+                        const OneOf<ExprVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            expressions().emplace_back(n, c, errs, v);
+            expressions().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<ModifierVerifier> v)
+                        const OneOf<ModifierVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            modifiers().emplace_back(n, c, errs, v);
+            modifiers().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
-                        OneOf<TypeVerifier> v)
+                        const OneOf<TypeVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
-            type_annotations().emplace_back(n, c, errs, v);
+            type_annotations().push_back({n, c, errs, v, skip_contexts});
         }
     };
 }

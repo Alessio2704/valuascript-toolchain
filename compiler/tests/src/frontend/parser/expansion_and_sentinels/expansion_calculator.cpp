@@ -1,31 +1,43 @@
 #include "expansion_calculator.h"
 #include "context_tree_walker.h"
+#include <algorithm>
 
 namespace valuascript::compiler::test
 {
-    size_t ExpansionCalculator::compute_expected_expansions(InjectableType start_type)
+    size_t ExpansionCalculator::compute_expected_expansions(InjectableType start_type,
+                                                            const std::vector<std::string_view>& skip_contexts)
     {
         size_t count = 0;
 
-        ContextTreeWalker<InjectableType>::Callbacks cb;
-
-        cb.get_type = [](const InjectableType& type) { return type; };
-
-        cb.on_terminal = [&](InjectableType) { count++; };
-
-        cb.on_promotion = [&](const InjectableType&) { count++; };
-
-        cb.on_normal_branch = [](const InjectableType&, const Context& ctx, int)
+        struct WalkState
         {
-            return ctx.output_type;
+            InjectableType type;
+            bool is_skipped;
         };
 
-        cb.on_block_branch = [](const InjectableType&, const Context& ctx, int)
+        ContextTreeWalker<WalkState>::Callbacks cb;
+
+        cb.get_type = [](const WalkState& s) { return s.type; };
+
+        cb.on_terminal = [&](WalkState s) { if (!s.is_skipped) count++; };
+
+        cb.on_promotion = [&](const WalkState& s) { if (!s.is_skipped) count++; };
+
+        cb.on_normal_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int)
         {
-            return ctx.output_type;
+            bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
+                .end();
+            return WalkState{ctx.output_type, skip};
         };
 
-        ContextTreeWalker<InjectableType>::walk(start_type, 0, 0, cb);
+        cb.on_block_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int)
+        {
+            bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
+                .end();
+            return WalkState{ctx.output_type, skip};
+        };
+
+        ContextTreeWalker<WalkState>::walk({start_type, false}, 0, 0, cb);
 
         return count;
     }

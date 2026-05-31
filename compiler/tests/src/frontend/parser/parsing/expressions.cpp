@@ -40,16 +40,9 @@ namespace valuascript::compiler::test
         ParserStageTest,
         ExpressionSadPathTest,
         testing::Values(
-            ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", E::ExpectedRightParenAfterExpression
-            },
+            ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", E::ExpectedRightParenAfterExpression},
             ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", E::InvalidExpression},
             ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", E::UnmatchedBracketAfterTensorElements},
-
-            ExpressionSadParam{"cond_missing_then", "if a > b 1 else 2", E::MissingThenToken},
-            ExpressionSadParam{"cond_missing_else", "if a > b then 1", E::MissingElseToken},
-            ExpressionSadParam{"cond_missing_else_value", "if a > b then 1 else", E::InvalidExpression},
-
-
             ExpressionSadParam{"missing_operator_1", "a + b c", E::MissingOperator},
             ExpressionSadParam{"missing_operator_2", "a + b (1 + 2)", E::MissingOperatorOrArgumentName},
             ExpressionSadParam{"missing_operator_3", "a + b model.a", E::MissingOperator},

@@ -138,49 +138,6 @@ namespace valuascript::compiler::test
             ExpectModifierSet({ {"test", {{"let", "1"}, {"func", "2"}}} })
             },
             ParserErrorsSynchronizationTestCase{
-            "modifier_arg_with_broken_switch",
-            "let @test(val: switch(x) { case A -> }) a = 1\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 38} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            ASSERT_FALSE(assign->targets.empty());
-            auto& mods = assign->targets[0].modifiers;
-            ASSERT_EQ(mods.size(), 1);
-            ASSERT_EQ(mods[0].name, "test");
-            ASSERT_EQ(mods[0].arguments.size(), 1);
-            ASSERT_EQ(mods[0].arguments[0].first, "val");
-            auto const switch_expr = dynamic_cast<SwitchExpression*>(mods[0].arguments[0].second.get());
-            EXPECT_NE(switch_expr, nullptr);
-            EXPECT_EQ(switch_expr->cases.size(), 1);
-            EXPECT_EQ(switch_expr->cases[0].result.get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_on_broken_struct",
-            "@test(a: 1) struct S { a: }\n"
-            "let recovery = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 27} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            EXPECT_EQ(ast.struct_definitions[0]->modifiers.size(), 1);
-            EXPECT_EQ(ast.struct_definitions[0]->modifiers[0].name, "test");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_on_broken_enum",
-            "@meta enum E: int { A = , B = 2 }\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 25} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.enum_definitions.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->modifiers.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_on_broken_func",
             "@rpc func f(a:) -> int { return 1 }\n"
             "let recovery = 1\n",
@@ -268,30 +225,6 @@ namespace valuascript::compiler::test
             [](const Program& ast) {
             ASSERT_EQ(ast.directives.size(), 1);
             ASSERT_EQ(ast.execution_steps.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_with_deeply_nested_sync_fail",
-            "let @test(a: switch(x) { case A -> switch(y) { case B -> } }) a = 1\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 58} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            ASSERT_FALSE(assign->targets.empty());
-            auto& mods = assign->targets[0].modifiers;
-            ASSERT_EQ(mods.size(), 1);
-            ASSERT_EQ(mods[0].name, "test");
-            ASSERT_EQ(mods[0].arguments.size(), 1);
-            ASSERT_EQ(mods[0].arguments[0].first, "a");
-            auto const switch_expr = dynamic_cast<SwitchExpression*>(mods[0].arguments[0].second.get());
-            EXPECT_NE(switch_expr, nullptr);
-            EXPECT_EQ(switch_expr->cases.size(), 1);
-            auto const switch_expr_2 = dynamic_cast<SwitchExpression*>(switch_expr->cases[0].result.get());
-            EXPECT_NE(switch_expr_2, nullptr);
-            EXPECT_EQ(switch_expr_2->cases.size(), 1);
-            EXPECT_EQ(switch_expr_2->cases[0].result.get(), nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{

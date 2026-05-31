@@ -1,5 +1,6 @@
 #include "context_registry.h"
 #include "spec_adder.h"
+#include "context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -7,7 +8,7 @@ namespace valuascript::compiler::test
     {
         static const std::vector<Context> contexts = {
             {
-                "assignment_target", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                ContextNames::TypeAssignmentTarget, {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
                 "let ctx_assign: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment({{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}},
@@ -15,7 +16,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "multi_assignment_target_1", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                ContextNames::TypeMultiAssignmentTarget1, {InjectableType::TypeAnnotation},
+                InjectableType::StrongStatement,
                 "let ctx_m1: ", ", ctx_m2 = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -23,7 +25,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "multi_assignment_target_2", {InjectableType::TypeAnnotation}, InjectableType::StrongStatement,
+                ContextNames::TypeMultiAssignmentTarget2, {InjectableType::TypeAnnotation},
+                InjectableType::StrongStatement,
                 "let ctx_m1, ctx_m2: ", " = 1\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -31,14 +34,14 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "typealias_target", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                ContextNames::TypeTypealiasTarget, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
                 "typealias ctx_alias = ", "\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsTypeAlias("ctx_alias", {}, SpecAdder::get_v<TypeVerifier>(v)));
                 }
             },
             {
-                "function_parameter", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                ContextNames::TypeFunctionParameter, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
                 "func ctx_func_param(p: ", ") -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
@@ -47,7 +50,7 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "function_return", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                ContextNames::TypeFunctionReturn, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
                 "func ctx_func_ret() -> ", " {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_ret", {}, {}, {
@@ -56,7 +59,7 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "function_multi_return", {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                ContextNames::TypeFunctionMultiReturn, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
                 "func ctx_func_multi_ret() -> ", ", int {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_multi_ret", {}, {},
@@ -64,7 +67,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "struct_field", {InjectableType::TypeAnnotation}, InjectableType::TopLevel, "struct ctx_struct { f: ",
+                ContextNames::TypeStructField, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "struct ctx_struct { f: ",
                 " }\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct", {}, {
@@ -73,14 +77,15 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "enum_underlying_type", {InjectableType::TypeAnnotation}, InjectableType::TopLevel, "enum ctx_enum: ",
+                ContextNames::TypeEnumUnderlyingType, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "enum ctx_enum: ",
                 " { A }\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), {{"A"}}));
                 }
             },
             {
-                "tuple_type_start", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(",
+                ContextNames::TypeTupleTypeStart, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(",
                 ", int)", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -91,7 +96,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "tuple_type_middle", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(int, ",
+                ContextNames::TypeTupleTypeMiddle, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                "(int, ",
                 ", string)", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -103,7 +109,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "tuple_type_end", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "(int, string, ",
+                ContextNames::TypeTupleTypeEnd, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                "(int, string, ",
                 ")", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -115,7 +122,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "generic_type_start", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "vector<",
+                ContextNames::TypeGenericTypeStart, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                "vector<",
                 ", int>", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -128,7 +136,8 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "generic_type_middle", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation, "vector<int, ",
+                ContextNames::TypeGenericTypeMiddle, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                "vector<int, ",
                 ", string>", [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
@@ -142,7 +151,7 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                "generic_type_end", {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
+                ContextNames::TypeGenericTypeEnd, {InjectableType::TypeAnnotation}, InjectableType::TypeAnnotation,
                 "vector<int, string, ",
                 ">", [](const UniversalVerifier& v) -> UniversalVerifier
                 {

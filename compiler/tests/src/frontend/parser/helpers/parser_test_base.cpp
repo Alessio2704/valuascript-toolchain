@@ -1,6 +1,7 @@
 #include "parser_test_base.h"
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 #include "context_registry.h"
 #include "error_shifter.h"
 #include "recovery_sentinel.h"
@@ -43,12 +44,15 @@ namespace valuascript::compiler::test
         return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
     }
 
-    std::vector<ProcessingItem> ParserTestBase::apply_context_augmentations(InjectableType type,
-                                                                     const std::string& snippet,
-                                                                     const UniversalVerifier& verifier,
-                                                                     const std::string& group_name)
+    std::vector<ProcessingItem> ParserTestBase::apply_context_augmentations(
+        InjectableType type,
+        const std::string& snippet,
+        const UniversalVerifier& verifier,
+        const std::string& group_name,
+        const std::vector<std::string_view>& skip_contexts
+    )
     {
-        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0};
+        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0, skip_contexts, false};
 
         switch (type)
         {
@@ -85,22 +89,28 @@ namespace valuascript::compiler::test
                 callback({
                     InjectableType::TopLevel, item.code, item.verifier,
                     item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
-                    item.depth + 1, item.recursion_depth
+                    item.depth + 1, item.recursion_depth,
+                    item.skip_contexts, item.is_skipped
                 });
             };
             cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
             {
+                bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
+                    != item.skip_contexts.end();
                 return ProcessingItem{
                     ctx.output_type, ctx.prefix + item.code + ctx.suffix,
                     ctx.transform_verifier(item.verifier),
                     item.path_name + " -> " + (next_rec_depth > item.recursion_depth
                                                    ? ctx.name + "(Recurse)"
                                                    : ctx.name),
-                    ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth
+                    ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth,
+                    item.skip_contexts, skip
                 };
             };
             cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
             {
+                bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
+                    != item.skip_contexts.end();
                 std::vector<RecoveryBlock> pre, post;
                 std::string inner_code = item.code;
                 std::string inner_prefix = item.cumulative_prefix;
@@ -120,7 +130,8 @@ namespace valuascript::compiler::test
                     item.path_name + " -> " + (next_rec_depth > item.recursion_depth
                                                    ? ctx.name + "(Recurse)"
                                                    : ctx.name),
-                    ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth
+                    ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth,
+                    item.skip_contexts, skip
                 };
             };
             cb.should_abort = [] { return HasFailure(); };
@@ -137,9 +148,15 @@ namespace valuascript::compiler::test
         size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
         size_t expected_total = expected_expansions * items.size();
         size_t actual_expansions = 0;
+        size_t skipped_expansions = 0;
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
         {
+            if (item.is_skipped)
+            {
+                skipped_expansions++;
+                return;
+            }
             actual_expansions++;
             ProgramSpec spec;
             std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
@@ -149,8 +166,8 @@ namespace valuascript::compiler::test
 
         if (!HasFailure())
         {
-            EXPECT_EQ(actual_expansions, expected_total) << "Expansion count mismatch for " << group_name <<
- " (Valid Parse).";
+            EXPECT_EQ(actual_expansions + skipped_expansions, expected_total) << "Expansion count mismatch for " <<
+ group_name << " (Valid Parse).";
         }
     }
 
@@ -164,18 +181,24 @@ namespace valuascript::compiler::test
         size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
         size_t expected_total = expected_expansions * items.size();
         size_t actual_expansions = 0;
+        size_t skipped_expansions = 0;
         size_t scenario_index = 0;
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
         {
+            if (item.is_skipped)
+            {
+                skipped_expansions++;
+                return;
+            }
             actual_expansions++;
             RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));
         }, true);
 
         if (!HasFailure())
         {
-            EXPECT_EQ(actual_expansions, expected_total) << "Expansion count mismatch for " << group_name <<
- " (Error Recovery).";
+            EXPECT_EQ(actual_expansions + skipped_expansions, expected_total) << "Expansion count mismatch for " <<
+ group_name << " (Error Recovery).";
         }
     }
 

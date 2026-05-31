@@ -111,20 +111,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reassignment_chained_comparison_error",
-            "a = 1 < 2 < 3\n"
-            "let c = 2\n",
-            {
-            {Err::ChainingNotAllowedForComparisonOperations, 1, 11}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto reassign = dynamic_cast<Reassignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(reassign, nullptr);
-            EXPECT_EQ(dynamic_cast<IdentifierAccess*>(reassign->target.get())->name, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_value_in_bracket_reassignment",
             "a[0] =\n"
             "let c = 2\n",

@@ -461,17 +461,63 @@ namespace valuascript::compiler
         SyncSetTracker tracker(ctx, {TokenType::Then, TokenType::Else});
         RecoveryConfig conf;
         conf.stop_tokens = {
-            TokenType::Then, TokenType::Else, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+            TokenType::Then, TokenType::Else,
+            TokenType::RightParen, TokenType::RightBracket,
+            TokenType::RightBrace, TokenType::Comma
         };
-        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
+        conf.options = DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp |
+            RecoveryOptions::StopEarlyIfUnbalancedBlocks;
 
         auto condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
-        if (!cursor.match({TokenType::Then})) cursor.report_error_no_panic(cursor.peek(), E::MissingThenToken);
 
-        auto then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
-        if (!cursor.match({TokenType::Else})) cursor.report_error_no_panic(cursor.peek(), E::MissingElseToken);
+        bool has_then = cursor.match({TokenType::Then});
+        if (!has_then) cursor.report_error_no_panic(cursor.peek(), E::MissingThenToken);
 
-        ExprPtr else_branch = parse_expression();
+        ExprPtr then_branch = nullptr;
+        bool skip_then = false;
+        if (!has_then)
+        {
+            if (cursor.is_at_end() || cursor.check(TokenType::Else) || ctx.is_active_closer(cursor.peek().type) ||
+                !TokenTraits::is_expression_start(cursor.peek().type))
+            {
+                skip_then = true;
+            }
+            else if (cursor.peek().line > cursor.previous().line && TokenTraits::is_newline_statement_boundary(
+                cursor.previous(), cursor.peek(), cursor.peek(1).type))
+            {
+                skip_then = true;
+            }
+        }
+
+        if (!skip_then)
+        {
+            then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        }
+
+        bool has_else = cursor.match({TokenType::Else});
+        if (!has_else) cursor.report_error_no_panic(cursor.peek(), E::MissingElseToken);
+
+        ExprPtr else_branch = nullptr;
+        bool skip_else = false;
+        if (!has_else)
+        {
+            if (cursor.is_at_end() || ctx.is_active_closer(cursor.peek().type) ||
+                !TokenTraits::is_expression_start(cursor.peek().type))
+            {
+                skip_else = true;
+            }
+            else if (cursor.peek().line > cursor.previous().line && TokenTraits::is_newline_statement_boundary(
+                cursor.previous(), cursor.peek(), cursor.peek(1).type))
+            {
+                skip_else = true;
+            }
+        }
+
+        if (!skip_else)
+        {
+            else_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        }
+
         return AstFactory::make_node<ConditionalExpression>(cursor, start, std::move(condition), std::move(then_branch),
                                                             std::move(else_branch));
     }

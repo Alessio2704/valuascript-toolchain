@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <iomanip>
+#include <algorithm>
 
 #include "parser_test_base.h"
 #include "dump_writer.h"
@@ -13,6 +14,7 @@
 #include "test_structures.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_calculator.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
+#include "../expansion_and_sentinels/context_tree_walker.h"
 
 namespace valuascript::compiler::test
 {
@@ -78,6 +80,106 @@ namespace valuascript::compiler::test
 
     class ParserTestingFrameworkDetails : public ParserTestBase
     {
+    protected:
+        std::map<std::pair<InjectableType, std::vector<std::string_view>>, size_t> expansion_cache;
+
+        size_t get_expansion_count(InjectableType type, const std::vector<std::string_view>& skip_contexts)
+        {
+            auto key = std::make_pair(type, skip_contexts);
+            if (expansion_cache.contains(key)) return expansion_cache[key];
+
+            size_t count = ExpansionCalculator::compute_expected_expansions(type, skip_contexts);
+            expansion_cache[key] = count;
+            return count;
+        }
+
+        size_t count_happy_executions(InjectableType type, const UniversalVerifier& dummy_verifier)
+        {
+            size_t count = 0;
+            size_t augmentations = apply_context_augmentations(type, "dummy", dummy_verifier, "test", {}).size();
+
+            auto add = [&](const auto& registry)
+            {
+                // For the happy path right now, skip_contexts is virtually empty
+                count += registry.size() * augmentations * get_expansion_count(type, {});
+            };
+
+            switch (type)
+            {
+            case InjectableType::Import: add(ConstructRegistry::imports());
+                break;
+            case InjectableType::Directive: add(ConstructRegistry::directives());
+                break;
+            case InjectableType::Function: add(ConstructRegistry::functions());
+                break;
+            case InjectableType::Struct: add(ConstructRegistry::structs());
+                break;
+            case InjectableType::Enum: add(ConstructRegistry::enums());
+                break;
+            case InjectableType::TypeAlias: add(ConstructRegistry::aliases());
+                break;
+            case InjectableType::Expression: add(ConstructRegistry::expressions());
+                break;
+            case InjectableType::Modifier: add(ConstructRegistry::modifiers());
+                break;
+            case InjectableType::TypeAnnotation: add(ConstructRegistry::type_annotations());
+                break;
+            case InjectableType::WeakStatement: add(ConstructRegistry::returns());
+                break;
+            case InjectableType::StrongStatement:
+                add(ConstructRegistry::assignments());
+                add(ConstructRegistry::reassignments());
+                add(ConstructRegistry::expr_stmts());
+                break;
+            case InjectableType::TopLevel: break;
+            }
+            return count;
+        }
+
+        size_t count_sad_executions(InjectableType type, const UniversalVerifier& dummy_verifier)
+        {
+            size_t count = 0;
+            size_t augmentations = apply_context_augmentations(type, "dummy", dummy_verifier, "test", {}).size();
+
+            auto add = [&](const auto& registry)
+            {
+                for (const auto& entry : registry)
+                {
+                    count += augmentations * get_expansion_count(type, entry.skip_contexts);
+                }
+            };
+
+            switch (type)
+            {
+            case InjectableType::Import: add(ErrorRegistry::imports());
+                break;
+            case InjectableType::Directive: add(ErrorRegistry::directives());
+                break;
+            case InjectableType::Function: add(ErrorRegistry::functions());
+                break;
+            case InjectableType::Struct: add(ErrorRegistry::structs());
+                break;
+            case InjectableType::Enum: add(ErrorRegistry::enums());
+                break;
+            case InjectableType::TypeAlias: add(ErrorRegistry::aliases());
+                break;
+            case InjectableType::Expression: add(ErrorRegistry::expressions());
+                break;
+            case InjectableType::Modifier: add(ErrorRegistry::modifiers());
+                break;
+            case InjectableType::TypeAnnotation: add(ErrorRegistry::type_annotations());
+                break;
+            case InjectableType::WeakStatement: add(ErrorRegistry::returns());
+                break;
+            case InjectableType::StrongStatement:
+                add(ErrorRegistry::assignments());
+                add(ErrorRegistry::reassignments());
+                add(ErrorRegistry::expr_stmts());
+                break;
+            case InjectableType::TopLevel: break;
+            }
+            return count;
+        }
     };
 
     TEST_F(ParserTestingFrameworkDetails, OutputDiagnostics)
@@ -220,9 +322,8 @@ namespace valuascript::compiler::test
             << "| " << std::setw(6) << "Sad"
             << "| " << std::setw(15) << "Augmentations"
             << "| " << std::setw(11) << "Expansions"
-            << "| " << std::setw(12) << "Per Snippet"
             << "| " << "Total Executions\n";
-        out << "------------------------------------------------------------------------------------\n";
+        out << "--------------------------------------------------------------------------------\n";
 
         for (const auto& [type, dummy_verifier] : injectables_with_verifiers)
         {
@@ -230,9 +331,9 @@ namespace valuascript::compiler::test
             size_t aug_cnt = apply_context_augmentations(type, "dummy", dummy_verifier, "test").size();
             size_t expansions = ExpansionCalculator::compute_expected_expansions(type);
 
-            size_t per_snippet = aug_cnt * expansions;
-            size_t item_total = happy_cnt + sad_cnt;
-            size_t run_total = item_total * per_snippet;
+            size_t happy_executions = count_happy_executions(type, dummy_verifier);
+            size_t sad_executions = count_sad_executions(type, dummy_verifier);
+            size_t run_total = happy_executions + sad_executions;
 
             grand_total_tests += run_total;
 
@@ -241,11 +342,10 @@ namespace valuascript::compiler::test
                 << "| " << std::setw(6) << sad_cnt
                 << "| " << std::setw(15) << aug_cnt
                 << "| " << std::setw(11) << expansions
-                << "| " << std::setw(12) << per_snippet
                 << "| " << run_total << "\n";
         }
 
-        out << "------------------------------------------------------------------------------------\n";
+        out << "--------------------------------------------------------------------------------\n";
         out << "GRAND TOTAL PARSER TESTS GENERATED: " << grand_total_tests << "\n";
 
         out << "\n====================================================================================\n";

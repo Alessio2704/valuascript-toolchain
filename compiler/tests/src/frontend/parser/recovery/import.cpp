@@ -52,10 +52,10 @@ namespace valuascript::compiler::test
 
     TEST_P(ImportErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectImportErrors(code, errors, verifier);
+        ExpectImportErrors(code, errors, verifier, skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(
