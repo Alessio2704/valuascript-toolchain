@@ -2,49 +2,59 @@
 #include "parser_errors_synchronization_base.h"
 #include "frontend/parser/ast.h"
 
-namespace valuascript::compiler::test {
-    namespace {
-        void ExpectIdentifier(const Expression *expr, const std::string &name) {
-            auto id = dynamic_cast<const IdentifierAccess *>(expr);
+namespace valuascript::compiler::test
+{
+    namespace
+    {
+        void ExpectIdentifier(const Expression* expr, const std::string& name)
+        {
+            auto id = dynamic_cast<const IdentifierAccess*>(expr);
             ASSERT_NE(id, nullptr) << "Expected IdentifierAccess, but got " << (
-                                      expr ? typeid(*expr).name() : "nullptr");
+                expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(id->name, name);
         }
 
-        void ExpectNumber(const Expression *expr, const std::string &value) {
-            auto num = dynamic_cast<const NumberLiteral *>(expr);
+        void ExpectNumber(const Expression* expr, const std::string& value)
+        {
+            auto num = dynamic_cast<const NumberLiteral*>(expr);
             ASSERT_NE(num, nullptr) << "Expected NumberLiteral, but got " << (expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(num->value, value);
         }
 
-        void ExpectDotAccess(const Expression *expr, std::function<void(const Expression *)> target_verifier,
-                             const std::string &property) {
-            auto dot = dynamic_cast<const DotAccess *>(expr);
+        void ExpectDotAccess(const Expression* expr, std::function<void(const Expression*)> target_verifier,
+                             const std::string& property)
+        {
+            auto dot = dynamic_cast<const DotAccess*>(expr);
             ASSERT_NE(dot, nullptr) << "Expected DotAccess, but got " << (expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(dot->property_name, property);
             if (target_verifier) target_verifier(dot->target.get());
         }
 
-        void ExpectBracketAccess(const Expression *expr, std::function<void(const Expression *)> target_verifier,
-                                 std::function<void(const Expression *)> index_verifier) {
-            auto bracket = dynamic_cast<const BracketAccess *>(expr);
+        void ExpectBracketAccess(const Expression* expr, std::function<void(const Expression*)> target_verifier,
+                                 std::function<void(const Expression*)> index_verifier)
+        {
+            auto bracket = dynamic_cast<const BracketAccess*>(expr);
             ASSERT_NE(bracket, nullptr) << "Expected BracketAccess, but got " << (expr
-                                               ? typeid(*expr).name()
-                                               : "nullptr");
+                    ? typeid(*expr).name()
+                    : "nullptr");
             if (target_verifier) target_verifier(bracket->target.get());
 
-            if (index_verifier) {
+            if (index_verifier)
+            {
                 index_verifier(bracket->index.get());
-            } else {
+            }
+            else
+            {
                 EXPECT_EQ(bracket->index, nullptr) << "Expected index to be nullptr (partial AST fallback)";
             }
         }
 
-        void ExpectSlice(const Expression *expr, std::function<void(const Expression *)> left_verifier,
-                         std::function<void(const Expression *)> right_verifier) {
-            auto bin = dynamic_cast<const BinaryExpression *>(expr);
+        void ExpectSlice(const Expression* expr, std::function<void(const Expression*)> left_verifier,
+                         std::function<void(const Expression*)> right_verifier)
+        {
+            auto bin = dynamic_cast<const BinaryExpression*>(expr);
             ASSERT_NE(bin, nullptr) << "Expected BinaryExpression (slice), but got " << (
-                                       expr ? typeid(*expr).name() : "nullptr");
+                expr ? typeid(*expr).name() : "nullptr");
             EXPECT_EQ(bin->op, TokenType::Colon);
 
             if (left_verifier) left_verifier(bin->left.get());
@@ -56,21 +66,25 @@ namespace valuascript::compiler::test {
                 EXPECT_EQ(bin->right, nullptr);
         }
 
-        auto VerifyAssignmentValue(std::function<void(const Expression *)> value_verifier, size_t expected_steps = 1,
-                                   size_t step_index = 0) {
-            return [=](const Program &ast) {
+        auto VerifyAssignmentValue(std::function<void(const Expression*)> value_verifier, size_t expected_steps = 1,
+                                   size_t step_index = 0)
+        {
+            return [=](const Program& ast)
+            {
                 ASSERT_EQ(ast.execution_steps.size(), expected_steps) << "Execution step count mismatch";
-                auto assign = dynamic_cast<Assignment *>(ast.execution_steps[step_index].get());
+                auto assign = dynamic_cast<Assignment*>(ast.execution_steps[step_index].get());
                 ASSERT_NE(assign, nullptr) << "Expected step " << step_index << " to be an Assignment";
                 value_verifier(assign->value.get());
             };
         }
     }
 
-    class BracketAndDotAccessParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+    class BracketAndDotAccessParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(BracketAndDotAccessParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(BracketAndDotAccessParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -87,7 +101,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
+            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i)
+                {
                 ExpectNumber(i, "1");
                 });
 
@@ -105,7 +120,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_a, nullptr);
-            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
+            ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i)
+                {
                 ExpectSlice(i, [](auto l) { ExpectNumber(l, "1"); }, [](auto r) { ExpectNumber(r, "2"); });
                 });
             }
@@ -245,32 +261,47 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_func_call_no_args",
+            "dot_access_succeeds_at_newline_func_call_no_args",
             "let a = obj.\n"
             "test()\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
+            {},
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[1].get());
-            ASSERT_NE(expr_stmt, nullptr);
-            auto call = dynamic_cast<FunctionCall*>(expr_stmt->expr.get());
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].name, "a");
+
+            auto call = dynamic_cast<FunctionCall*>(assign->value.get());
             ASSERT_NE(call, nullptr);
-            ExpectIdentifier(call->target.get(), "test");
+
+            auto dot_access = dynamic_cast<DotAccess*>(call->target.get());
+            ASSERT_NE(dot_access, nullptr);
+            EXPECT_EQ(dot_access->property_name, "test");
+
             EXPECT_TRUE(call->arguments.empty());
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_func_call_with_args",
+            "dot_access_succeeds_at_newline_func_call_with_args",
             "let a = obj.\n"
             "test(arg: 1)\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
+            {},
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto expr_stmt = dynamic_cast<ExpressionStatement*>(ast.execution_steps[1].get());
-            ASSERT_NE(expr_stmt, nullptr);
-            auto call = dynamic_cast<FunctionCall*>(expr_stmt->expr.get());
+            ASSERT_EQ(ast.execution_steps.size(), 1);
+
+            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_NE(assign, nullptr);
+            EXPECT_EQ(assign->targets[0].name, "a");
+
+            auto call = dynamic_cast<FunctionCall*>(assign->value.get());
             ASSERT_NE(call, nullptr);
-            ExpectIdentifier(call->target.get(), "test");
+
+            auto dot_access = dynamic_cast<DotAccess*>(call->target.get());
+            ASSERT_NE(dot_access, nullptr);
+            ExpectIdentifier(dot_access->target.get(), "obj");
+            EXPECT_EQ(dot_access->property_name, "test");
+
             ASSERT_EQ(call->arguments.size(), 1);
             EXPECT_EQ(call->arguments[0].first, "arg");
             ExpectNumber(call->arguments[0].second.get(), "1");
@@ -298,7 +329,8 @@ namespace valuascript::compiler::test {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
             ASSERT_NE(reassignment, nullptr);
-            ExpectBracketAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, [](auto i) {
+            ExpectBracketAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, [](auto
+                    i) {
                 ExpectNumber(i, "0"); });
             ExpectNumber(reassignment->value.get(), "2");
             }
@@ -343,7 +375,7 @@ namespace valuascript::compiler::test {
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

@@ -13,6 +13,10 @@ namespace valuascript::compiler::test
         {
         }
 
+        static void add(ProgramSpec&, const std::string&)
+        {
+        }
+
         static void add(ProgramSpec& s, const ImportVerifier& v) { s.imports.emplace_back(v); }
         static void add(ProgramSpec& s, const DirectiveVerifier& v) { s.directives.emplace_back(v); }
         static void add(ProgramSpec& s, const FuncVerifier& v) { s.functions.emplace_back(v); }
@@ -53,6 +57,15 @@ namespace valuascript::compiler::test
                 }
             }
             return std::get<T>(v);
+        }
+
+        static std::string get_id(const UniversalVerifier& v)
+        {
+            if (std::holds_alternative<std::string>(v))
+            {
+                return std::get<std::string>(v);
+            }
+            return "unknown";
         }
     };
 }

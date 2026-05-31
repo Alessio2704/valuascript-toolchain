@@ -133,5 +133,17 @@ namespace valuascript::compiler::test
 
             return pool[static_cast<size_t>(dist(rng))];
         }
+
+        static const std::vector<RecoveryBlock>& get_all_block_sentinels()
+        {
+            static std::vector<RecoveryBlock> pool = build_block_pool();
+            return pool;
+        }
+
+        static const std::vector<RecoveryBlock>& get_all_top_level_sentinels()
+        {
+            static std::vector<RecoveryBlock> pool = build_top_level_pool();
+            return pool;
+        }
     };
 }

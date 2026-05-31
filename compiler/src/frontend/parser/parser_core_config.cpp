@@ -60,7 +60,8 @@ namespace valuascript::compiler
             lookahead_type == TokenType::RightParen || lookahead_type == TokenType::LeftBrace ||
             lookahead_type == TokenType::RightBrace || lookahead_type == TokenType::Less ||
             lookahead_type == TokenType::Greater || lookahead_type == TokenType::Dot ||
-            lookahead_type == TokenType::LeftBracket || lookahead_type == TokenType::EndOfFile);
+            lookahead_type == TokenType::LeftBracket || lookahead_type == TokenType::RightBracket ||
+            lookahead_type == TokenType::Arrow || lookahead_type == TokenType::EndOfFile);
     }
 
     bool TokenTraits::is_top_level_token(const TokenType type)

@@ -319,15 +319,17 @@ namespace valuascript::compiler
 
     ExprPtr ExpressionParser::parse_dot_access(ExprPtr target, const Token& /*op*/)
     {
-        Token property_token = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedPropertyName,
-                                                                     RecoveryConfig::ForceStopAtBoundary({
-                                                                         TokenType::Assign,
-                                                                         TokenType::Comma,
-                                                                         TokenType::Dot,
-                                                                         TokenType::LeftParen,
-                                                                         TokenType::LeftBracket,
-                                                                         TokenType::LeftBrace
-                                                                     }), true, true);
+        Token property_token = ErrorRecovery::try_consume_identifier(
+            ctx, E::ExpectedPropertyName,
+            RecoveryConfig::ForceStopAtBoundary({
+                TokenType::Assign,
+                TokenType::Comma,
+                TokenType::Dot,
+                TokenType::LeftParen,
+                TokenType::LeftBracket,
+                TokenType::LeftBrace
+            }), true, true);
+
         return AstFactory::make_node_with_span<DotAccess>(
             cursor.combine_spans(target->span, cursor.make_span(property_token, property_token)), std::move(target),
             property_token.lexeme);
@@ -582,7 +584,8 @@ namespace valuascript::compiler
                 }
             }
             if (cursor.match({TokenType::Comma})) continue;
-            if (cursor.check(TokenType::Identifier))
+            if (cursor.check(TokenType::Identifier) || (is_reserved_keyword(cursor.peek()) &&
+                TokenTraits::acts_like_identifier(cursor.peek(), cursor.peek(1).type)))
             {
                 cursor.report_error_no_panic(cursor.peek(), E::ExpectedCommaBetweenCaseIdentifiers);
                 continue;

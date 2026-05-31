@@ -255,6 +255,7 @@ namespace valuascript::compiler
                              if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
                              if (is_reserved_keyword(tok))
                              {
+                                 if (TokenTraits::acts_like_identifier(tok, next.type)) return true;
                                  if (TokenTraits::is_top_level_only_declaration(tok.type)) return false;
                                  if (tok.type == TokenType::Let) return next.type != TokenType::Identifier;
                                  return true;

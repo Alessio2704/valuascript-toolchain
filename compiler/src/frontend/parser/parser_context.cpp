@@ -18,20 +18,65 @@ namespace valuascript::compiler
         return std::find(sync_set.begin(), sync_set.end(), type) != sync_set.end();
     }
 
+    bool ParserContext::looks_like_reassignment() const
+    {
+        int depth = 0;
+        size_t offset = 0;
+        size_t start_line = cursor.peek().line;
+
+        while (true)
+        {
+            const Token& tok = cursor.peek(offset);
+            if (tok.type == TokenType::EndOfFile || tok.line > start_line) break;
+
+            if (TokenTraits::is_grouping_opener(tok.type)) depth++;
+            else if (TokenTraits::is_grouping_closer(tok.type))
+            {
+                depth--;
+                if (depth < 0) depth = 0;
+            }
+            else if (depth == 0 && tok.type == TokenType::Assign) return true;
+
+            offset++;
+        }
+        return false;
+    }
+
     const Token& ParserContext::consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords,
                                                    bool check_statement_boundary)
     {
         if (check_statement_boundary && cursor.peek().line > cursor.previous().line &&
             TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type))
         {
-            cursor.report_error(cursor.peek(), fallback_err);
+            bool is_dot_override = false;
+            if (cursor.previous().type == TokenType::Dot)
+            {
+                is_dot_override = true;
+                if (looks_like_reassignment()) is_dot_override = false;
+            }
+
+            if (!is_dot_override) cursor.report_error(cursor.peek(), fallback_err);
         }
+
         if (cursor.check(TokenType::Identifier)) return cursor.advance();
 
         if (is_reserved_keyword(cursor.peek()))
         {
             TokenType next = cursor.peek(1).type;
             bool acts_like_id = TokenTraits::acts_like_identifier(cursor.peek(), next);
+
+            if (cursor.previous().type == TokenType::Dot)
+            {
+                if (cursor.peek().line == cursor.previous().line)
+                {
+                    acts_like_id = true;
+                }
+                else if (next != TokenType::Identifier)
+                {
+                    acts_like_id = true;
+                }
+            }
+
             bool forms_statement = TokenTraits::is_statement_start(cursor.peek(), next) || (check_statement_boundary &&
                 cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
                     cursor.peek(), next));

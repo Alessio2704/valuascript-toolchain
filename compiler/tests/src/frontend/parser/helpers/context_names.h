@@ -67,4 +67,25 @@ namespace valuascript::compiler::test::ContextNames
     inline constexpr const char* TypeGenericTypeStart = "generic_type_start";
     inline constexpr const char* TypeGenericTypeMiddle = "generic_type_middle";
     inline constexpr const char* TypeGenericTypeEnd = "generic_type_end";
+
+    inline constexpr const char* IdLetTarget = "id_let_target";
+    inline constexpr const char* IdMultiLetTarget1 = "id_multi_let_target1";
+    inline constexpr const char* IdMultiLetTarget2 = "id_multi_let_target2";
+    inline constexpr const char* IdReassignmentTarget = "id_reassignment_target";
+    inline constexpr const char* IdFuncDefName = "id_func_def_name";
+    inline constexpr const char* IdFuncParamName = "id_func_param_name";
+    inline constexpr const char* IdStructDefName = "id_struct_def_name";
+    inline constexpr const char* IdStructFieldName = "id_struct_field_name";
+    inline constexpr const char* IdEnumDefName = "id_enum_def_name";
+    inline constexpr const char* IdEnumCaseName = "id_enum_case_name";
+    inline constexpr const char* IdTypeAliasName = "id_typealias_name";
+    inline constexpr const char* IdDirectiveName = "id_directive_name";
+    inline constexpr const char* IdTypeAnnotation = "id_type_annotation";
+    inline constexpr const char* IdDotAccessProperty = "id_dot_access_property";
+    inline constexpr const char* IdDictKey = "id_dict_key";
+    inline constexpr const char* IdSwitchCaseLabel = "id_switch_case_label";
+    inline constexpr const char* IdModifierName = "id_modifier_name";
+    inline constexpr const char* IdModifierArgLabel = "id_modifier_arg_label";
+    inline constexpr const char* IdCallArgLabel = "id_call_arg_label";
+    inline constexpr const char* IdStandaloneExpr = "id_standalone_expr";
 }

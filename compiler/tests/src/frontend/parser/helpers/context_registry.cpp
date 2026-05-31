@@ -65,6 +65,7 @@ namespace valuascript::compiler::test
             add(get_expression_contexts());
             add(get_type_contexts());
             add(get_modifier_contexts());
+            add(get_identifier_contexts());
 
             return vec;
         }();

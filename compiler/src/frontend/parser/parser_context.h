@@ -17,15 +17,17 @@ namespace valuascript::compiler
 
         explicit ParserContext(TokenCursor c);
 
-        bool is_active_closer(TokenType type) const;
-        bool is_in_sync_set(TokenType type) const;
+        [[nodiscard]] bool is_active_closer(TokenType type) const;
+        [[nodiscard]] bool is_in_sync_set(TokenType type) const;
+
+        [[nodiscard]] bool looks_like_reassignment() const;
 
         const Token& consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords = true,
                                         bool check_statement_boundary = false);
-        TokenType peek_past_modifiers() const;
-        bool is_at_top_level_declaration() const;
-        bool is_at_any_declaration() const;
-        bool is_missing_closing_brace() const;
+        [[nodiscard]] TokenType peek_past_modifiers() const;
+        [[nodiscard]] bool is_at_top_level_declaration() const;
+        [[nodiscard]] bool is_at_any_declaration() const;
+        [[nodiscard]] bool is_missing_closing_brace() const;
         void reject_modifiers(const std::vector<Modifier>& modifiers,
                               ParserErrorCode error_code =
                                   ParserErrorCode::ModifiersAttachedToInvalidDeclaration) const;

@@ -12,6 +12,7 @@ namespace valuascript::compiler::test
 
     enum class InjectableType
     {
+        Identifier,
         Import, Directive, Function, Struct, Enum, TypeAlias,
         Expression, Modifier, TypeAnnotation,
         WeakStatement, StrongStatement,
@@ -20,6 +21,7 @@ namespace valuascript::compiler::test
 
     using UniversalVerifier = std::variant<
         NullVerifier,
+        std::string,
         ImportVerifier,
         DirectiveVerifier,
         FuncVerifier,

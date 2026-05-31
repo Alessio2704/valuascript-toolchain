@@ -10,6 +10,8 @@
 #include "utils/parametrised_test_name_helper.h"
 #include <string_view>
 
+#include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
+
 namespace valuascript::compiler::test
 {
     struct ConstructedRecoveryProgram
@@ -29,7 +31,8 @@ namespace valuascript::compiler::test
 
         static void expand_to_top_level_stream(std::vector<ProcessingItem> items,
                                                const ExpansionCallback& callback,
-                                               bool inject_sentinels = false);
+                                               bool inject_sentinels = false,
+                                               std::optional<ExpansionPolicy> policy_override = std::nullopt);
 
         static std::vector<ProcessingItem> apply_context_augmentations(InjectableType type,
                                                                        const std::string& snippet,

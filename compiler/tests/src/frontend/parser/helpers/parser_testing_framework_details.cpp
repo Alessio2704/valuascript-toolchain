@@ -22,6 +22,7 @@ namespace valuascript::compiler::test
     {
         switch (type)
         {
+        case InjectableType::Identifier: return "Identifier";
         case InjectableType::Import: return "Import";
         case InjectableType::Directive: return "Directive";
         case InjectableType::Function: return "Function";
@@ -42,6 +43,8 @@ namespace valuascript::compiler::test
     {
         switch (type)
         {
+        case InjectableType::Identifier:
+            break;
         case InjectableType::Import:
             return {ConstructRegistry::imports().size(), ErrorRegistry::imports().size()};
         case InjectableType::Directive:
@@ -100,12 +103,12 @@ namespace valuascript::compiler::test
 
             auto add = [&](const auto& registry)
             {
-                // For the happy path right now, skip_contexts is virtually empty
                 count += registry.size() * augmentations * get_expansion_count(type, {});
             };
 
             switch (type)
             {
+            case InjectableType::Identifier: break;
             case InjectableType::Import: add(ConstructRegistry::imports());
                 break;
             case InjectableType::Directive: add(ConstructRegistry::directives());
@@ -151,6 +154,7 @@ namespace valuascript::compiler::test
 
             switch (type)
             {
+            case InjectableType::Identifier: break;
             case InjectableType::Import: add(ErrorRegistry::imports());
                 break;
             case InjectableType::Directive: add(ErrorRegistry::directives());

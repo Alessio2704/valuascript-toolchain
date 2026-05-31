@@ -77,7 +77,8 @@ namespace valuascript::compiler::test
 
     void ParserTestBase::expand_to_top_level_stream(std::vector<ProcessingItem> items,
                                                     const ExpansionCallback& callback,
-                                                    bool inject_sentinels)
+                                                    bool inject_sentinels,
+                                                    std::optional<ExpansionPolicy> policy_override)
     {
         for (auto& var_item : items)
         {
@@ -138,7 +139,8 @@ namespace valuascript::compiler::test
 
             int start_depth = var_item.depth;
             int start_rec_depth = var_item.recursion_depth;
-            ContextTreeWalker<ProcessingItem>::walk(std::move(var_item), start_depth, start_rec_depth, cb);
+            ContextTreeWalker<ProcessingItem>::walk(std::move(var_item), start_depth, start_rec_depth, cb,
+                                                    policy_override);
         }
     }
 
