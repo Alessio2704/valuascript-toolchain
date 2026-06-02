@@ -137,6 +137,14 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                ContextNames::IdTypeAnnotation, {InjectableType::Identifier}, InjectableType::TypeAnnotation,
+                "", "",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(IsType(SpecAdder::get_id(v)));
+                }
+            },
+            {
                 ContextNames::IdDotAccessProperty, {InjectableType::Identifier}, InjectableType::Expression,
                 "(ctx_obj).", "",
                 [](const UniversalVerifier& v)

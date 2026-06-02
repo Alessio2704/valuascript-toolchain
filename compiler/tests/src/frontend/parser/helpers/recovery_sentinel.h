@@ -53,6 +53,16 @@ namespace valuascript::compiler::test
             {
                 SpecAdder::add(s, StmtVerifier(v));
             });
+
+            add_if_not_empty(pool, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_returns(), [](ProgramSpec& s, const ReturnVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+
             return pool;
         }
 
@@ -96,6 +106,32 @@ namespace valuascript::compiler::test
             {
                 SpecAdder::add(s, v);
             });
+
+            add_if_not_empty(pool, ConstructRegistry::modified_imports(), [](ProgramSpec& s, const ImportVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_functions(), [](ProgramSpec& s, const FuncVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_structs(), [](ProgramSpec& s, const StructVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_enums(), [](ProgramSpec& s, const EnumVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_aliases(), [](ProgramSpec& s, const AliasVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+
             return pool;
         }
 

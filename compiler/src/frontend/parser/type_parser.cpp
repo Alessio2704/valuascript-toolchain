@@ -41,7 +41,7 @@ namespace valuascript::compiler
                                                                         std::move(elements));
         }
 
-        Token name_token = ctx.consume_identifier(E::MissingTypeAnnotation);
+        Token name_token = ctx.consume_identifier(E::MissingTypeAnnotation, false);
         std::vector<TypeAnnPtr> generic_args;
 
         if (cursor.match({TokenType::Less}))

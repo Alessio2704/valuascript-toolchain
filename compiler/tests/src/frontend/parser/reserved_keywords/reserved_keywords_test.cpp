@@ -35,7 +35,7 @@ namespace valuascript::compiler::test
                 size_t seed = std::hash<std::string>{}(item.path_name + keyword) ^ i;
                 auto pre_sentinel = RecoverySentinel::generate_top_level_sentinel(seed);
 
-                auto post_sentinel = post_sentinels[i];
+                const auto& post_sentinel = post_sentinels[i];
 
                 std::string full_code = pre_sentinel.source + "\n\n" + item.code + "\n\n" + post_sentinel.source + "\n";
                 std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
@@ -53,7 +53,7 @@ namespace valuascript::compiler::test
 
                 ExpectParseErrors(full_code, shifted_errors, full_spec);
             }
-        }, false, ExpansionPolicy{2, 0});
+        }, false, ExpansionPolicy{3, 1});
     }
 
     INSTANTIATE_TEST_SUITE_P(

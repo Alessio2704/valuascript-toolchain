@@ -418,15 +418,7 @@ namespace valuascript::compiler
                 TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
-        if (is_reserved_keyword(cursor.peek()))
-        {
-            cursor.report_error_no_panic(cursor.peek(), E::ReservedKeywordAsIdentifier, true);
-            cursor.advance();
-            return AstFactory::make_node<
-                TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
-        }
-
-        if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen))
+        if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen) && !is_reserved_keyword(cursor.peek()))
         {
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, true);
             cursor.advance();

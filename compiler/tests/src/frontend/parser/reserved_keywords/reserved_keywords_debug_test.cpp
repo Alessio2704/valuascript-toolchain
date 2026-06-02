@@ -60,7 +60,7 @@ namespace valuascript::compiler::test
                     }
                     out << "------------------------------------------------------------\n\n";
                 }
-            }, false, ExpansionPolicy{2, 0});
+            }, false, ExpansionPolicy{3, 1});
 
             out << "[DEBUG] Reserved keyword dump finished (" << count << " variations)\n";
         }
