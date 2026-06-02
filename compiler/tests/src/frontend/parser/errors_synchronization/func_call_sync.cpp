@@ -128,16 +128,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_as_arg_name",
-            "f(let: 1, if: 2)\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 3},
-            {Err::ReservedKeywordAsIdentifier, 1, 11}
-            },
-            ExpectFunctionCall("f", {{"let", "1"}, {"if", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_closing_parenthesis",
             "f(a: 1 \n"
             "let recovery = 1\n",

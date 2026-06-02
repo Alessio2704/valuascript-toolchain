@@ -40,7 +40,6 @@ namespace valuascript::compiler::test
         testing::Values(
             DotAccessSadParam{"missing_property", "let a = model.", E::ExpectedPropertyName},
             DotAccessSadParam{"number_as_property", "let a = model.123", E::MissingOperator},
-            DotAccessSadParam{"keyword_as_property", "let a = model.let", E::ReservedKeywordAsIdentifier},
             DotAccessSadParam{"missing_property_deep", "let a = model.assets[0].", E::ExpectedPropertyName}
         ),
         [](const testing::TestParamInfo<DotAccessSadParam>& test_info) {

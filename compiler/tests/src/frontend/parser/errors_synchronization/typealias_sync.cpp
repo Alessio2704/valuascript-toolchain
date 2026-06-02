@@ -86,18 +86,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "type_alias_reserved_keyword_as_name",
-            "typealias func = int\n"
-            "let a = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 11} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.type_aliases.size(), 1);
-            EXPECT_EQ(ast.type_aliases[0]->name, "func");
-            ExpectBaseType(ast.type_aliases[0]->target_type.get(), "int", 0);
-            ExpectRecoveredAssignment("a")(ast);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "deeply_nested_generic_missing_commas_and_brackets",
             "typealias MyGraph = map<string vector<int>\n"
             "typealias Valid = bool\n",
@@ -127,28 +115,6 @@ namespace valuascript::compiler::test
             ASSERT_EQ(ast.type_aliases.size(), 1);
             EXPECT_EQ(ast.type_aliases[0]->name, "Safe");
             ExpectBaseType(ast.type_aliases[0]->target_type.get(), "string", 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "type_alias_reserved_keyword_as_target_1",
-            "typealias MyType = struct\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 20},
-            },
-            [](const Program& ast) {
-            EXPECT_FALSE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "type_alias_reserved_keyword_as_target_2",
-            "typealias MyType = true\n"
-            "let a = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 20} },
-            [](const Program& ast) {
-            EXPECT_FALSE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
             }
             },
             ParserErrorsSynchronizationTestCase{

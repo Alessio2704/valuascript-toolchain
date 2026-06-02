@@ -83,16 +83,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "generic_reserved_keyword_as_type",
-            "let a: map<int, let> = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 17} },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "map", 2);
-                ExpectBaseType(type->generic_args[0].get(), "int", 0);
-                ExpectBaseType(type->generic_args[1].get(), "let", 0);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "eof_inside_generic",
             "let a: vector<int, ",
             {

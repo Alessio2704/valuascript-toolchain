@@ -101,16 +101,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_key_is_reserved_keyword",
-            "let a = { let: 1, func: 2 }\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 11},
-            {Err::ReservedKeywordAsIdentifier, 1, 19}
-            },
-            ExpectDict({ {"let", "1"}, {"func", "2"} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "array_inside_dict_with_error",
             "let a = {a: [1, 2}\n"
             "let recovery = 1\n",

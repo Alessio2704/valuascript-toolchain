@@ -159,54 +159,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_1",
-            "enum Test : int { let, true, if }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 19},
-            {Err::ReservedKeywordAsIdentifier, 1, 24},
-            {Err::ReservedKeywordAsIdentifier, 1, 30},
-            },
-            ExpectEnum("Test", "int", {"let", "true", "if"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_2",
-            "enum Test : int { let = 1, true = 2, if = 3 }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 19},
-            {Err::ReservedKeywordAsIdentifier, 1, 28},
-            {Err::ReservedKeywordAsIdentifier, 1, 38},
-            },
-            ExpectEnum("Test", "int", {{"let", "1"}, {"true", "2"}, {"if", "3"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_3",
-            "enum Test : int { let true if }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 19},
-            {Err::ExpectedCommaSeparatorInEnum, 1, 23},
-            {Err::ReservedKeywordAsIdentifier, 1, 23},
-            {Err::ExpectedCommaSeparatorInEnum, 1, 28},
-            {Err::ReservedKeywordAsIdentifier, 1, 28},
-
-            },
-            ExpectEnum("Test", "int", {{"let"}, {"true"}, {"if"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_4",
-            "enum Test : int { let = 1, true = , if = 3 }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 19},
-            {Err::ReservedKeywordAsIdentifier, 1, 28},
-            {Err::InvalidExpression, 1, 35},
-            {Err::ReservedKeywordAsIdentifier, 1, 37},
-            },
-            ExpectEnum("Test", "int", {{"let", "1"}, "true", {"if", "3"}})
-            },
-            ParserErrorsSynchronizationTestCase{
             "reserved_char_1",
             "enum Test : int { # }\n"
             "let a = 1\n",

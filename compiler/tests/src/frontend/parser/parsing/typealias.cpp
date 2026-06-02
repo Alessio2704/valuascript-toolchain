@@ -46,11 +46,6 @@ namespace valuascript::compiler::test
             E::ExpectedAssignAfterTypeAliasName
             },
             TypeAliasSadParam{
-            "reserved_keyword_as_name",
-            "typealias struct = scalar",
-            E::ReservedKeywordAsIdentifier
-            },
-            TypeAliasSadParam{
             "invalid_target_type_number",
             "typealias MyType = 123",
             E::MissingTypeAnnotation

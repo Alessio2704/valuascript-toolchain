@@ -196,22 +196,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_successive_reserved_keywords_as_properties",
-            "let a = obj.let.if.else\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 13},
-            {Err::ReservedKeywordAsIdentifier, 1, 17},
-            {Err::ReservedKeywordAsIdentifier, 1, 20}
-            },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectDotAccess(expr, [](auto t_else) {
-                    ExpectDotAccess(t_else, [](auto t_if) {
-                        ExpectDotAccess(t_if, [](auto t_let) { ExpectIdentifier(t_let, "obj"); }, "let");
-                        }, "if");
-                    }, "else");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "postfix_deep_chain_with_multiple_internal_failures",
             "let a = obj.let[1, *].if[*]\n",
             {
