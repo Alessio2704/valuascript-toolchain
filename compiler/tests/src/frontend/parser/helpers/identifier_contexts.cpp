@@ -93,6 +93,42 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                ContextNames::IdEnumCaseNameMulti1, {InjectableType::Identifier}, InjectableType::TopLevel,
+                "enum ctx_e: int { ", " = 1, B = 2, C = 3 }\n",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
+                                                           {SpecAdder::get_id(v), {}, IsNumber("1")},
+                                                           {"B", {}, IsNumber("2")},
+                                                           {"C", {}, IsNumber("3")}
+                                                       }));
+                }
+            },
+            {
+                ContextNames::IdEnumCaseNameMulti2, {InjectableType::Identifier}, InjectableType::TopLevel,
+                "enum ctx_e: int { A = 1, ", " = 2, C = 3 }\n",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
+                                                           {"A", {}, IsNumber("1")},
+                                                           {SpecAdder::get_id(v), {}, IsNumber("2")},
+                                                           {"C", {}, IsNumber("3")}
+                                                       }));
+                }
+            },
+            {
+                ContextNames::IdEnumCaseNameMulti3, {InjectableType::Identifier}, InjectableType::TopLevel,
+                "enum ctx_e: int { A = 1, B = 2, ", " = 3 }\n",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
+                                                           {"A", {}, IsNumber("1")},
+                                                           {"B", {}, IsNumber("2")},
+                                                           {SpecAdder::get_id(v), {}, IsNumber("3")}
+                                                       }));
+                }
+            },
+            {
                 ContextNames::IdTypeAliasName, {InjectableType::Identifier}, InjectableType::TopLevel,
                 "typealias ", " = int\n",
                 [](const UniversalVerifier& v)
@@ -125,6 +161,45 @@ namespace valuascript::compiler::test
                         IsSwitch(
                             IsNumber("1"),
                             {SwitchCaseSpec{{SpecAdder::get_id(v)}, IsNumber("1")}}
+                        )
+                    );
+                }
+            },
+            {
+                ContextNames::IdSwitchCaseLabelMulti1, {InjectableType::Identifier}, InjectableType::Expression,
+                "switch(1) { case ", ", B, C -> 1 }",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(
+                        IsSwitch(
+                            IsNumber("1"),
+                            {SwitchCaseSpec{{SpecAdder::get_id(v), "B", "C"}, IsNumber("1")}}
+                        )
+                    );
+                }
+            },
+            {
+                ContextNames::IdSwitchCaseLabelMulti2, {InjectableType::Identifier}, InjectableType::Expression,
+                "switch(1) { case A, ", ", C -> 1 }",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(
+                        IsSwitch(
+                            IsNumber("1"),
+                            {SwitchCaseSpec{{"A", SpecAdder::get_id(v), "C"}, IsNumber("1")}}
+                        )
+                    );
+                }
+            },
+            {
+                ContextNames::IdSwitchCaseLabelMulti3, {InjectableType::Identifier}, InjectableType::Expression,
+                "switch(1) { case A, B, ", " -> 1 }",
+                [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(
+                        IsSwitch(
+                            IsNumber("1"),
+                            {SwitchCaseSpec{{"A", "B", SpecAdder::get_id(v)}, IsNumber("1")}}
                         )
                     );
                 }
