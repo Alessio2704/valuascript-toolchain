@@ -182,6 +182,7 @@ namespace valuascript::compiler
         auto is_at_boundary = [&]()
         {
             return cursor.is_at_end() || TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                (cursor.peek().type == TokenType::Return && ctx.is_active_closer(TokenType::RightBrace)) ||
                 (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
                     cursor.peek(), cursor.peek(1).type)) ||
                 ctx.is_active_closer(cursor.peek().type);
@@ -232,6 +233,7 @@ namespace valuascript::compiler
 
             ExprPtr value = nullptr;
             bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                (cursor.peek().type == TokenType::Return && ctx.is_active_closer(TokenType::RightBrace)) ||
             (cursor.peek().line > cursor.previous().line && cursor.peek().type == TokenType::Identifier && cursor.
                 peek(1).type == TokenType::Assign);
 

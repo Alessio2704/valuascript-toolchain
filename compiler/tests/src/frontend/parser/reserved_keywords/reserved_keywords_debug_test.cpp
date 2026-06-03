@@ -60,7 +60,7 @@ namespace valuascript::compiler::test
                     }
                     out << "------------------------------------------------------------\n\n";
                 }
-            }, false, ExpansionPolicy{3, 1});
+            }, true, ExpansionPolicy{3, 1});
 
             out << "[DEBUG] Reserved keyword dump finished (" << count << " variations)\n";
         }
@@ -69,5 +69,7 @@ namespace valuascript::compiler::test
     TEST_F(ReservedKeywordDebugger, GenerateKeywordReport)
     {
         DumpKeywordTest("struct");
+        DumpKeywordTest("let");
+        DumpKeywordTest("mod");
     }
 }
