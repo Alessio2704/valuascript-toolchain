@@ -53,7 +53,7 @@ namespace valuascript::compiler::test
 
                 ExpectParseErrors(full_code, shifted_errors, full_spec);
             }
-        }, true, ExpansionPolicy{3, 1});
+        }, true, ExpansionPolicy{4, 3});
     }
 
     INSTANTIATE_TEST_SUITE_P(

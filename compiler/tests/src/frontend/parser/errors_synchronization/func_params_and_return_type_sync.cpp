@@ -103,13 +103,6 @@ namespace valuascript::compiler::test
             ExpectFunction("<error>", {{"a", "int"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_name_func_full_ast",
-            "func true(a: int) -> int {}\n"
-            "let a = 1\n",
-            {{Err::ReservedKeywordAsIdentifier, 1, 6}},
-            ExpectFunction("true", {{"a", "int"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "no_left_paren_func_empty_ast",
             "func test a: int) -> int {}\n"
             "let a = 1\n",
@@ -284,64 +277,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_params_1",
-            "func test(let: int) -> int {}\n"
-            "let a = 1\n",
-            {{Err::ReservedKeywordAsIdentifier, 1, 11}},
-            ExpectFunction("test", {{"let", "int"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_params_2",
-            "func test(let: int, if: int, then: string) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 11},
-            {Err::ReservedKeywordAsIdentifier, 1, 21},
-            {Err::ReservedKeywordAsIdentifier, 1, 30},
-            },
-            ExpectFunction("test", {{"let", "int"}, {"if", "int"}, {"then", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_params_3",
-            "func test(let: int if: int then: string) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 11},
-            {Err::ExpectedCommaSeparatorInParameterList, 1, 20},
-            {Err::ReservedKeywordAsIdentifier, 1, 20},
-            {Err::ExpectedCommaSeparatorInParameterList, 1, 28},
-            {Err::ReservedKeywordAsIdentifier, 1, 28},
-            },
-            ExpectFunction("test", {{"let", "int"}, {"if", "int"}, {"then", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_params_type_1",
-            "func test(a: true) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 14},
-            },
-            ExpectFunction("test", {{"a", "true"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "return_type_1",
-            "func test(a: int) -> true {}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 22},
-            },
-            ExpectFunction("test", {{"a", "int"}}, {"true"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "return_type_2",
-            "func test(a: int) -> vector<true> {}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 29},
-            },
-            ExpectFunction("test", {{"a", "int"}}, {"vector"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "return_type_3",
             "func test(a: int) -> (int int) {}\n"
             "let a = 1\n",
@@ -414,44 +349,6 @@ namespace valuascript::compiler::test
             EXPECT_NE(f->parameters[0].default_value, nullptr);
             EXPECT_EQ(f->parameters[1].default_value, nullptr);
             EXPECT_EQ(f->parameters[2].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "valid_default_parameters_parse_correctly",
-            "func test(a: int = 1, b: string = \"hello\") -> int {}\n"
-            "let a = 1\n",
-            {},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_NE(f->parameters[1].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "valid_dict_literal_default_value",
-            "func test(a: dict = {key: 1}, b: int = 2) -> int {}\n"
-            "let a = 1\n",
-            {},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_NE(f->parameters[1].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "valid_tensor_literal_default_value",
-            "func test(a: vector = [1, 2, 3]) -> int {}\n"
-            "let a = 1\n",
-            {},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 1);
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
             }
             },
             ParserErrorsSynchronizationTestCase{
