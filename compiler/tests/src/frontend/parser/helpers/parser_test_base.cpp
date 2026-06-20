@@ -119,8 +119,8 @@ namespace valuascript::compiler::test
                 if (inject_sentinels)
                 {
                     size_t seed = std::hash<std::string>{}(item.path_name + ctx.name + item.code);
-                    pre.push_back(RecoverySentinel::generate_block_sentinel(seed));
-                    post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1));
+                    pre.push_back(RecoverySentinel::generate_block_sentinel(seed, ctx.block_context));
+                    post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1, ctx.block_context));
                     inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
                     inner_prefix = pre[0].source + "\n  " + inner_prefix;
                 }

@@ -38,6 +38,26 @@ namespace valuascript::compiler::test
                 IsExtensionDef({}, IsType("Target"), {})
             );
 
+            reg("ForbiddenImport", "extension Target { import \"abc\" }",
+                {{E::ImportNotAllowedInExtension, 1, 20, 1, 26}},
+                IsExtensionDef({}, IsType("Target"), {})
+            );
+
+            reg("ForbiddenDirective1", "extension Target { #no_value }",
+                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                IsExtensionDef({}, IsType("Target"), {})
+            );
+
+            reg("ForbiddenDirective2", "extension Target { #value = 10 }",
+                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 31}},
+                IsExtensionDef({}, IsType("Target"), {})
+            );
+
+            reg("ForbiddenDirective3", "extension Target { #value 10 }",
+                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                IsExtensionDef({}, IsType("Target"), {})
+            );
+
             return true;
         }();
     }

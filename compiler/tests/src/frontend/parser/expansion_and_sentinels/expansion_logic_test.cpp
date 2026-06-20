@@ -229,7 +229,7 @@ namespace valuascript::compiler::test
             EXPECT_EQ(total_top_level_items, 3)
                 << "Top-level sentinel injection missing in path: " << item.path_name;
 
-            if (item.path_name.find("wrapper") != std::string::npos)
+            if (item.path_name.find("function_body_wrapper") != std::string::npos)
             {
                 bool wrapper_found = false;
                 for (const auto& f : ast->function_definitions)
@@ -242,7 +242,20 @@ namespace valuascript::compiler::test
                             << "\nBody size was: " << f->body.size();
                     }
                 }
-                EXPECT_TRUE(wrapper_found) << "Path indicated a wrapper, but ctx_wrapper not found in AST.";
+                EXPECT_TRUE(wrapper_found) << "Path indicated a function wrapper, but ctx_wrapper not found in AST.";
+            }
+            else if (item.path_name.find("extension_body_wrapper") != std::string::npos)
+            {
+                bool wrapper_found = false;
+                for (const auto& e : ast->extension_definitions)
+                {
+                    wrapper_found = true;
+                    size_t body_size = e->execution_steps.size() + e->function_definitions.size() + e->struct_definitions.size() + e->enum_definitions.size() + e->type_aliases.size();
+                    EXPECT_EQ(body_size, 3)
+                        << "Block-level sentinels missing inside extension_body_wrapper for path: " << item.path_name
+                        << "\nBody size was: " << body_size;
+                }
+                EXPECT_TRUE(wrapper_found) << "Path indicated an extension wrapper, but no extension found in AST.";
             }
         }, true);
     }

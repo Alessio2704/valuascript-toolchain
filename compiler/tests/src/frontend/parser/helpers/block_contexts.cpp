@@ -54,7 +54,7 @@ namespace valuascript::compiler::test
             ctx.suffix = std::move(suffix);
             ctx.input_types = {InjectableType::WeakStatement, InjectableType::StrongStatement};
             ctx.output_type = InjectableType::TopLevel;
-            ctx.is_block_context = true;
+            ctx.block_context = BlockContext::FunctionBody;
 
             ctx.transform_verifier = [creator](const UniversalVerifier& v)
             {

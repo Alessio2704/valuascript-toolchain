@@ -112,7 +112,7 @@ namespace valuascript::compiler::test
                     int next_rec_depth = is_recursive ? rec_depth + 1 : rec_depth;
 
                     State next_state;
-                    if (ctx.is_block_context)
+                    if (ctx.block_context != BlockContext::None)
                     {
                         next_state = cb.on_block_branch(current, ctx, next_rec_depth);
                     }

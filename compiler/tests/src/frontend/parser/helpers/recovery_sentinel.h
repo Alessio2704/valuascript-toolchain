@@ -6,6 +6,7 @@
 #include <functional>
 #include "construct_registry.h"
 #include "spec_adder.h"
+#include "context_infrastructure.h"
 
 namespace valuascript::compiler::test
 {
@@ -34,7 +35,7 @@ namespace valuascript::compiler::test
             }
         }
 
-        static std::vector<RecoveryBlock> build_block_pool()
+        static std::vector<RecoveryBlock> build_function_block_pool()
         {
             std::vector<RecoveryBlock> pool;
             add_if_not_empty(pool, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
@@ -59,6 +60,30 @@ namespace valuascript::compiler::test
                 SpecAdder::add(s, StmtVerifier(v));
             });
             add_if_not_empty(pool, ConstructRegistry::modified_returns(), [](ProgramSpec& s, const ReturnVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+
+            return pool;
+        }
+
+        static std::vector<RecoveryBlock> build_extension_block_pool()
+        {
+            std::vector<RecoveryBlock> pool;
+            add_if_not_empty(pool, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+            add_if_not_empty(pool, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
+            {
+                SpecAdder::add(s, StmtVerifier(v));
+            });
+
+            add_if_not_empty(pool, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
             });
@@ -136,9 +161,12 @@ namespace valuascript::compiler::test
         }
 
     public:
-        static RecoveryBlock generate_block_sentinel(size_t seed)
+        static RecoveryBlock generate_block_sentinel(size_t seed, BlockContext ctx_type)
         {
-            static std::vector<RecoveryBlock> pool = build_block_pool();
+            static std::vector<RecoveryBlock> function_pool = build_function_block_pool();
+            static std::vector<RecoveryBlock> extension_pool = build_extension_block_pool();
+
+            const auto& pool = (ctx_type == BlockContext::ExtensionBody) ? extension_pool : function_pool;
 
             if (pool.empty())
                 return {
@@ -172,7 +200,7 @@ namespace valuascript::compiler::test
 
         static const std::vector<RecoveryBlock>& get_all_block_sentinels()
         {
-            static std::vector<RecoveryBlock> pool = build_block_pool();
+            static std::vector<RecoveryBlock> pool = build_function_block_pool();
             return pool;
         }
 

@@ -86,8 +86,8 @@ namespace valuascript::compiler
                 ctx.reject_modifiers(modifiers);
                 if (parse_ctx == ParseContextType::ExtensionBody)
                 {
-                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::DirectiveNotAllowedInExtension);
-                    decl_parser->parse_directive();
+                    auto dir = decl_parser->parse_directive();
+                    ctx.cursor.report_error_no_panic(dir->span, E::DirectiveNotAllowedInExtension);
                 }
                 else if (program)
                     program->directives.push_back(decl_parser->parse_directive());

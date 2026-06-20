@@ -41,9 +41,11 @@ namespace valuascript::compiler::test
             ctx.name = std::move(name);
             ctx.prefix = std::move(prefix);
             ctx.suffix = std::move(suffix);
-            ctx.input_types = {InjectableType::TopLevel};
+            ctx.input_types = {
+                InjectableType::Function, InjectableType::Struct, InjectableType::Enum, InjectableType::StrongStatement
+            };
             ctx.output_type = InjectableType::TopLevel;
-            ctx.is_block_context = true;
+            ctx.block_context = BlockContext::ExtensionBody;
 
             ctx.transform_verifier = [](const UniversalVerifier& v)
             {

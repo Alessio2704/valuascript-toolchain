@@ -10,6 +10,13 @@ namespace valuascript::compiler::test
 {
     struct RecoveryBlock;
 
+    enum class BlockContext
+    {
+        None,
+        FunctionBody,
+        ExtensionBody
+    };
+
     enum class InjectableType
     {
         Identifier,
@@ -73,7 +80,7 @@ namespace valuascript::compiler::test
         std::string suffix;
         std::function<UniversalVerifier(const UniversalVerifier&)> transform_verifier;
 
-        bool is_block_context = false;
+        BlockContext block_context = BlockContext::None;
         std::function<UniversalVerifier(const UniversalVerifier&,
                                         const std::vector<RecoveryBlock>&,
                                         const std::vector<RecoveryBlock>&)> transform_verifier_block = nullptr;
