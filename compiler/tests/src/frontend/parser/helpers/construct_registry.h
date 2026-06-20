@@ -23,6 +23,8 @@ namespace valuascript::compiler::test
         static std::vector<RegistryEntry<DirectiveVerifier>>& directives();
         static std::vector<RegistryEntry<FuncVerifier>>& functions();
         static std::vector<RegistryEntry<FuncVerifier>>& modified_functions();
+        static std::vector<RegistryEntry<ExtVerifier>>& extensions();
+        static std::vector<RegistryEntry<ExtVerifier>>& modified_extensions();
         static std::vector<RegistryEntry<StructVerifier>>& structs();
         static std::vector<RegistryEntry<StructVerifier>>& modified_structs();
         static std::vector<RegistryEntry<EnumVerifier>>& enums();
@@ -42,6 +44,7 @@ namespace valuascript::compiler::test
         static void add(const std::string& n, const std::string& c, const ImportVerifier& v) { imports().emplace_back(n, c, v); }
         static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v) { directives().emplace_back(n, c, v); }
         static void add(const std::string& n, const std::string& c, const FuncVerifier& v) { functions().emplace_back(n, c, v); }
+        static void add(const std::string& n, const std::string& c, const ExtVerifier& v) { extensions().emplace_back(n, c, v); }
         static void add(const std::string& n, const std::string& c, const StructVerifier& v) { structs().emplace_back(n, c, v); }
         static void add(const std::string& n, const std::string& c, const EnumVerifier& v) { enums().emplace_back(n, c, v); }
         static void add(const std::string& n, const std::string& c, const AliasVerifier& v) { aliases().emplace_back(n, c, v); }

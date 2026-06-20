@@ -17,7 +17,7 @@ namespace valuascript::compiler::test
     {
         None,
         Expression, TypeAnnotation, Statement, ReturnStmt, Modifier,
-        FunctionDef, StructDef, EnumDef, TypeAlias, ImportStmt, Directive,
+        FunctionDef, ExtensionDef, StructDef, EnumDef, TypeAlias, ImportStmt, Directive,
         Count
     };
 
@@ -34,6 +34,7 @@ namespace valuascript::compiler::test
             double structs = 0.0;
             double enums = 0.0;
             double type_aliases = 0.0;
+            double extensions = 0.0;
             double imports = 0.0;
             double directives = 0.0;
         } registry;
@@ -84,6 +85,7 @@ namespace valuascript::compiler::test
                 double return_stmt = 0.0;
                 double modifier = 0.0;
                 double function_def = 0.0;
+                double extension_def = 0.0;
                 double struct_def = 0.0;
                 double enum_def = 0.0;
                 double type_alias = 0.0;
@@ -142,6 +144,7 @@ namespace valuascript::compiler::test
             c.registry.structs = 0.5;
             c.registry.enums = 0.5;
             c.registry.type_aliases = 0.5;
+            c.registry.extensions = 0.5;
             c.registry.imports = 0.5;
             c.registry.directives = 0.5;
 
@@ -180,6 +183,7 @@ namespace valuascript::compiler::test
             c.weights.top_level_constructs.return_stmt = 1.0;
             c.weights.top_level_constructs.modifier = 1.0;
             c.weights.top_level_constructs.function_def = 1.0;
+            c.weights.top_level_constructs.extension_def = 1.0;
             c.weights.top_level_constructs.struct_def = 1.0;
             c.weights.top_level_constructs.enum_def = 1.0;
             c.weights.top_level_constructs.type_alias = 1.0;
@@ -228,7 +232,7 @@ namespace valuascript::compiler::test
                 expressions << "\n";
             out << " *   Stmts: " << registry.statements << " | Funcs: " << registry.functions << " | Structs: " <<
                 registry.structs << "\n";
-            out << " *   Enums: " << registry.enums << " | Aliases: " << registry.type_aliases << " | Returns: " <<
+            out << " *   Enums: " << registry.enums << " | Aliases: " << registry.type_aliases << " | Extensions: " << registry.extensions << " | Returns: " <<
                 registry.returns
                 << " | Imports: " << registry.imports << " | Dirs: " << registry.directives << "\n\n";
 

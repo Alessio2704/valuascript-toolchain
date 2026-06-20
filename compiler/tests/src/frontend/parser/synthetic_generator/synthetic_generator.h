@@ -113,6 +113,7 @@ namespace valuascript::compiler::test
         }
 
         std::pair<std::string, StructVerifier> generate_raw_struct(int depth = 0) { return rule_struct(*this, depth); }
+        std::pair<std::string, ExtVerifier> generate_raw_extension(int depth = 0) { return rule_extension(*this, depth); }
         std::pair<std::string, EnumVerifier> generate_raw_enum(int depth = 0) { return rule_enum(*this, depth); }
 
         std::pair<std::string, AliasVerifier> generate_raw_alias(int depth = 0)
@@ -366,6 +367,17 @@ namespace valuascript::compiler::test
                 }
             });
 
+            f(GrammarRule<ExtVerifier>{
+                "Extension", rule_extension, "", "",
+                [](const Program* p, const ExtVerifier& v)
+                {
+                    if (p && !p->extension_definitions.empty())
+                    {
+                        if (v) v(p->extension_definitions[0].get());
+                    }
+                }
+            });
+
             f(GrammarRule<ImportVerifier>{
                 "Import", rule_import, "", "",
                 [](const Program* p, const ImportVerifier& v)
@@ -407,6 +419,7 @@ namespace valuascript::compiler::test
         GenRule<std::vector<AssignmentTargetSpec>> rule_assignment_targets;
         GenRule<ReturnVerifier> rule_return;
         GenRule<FuncVerifier> rule_function;
+        GenRule<ExtVerifier> rule_extension;
         GenRule<StructVerifier> rule_struct;
         GenRule<EnumVerifier> rule_enum;
         GenRule<AliasVerifier> rule_type_alias;

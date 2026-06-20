@@ -13,7 +13,7 @@ namespace valuascript::compiler::test
     enum class InjectableType
     {
         Identifier,
-        Import, Directive, Function, Struct, Enum, TypeAlias,
+        Import, Directive, Function, Extension, Struct, Enum, TypeAlias,
         Expression, Modifier, TypeAnnotation,
         WeakStatement, StrongStatement,
         TopLevel
@@ -25,6 +25,7 @@ namespace valuascript::compiler::test
         ImportVerifier,
         DirectiveVerifier,
         FuncVerifier,
+        ExtVerifier,
         StructVerifier,
         EnumVerifier,
         AliasVerifier,

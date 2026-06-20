@@ -3,6 +3,7 @@
 namespace valuascript::compiler::test::ContextNames
 {
     inline constexpr const char* FunctionBodyWrapper = "function_body_wrapper";
+    inline constexpr const char* ExtensionBodyWrapper = "extension_body_wrapper";
 
     inline constexpr const char* ExprSingleAssignment = "single_assignment";
     inline constexpr const char* ExprMultiAssignment = "multi_assignment";
@@ -50,12 +51,14 @@ namespace valuascript::compiler::test::ContextNames
     inline constexpr const char* ModEnumDefinition = "enum_definition";
     inline constexpr const char* ModEnumCase = "enum_case";
     inline constexpr const char* ModTypealiasDefinition = "typealias_definition";
+    inline constexpr const char* ModExtensionDefinition = "extension_definition";
     inline constexpr const char* ModDictItem = "dict_item";
 
     inline constexpr const char* TypeAssignmentTarget = "assignment_target";
     inline constexpr const char* TypeMultiAssignmentTarget1 = "multi_assignment_target_1";
     inline constexpr const char* TypeMultiAssignmentTarget2 = "multi_assignment_target_2";
     inline constexpr const char* TypeTypealiasTarget = "typealias_target";
+    inline constexpr const char* TypeExtensionTarget = "extension_target";
     inline constexpr const char* TypeFunctionParameter = "function_parameter";
     inline constexpr const char* TypeFunctionReturn = "function_return";
     inline constexpr const char* TypeFunctionMultiReturn = "function_multi_return";

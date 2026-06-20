@@ -636,6 +636,21 @@ namespace valuascript::compiler::test
             &ConstructRegistry::structs()
         );
 
+        auto logic_extension_rule = [this](SyntheticGenerator& env, int depth) -> std::pair<std::string, ExtVerifier>
+        {
+            auto [mods_c, mods_v] = this->rule_modifiers(env, depth);
+            auto [t_c, t_v] = this->rule_type(env, depth);
+
+            std::string code = mods_c + "extension " + t_c + " {}\n";
+            return {code, IsExtensionDef(mods_v, t_v, {})};
+        };
+
+        rule_extension = WithRegistryFallback<ExtVerifier>(
+            logic_extension_rule,
+            [](const auto& c) { return c.registry.extensions; },
+            &ConstructRegistry::extensions()
+        );
+
         auto opt_enum_value = Opt<ExprVerifier>(
             [this](SyntheticGenerator& env, int depth) { return this->rule_expression(env, depth); },
             [](const auto& c) { return c.features.enum_case_has_value; }
@@ -826,6 +841,10 @@ namespace valuascript::compiler::test
         register_top_level<FuncVerifier>(
             TopLevelConstruct::FunctionDef,
             [this] { return this->rule_function(*this, 0); });
+
+        register_top_level<ExtVerifier>(
+            TopLevelConstruct::ExtensionDef,
+            [this] { return this->rule_extension(*this, 0); });
 
         register_top_level<StructVerifier>(
             TopLevelConstruct::StructDef,

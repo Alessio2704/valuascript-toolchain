@@ -19,6 +19,7 @@ namespace valuascript::compiler
     class StructDefinition;
     class EnumDefinition;
     class TypeAliasDefinition;
+    class ExtensionDefinition;
 
     using ExprPtr = std::unique_ptr<Expression>;
     using StmtPtr = std::unique_ptr<Statement>;
@@ -30,6 +31,7 @@ namespace valuascript::compiler
     using StructDefPtr = std::unique_ptr<StructDefinition>;
     using EnumDefPtr = std::unique_ptr<EnumDefinition>;
     using TypeAliasPtr = std::unique_ptr<TypeAliasDefinition>;
+    using ExtensionDefPtr = std::unique_ptr<ExtensionDefinition>;
 
     struct SourceSpan
     {

@@ -99,6 +99,24 @@ namespace valuascript::compiler
         }
     };
 
+    class ExtensionDefinition : public AstNode
+    {
+    public:
+        std::vector<Modifier> modifiers;
+        TypeAnnPtr target_type;
+        std::vector<StmtPtr> execution_steps;
+        std::vector<FuncDefPtr> function_definitions;
+        std::vector<StructDefPtr> struct_definitions;
+        std::vector<EnumDefPtr> enum_definitions;
+        std::vector<TypeAliasPtr> type_aliases;
+
+        explicit ExtensionDefinition(std::vector<Modifier> mods,
+                                     TypeAnnPtr target)
+            : modifiers(std::move(mods)), target_type(std::move(target))
+        {
+        }
+    };
+
     class Program : public AstNode
     {
     public:
@@ -109,5 +127,6 @@ namespace valuascript::compiler
         std::vector<StructDefPtr> struct_definitions;
         std::vector<EnumDefPtr> enum_definitions;
         std::vector<TypeAliasPtr> type_aliases;
+        std::vector<ExtensionDefPtr> extension_definitions;
     };
 }

@@ -21,6 +21,7 @@ namespace valuascript::compiler::test
             int structs = 0;
             int enums = 0;
             int type_aliases = 0;
+            int extensions = 0;
             int imports = 0;
             int directives = 0;
         } pieces_rolled;

@@ -11,6 +11,7 @@ return vec; \
     DEFINE_REGISTRY(imports, ImportVerifier)
     DEFINE_REGISTRY(directives, DirectiveVerifier)
     DEFINE_REGISTRY(functions, FuncVerifier)
+    DEFINE_REGISTRY(extensions, ExtVerifier)
     DEFINE_REGISTRY(structs, StructVerifier)
     DEFINE_REGISTRY(enums, EnumVerifier)
     DEFINE_REGISTRY(aliases, AliasVerifier)
@@ -28,6 +29,16 @@ return vec; \
             {"func_mod1", "@mod1 func f_m1() -> void {}\n", IsFunctionDef("f_m1", {{"mod1", {}}}, {}, {IsType("void")})},
             {"func_mod2", "@mod2() func f_m2() -> void {}\n", IsFunctionDef("f_m2", {{"mod2", {}}}, {}, {IsType("void")})},
             {"func_mod3", "@mod3(p: 1) func f_m3() -> void {}\n", IsFunctionDef("f_m3", {{"mod3", {{"p", IsNumber("1")}}}}, {}, {IsType("void")})}
+        };
+        return vec;
+    }
+
+    std::vector<RegistryEntry<ExtVerifier>>& ConstructRegistry::modified_extensions()
+    {
+        static std::vector<RegistryEntry<ExtVerifier>> vec = {
+            {"ext_mod1", "@mod1 extension target {}\n", IsExtensionDef({{"mod1", {}}}, IsType("target"), {})},
+            {"ext_mod2", "@mod2() extension target {}\n", IsExtensionDef({{"mod2", {}}}, IsType("target"), {})},
+            {"ext_mod3", "@mod3(p: 1) extension target {}\n", IsExtensionDef({{"mod3", {{"p", IsNumber("1")}}}}, IsType("target"), {})}
         };
         return vec;
     }

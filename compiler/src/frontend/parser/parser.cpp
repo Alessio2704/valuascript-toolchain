@@ -33,7 +33,7 @@ namespace valuascript::compiler
                 ctx,
                 [&]
                 {
-                    parse_statement_or_declaration(ParseContextType::TopLevel, program.get(), dummy_block);
+                    parse_statement_or_declaration(ParseContextType::TopLevel, program.get(), nullptr, dummy_block);
                 },
                 RecoveryConfig::ForceStopAtBoundary()
             );
@@ -43,7 +43,7 @@ namespace valuascript::compiler
         return program;
     }
 
-    void Parser::parse_statement_or_declaration(ParseContextType parse_ctx, Program* program,
+    void Parser::parse_statement_or_declaration(ParseContextType parse_ctx, Program* program, ExtensionDefinition* extension,
                                                 std::vector<StmtPtr>& block)
     {
         const Token& start_token = ctx.cursor.peek();
@@ -74,48 +74,91 @@ namespace valuascript::compiler
             switch (token_type)
             {
             case TokenType::Import:
-                if (program)
+                if (parse_ctx == ParseContextType::ExtensionBody)
+                {
+                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::ImportNotAllowedInExtension);
+                    decl_parser->parse_import_statement(std::move(modifiers));
+                }
+                else if (program)
                     program->import_statements.push_back(decl_parser->parse_import_statement(std::move(modifiers)));
                 break;
             case TokenType::Hash:
                 ctx.reject_modifiers(modifiers);
-                if (program) program->directives.push_back(decl_parser->parse_directive());
+                if (parse_ctx == ParseContextType::ExtensionBody)
+                {
+                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::DirectiveNotAllowedInExtension);
+                    decl_parser->parse_directive();
+                }
+                else if (program)
+                    program->directives.push_back(decl_parser->parse_directive());
+                break;
+            case TokenType::Extension:
+                if (program)
+                    program->extension_definitions.push_back(
+                        decl_parser->parse_extension_definition(std::move(modifiers)));
+                else if (extension)
+                {
+                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::TopLevelDeclarationNotAllowedHere);
+                    decl_parser->parse_extension_definition(std::move(modifiers));
+                }
                 break;
             case TokenType::Func:
                 if (program)
                     program->function_definitions.push_back(
+                        decl_parser->parse_function_definition(std::move(modifiers)));
+                else if (extension)
+                    extension->function_definitions.push_back(
                         decl_parser->parse_function_definition(std::move(modifiers)));
                 break;
             case TokenType::Struct:
                 if (program)
                     program->struct_definitions.push_back(
                         decl_parser->parse_struct_definition(std::move(modifiers)));
+                else if (extension)
+                    extension->struct_definitions.push_back(
+                        decl_parser->parse_struct_definition(std::move(modifiers)));
                 break;
             case TokenType::Enum:
                 if (program)
                     program->enum_definitions.push_back(
+                        decl_parser->parse_enum_definition(std::move(modifiers)));
+                else if (extension)
+                    extension->enum_definitions.push_back(
                         decl_parser->parse_enum_definition(std::move(modifiers)));
                 break;
             case TokenType::Typealias:
                 if (program)
                     program->type_aliases.push_back(
                         decl_parser->parse_type_alias_definition(std::move(modifiers)));
+                else if (extension)
+                    extension->type_aliases.push_back(
+                        decl_parser->parse_type_alias_definition(std::move(modifiers)));
                 break;
             case TokenType::Let:
                 {
                     auto assign = stmt_parser->parse_assignment(std::move(modifiers));
                     if (program) program->execution_steps.push_back(std::move(assign));
+                    else if (extension) extension->execution_steps.push_back(std::move(assign));
                     else block.push_back(std::move(assign));
                     break;
                 }
             case TokenType::Return:
-                if (parse_ctx == ParseContextType::TopLevel)
+                if (parse_ctx == ParseContextType::TopLevel || parse_ctx == ParseContextType::ExtensionBody)
                 {
                     const Token& ret_start = ctx.cursor.peek();
                     auto ret = stmt_parser->parse_return_statement(std::move(modifiers));
-                    ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
-                                                     E::ReturnUsedInToplevel);
+                    if (parse_ctx == ParseContextType::ExtensionBody)
+                    {
+                        ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
+                                                         E::ReturnNotAllowedInExtension);
+                    }
+                    else
+                    {
+                        ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
+                                                         E::ReturnUsedInToplevel);
+                    }
                     if (program) program->execution_steps.push_back(std::move(ret));
+                    else if (extension) extension->execution_steps.push_back(std::move(ret));
                 }
                 else { block.push_back(stmt_parser->parse_return_statement(std::move(modifiers))); }
                 break;
@@ -124,6 +167,7 @@ namespace valuascript::compiler
                 if (auto expr_stmt = stmt_parser->parse_expression_statement())
                 {
                     if (program) program->execution_steps.push_back(std::move(expr_stmt));
+                    else if (extension) extension->execution_steps.push_back(std::move(expr_stmt));
                     else block.push_back(std::move(expr_stmt));
                 }
                 break;
@@ -156,7 +200,7 @@ namespace valuascript::compiler
         try
         {
             std::vector<StmtPtr> dummy_block;
-            parse_statement_or_declaration(ParseContextType::TopLevel, &dummy, dummy_block);
+            parse_statement_or_declaration(ParseContextType::TopLevel, &dummy, nullptr, dummy_block);
         }
         catch (const ParseSyncException&)
         {

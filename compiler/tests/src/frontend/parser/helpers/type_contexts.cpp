@@ -41,6 +41,13 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                ContextNames::TypeExtensionTarget, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
+                "extension ", " {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsExtensionDef({}, SpecAdder::get_v<TypeVerifier>(v)));
+                }
+            },
+            {
                 ContextNames::TypeFunctionParameter, {InjectableType::TypeAnnotation}, InjectableType::TopLevel,
                 "func ctx_func_param(p: ", ") -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
                 {

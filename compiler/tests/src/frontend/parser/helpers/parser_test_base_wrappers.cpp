@@ -39,6 +39,12 @@ namespace valuascript::compiler::test
         ExpectValidUnified(InjectableType::Function, snippet, v, "Function", skip_contexts);
     }
 
+    void ParserTestBase::ExpectValidExtensionDefinition(const std::string& snippet, const ExtVerifier& v,
+                                                        const std::vector<std::string_view>& skip_contexts)
+    {
+        ExpectValidUnified(InjectableType::Extension, snippet, v, "Extension", skip_contexts);
+    }
+
     void ParserTestBase::ExpectValidStructDefinition(const std::string& snippet, const StructVerifier& v,
                                                      const std::vector<std::string_view>& skip_contexts)
     {
@@ -122,6 +128,13 @@ namespace valuascript::compiler::test
                                                         const std::vector<std::string_view>& skip_contexts)
     {
         ExpectParseErrorsUnified(InjectableType::Function, s, e, v.value, "Function Definition", skip_contexts);
+    }
+
+    void ParserTestBase::ExpectExtensionDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
+                                                         const OneOf<ExtVerifier>& v,
+                                                         const std::vector<std::string_view>& skip_contexts)
+    {
+        ExpectParseErrorsUnified(InjectableType::Extension, s, e, v.value, "Extension Definition", skip_contexts);
     }
 
     void ParserTestBase::ExpectStructDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,

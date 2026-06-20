@@ -60,6 +60,7 @@ namespace valuascript::shared  {
         Default, // default
         Self, // self
         Typealias, // typealias
+        Extension, // extension
         EndOfFile
     };
 }

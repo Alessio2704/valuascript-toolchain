@@ -68,6 +68,8 @@ namespace valuascript::compiler::test
                                          const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidFunctionDefinition(const std::string& snippet, const FuncVerifier& verifier,
                                                   const std::vector<std::string_view>& skip_contexts = {});
+        static void ExpectValidExtensionDefinition(const std::string& snippet, const ExtVerifier& verifier,
+                                                   const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidStructDefinition(const std::string& snippet, const StructVerifier& verifier,
                                                 const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidEnumDefinition(const std::string& snippet, const EnumVerifier& verifier,
@@ -108,6 +110,11 @@ namespace valuascript::compiler::test
                                                    const std::vector<ParserExpectedError>& errs,
                                                    const OneOf<FuncVerifier>& v,
                                                    const std::vector<std::string_view>& skip_contexts = {});
+
+        static void ExpectExtensionDefinitionErrors(const std::string& snippet,
+                                                    const std::vector<ParserExpectedError>& errs,
+                                                    const OneOf<ExtVerifier>& v,
+                                                    const std::vector<std::string_view>& skip_contexts = {});
 
         static void ExpectStructDefinitionErrors(const std::string& snippet,
                                                  const std::vector<ParserExpectedError>& errs,

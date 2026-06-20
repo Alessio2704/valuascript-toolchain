@@ -23,6 +23,7 @@ namespace valuascript::compiler
         StructDefPtr parse_struct_definition(std::vector<Modifier> modifiers);
         EnumDefPtr parse_enum_definition(std::vector<Modifier> modifiers);
         TypeAliasPtr parse_type_alias_definition(std::vector<Modifier> modifiers);
+        ExtensionDefPtr parse_extension_definition(std::vector<Modifier> modifiers);
         FuncDefPtr parse_function_definition(std::vector<Modifier> modifiers);
         GenericParameter parse_generic_parameter(const ParameterRuleSpec& spec,
                                                  const ParentBoundaryPredicate& is_at_parent_boundary = nullptr);

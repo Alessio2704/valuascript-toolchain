@@ -16,6 +16,7 @@ namespace valuascript::compiler::test
         static const std::vector<Context>& get_type_contexts();
         static const std::vector<Context>& get_modifier_contexts();
         static const std::vector<Context>& get_block_contexts_impl();
+        static const std::vector<Context>& get_extension_contexts();
         static const std::vector<Context>& get_identifier_contexts();
     };
 }

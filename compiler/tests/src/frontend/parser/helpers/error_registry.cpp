@@ -11,6 +11,7 @@ return vec; \
     DEFINE_ERROR_REGISTRY(imports, ImportVerifier)
     DEFINE_ERROR_REGISTRY(directives, DirectiveVerifier)
     DEFINE_ERROR_REGISTRY(functions, FuncVerifier)
+    DEFINE_ERROR_REGISTRY(extensions, ExtVerifier)
     DEFINE_ERROR_REGISTRY(structs, StructVerifier)
     DEFINE_ERROR_REGISTRY(enums, EnumVerifier)
     DEFINE_ERROR_REGISTRY(aliases, AliasVerifier)

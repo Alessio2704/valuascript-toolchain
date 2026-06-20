@@ -45,6 +45,7 @@ namespace valuascript::compiler::test
                 config_.weights.top_level_constructs.return_stmt,
                 config_.weights.top_level_constructs.modifier,
                 config_.weights.top_level_constructs.function_def,
+                config_.weights.top_level_constructs.extension_def,
                 config_.weights.top_level_constructs.struct_def,
                 config_.weights.top_level_constructs.enum_def,
                 config_.weights.top_level_constructs.type_alias,
@@ -159,6 +160,8 @@ namespace valuascript::compiler::test
             case TopLevelConstruct::Modifier: stats_.pieces_rolled.modifiers++;
                 break;
             case TopLevelConstruct::FunctionDef: stats_.pieces_rolled.functions++;
+                break;
+            case TopLevelConstruct::ExtensionDef: stats_.pieces_rolled.extensions++;
                 break;
             case TopLevelConstruct::StructDef: stats_.pieces_rolled.structs++;
                 break;

@@ -223,6 +223,7 @@ namespace valuascript::compiler::test
                 ast->struct_definitions.size() +
                 ast->enum_definitions.size() +
                 ast->type_aliases.size() +
+                ast->extension_definitions.size() +
                 ast->execution_steps.size();
 
             EXPECT_EQ(total_top_level_items, 3)

@@ -229,6 +229,13 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                ContextNames::ModExtensionDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
+                " extension ctx_target {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsExtensionDef(SpecAdder::get_v<ModifierVerifier>(v), IsType("ctx_target")));
+                }
+            },
+            {
                 ContextNames::ModDictItem, {InjectableType::Modifier}, InjectableType::Expression, "{ ", " k: 1 }",
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {

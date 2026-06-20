@@ -380,7 +380,7 @@ namespace valuascript::compiler
             body_config.stop_tokens = {TokenType::RightBrace, TokenType::Return};
             body_config.options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp;
             ErrorRecovery::attempt_parse_void(
-                ctx, [&]() { parser.parse_statement_or_declaration(ParseContextType::FunctionBody, nullptr, body); },
+                ctx, [&]() { parser.parse_statement_or_declaration(ParseContextType::FunctionBody, nullptr, nullptr, body); },
                 body_config);
         }
 
@@ -531,5 +531,50 @@ namespace valuascript::compiler
 
         result.span = cursor.make_span(start, cursor.previous());
         return result;
+    }
+
+    ExtensionDefPtr DeclarationParser::parse_extension_definition(std::vector<Modifier> modifiers)
+    {
+        const Token& start = cursor.consume(TokenType::Extension, E::ExpectedExtensionToken);
+
+        TypeAnnPtr target_type = nullptr;
+        ErrorRecovery::attempt_parse_void(
+            ctx,
+            [&]() { target_type = parser.parse_type_annotation(); },
+            RecoveryConfig::ForceStopAtBoundary({TokenType::LeftBrace})
+        );
+
+        auto extension = std::make_unique<ExtensionDefinition>(std::move(modifiers), std::move(target_type));
+
+        cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeExtensionBody);
+
+        CloserTracker tracker(ctx, TokenType::RightBrace);
+
+        while (!cursor.is_at_end() && !cursor.check(TokenType::RightBrace))
+        {
+            ErrorRecovery::attempt_parse_void(
+                ctx,
+                [&]() {
+                    std::vector<StmtPtr> dummy_block;
+                    parser.parse_statement_or_declaration(ParseContextType::ExtensionBody, nullptr, extension.get(), dummy_block);
+                },
+                RecoveryConfig::ForceStopAtBoundary()
+            );
+        }
+
+        Token end_token = cursor.previous();
+        try
+        {
+            end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterExtensionBody);
+        }
+        catch (const ParseSyncException&)
+        {
+            TokenType peek_type = cursor.peek().type;
+            if (TokenTraits::is_grouping_closer(peek_type) && !ctx.is_active_closer(peek_type))
+                end_token = cursor.advance();
+        }
+
+        extension->span = cursor.make_span(start, end_token);
+        return extension;
     }
 }

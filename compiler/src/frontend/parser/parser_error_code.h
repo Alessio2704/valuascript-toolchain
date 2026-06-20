@@ -105,9 +105,15 @@ namespace valuascript::compiler
         MissingCommaBetweenFields,
         TopLevelDeclarationNotAllowedHere,
         ReturnUsedInToplevel,
+        ReturnNotAllowedInExtension,
         ExpectedTypeAliasToken,
         ExpectedTypeAliasName,
-        ExpectedAssignAfterTypeAliasName
+        ExpectedAssignAfterTypeAliasName,
+        ExpectedExtensionToken,
+        ExpectedLeftBraceBeforeExtensionBody,
+        ExpectedRightBraceAfterExtensionBody,
+        ImportNotAllowedInExtension,
+        DirectiveNotAllowedInExtension
     };
 
     std::string_view get_error_template(ParserErrorCode code);

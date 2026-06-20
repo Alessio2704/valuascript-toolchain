@@ -11,7 +11,7 @@ namespace valuascript::compiler
     class DeclarationParser;
     class TypeParser;
 
-    enum class ParseContextType { TopLevel, FunctionBody };
+    enum class ParseContextType { TopLevel, FunctionBody, ExtensionBody };
 
     class Parser
     {
@@ -28,7 +28,7 @@ namespace valuascript::compiler
         ~Parser();
 
         std::unique_ptr<Program> parse_program();
-        void parse_statement_or_declaration(ParseContextType parse_ctx, Program* program, std::vector<StmtPtr>& block);
+        void parse_statement_or_declaration(ParseContextType parse_ctx, Program* program, ExtensionDefinition* extension, std::vector<StmtPtr>& block);
         void consume_unexpected_statement_gracefully();
 
         ExprPtr parse_expression(Precedence min_precedence = Precedence::Or);

@@ -24,6 +24,7 @@ namespace valuascript::shared
             {"default", TokenType::Default},
             {"self", TokenType::Self},
             {"typealias", TokenType::Typealias},
+            {"extension", TokenType::Extension},
             {"return", TokenType::Return},
         };
         return kReservedKeywords;

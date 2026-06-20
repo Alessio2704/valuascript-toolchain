@@ -73,6 +73,7 @@ namespace valuascript::compiler
         case TokenType::Struct:
         case TokenType::Enum:
         case TokenType::Typealias:
+        case TokenType::Extension:
         case TokenType::Import:
         case TokenType::At:
         case TokenType::Hash: return true;
@@ -99,7 +100,8 @@ namespace valuascript::compiler
         case TokenType::Func:
         case TokenType::Struct:
         case TokenType::Typealias:
-        case TokenType::Enum: return true;
+        case TokenType::Enum:
+        case TokenType::Extension: return true;
         default: return false;
         }
     }

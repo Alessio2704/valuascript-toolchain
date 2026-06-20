@@ -26,6 +26,7 @@ namespace valuascript::compiler::test
         case InjectableType::Import: return "Import";
         case InjectableType::Directive: return "Directive";
         case InjectableType::Function: return "Function";
+        case InjectableType::Extension: return "Extension";
         case InjectableType::Struct: return "Struct";
         case InjectableType::Enum: return "Enum";
         case InjectableType::TypeAlias: return "TypeAlias";
@@ -51,6 +52,8 @@ namespace valuascript::compiler::test
             return {ConstructRegistry::directives().size(), ErrorRegistry::directives().size()};
         case InjectableType::Function:
             return {ConstructRegistry::functions().size(), ErrorRegistry::functions().size()};
+        case InjectableType::Extension:
+            return {ConstructRegistry::extensions().size(), ErrorRegistry::extensions().size()};
         case InjectableType::Struct:
             return {ConstructRegistry::structs().size(), ErrorRegistry::structs().size()};
         case InjectableType::Enum:
@@ -115,6 +118,8 @@ namespace valuascript::compiler::test
                 break;
             case InjectableType::Function: add(ConstructRegistry::functions());
                 break;
+            case InjectableType::Extension: add(ConstructRegistry::extensions());
+                break;
             case InjectableType::Struct: add(ConstructRegistry::structs());
                 break;
             case InjectableType::Enum: add(ConstructRegistry::enums());
@@ -160,6 +165,8 @@ namespace valuascript::compiler::test
             case InjectableType::Directive: add(ErrorRegistry::directives());
                 break;
             case InjectableType::Function: add(ErrorRegistry::functions());
+                break;
+            case InjectableType::Extension: add(ErrorRegistry::extensions());
                 break;
             case InjectableType::Struct: add(ErrorRegistry::structs());
                 break;
@@ -212,6 +219,7 @@ namespace valuascript::compiler::test
         print_registry_row("Imports", ConstructRegistry::imports().size(), ErrorRegistry::imports().size());
         print_registry_row("Directives", ConstructRegistry::directives().size(), ErrorRegistry::directives().size());
         print_registry_row("Functions", ConstructRegistry::functions().size(), ErrorRegistry::functions().size());
+        print_registry_row("Extensions", ConstructRegistry::extensions().size(), ErrorRegistry::extensions().size());
         print_registry_row("Structs", ConstructRegistry::structs().size(), ErrorRegistry::structs().size());
         print_registry_row("Enums", ConstructRegistry::enums().size(), ErrorRegistry::enums().size());
         print_registry_row("Aliases", ConstructRegistry::aliases().size(), ErrorRegistry::aliases().size());
@@ -230,6 +238,7 @@ namespace valuascript::compiler::test
             {InjectableType::Import, ImportVerifier{}},
             {InjectableType::Directive, DirectiveVerifier{}},
             {InjectableType::Function, FuncVerifier{}},
+            {InjectableType::Extension, ExtVerifier{}},
             {InjectableType::Struct, StructVerifier{}},
             {InjectableType::Enum, EnumVerifier{}},
             {InjectableType::TypeAlias, AliasVerifier{}},
@@ -302,6 +311,8 @@ namespace valuascript::compiler::test
             ConstructRegistry::expr_stmts().size() +
             ConstructRegistry::imports().size() +
             ConstructRegistry::functions().size() +
+            ConstructRegistry::extensions().size() +
+            ConstructRegistry::structs().size() +
             ConstructRegistry::enums().size() +
             ConstructRegistry::aliases().size() +
             ConstructRegistry::directives().size() +

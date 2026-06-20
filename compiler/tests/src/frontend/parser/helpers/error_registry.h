@@ -52,6 +52,7 @@ namespace valuascript::compiler::test
         static std::vector<ErrorRegistryEntry<ImportVerifier>>& imports();
         static std::vector<ErrorRegistryEntry<DirectiveVerifier>>& directives();
         static std::vector<ErrorRegistryEntry<FuncVerifier>>& functions();
+        static std::vector<ErrorRegistryEntry<ExtVerifier>>& extensions();
         static std::vector<ErrorRegistryEntry<StructVerifier>>& structs();
         static std::vector<ErrorRegistryEntry<EnumVerifier>>& enums();
         static std::vector<ErrorRegistryEntry<AliasVerifier>>& aliases();
@@ -79,6 +80,12 @@ namespace valuascript::compiler::test
                         const OneOf<FuncVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
         {
             functions().push_back({n, c, errs, v, skip_contexts});
+        }
+
+        static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
+                        const OneOf<ExtVerifier>& v, const std::vector<std::string_view>& skip_contexts = {})
+        {
+            extensions().push_back({n, c, errs, v, skip_contexts});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,

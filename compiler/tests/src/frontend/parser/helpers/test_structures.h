@@ -15,6 +15,7 @@ namespace valuascript::compiler::test
         case InjectableType::Import:
         case InjectableType::Directive:
         case InjectableType::Function:
+        case InjectableType::Extension:
         case InjectableType::Struct:
         case InjectableType::Enum:
         case InjectableType::TypeAlias:

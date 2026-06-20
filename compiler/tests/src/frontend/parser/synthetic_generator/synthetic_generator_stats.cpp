@@ -53,7 +53,8 @@ namespace valuascript::compiler::test
         row2("Enums", pieces_rolled.enums, "TypeAliases", pieces_rolled.type_aliases);
         row2("Naked Statements", pieces_rolled.statements, "Naked Expressions", pieces_rolled.expressions);
         row2("Return Stmts", pieces_rolled.return_stmts, "Standalone Mods", pieces_rolled.modifiers);
-        row2("Directives", pieces_rolled.directives, "Imports", pieces_rolled.imports);
+        row2("Extensions", pieces_rolled.extensions, "Imports", pieces_rolled.imports);
+        row1("Directives", pieces_rolled.directives);
 
         sep();
         title("[ MODIFIER USAGE ]");

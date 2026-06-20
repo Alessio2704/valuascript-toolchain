@@ -44,6 +44,7 @@ namespace valuascript::compiler::test
     using ImportVerifier = std::function<void(ImportStatement*)>;
     using DirectiveVerifier = std::function<void(Directive*)>;
     using FuncVerifier = std::function<void(FunctionDefinition*)>;
+    using ExtVerifier = std::function<void(ExtensionDefinition*)>;
     using StructVerifier = std::function<void(StructDefinition*)>;
     using EnumVerifier = std::function<void(EnumDefinition*)>;
     using AliasVerifier = std::function<void(TypeAliasDefinition*)>;
@@ -195,6 +196,7 @@ namespace valuascript::compiler::test
         std::vector<StructVerifier> structs = {};
         std::vector<EnumVerifier> enums = {};
         std::vector<AliasVerifier> type_aliases = {};
+        std::vector<ExtVerifier> extensions = {};
     };
 
     inline void ExpectNullNode(AstNode* node)
@@ -514,6 +516,36 @@ namespace valuascript::compiler::test
         }
     }
 
+    inline void ExpectExtensionDef(ExtensionDefinition* e,
+                                  const std::vector<ModifierSpec>& modifiers,
+                                  const TypeVerifier& target,
+                                  const ProgramSpec& spec)
+    {
+        ASSERT_NE(e, nullptr) << "Expected ExtensionDefinition node, but got nullptr.";
+        ExpectModifiers(e->modifiers, modifiers);
+        if (target) target(e->target_type.get());
+
+        ASSERT_EQ(e->execution_steps.size(), spec.execution_steps.size()) << "Execution steps count mismatch in Extension.";
+        for (size_t i = 0; i < spec.execution_steps.size(); i++)
+            if (spec.execution_steps[i]) spec.execution_steps[i](e->execution_steps[i].get());
+
+        ASSERT_EQ(e->function_definitions.size(), spec.functions.size()) << "Functions count mismatch in Extension.";
+        for (size_t i = 0; i < spec.functions.size(); i++)
+            if (spec.functions[i]) spec.functions[i](e->function_definitions[i].get());
+
+        ASSERT_EQ(e->struct_definitions.size(), spec.structs.size()) << "Structs count mismatch in Extension.";
+        for (size_t i = 0; i < spec.structs.size(); i++)
+            if (spec.structs[i]) spec.structs[i](e->struct_definitions[i].get());
+
+        ASSERT_EQ(e->enum_definitions.size(), spec.enums.size()) << "Enums count mismatch in Extension.";
+        for (size_t i = 0; i < spec.enums.size(); i++)
+            if (spec.enums[i]) spec.enums[i](e->enum_definitions[i].get());
+
+        ASSERT_EQ(e->type_aliases.size(), spec.type_aliases.size()) << "Type aliases count mismatch in Extension.";
+        for (size_t i = 0; i < spec.type_aliases.size(); i++)
+            if (spec.type_aliases[i]) spec.type_aliases[i](e->type_aliases[i].get());
+    }
+
     inline void ExpectStructDef(StructDefinition* s, std::string_view name, const std::vector<ModifierSpec>& modifiers,
                                 const std::vector<FieldSpec>& fields)
     {
@@ -812,6 +844,16 @@ namespace valuascript::compiler::test
         };
     }
 
+    inline ExtVerifier IsExtensionDef(std::vector<ModifierSpec> modifiers = {},
+                                      TypeVerifier target = nullptr,
+                                      ProgramSpec spec = {})
+    {
+        return [m = std::move(modifiers), t = std::move(target), s = std::move(spec)](ExtensionDefinition* e)
+        {
+            ExpectExtensionDef(e, m, t, s);
+        };
+    }
+
     inline ImportVerifier IsImport(std::string path, std::vector<ModifierSpec> modifiers = {})
     {
         return [p = std::move(path), m = std::move(modifiers)](ImportStatement* i) { ExpectImport(i, m, p); };
@@ -832,6 +874,7 @@ namespace valuascript::compiler::test
         base.structs.insert(base.structs.end(), extension.structs.begin(), extension.structs.end());
         base.enums.insert(base.enums.end(), extension.enums.begin(), extension.enums.end());
         base.type_aliases.insert(base.type_aliases.end(), extension.type_aliases.begin(), extension.type_aliases.end());
+        base.extensions.insert(base.extensions.end(), extension.extensions.begin(), extension.extensions.end());
         return base;
     }
 }
