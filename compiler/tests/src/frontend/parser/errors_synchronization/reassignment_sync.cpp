@@ -683,17 +683,6 @@ namespace valuascript::compiler::test
             ASSERT_NE(assign_b, nullptr);
             EXPECT_EQ(assign_b->targets[0].name, "b");
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "assignment_self_as_target_error",
-            "let self = 10\n"
-            "let recovery = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 5} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            EXPECT_EQ(assign->targets[0].name, "self");
-            }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

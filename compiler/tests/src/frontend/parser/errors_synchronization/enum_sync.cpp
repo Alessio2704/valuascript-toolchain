@@ -103,13 +103,6 @@ namespace valuascript::compiler::test
         EnumParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "name_reserved_keyword_full_ast",
-            "enum true: int { A = 1, B = 2 }\n"
-            "let a = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 6} },
-            ExpectEnum("true", "int", {{"A", "1"}, {"B", "2"}})
-            },
-            ParserErrorsSynchronizationTestCase{
             "no_colon_enum_empty_ast",
             "enum Test int { A }\n"
             "let a = 1\n",

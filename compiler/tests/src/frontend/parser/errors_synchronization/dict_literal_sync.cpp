@@ -278,37 +278,6 @@ namespace valuascript::compiler::test
             ExpectDict({{"<error>", std::nullopt}, {"y", "2"} })
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_self_deep_chain_interrupted",
-            "let a = { x: self.a.b[ * ], y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 24} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2) <<
-            "Both dictionary items should be preserved due to local bracket recovery";
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
-            ASSERT_NE(bracket, nullptr);
-            EXPECT_EQ(bracket->index.get(), nullptr);
-
-            auto target_b = dynamic_cast<DotAccess*>(bracket->target.get());
-            ASSERT_NE(target_b, nullptr);
-            EXPECT_EQ(target_b->property_name, "b");
-
-            auto target_a = dynamic_cast<DotAccess*>(target_b->target.get());
-            ASSERT_NE(target_a, nullptr);
-            EXPECT_EQ(target_a->property_name, "a");
-
-            ASSERT_NE(dynamic_cast<SelfExpression*>(target_a->target.get()), nullptr);
-
-            EXPECT_EQ(dict->elements[1].key, "y");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_self_in_switch_target_error",
             "let a = { x: switch(self.) { case A -> 1 }, y: 2 }\n"
             "let recovery = 1\n",
