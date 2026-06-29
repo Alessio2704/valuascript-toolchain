@@ -155,7 +155,7 @@ namespace valuascript::compiler::test {
             "tuple_missing_comma_after_complex_expression",
             "let a = (1 + 2 3)\n"
             "let recovery = 1\n",
-            { {Err::MissingOperatorInsideGrouping, 1, 16} },
+            { {Err::MissingOperator, 1, 16} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());

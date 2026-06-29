@@ -49,7 +49,7 @@ namespace valuascript::compiler::test {
             "grouping_missing_operator_inside",
             "let a = ( 1 2 )\n"
             "let recovery = 1\n",
-            { {Err::MissingOperatorInsideGrouping, 1, 13} },
+            { {Err::MissingOperator, 1, 13} },
             ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{

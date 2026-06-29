@@ -52,7 +52,7 @@ namespace valuascript::compiler::test
             ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", E::
             MissingOperator},
             ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", E::
-            MissingOperatorInsideGrouping},
+            MissingOperator},
             ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", E::
             MissingOperatorOrArgumentName},
             ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", E::

@@ -92,8 +92,6 @@ namespace valuascript::compiler
                 "Syntax Error: Trailing comma in function call arguments.";
         case ParserErrorCode::TrailingCommaInModifier: return "Syntax Error: Trailing comma in modifier arguments.";
         case ParserErrorCode::ExpectedRightParenAfterArguments: return "Expected ')' after arguments.";
-        case ParserErrorCode::MissingOperatorOrExpectedColonOrBracketInTensor: return
-                "Syntax Error: Missing operator or expected ':' or ']' in tensor access.";
         case ParserErrorCode::UnexpectedCommaInBracketAccess: return
                 "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.";
         case ParserErrorCode::EmptyBracketAccess: return "Expected an index or slice inside '[]'.";
@@ -104,8 +102,6 @@ namespace valuascript::compiler
                 "Syntax Error: Trailing commas and 1-element tuples are not allowed.";
         case ParserErrorCode::TrailingCommaInTuple: return "Syntax Error: Trailing comma in tuple.";
         case ParserErrorCode::ExpectedRightParenAfterTupleElements: return "Expected ')' after tuple elements.";
-        case ParserErrorCode::MissingOperatorInsideGrouping: return
-                "Syntax Error: Missing operator between expressions inside grouping.";
         case ParserErrorCode::ExpectedRightParenAfterExpression: return "Expected ')' after expression.";
         case ParserErrorCode::UnmatchedBracketAfterTensorElements: return "Expected ']' after vector elements.";
         case ParserErrorCode::ExpectedDictionaryKey: return "Expected key in dictionary.";
@@ -119,8 +115,6 @@ namespace valuascript::compiler
         case ParserErrorCode::ExpectedRightParenAfterSwitchTarget: return "Expected ')' after switch target.";
         case ParserErrorCode::ExpectedLeftBraceBeforeSwitchBody: return "Expected '{{' before switch body.";
         case ParserErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier: return "Expected '->' before case result.";
-        case ParserErrorCode::MissingOperatorInSwitchCaseResult: return
-                "Syntax Error: Missing operator between expressions in switch case result.";
         case ParserErrorCode::CaseOrDefaultMissingInSwitchAfterResult: return
                 "Syntax Error: Expected 'case', 'default', or '}}' after case result.";
         case ParserErrorCode::ExpectedEnumCaseNameAfterCase: return "Expected enum case identifier after 'case'.";

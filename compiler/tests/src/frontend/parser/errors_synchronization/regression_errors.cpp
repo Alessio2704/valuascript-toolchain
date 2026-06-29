@@ -67,7 +67,7 @@ namespace valuascript::compiler::test {
             "let valid2 = 200\n"
             "let a = { a: 1 b: 2}",
             {
-            {Err::MissingOperatorInsideGrouping, 2, 20},
+            {Err::MissingOperator, 2, 20},
             {Err::ExpectedStructName, 4, 8},
             {Err::ExpectedCommaSeparatorInDictionaryLiteral, 6, 16}
             }
@@ -120,13 +120,13 @@ namespace valuascript::compiler::test {
             "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
             {
             {Err::MissingOperatorOrArgumentName, 1, 14},
-            {Err::MissingOperatorInsideGrouping, 2, 19},
+            {Err::MissingOperator, 2, 19},
             {Err::MissingOperatorOrArgumentName, 3, 17},
-            {Err::MissingOperatorInsideGrouping, 4, 22},
-            {Err::MissingOperatorInsideGrouping, 5, 22},
+            {Err::MissingOperator, 4, 22},
+            {Err::MissingOperator, 5, 22},
             {Err::MissingOperatorOrArgumentName, 6, 16},
-            {Err::MissingOperatorInsideGrouping, 7, 24},
-            {Err::MissingOperatorInsideGrouping, 8, 24},
+            {Err::MissingOperator, 7, 24},
+            {Err::MissingOperator, 8, 24},
             {Err::MissingOperatorOrArgumentName, 10, 18},
             {Err::MissingOperatorOrArgumentName, 13, 18},
             {Err::MissingOperatorOrArgumentName, 15, 13},

@@ -85,7 +85,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "grouping_missing_operator",
             "let a = (1 2)\n",
-            { {Err::MissingOperatorInsideGrouping, 1, 12} },
+            { {Err::MissingOperator, 1, 12} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](auto inner) { ExpectNumber(inner, "1"); });
                 })

@@ -1,3 +1,4 @@
+#include "frontend/parser/helpers/context_names.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 
 namespace valuascript::compiler::test
@@ -8,9 +9,10 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v,
+                          const std::vector<std::string_view>& skip_contexts = {})
             {
-                ErrorRegistry::add(n, c, errs, v);
+                ErrorRegistry::add(n, c, errs, v, skip_contexts);
             };
 
             reg("BinaryMissingRight", "1 + ",
@@ -18,6 +20,13 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 0, 0, 0, 0, true}
                 },
                 IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
+            );
+
+            reg("MissingOperatorBinary", "1 2",
+                {
+                    {E::MissingOperator, 1, 3, 1, 4}
+                },
+                IsNumber("1")
             );
 
             reg("BinaryInvalidRight1", "1 + * 2",

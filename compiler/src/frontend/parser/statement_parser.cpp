@@ -120,7 +120,8 @@ namespace valuascript::compiler
         {
             if (TokenTraits::is_expression_start(cursor.peek().type))
             {
-                cursor.report_error(cursor.peek(), E::MissingOperator);
+                cursor.report_error_no_panic(cursor.peek(), E::MissingOperator);
+                ErrorRecovery::synchronize_with(ctx, RecoveryConfig::ForceStopAtBoundary());
             }
         }
     }

@@ -42,7 +42,7 @@ namespace valuascript::compiler::test
         testing::Values(
             DirectiveSadParam{"missing_operator_1", "#iterations = 1000 1", E::MissingOperator},
             DirectiveSadParam{"missing_operator_2", "#iterations = 1000 + 1 2", E::MissingOperator},
-            DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", E::MissingOperatorInsideGrouping},
+            DirectiveSadParam{"missing_operator_3", "#iterations = 1000 + (1 2)", E::MissingOperator},
             DirectiveSadParam{"missing_operator_4", "#iterations = 1000  (1 + 2)", E::MissingOperatorOrArgumentName},
             DirectiveSadParam{"missing_operator_5", "#iterations = 1000 a() + b()", E::MissingOperator}
         ),

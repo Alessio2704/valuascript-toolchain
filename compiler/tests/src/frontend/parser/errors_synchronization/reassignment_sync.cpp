@@ -66,8 +66,8 @@ namespace valuascript::compiler::test
             {Err::MissingOperator, 1, 7}
             },
             [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+            ASSERT_EQ(ast.execution_steps.size(), 2);
+            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
             ASSERT_NE(assign_c, nullptr);
             EXPECT_EQ(assign_c->targets[0].name, "c");
             }

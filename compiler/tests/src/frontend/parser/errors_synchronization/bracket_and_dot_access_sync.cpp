@@ -175,7 +175,7 @@ namespace valuascript::compiler::test
             "bracket_missing_operator_between_elements",
             "let a = arr[1 2]\n",
             {
-            {Err::MissingOperatorOrExpectedColonOrBracketInTensor, 1, 15}
+            {Err::MissingOperator, 1, 15}
             },
             VerifyAssignmentValue([](auto expr) {
                 ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);

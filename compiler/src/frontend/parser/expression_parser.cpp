@@ -279,7 +279,7 @@ namespace valuascript::compiler
                     {
                         if (TokenTraits::is_expression_start(cursor.peek().type))
                             cursor.report_error(
-                                cursor.peek(), E::MissingOperatorOrExpectedColonOrBracketInTensor);
+                                cursor.peek(), E::MissingOperator);
                         else if (cursor.check(TokenType::Comma))
                             cursor.report_error(
                                 cursor.peek(), E::UnexpectedCommaInBracketAccess);
@@ -387,7 +387,7 @@ namespace valuascript::compiler
             if (!failed && !cursor.check(TokenType::RightParen) && TokenTraits::is_expression_start(cursor.peek().type))
             {
                 if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), cursor.peek(), cursor.peek(1).type))
-                    cursor.report_error(cursor.peek(), E::MissingOperatorInsideGrouping);
+                    cursor.report_error(cursor.peek(), E::MissingOperator);
             }
             const Token& end = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterExpression);
             return AstFactory::make_node_with_span<GroupingExpression>(cursor.make_span(start, end),
@@ -626,7 +626,7 @@ namespace valuascript::compiler
             {
                 if (TokenTraits::is_expression_start(cursor.peek().type))
                     cursor.report_error_no_panic(
-                        cursor.peek(), E::MissingOperatorInSwitchCaseResult, true);
+                        cursor.peek(), E::MissingOperator, true);
                 else cursor.report_error_no_panic(cursor.peek(), E::CaseOrDefaultMissingInSwitchAfterResult, true);
             }
         }
