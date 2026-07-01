@@ -44,7 +44,7 @@ namespace valuascript::compiler::test
 
             reg("TensorMissingComma", "[1 2]",
                 {
-                    {E::MissingCommaOrOperatorBetweenExpressions, 1, 4, 1, 5}
+                    {E::MissingOperator, 1, 4, 1, 5}
                 },
                 IsTensor({
                     IsNumber("1"), IsNumber("2")

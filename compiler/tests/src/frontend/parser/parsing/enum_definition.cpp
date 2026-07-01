@@ -47,7 +47,7 @@ namespace valuascript::compiler::test {
             EnumSadParam{"missing_operator_2", "enum Test : int { A = (a b), B = 2 }", E::
             MissingOperator},
             EnumSadParam{"missing_operator_3", "enum Test : int { A = 1 (a + b), B = 2 }", E::
-            MissingOperatorOrArgumentName}
+            MissingOperator}
         ),
         [](const testing::TestParamInfo<EnumSadParam>& test_info) {
         return test_info.param.test_name;

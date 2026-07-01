@@ -47,8 +47,8 @@ namespace valuascript::compiler::test
             TupleSadParam{"tuple_parenthesis", "(a, b", E::ExpectedRightParenAfterTupleElements},
             TupleSadParam{"missing_operator_1", "(a b)", E::MissingOperator},
             TupleSadParam{"missing_operator_2", "(a, b c)", E::
-            MissingCommaOrOperatorBetweenExpressions},
-            TupleSadParam{"missing_operator_3", "(a, b (c + d))", E::MissingOperatorOrArgumentName},
+            MissingOperator},
+            TupleSadParam{"missing_operator_3", "(a, b (c + d))", E::MissingOperator},
             TupleSadParam{"missing_operator_4", "(a, b + (c  d))", E::MissingOperator}
         ),
         [](const testing::TestParamInfo<TupleSadParam>& test_info) {

@@ -60,7 +60,7 @@ namespace valuascript::compiler::test {
             "tuple_missing_comma_in_list",
             "let a = (1, 2 3)\n"
             "let recovery = 1\n",
-            { {Err::MissingCommaOrOperatorBetweenExpressions, 1, 15} },
+            { {Err::MissingOperator, 1, 15} },
             ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{

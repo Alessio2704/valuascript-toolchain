@@ -81,8 +81,8 @@ namespace valuascript::compiler
                 "Syntax Error: Invalid statement. Expected an assignment, reassignment, or function call.";
         case ParserErrorCode::ChainingNotAllowedForComparisonOperations: return
                 "Syntax Error: Chaining comparison operators is not allowed.";
-        case ParserErrorCode::MissingOperatorOrArgumentName: return
-                "Syntax Error: Missing operator (like '*') before '(', or expected argument name.";
+        case ParserErrorCode::MissingOperator: return
+                "Syntax Error: Missing operator or separator between expressions.";
         case ParserErrorCode::ExpectedArgumentNameOrClosingParen: return
                 "Syntax Error: Expected an argument name (e.g., 'name: value') or a closing ')'.";
         case ParserErrorCode::MissingArgumentNameInFunctionCall: return "Expected argument name in function call.";
@@ -125,10 +125,8 @@ namespace valuascript::compiler
         case ParserErrorCode::ExpectedCaseOrDefaultInsideSwitchBody: return
                 "Syntax Error: Expected 'case' or 'default' inside switch body.";
         case ParserErrorCode::ExpectedRightBraceAfterSwitchBody: return "Expected '}}' after switch body.";
-        case ParserErrorCode::MissingOperator: return "Syntax Error: Missing operator between expressions.";
         case ParserErrorCode::TrailingCommaInList: return "Syntax Error: Trailing comma in list.";
-        case ParserErrorCode::MissingCommaOrOperatorBetweenExpressions: return
-                "Syntax Error: Missing comma ',' or operator between expressions.";
+
         case ParserErrorCode::TrailingComma: return "Syntax Error: Trailing comma.";
         case ParserErrorCode::TrailingCommaInGenericArgument: return
                 "Syntax Error: Trailing comma in generic arguments.";

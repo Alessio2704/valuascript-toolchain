@@ -50,7 +50,7 @@ namespace valuascript::compiler::test
             BracketAccessSadParam{"missing_operator_3", "vec[1 + (2 3)]", E::
             MissingOperator},
             BracketAccessSadParam{"missing_operator_4", "vec[1  (2 + 3)]", E::
-            MissingOperatorOrArgumentName},
+            MissingOperator},
             BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", E::
             MissingOperator}
         ),

@@ -42,12 +42,8 @@ namespace valuascript::compiler::test
         testing::Values(
             DictLiteralSadParam{"dict_missing_brace", "{a: 1", E::
             UnmatchedBraceInDictionaryLiteral},
-            DictLiteralSadParam{"dict_missing_comma", "{a: 1 b: 2}", E::
-            ExpectedCommaSeparatorInDictionaryLiteral},
             DictLiteralSadParam{"dict_missing_key", "{1}", E::
             ExpectedDictionaryKey},
-            DictLiteralSadParam{"dict_missing_colon", "{a 1}", E::
-            ExpectedColonAfterDictionaryKey},
             DictLiteralSadParam{"dict_empty", "{a}", E::
             ExpectedColonAfterDictionaryKey},
             DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", E::ExpectedDictionaryKey

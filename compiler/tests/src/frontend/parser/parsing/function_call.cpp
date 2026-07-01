@@ -40,7 +40,7 @@ namespace valuascript::compiler::test
         ParserStageTest,
         FunctionCallSadPathTest,
         testing::Values(
-            FunctionCallSadParam{"func_missing_argument", "test(1)", E::MissingOperatorOrArgumentName},
+            FunctionCallSadParam{"func_missing_argument", "test(1)", E::MissingOperator},
             FunctionCallSadParam{"unclosed_call", "test(a: 1, b: 2", E::ExpectedRightParenAfterArguments}
         ),
         [](const testing::TestParamInfo<FunctionCallSadParam>& test_info) {

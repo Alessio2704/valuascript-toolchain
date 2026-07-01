@@ -143,8 +143,7 @@ namespace valuascript::compiler
                 {
                     should_shift = true;
                 }
-                else if (code == E::MissingOperator ||
-                    code == E::MissingCommaOrOperatorBetweenExpressions)
+                else if (code == E::MissingOperator)
                 {
                     should_shift = true;
                 }

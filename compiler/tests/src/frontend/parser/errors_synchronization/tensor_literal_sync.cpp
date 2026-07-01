@@ -87,7 +87,7 @@ namespace valuascript::compiler::test
             "tensor_missing_comma_between_complex_expr",
             "let a = [ 1 + 2 3 + 4 ]\n"
             "let recovery = 1\n",
-            { {Err::MissingCommaOrOperatorBetweenExpressions, 1, 17} },
+            { {Err::MissingOperator, 1, 17} },
             ExpectTensor({ "", "" })
             },
             ParserErrorsSynchronizationTestCase{

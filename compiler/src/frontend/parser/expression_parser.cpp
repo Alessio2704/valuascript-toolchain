@@ -208,7 +208,7 @@ namespace valuascript::compiler
                     if (p1 != TokenType::Colon && TokenTraits::is_binary_operator(p1))
                         if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), p0, p1))
                             cursor.report_error(
-                                cursor.previous(), E::MissingOperatorOrArgumentName);
+                                cursor.previous(), E::MissingOperator);
                 }
                 else
                 {
@@ -216,7 +216,7 @@ namespace valuascript::compiler
                     {
                         if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), p0, p1))
                             cursor.report_error(
-                                cursor.previous(), E::MissingOperatorOrArgumentName);
+                                cursor.previous(), E::MissingOperator);
                     }
                     else if (!cursor.check(TokenType::Colon) && !cursor.check(TokenType::Comma))
                         cursor.report_error(
@@ -715,7 +715,7 @@ namespace valuascript::compiler
         return ListParser<ExprPtr>(ctx)
                .stop_at(closing_token)
                .on_trailing_comma(trailing_comma_err)
-               .on_missing_comma(E::MissingCommaOrOperatorBetweenExpressions)
+               .on_missing_comma(E::MissingOperator)
                .with_recovery_boundaries(recovery_boundaries)
                .is_element_start([this]() { return TokenTraits::is_expression_start(cursor.peek().type); })
                .parse_elements([this]() { return parse_expression(); });

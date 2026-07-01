@@ -55,9 +55,9 @@ namespace valuascript::compiler::test
             SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", E::
             MissingOperator},
             SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", E::
-            MissingOperatorOrArgumentName},
+            MissingOperator},
             SwitchSadParam{"missing_operator_3", "let a = switch (res) { case UP -> 1 + a() (2 + 3) }",
-            E::MissingOperatorOrArgumentName},
+            E::MissingOperator},
             SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", E
             ::MissingOperator}
 

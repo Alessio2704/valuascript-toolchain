@@ -62,7 +62,7 @@ namespace valuascript::compiler::test
             ReassignmentSadParam{"missing_operator_3", "a = 1 + (2 3)", E::
             MissingOperator},
             ReassignmentSadParam{"missing_operator_4", "a = 1  (2 + 3)", E::
-            MissingOperatorOrArgumentName},
+            MissingOperator},
             ReassignmentSadParam{"missing_operator_5", "a = 1 + a() b()", E::MissingOperator},
             ReassignmentSadParam{"missing_operator_6", "a = 1 + a[0] b[1:2]", E::MissingOperator},
             ReassignmentSadParam{"missing_operator_7", "a = 1 + a[0] + b[1:2] a.b", E::
