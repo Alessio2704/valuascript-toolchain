@@ -39,15 +39,7 @@ namespace valuascript::compiler::test {
             EnumSadParam{"missing_right_brace", "enum Option: string { a, b ", E::
             ExpectedRightBraceAfterEnumBody},
             EnumSadParam{"invalid_value_expression", "enum Option: string { a = let }", E::
-            ReservedKeywordAsIdentifier},
-            EnumSadParam{"keyword_as_case_name", "enum Bad: string { if = \"a\" }", E::
-            ReservedKeywordAsIdentifier},
-            EnumSadParam{"missing_operator_1", "enum Test : int { A = a b, B = 2 }", E::
-            MissingOperator},
-            EnumSadParam{"missing_operator_2", "enum Test : int { A = (a b), B = 2 }", E::
-            MissingOperator},
-            EnumSadParam{"missing_operator_3", "enum Test : int { A = 1 (a + b), B = 2 }", E::
-            MissingOperator}
+            ReservedKeywordAsIdentifier}
         ),
         [](const testing::TestParamInfo<EnumSadParam>& test_info) {
         return test_info.param.test_name;

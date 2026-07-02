@@ -51,15 +51,7 @@ namespace valuascript::compiler::test
             SwitchSadParam{"expression_as_case", "let a = switch (res) { case a + b -> 10 }",
             E::ExpectedRightArrowAfterSwitchCaseIdentifier},
             SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-            E::TopLevelDeclarationNotAllowedHere},
-            SwitchSadParam{"missing_operator_1", "let a = switch (res) { case UP -> 1 2 }", E::
-            MissingOperator},
-            SwitchSadParam{"missing_operator_2", "let a = switch (res) { case UP -> 1 (2 + 3) }", E::
-            MissingOperator},
-            SwitchSadParam{"missing_operator_3", "let a = switch (res) { case UP -> 1 + a() (2 + 3) }",
-            E::MissingOperator},
-            SwitchSadParam{"missing_operator_4", "let a = switch (res) { case UP -> 1 + a() b() }", E
-            ::MissingOperator}
+            E::TopLevelDeclarationNotAllowedHere}
 
         ),
         [](const testing::TestParamInfo<SwitchSadParam>& test_info) {

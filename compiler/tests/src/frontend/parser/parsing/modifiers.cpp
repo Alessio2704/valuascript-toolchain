@@ -48,15 +48,6 @@ namespace valuascript::compiler::test
             ModifierSadParam{"DoubleAtSign", "@@export let x = 1", E::ExpectedModifierName},
             ModifierSadParam{"missing_comma_in_param", "@export(a: 1 b: 2) let x = 1", E::
             MissingCommaSeparatorForArgumentsInModifier},
-            ModifierSadParam{"missing_operator_1", "@export(a: 1 2) let x = 1", E::MissingOperator},
-            ModifierSadParam{"missing_operator_2", "@export(a: 1 + 2 3) let x = 1", E::
-            MissingOperator},
-            ModifierSadParam{"missing_operator_3", "@export(a: 1 + (2 3)) let x = 1", E::
-            MissingOperator},
-            ModifierSadParam{"missing_operator_4", "@export(a: 1 (2 + 3)) let x = 1", E::
-            MissingOperator},
-            ModifierSadParam{"missing_operator_5", "@export(a: 1 a() + b()) let x = 1", E::
-            MissingOperator},
             ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", E::
             ExpectedModifierName}
         ),

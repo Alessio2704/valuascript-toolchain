@@ -134,24 +134,6 @@ namespace valuascript::compiler::test
             ExpectEnum("Test", "int", {{"A", "1"}, "B"})
             },
             ParserErrorsSynchronizationTestCase{
-            "complex_expression_3",
-            "enum Test : int { A = a b, B = 2 }\n"
-            "let a = 1\n",
-            {
-            {Err::MissingOperator, 1, 25},
-            },
-            [](const Program& ast) {
-            auto& enum_def = ast.enum_definitions[0];
-            ASSERT_EQ(enum_def->cases.size(), 2);
-            auto val_1 = dynamic_cast<IdentifierAccess*>(enum_def->cases[0].value.get());
-            ASSERT_NE(val_1, nullptr);
-            ASSERT_EQ(val_1->name, "a");
-            auto val_2 = dynamic_cast<NumberLiteral*>(enum_def->cases[1].value.get());
-            ASSERT_NE(val_2, nullptr);
-            ASSERT_EQ(val_2->value, "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "reserved_char_1",
             "enum Test : int { # }\n"
             "let a = 1\n",

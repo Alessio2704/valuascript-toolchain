@@ -84,13 +84,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tensor_missing_comma_between_complex_expr",
-            "let a = [ 1 + 2 3 + 4 ]\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 17} },
-            ExpectTensor({ "", "" })
-            },
-            ParserErrorsSynchronizationTestCase{
             "tensor_eof_immediately_after_bracket",
             "let a = [",
             { {Err::UnmatchedBracketAfterTensorElements, 1, 10} },

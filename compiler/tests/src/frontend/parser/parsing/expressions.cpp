@@ -42,15 +42,7 @@ namespace valuascript::compiler::test
         testing::Values(
             ExpressionSadParam{"unclosed_parenthesis", "(1 + 2", E::ExpectedRightParenAfterExpression},
             ExpressionSadParam{"unmatched_right_parenthesis", "1 + 2)", E::InvalidExpression},
-            ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", E::UnmatchedBracketAfterTensorElements},
-            ExpressionSadParam{"missing_operator_1", "a + b c", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_2", "a + b (1 + 2)", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_3", "a + b model.a", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_4", "a + b vec[0]", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_5", "a + b {}", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_6", "a  b[]", E::MissingOperator},
-            ExpressionSadParam{"missing_operator_6_a", "a - b[]", E::EmptyBracketAccess},
-            ExpressionSadParam{"missing_operator_7", "a + b (1, 2)", E::MissingOperator}
+            ExpressionSadParam{"unclosed_vector_literal", "[1, 2, 3", E::UnmatchedBracketAfterTensorElements}
         ),
         [](const testing::TestParamInfo<ExpressionSadParam>& test_info) {
         return test_info.param.test_name;

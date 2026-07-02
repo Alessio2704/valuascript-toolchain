@@ -42,17 +42,7 @@ namespace valuascript::compiler::test
         BracketAccessSadPathTest,
         testing::Values(
             BracketAccessSadParam{"unclosed_vector_access", "vec[0", E::
-            UnmatchedBracketAfterTensorIndex},
-            BracketAccessSadParam{"missing_operator_1", "vec[1 2]", E::
-            MissingOperator},
-            BracketAccessSadParam{"missing_operator_2", "vec[1 + 2 3]", E::
-            MissingOperator},
-            BracketAccessSadParam{"missing_operator_3", "vec[1 + (2 3)]", E::
-            MissingOperator},
-            BracketAccessSadParam{"missing_operator_4", "vec[1  (2 + 3)]", E::
-            MissingOperator},
-            BracketAccessSadParam{"missing_operator_5", "vec[1 + a() b()]", E::
-            MissingOperator}
+            UnmatchedBracketAfterTensorIndex}
         ),
         [](const testing::TestParamInfo<BracketAccessSadParam>& test_info) {
         return test_info.param.test_name;

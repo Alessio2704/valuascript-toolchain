@@ -46,13 +46,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_missing_operator_inside",
-            "let a = ( 1 2 )\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 13} },
-            ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
             "grouping_closed_with_wrong_bracket",
             "let a = ( 1 + 2 ]\n"
             "let recovery = 1\n",

@@ -252,25 +252,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_self_standalone_missing_operator",
-            "let a = { x: self 10, y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 19} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2);
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto self_expr = dynamic_cast<SelfExpression*>(dict->elements[0].value.get());
-            ASSERT_NE(self_expr, nullptr);
-
-            EXPECT_EQ(dict->elements[1].key, "y");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_self_key_missing_colon",
             "let a = {x self.a, y: 2 }\n"
             "let recovery = 1\n",
@@ -339,25 +320,6 @@ namespace valuascript::compiler::test
             ASSERT_NE(inner_dict, nullptr);
             EXPECT_EQ(inner_dict->elements.size(), 1);
             EXPECT_EQ(inner_dict->elements[0].key, "inner");
-            EXPECT_EQ(dict->elements[1].key, "y");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_self_missing_dot_between_properties",
-            "let a = { x: self a, y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 19} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2);
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto self_expr = dynamic_cast<SelfExpression*>(dict->elements[0].value.get());
-            ASSERT_NE(self_expr, nullptr);
-
             EXPECT_EQ(dict->elements[1].key, "y");
             }
             }

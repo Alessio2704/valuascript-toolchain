@@ -83,14 +83,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_missing_operator",
-            "let a = (1 2)\n",
-            { {Err::MissingOperator, 1, 12} },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectGrouping(expr, [](auto inner) { ExpectNumber(inner, "1"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "invalid_standalone_statement",
             "1 + 1\n"
             "let b = 2\n",

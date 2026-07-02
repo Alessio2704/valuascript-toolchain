@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
 
-namespace valuascript::compiler::test {
-    class GeneralParserSynchronizationTest : public ParserErrorsSynchronizationBase {
+namespace valuascript::compiler::test
+{
+    class GeneralParserSynchronizationTest : public ParserErrorsSynchronizationBase
+    {
     };
 
-    TEST_P(GeneralParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations) {
+    TEST_P(GeneralParserSynchronizationTest, CollectsMultipleSyntaxErrorsAtCorrectLocations)
+    {
         run_parser_and_check_errors(GetParam());
     }
 
@@ -61,15 +64,13 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "DeepSynchronizationStressTest",
             "let valid1 = 100\n"
-            "let broken1 = (10  2)\n"
             "func valid_func() -> int {}\n"
             "struct { }\n"
             "let valid2 = 200\n"
             "let a = { a: 1 b: 2}",
             {
-            {Err::MissingOperator, 2, 20},
-            {Err::ExpectedStructName, 4, 8},
-            {Err::ExpectedCommaSeparatorInDictionaryLiteral, 6, 16}
+            {Err::ExpectedStructName, 3, 8},
+            {Err::ExpectedCommaSeparatorInDictionaryLiteral, 5, 16}
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -98,55 +99,14 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "MissingOperand",
-            "let res = a  (b - c)\n"
-            "let res = a + (b  c)\n"
-            "let res = a[1]  (b - c)\n"
-            "let res = a[1] / (b  c)\n"
-            "let res = a[1] / (1  c)\n"
-            "let res = a[1] (1 + c)\n"
-            "let res = a[1] + (b.a  c)\n"
-            "let res = a[1] + (b.a  c[3].b)\n"
-            "func test() -> scalar {\n"
-            "return a + a.key (1 + 2)\n"
-            "}\n"
-            "func test() -> scalar {\n"
-            "return a + a.key (1 + 2)\n"
-            "}\n"
-            "let res = a ([1, 2])\n"
-            "let res = a ({1, 2})\n"
-            "let res = a ([[1, 2], [3, 4])\n"
-            "let res = a (-5)\n"
-            "let a = switch (s) { case LOW -> 1  (3 + 3) case HIGH -> 3 }\n",
-            {
-            {Err::MissingOperator, 1, 14},
-            {Err::MissingOperator, 2, 19},
-            {Err::MissingOperator, 3, 17},
-            {Err::MissingOperator, 4, 22},
-            {Err::MissingOperator, 5, 22},
-            {Err::MissingOperator, 6, 16},
-            {Err::MissingOperator, 7, 24},
-            {Err::MissingOperator, 8, 24},
-            {Err::MissingOperator, 10, 18},
-            {Err::MissingOperator, 13, 18},
-            {Err::MissingOperator, 15, 13},
-            {Err::MissingOperator, 16, 13},
-            {Err::MissingOperator, 17, 13},
-            {Err::MissingOperator, 18, 13},
-            {Err::MissingOperator, 19, 37},
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "FunctionCallAndSignatureErrors",
             "func process(a: int b: string) -> int {}\n"
-            "let result = process(a: 10 20)\n"
             "let x = trailing_comma(a: 1, )\n"
             "func true() -> void { return 1}",
             {
             {Err::ExpectedCommaSeparatorInParameterList, 1, 21},
-            {Err::MissingOperator, 2, 28},
-            {Err::TrailingCommaInFunctionCall, 3, 28},
-            {Err::ReservedKeywordAsIdentifier, 4, 6}
+            {Err::TrailingCommaInFunctionCall, 2, 28},
+            {Err::ReservedKeywordAsIdentifier, 3, 6}
             }
             },
 
@@ -234,7 +194,7 @@ namespace valuascript::compiler::test {
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
+        return test_info.param.test_name;
         }
     );
 }

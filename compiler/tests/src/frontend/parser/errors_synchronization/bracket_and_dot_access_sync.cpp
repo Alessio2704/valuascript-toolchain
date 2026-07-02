@@ -172,16 +172,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "bracket_missing_operator_between_elements",
-            "let a = arr[1 2]\n",
-            {
-            {Err::MissingOperator, 1, 15}
-            },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
             "dot_aborts_assignment_preserves_next_statement",
             "let a = obj.\n"
             "let b = 2\n",

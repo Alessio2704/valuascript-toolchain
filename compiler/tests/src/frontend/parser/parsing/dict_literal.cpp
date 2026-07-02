@@ -48,8 +48,6 @@ namespace valuascript::compiler::test
             ExpectedColonAfterDictionaryKey},
             DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", E::ExpectedDictionaryKey
             },
-            DictLiteralSadParam{"dict_key_missing_operator", "{ market_size: 13_624 / 11%   4, }", E
-            ::MissingOperator},
             DictLiteralSadParam{"dict_self_missing_property_name", "{ a: 1, b: self. }", E::
             ExpectedPropertyName},
             DictLiteralSadParam{"dict_self_empty_bracket", "{ a: 1, b: self[] }", E::

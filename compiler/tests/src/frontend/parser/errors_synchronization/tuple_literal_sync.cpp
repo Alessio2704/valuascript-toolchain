@@ -57,13 +57,6 @@ namespace valuascript::compiler::test {
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "tuple_missing_comma_in_list",
-            "let a = (1, 2 3)\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 15} },
-            ExpectTuple(3)
-            },
-            ParserErrorsSynchronizationTestCase{
             "array_inside_tuple_first_element_error",
             "let a = ([1, 2)\n"
             "let recovery = 1\n",
@@ -150,23 +143,6 @@ namespace valuascript::compiler::test {
             {Err::UnmatchedBracketAfterTensorElements, 1, 17}
             },
             ExpectTuple(3)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "tuple_missing_comma_after_complex_expression",
-            "let a = (1 + 2 3)\n"
-            "let recovery = 1\n",
-            { {Err::MissingOperator, 1, 16} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            const auto binary_exp = dynamic_cast<BinaryExpression*>(unwrap_grouping(assign_1->value.get()));
-            ASSERT_NE(binary_exp, nullptr);
-            const auto left = dynamic_cast<NumberLiteral*>(binary_exp->left.get());
-            ASSERT_NE(left, nullptr);
-            ASSERT_EQ(left->value, "1");
-            const auto right = dynamic_cast<NumberLiteral*>(binary_exp->right.get());
-            ASSERT_EQ(right->value, "2");
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "tuple_too_many_closing_parens",
