@@ -8,7 +8,7 @@ namespace valuascript::compiler::test
 
     using E = ParserErrorCode;
 
-    TEST_F(MissingOperatorTestBase, vec_missing_operator_1)
+    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_1)
     {
         ExpectParseErrorsWithRecovery(
             "let a = vec[1 2]",
@@ -19,14 +19,16 @@ namespace valuascript::compiler::test
                         {
                             {"a"}
                         },
-                        IsBracket(IsIdentifier("vec"), IsNull())
+                        IsBracket(
+                            IsIdentifier("vec"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
+                        )
                     )
                 }
             }
         );
     }
 
-    TEST_F(MissingOperatorTestBase, vec_missing_operator_2)
+    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_2)
     {
         ExpectParseErrorsWithRecovery(
             "let a = vec[1 + 2 3]",
@@ -37,14 +39,19 @@ namespace valuascript::compiler::test
                         {
                             {"a"}
                         },
-                        IsBracket(IsIdentifier("vec"), IsNull())
+                        IsBracket(
+                            IsIdentifier("vec"),
+                            IsBinary(
+                                TokenType::Plus,
+                                IsNumber("1"),
+                                IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3"))))
                     )
                 }
             }
         );
     }
 
-    TEST_F(MissingOperatorTestBase, vec_missing_operator_3)
+    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_3)
     {
         ExpectParseErrorsWithRecovery(
             "let a = vec[1 + (2 3)]",
@@ -57,7 +64,9 @@ namespace valuascript::compiler::test
                         },
                         IsBracket(
                             IsIdentifier("vec"),
-                            IsBinary(TokenType::Plus, IsNumber("1"), IsGrouping(IsNumber("2")))
+                            IsBinary(TokenType::Plus,
+                                     IsNumber("1"),
+                                     IsGrouping(IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3"))))
                         )
                     )
                 }
@@ -65,7 +74,7 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(MissingOperatorTestBase, vec_missing_operator_4)
+    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_4)
     {
         ExpectParseErrorsWithRecovery(
             "let a = vec[1 (2 + 3)]",
@@ -83,7 +92,7 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(MissingOperatorTestBase, vec_missing_operator_5)
+    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_5)
     {
         ExpectParseErrorsWithRecovery(
             "let a = vec[1 + a() b()]",
@@ -94,7 +103,117 @@ namespace valuascript::compiler::test
                         {
                             {"a"}
                         },
-                        IsBracket(IsIdentifier("vec"), IsNull())
+                        IsBracket(IsIdentifier("vec"),
+                                  IsBinary(TokenType::Plus,
+                                           IsNumber("1"),
+                                           IsBinary(TokenType::Error,
+                                                    IsCall(IsIdentifier("a")),
+                                                    IsCall(IsIdentifier("b")
+                                                    )
+                                           )
+                                  )
+                        )
+                    )
+                }
+            }
+        );
+    }
+
+    TEST_F(MissingOperatorTestBase, tensor_missing_operator_1)
+    {
+        ExpectParseErrorsWithRecovery(
+            "let a = [1 2]",
+            {{E::MissingOperator, 1, 12, 1, 13}},
+            ProgramSpec{
+                .execution_steps = {
+                    IsAssignment(
+                        {
+                            {"a"}
+                        },
+                        IsTensor({IsNumber("1"), IsNumber("2")})
+                    )
+                }
+            }
+        );
+    }
+
+    TEST_F(MissingOperatorTestBase, tensor_missing_operator_2)
+    {
+        ExpectParseErrorsWithRecovery(
+            "let a = [1 + 2 3]",
+            {{E::MissingOperator, 1, 16, 1, 17}},
+            ProgramSpec{
+                .execution_steps = {
+                    IsAssignment(
+                        {
+                            {"a"}
+                        },
+                        IsTensor({
+                            IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")),
+                            IsNumber("3")
+                        })
+                    )
+                }
+            }
+        );
+    }
+
+    TEST_F(MissingOperatorTestBase, tensor_missing_operator_3)
+    {
+        ExpectParseErrorsWithRecovery(
+            "let a = [1 + (2 3)]",
+            {{E::MissingOperator, 1, 17, 1, 18}},
+            ProgramSpec{
+                .execution_steps = {
+                    IsAssignment(
+                        {
+                            {"a"}
+                        },
+                        IsTensor({
+                            IsBinary(TokenType::Plus,
+                                     IsNumber("1"),
+                                     IsGrouping(IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3")))
+                            )
+                        })
+                    )
+                }
+            }
+        );
+    }
+
+    TEST_F(MissingOperatorTestBase, tensor_missing_operator_4)
+    {
+        ExpectParseErrorsWithRecovery(
+            "let a = [1 (2 + 3)]",
+            {{E::MissingOperator, 1, 12, 1, 13}},
+            ProgramSpec{
+                .execution_steps = {
+                    IsAssignment(
+                        {
+                            {"a"}
+                        },
+                        IsTensor({IsCall(IsNumber("1"))})
+                    )
+                }
+            }
+        );
+    }
+
+    TEST_F(MissingOperatorTestBase, tensor_missing_operator_5)
+    {
+        ExpectParseErrorsWithRecovery(
+            "let a = [1 + a() b()]",
+            {{E::MissingOperator, 1, 18, 1, 19}},
+            ProgramSpec{
+                .execution_steps = {
+                    IsAssignment(
+                        {
+                            {"a"}
+                        },
+                        IsTensor({
+                            IsBinary(TokenType::Plus, IsNumber("1"), IsCall(IsIdentifier("a"))),
+                            IsCall(IsIdentifier("b"))
+                        })
                     )
                 }
             }
@@ -108,7 +227,7 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .directives = {
-                    IsDirective("iterations", IsNumber("1000"))
+                    IsDirective("iterations", IsBinary(TokenType::Error, IsNumber("1000"), IsNumber("1")))
                 }
             }
         );
@@ -121,7 +240,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 24, 1, 25}},
             ProgramSpec{
                 .directives = {
-                    IsDirective("iterations", IsBinary(TokenType::Plus, IsNumber("1000"), IsNumber("1")))
+                    IsDirective("iterations",
+                                IsBinary(TokenType::Plus,
+                                         IsNumber("1000"),
+                                         IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
+                                )
+                    )
                 }
             }
         );
@@ -134,7 +258,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 25, 1, 26}},
             ProgramSpec{
                 .directives = {
-                    IsDirective("iterations", IsBinary(TokenType::Plus, IsNumber("1000"), IsGrouping(IsNumber("1"))))
+                    IsDirective("iterations",
+                                IsBinary(TokenType::Plus,
+                                         IsNumber("1000"),
+                                         IsGrouping(IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")))
+                                )
+                    )
                 }
             }
         );
@@ -160,7 +289,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .directives = {
-                    IsDirective("iterations", IsNumber("1000"))
+                    IsDirective("iterations",
+                                IsBinary(TokenType::Plus,
+                                         IsBinary(TokenType::Error, IsNumber("1000"), IsCall(IsIdentifier("a"))),
+                                         IsCall(IsIdentifier("b"))
+                                )
+                    )
                 }
             }
         );
@@ -176,7 +310,11 @@ namespace valuascript::compiler::test
                     IsAssignment(
                         {{"a"}},
                         IsDict({
-                            {"market_size", {}, IsBinary(TokenType::Slash, IsNumber("13_624"), IsPercentage("11%"))}
+                            {
+                                "market_size", {},
+                                IsBinary(TokenType::Slash, IsNumber("13_624"),
+                                         IsBinary(TokenType::Error, IsPercentage("11%"), IsNumber("4")))
+                            }
                         })
                     )
                 }
@@ -194,7 +332,11 @@ namespace valuascript::compiler::test
                     IsAssignment(
                         {{"a"}},
                         IsDict({
-                            {"market_size", {}, IsBinary(TokenType::Slash, IsNumber("13_624"), IsPercentage("11%"))}
+                            {
+                                "market_size", {},
+                                IsBinary(TokenType::Slash, IsNumber("13_624"),
+                                         IsBinary(TokenType::Error, IsPercentage("11%"), IsNumber("4")))
+                            }
                         })
                     )
                 }
@@ -210,7 +352,7 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .enums = {
                     IsEnumDef("Test", {}, IsType("int"), {
-                                  {"A", {}, IsIdentifier("a")},
+                                  {"A", {}, IsBinary(TokenType::Error, IsIdentifier("a"), IsIdentifier("b"))},
                                   {"B", {}, IsNumber("2")}
                               })
                 }
@@ -226,7 +368,10 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .enums = {
                     IsEnumDef("Test", {}, IsType("int"), {
-                                  {"A", {}, IsGrouping(IsIdentifier("a"))},
+                                  {
+                                      "A", {},
+                                      IsGrouping(IsBinary(TokenType::Error, IsIdentifier("a"), IsIdentifier("b")))
+                                  },
                                   {"B", {}, IsNumber("2")}
                               })
                 }
@@ -257,7 +402,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsIdentifier("b")))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Plus,
+                                          IsIdentifier("a"),
+                                          IsBinary(TokenType::Error, IsIdentifier("b"), IsIdentifier("c"))
+                                 )
+                    )
                 }
             }
         );
@@ -270,7 +420,9 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsCall(IsIdentifier("b"))))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Plus, IsIdentifier("a"), IsCall(IsIdentifier("b")))
+                    )
                 }
             }
         );
@@ -283,7 +435,15 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 25}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsIdentifier("b")))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Plus,
+                                          IsIdentifier("a"),
+                                          IsBinary(TokenType::Error,
+                                                   IsIdentifier("b"),
+                                                   IsDot(IsIdentifier("model"), "a")
+                                          )
+                                 )
+                    )
                 }
             }
         );
@@ -296,7 +456,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 23}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsIdentifier("b")))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Plus,
+                                          IsIdentifier("a"),
+                                          IsBinary(TokenType::Error,
+                                                   IsIdentifier("b"),
+                                                   IsBracket(IsIdentifier("vec"), IsNumber("0")))))
                 }
             }
         );
@@ -309,7 +474,12 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsIdentifier("b")))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Plus,
+                                          IsIdentifier("a"),
+                                          IsBinary(TokenType::Error, IsIdentifier("b"), IsDict({}))
+                                 )
+                    )
                 }
             }
         );
@@ -319,10 +489,19 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "let result = a  b[]",
-            {{E::MissingOperator, 1, 17, 1, 18}},
+            {
+                {E::MissingOperator, 1, 17, 1, 18},
+                {E::EmptyBracketAccess, 1, 18, 1, 19}
+            },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsIdentifier("a"))
+                    IsAssignment({{"result"}},
+                                 IsBinary(TokenType::Error,
+                                          IsIdentifier("a"),
+                                          IsBracket(IsIdentifier("b"), IsNull())
+                                 )
+
+                    )
                 }
             }
         );
@@ -336,7 +515,11 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({{"result"}},
-                                 IsBinary(TokenType::Minus, IsIdentifier("a"), IsBracket(IsIdentifier("b"), IsNull())))
+                                 IsBinary(TokenType::Minus,
+                                          IsIdentifier("a"),
+                                          IsBracket(IsIdentifier("b"), IsNull())
+                                 )
+                    )
                 }
             }
         );
@@ -349,7 +532,13 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 20, 1, 21}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsCall(IsIdentifier("b"))))
+                    IsAssignment({{"result"}},
+                                 IsBinary(
+                                     TokenType::Plus,
+                                     IsIdentifier("a"),
+                                     IsCall(IsIdentifier("b"))
+                                 )
+                    )
                 }
             }
         );
@@ -363,7 +552,20 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(
-                        {AssignmentTargetSpec({ModifierSpec{"export", {ArgSpec{"a", IsNumber("1")}}}}, "x")},
+                        {
+                            AssignmentTargetSpec(
+                                {
+                                    ModifierSpec{
+                                        "export",
+                                        {
+                                            ArgSpec{
+                                                "a",
+                                                IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
+                                            }
+                                        }
+                                    }
+                                }, "x")
+                        },
                         IsNumber("1")
                     )
                 }
@@ -380,17 +582,21 @@ namespace valuascript::compiler::test
                 .execution_steps = {
                     IsAssignment(
                         {
-                            AssignmentTargetSpec({
-                                                     ModifierSpec{
-                                                         "export",
-                                                         {
-                                                             ArgSpec{
-                                                                 "a",
-                                                                 IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
-                                                             }
-                                                         }
-                                                     }
-                                                 }, "x")
+                            AssignmentTargetSpec(
+                                {
+                                    ModifierSpec{
+                                        "export",
+                                        {
+                                            ArgSpec{
+                                                "a",
+                                                IsBinary(
+                                                    TokenType::Plus,
+                                                    IsNumber("1"),
+                                                    IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3")))
+                                            }
+                                        }
+                                    }
+                                }, "x")
                         },
                         IsNumber("1")
                     )
@@ -408,18 +614,24 @@ namespace valuascript::compiler::test
                 .execution_steps = {
                     IsAssignment(
                         {
-                            AssignmentTargetSpec({
-                                                     ModifierSpec{
-                                                         "export",
-                                                         {
-                                                             ArgSpec{
-                                                                 "a",
-                                                                 IsBinary(TokenType::Plus, IsNumber("1"),
-                                                                          IsGrouping(IsNumber("2")))
-                                                             }
-                                                         }
-                                                     }
-                                                 }, "x")
+                            AssignmentTargetSpec(
+                                {
+                                    ModifierSpec{
+                                        "export",
+                                        {
+                                            ArgSpec{
+                                                "a",
+                                                IsBinary(TokenType::Plus,
+                                                         IsNumber("1"),
+                                                         IsGrouping(
+                                                             IsBinary(
+                                                                 TokenType::Error, IsNumber("2"), IsNumber("3"))
+                                                         )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }, "x")
                         },
                         IsNumber("1")
                     )
@@ -452,7 +664,24 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(
-                        {AssignmentTargetSpec({ModifierSpec{"export", {ArgSpec{"a", IsNumber("1")}}}}, "x")},
+                        {
+                            AssignmentTargetSpec(
+                                {
+                                    ModifierSpec{
+                                        "export",
+                                        {
+                                            ArgSpec{
+                                                "a",
+                                                IsBinary(
+                                                    TokenType::Plus,
+                                                    IsBinary(TokenType::Error, IsNumber("1"),
+                                                             IsCall(IsIdentifier("a"))),
+                                                    IsCall(IsIdentifier("b")))
+                                            }
+                                        }
+                                    }
+                                }, "x")
+                        },
                         IsNumber("1")
                     )
                 }
@@ -467,7 +696,7 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 7, 1, 8}},
             ProgramSpec{
                 .execution_steps = {
-                    IsReassignment(IsIdentifier("a"), IsNumber("1"))
+                    IsReassignment(IsIdentifier("a"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")))
                 }
             }
         );
@@ -480,7 +709,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 11, 1, 12}},
             ProgramSpec{
                 .execution_steps = {
-                    IsReassignment(IsIdentifier("a"), IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    IsReassignment(
+                        IsIdentifier("a"),
+                        IsBinary(
+                            TokenType::Plus,
+                            IsNumber("1"),
+                            IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3"))
+                        )
+                    )
                 }
             }
         );
@@ -494,7 +730,11 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsReassignment(IsIdentifier("a"),
-                                   IsBinary(TokenType::Plus, IsNumber("1"), IsGrouping(IsNumber("2"))))
+                                   IsBinary(TokenType::Plus,
+                                            IsNumber("1"),
+                                            IsGrouping(IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3")))
+                                   )
+                    )
                 }
             }
         );
@@ -521,7 +761,15 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .execution_steps = {
                     IsReassignment(IsIdentifier("a"),
-                                   IsBinary(TokenType::Plus, IsNumber("1"), IsCall(IsIdentifier("a"))))
+                                   IsBinary(
+                                       TokenType::Plus,
+                                       IsNumber("1"),
+                                       IsBinary(TokenType::Error,
+                                                IsCall(IsIdentifier("a")),
+                                                IsCall(IsIdentifier("b"))
+                                       )
+                                   )
+                    )
                 }
             }
         );
@@ -536,7 +784,13 @@ namespace valuascript::compiler::test
                 .execution_steps = {
                     IsReassignment(IsIdentifier("a"),
                                    IsBinary(TokenType::Plus, IsNumber("1"),
-                                            IsBracket(IsIdentifier("a"), IsNumber("0"))))
+                                            IsBinary(TokenType::Error, IsBracket(IsIdentifier("a"), IsNumber("0")),
+                                                     IsBracket(IsIdentifier("b"),
+                                                               IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2"))
+                                                     )
+                                            )
+                                   )
+                    )
                 }
             }
         );
@@ -556,29 +810,35 @@ namespace valuascript::compiler::test
                                           IsNumber("1"),
                                           IsBracket(IsIdentifier("a"), IsNumber("0"))
                                  ),
-                                 IsBracket(
-                                     IsIdentifier("b"),
-                                     IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2"))
-                                 )
+                                 IsBinary(TokenType::Error,
+                                          IsBracket(
+                                              IsIdentifier("b"),
+                                              IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2"))
+                                          ),
+                                          IsDot(IsIdentifier("a"), "b"))
                         )
                     )
                 }
             }
         );
     }
+
     TEST_F(MissingOperatorTestBase, switch_missing_operator_1)
     {
         ExpectParseErrorsWithRecovery(
             "let a = switch (res) { case UP -> 1 2 }",
-            {
-                {E::MissingOperator, 1, 37, 1, 38},
-                {E::ExpectedCaseOrDefaultInsideSwitchBody, 1, 37, 1, 38}
-            },
+            {{E::MissingOperator, 1, 37, 1, 38}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}, IsSwitch(IsIdentifier("res"), {
-                        SwitchCaseSpec{{"UP"}, IsNumber("1")}
-                    }))
+                    IsAssignment(
+                        {{"a"}},
+                        IsSwitch(
+                            IsIdentifier("res"), {
+                                SwitchCaseSpec{
+                                    {"UP"},
+                                    IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
+                                }
+                            }))
                 }
             }
         );
@@ -591,9 +851,11 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 37, 1, 38}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}, IsSwitch(IsIdentifier("res"), {
-                        SwitchCaseSpec{{"UP"}, IsCall(IsNumber("1"))}
-                    }))
+                    IsAssignment(
+                        {{"a"}},
+                        IsSwitch(IsIdentifier("res"), {
+                                     SwitchCaseSpec{{"UP"}, IsCall(IsNumber("1"))}
+                                 }))
                 }
             }
         );
@@ -606,9 +868,15 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 43, 1, 44}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}, IsSwitch(IsIdentifier("res"), {
-                        SwitchCaseSpec{{"UP"}, IsBinary(TokenType::Plus, IsNumber("1"), IsCall(IsCall(IsIdentifier("a"))))}
-                    }))
+                    IsAssignment(
+                        {{"a"}},
+                        IsSwitch(IsIdentifier("res"), {
+                                     SwitchCaseSpec{
+                                         {"UP"},
+                                         IsBinary(TokenType::Plus, IsNumber("1"),
+                                                  IsCall(IsCall(IsIdentifier("a"))))
+                                     }
+                                 }))
                 }
             }
         );
@@ -619,18 +887,29 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             "let a = switch (res) { case UP -> 1 + a() b() }",
             {
-                {E::MissingOperator, 1, 43, 1, 44},
-                {E::ExpectedCaseOrDefaultInsideSwitchBody, 1, 43, 1, 44}
+                {E::MissingOperator, 1, 43, 1, 44}
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}, IsSwitch(IsIdentifier("res"), {
-                        SwitchCaseSpec{{"UP"}, IsBinary(TokenType::Plus, IsNumber("1"), IsCall(IsIdentifier("a")))}
-                    }))
+                    IsAssignment(
+                        {{"a"}},
+                        IsSwitch(IsIdentifier("res"), {
+                                     SwitchCaseSpec{
+                                         {"UP"},
+                                         IsBinary(TokenType::Plus,
+                                                  IsNumber("1"),
+                                                  IsBinary(TokenType::Error,
+                                                           IsCall(IsIdentifier("a")),
+                                                           IsCall(IsIdentifier("b"))
+                                                  )
+                                         )
+                                     }
+                                 }))
                 }
             }
         );
     }
+
     TEST_F(MissingOperatorTestBase, tuple_missing_operator_1)
     {
         ExpectParseErrorsWithRecovery(
@@ -638,7 +917,7 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 12, 1, 13}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"x"}}, IsGrouping(IsIdentifier("a")))
+                    IsAssignment({{"x"}}, IsGrouping(IsBinary(TokenType::Error, IsIdentifier("a"), IsIdentifier("b"))))
                 }
             }
         );
@@ -677,11 +956,19 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 21, 1, 22}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"x"}}, IsTuple({IsIdentifier("a"), IsBinary(TokenType::Plus, IsIdentifier("b"), IsGrouping(IsIdentifier("c")))}))
+                    IsAssignment(
+                        {{"x"}},
+                        IsTuple({
+                            IsIdentifier("a"),
+                            IsBinary(TokenType::Plus, IsIdentifier("b"),
+                                     IsGrouping(IsBinary(TokenType::Error, IsIdentifier("c"),
+                                                         IsIdentifier("d"))))
+                        }))
                 }
             }
         );
     }
+
     TEST_F(MissingOperatorTestBase, sync_port_missing_operator_1)
     {
         ExpectParseErrorsWithRecovery(
@@ -702,7 +989,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 19, 1, 20}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"res"}}, IsBinary(TokenType::Plus, IsIdentifier("a"), IsGrouping(IsIdentifier("b"))))
+                    IsAssignment(
+                        {{"res"}},
+                        IsBinary(TokenType::Plus,
+                                 IsIdentifier("a"),
+                                 IsGrouping(IsBinary(TokenType::Error, IsIdentifier("b"), IsIdentifier("c")))
+
+                        )
+                    )
                 }
             }
         );
@@ -728,7 +1022,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 22, 1, 23}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"res"}}, IsBinary(TokenType::Slash, IsBracket(IsIdentifier("a"), IsNumber("1")), IsGrouping(IsIdentifier("b"))))
+                    IsAssignment(
+                        {{"res"}},
+                        IsBinary(
+                            TokenType::Slash,
+                            IsBracket(IsIdentifier("a"), IsNumber("1")),
+                            IsGrouping(IsBinary(TokenType::Error, IsIdentifier("b"), IsIdentifier("c")))
+                        )
+                    )
                 }
             }
         );
@@ -741,7 +1042,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 22, 1, 23}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"res"}}, IsBinary(TokenType::Slash, IsBracket(IsIdentifier("a"), IsNumber("1")), IsGrouping(IsNumber("1"))))
+                    IsAssignment(
+                        {{"res"}},
+                        IsBinary(
+                            TokenType::Slash,
+                            IsBracket(IsIdentifier("a"), IsNumber("1")),
+                            IsGrouping(IsBinary(TokenType::Error, IsNumber("1"), IsIdentifier("c")))
+                        )
+                    )
                 }
             }
         );
@@ -767,7 +1075,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 24, 1, 25}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"res"}}, IsBinary(TokenType::Plus, IsBracket(IsIdentifier("a"), IsNumber("1")), IsGrouping(IsDot(IsIdentifier("b"), "a"))))
+                    IsAssignment(
+                        {{"res"}},
+                        IsBinary(
+                            TokenType::Plus,
+                            IsBracket(IsIdentifier("a"), IsNumber("1")),
+                            IsGrouping(IsBinary(TokenType::Error, IsDot(IsIdentifier("b"), "a"), IsIdentifier("c")))
+                        )
+                    )
                 }
             }
         );
@@ -780,7 +1095,20 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 24, 1, 25}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"res"}}, IsBinary(TokenType::Plus, IsBracket(IsIdentifier("a"), IsNumber("1")), IsGrouping(IsDot(IsIdentifier("b"), "a"))))
+                    IsAssignment(
+                        {{"res"}},
+                        IsBinary(
+                            TokenType::Plus,
+                            IsBracket(IsIdentifier("a"), IsNumber("1")),
+                            IsGrouping(
+                                IsBinary(
+                                    TokenType::Error,
+                                    IsDot(IsIdentifier("b"), "a"),
+                                    IsDot(IsBracket(IsIdentifier("c"), IsNumber("3")), "b")
+                                )
+                            )
+                        )
+                    )
                 }
             }
         );
@@ -796,8 +1124,11 @@ namespace valuascript::compiler::test
             ProgramSpec{
                 .functions = {
                     IsFunctionDef("test", {}, {}, {IsType("scalar")}, {
-                        IsReturn({IsBinary(TokenType::Plus, IsIdentifier("a"), IsCall(IsDot(IsIdentifier("a"), "key")))})
-                    })
+                                      IsReturn({
+                                          IsBinary(TokenType::Plus, IsIdentifier("a"),
+                                                   IsCall(IsDot(IsIdentifier("a"), "key")))
+                                      })
+                                  })
                 }
             }
         );
@@ -862,14 +1193,17 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 37, 1, 38}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}, IsSwitch(IsIdentifier("s"), {
-                        SwitchCaseSpec{{"LOW"}, IsCall(IsNumber("1"))},
-                        SwitchCaseSpec{{"HIGH"}, IsNumber("3")}
-                    }))
+                    IsAssignment({{"a"}},
+                                 IsSwitch(IsIdentifier("s"), {
+                                              SwitchCaseSpec{{"LOW"}, IsCall(IsNumber("1"))},
+                                              SwitchCaseSpec{{"HIGH"}, IsNumber("3")}
+                                          })
+                    )
                 }
             }
         );
     }
+
     TEST_F(MissingOperatorTestBase, call_missing_operator_1)
     {
         ExpectParseErrorsWithRecovery(
@@ -877,9 +1211,14 @@ namespace valuascript::compiler::test
             {{E::MissingOperator, 1, 28, 1, 30}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"result"}}, IsCall(IsIdentifier("process"), {
-                        ArgSpec{"a", IsNumber("10")}
-                    }))
+                    IsAssignment(
+                        {{"result"}},
+                        IsCall(IsIdentifier("process"), {
+                                   ArgSpec{
+                                       "a",
+                                       IsBinary(TokenType::Error, IsNumber("10"), IsNumber("20"))
+                                   }
+                               }))
                 }
             }
         );

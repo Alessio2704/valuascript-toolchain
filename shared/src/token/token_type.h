@@ -61,6 +61,7 @@ namespace valuascript::shared  {
         Self, // self
         Typealias, // typealias
         Extension, // extension
+        Error, // Error operator
         EndOfFile
     };
 }

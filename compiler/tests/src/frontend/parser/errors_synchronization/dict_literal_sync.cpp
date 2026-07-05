@@ -218,8 +218,8 @@ namespace valuascript::compiler::test
             ASSERT_NE(bracket, nullptr) << "BracketAccess should be recovered gracefully";
 
             ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr) << "Target must be self";
-            EXPECT_EQ(bracket->index.get(), nullptr) <<
-            "Index should be nullptr because comma aborted the bound parsing";
+            EXPECT_NE(bracket->index.get(), nullptr) <<
+            "Index should be recovered because comma aborts parsing after yielding the bound";
 
             EXPECT_EQ(dict->elements[1].key, "y");
             auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());

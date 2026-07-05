@@ -54,8 +54,77 @@ namespace valuascript::compiler
             cursor.report_error_no_panic(cursor.peek(), E::ChainingNotAllowedForComparisonOperations);
     }
 
-    ExprPtr ExpressionParser::parse_expression(const Precedence min_precedence)
+    bool ExpressionParser::is_reassignment_start_lookahead() const
     {
+        size_t offset = 0;
+
+        TokenType start_type = cursor.peek(offset).type;
+        if (start_type != TokenType::Identifier && !TokenTraits::acts_like_identifier(
+            cursor.peek(offset), cursor.peek(offset + 1).type))
+        {
+            return false;
+        }
+
+        offset++;
+
+        while (true)
+        {
+            TokenType type = cursor.peek(offset).type;
+            if (type == TokenType::LeftBracket)
+            {
+                int depth = 1;
+                offset++;
+                while (depth > 0 && cursor.peek(offset).type != TokenType::EndOfFile)
+                {
+                    if (cursor.peek(offset).type == TokenType::LeftBracket) depth++;
+                    else if (cursor.peek(offset).type == TokenType::RightBracket) depth--;
+                    offset++;
+                }
+            }
+            else if (type == TokenType::LeftParen)
+            {
+                int depth = 1;
+                offset++;
+                while (depth > 0 && cursor.peek(offset).type != TokenType::EndOfFile)
+                {
+                    if (cursor.peek(offset).type == TokenType::LeftParen) depth++;
+                    else if (cursor.peek(offset).type == TokenType::RightParen) depth--;
+                    offset++;
+                }
+            }
+            else if (type == TokenType::Dot)
+            {
+                offset++;
+                if (cursor.peek(offset).type == TokenType::Identifier)
+                {
+                    offset++;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else if (type == TokenType::Assign)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    ExprPtr ExpressionParser::parse_expression(const Precedence min_precedence, bool allow_missing_operator_binding)
+    {
+        struct ScopeRestore
+        {
+            bool& ref;
+            bool prev;
+            ScopeRestore(bool& r, bool v) : ref(r), prev(r) { r = v; }
+            ~ScopeRestore() { ref = prev; }
+        } scope(allow_missing_operator_binding_, allow_missing_operator_binding);
+
         const Token& start_tok = cursor.peek();
         ParseRule rule = get_rule(start_tok.type);
 
@@ -69,7 +138,91 @@ namespace valuascript::compiler
             ParseRule infix_rule = get_rule(op_tok.type);
             bool inside_expr_grouping = is_inside_expr_grouping();
 
-            if (!can_continue_expression(op_tok, infix_rule, min_precedence, inside_expr_grouping)) break;
+            if (!can_continue_expression(op_tok, infix_rule, min_precedence, inside_expr_grouping))
+            {
+                if (TokenTraits::is_expression_start(op_tok.type))
+                {
+                    if (infix_rule.infix != nullptr)
+                    {
+                        break;
+                    }
+
+                    bool physical_newline = op_tok.line > cursor.previous().line;
+                    bool crossed_newline = physical_newline && !inside_expr_grouping;
+
+                    if (is_reassignment_start_lookahead())
+                    {
+                        break;
+                    }
+
+                    if (!crossed_newline)
+                    {
+                        if (TokenTraits::is_statement_start(op_tok, cursor.peek(1).type))
+                        {
+                            break;
+                        }
+
+                        if (op_tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
+                            op_tok, cursor.peek(1).type))
+                        {
+                            if (cursor.peek(1).type == TokenType::Colon || cursor.peek(1).type == TokenType::Assign)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (min_precedence > Precedence::Postfix)
+                        {
+                            break;
+                        }
+
+                        if (!allow_missing_operator_binding)
+                        {
+                            break;
+                        }
+
+                        if (op_tok.type == TokenType::LeftBrace)
+                        {
+                            TokenType next = cursor.peek(1).type;
+                            if (next == TokenType::Case || next == TokenType::Default)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (physical_newline && inside_expr_grouping)
+                        {
+                            if (TokenTraits::is_expression_statement_start(op_tok, cursor.peek(1).type))
+                            {
+                                break;
+                            }
+                        }
+
+                        cursor.report_error_no_panic(op_tok, E::MissingOperator);
+
+                        Token fake_op = op_tok;
+                        fake_op.type = TokenType::Error;
+                        fake_op.lexeme = "<missing_operator>";
+
+                        auto right = ErrorRecovery::try_parse<ExprPtr>(
+                            ctx, [&]() { return parse_expression(Precedence::Postfix); },
+                            RecoveryConfig::ForceStopAtBoundary({
+                                TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
+                            })
+                        );
+
+                        const SourceSpan right_span = right
+                                                          ? right->span
+                                                          : cursor.make_span(cursor.previous(), cursor.previous());
+                        left = AstFactory::make_node_with_span<BinaryExpression>(
+                            cursor.combine_spans(left->span, right_span),
+                            std::move(left), TokenType::Error, std::move(right)
+                        );
+                        continue;
+                    }
+                }
+                break;
+            }
 
             Token op = cursor.advance();
             if (!inside_expr_grouping && infix_rule.infix == &ExpressionParser::parse_infix_binary)
@@ -89,7 +242,7 @@ namespace valuascript::compiler
                                          : static_cast<Precedence>(static_cast<int>(infix_rule.precedence) + 1);
 
         auto right = ErrorRecovery::try_parse<ExprPtr>(
-            ctx, [&]() { return parse_expression(next_precedence); },
+            ctx, [&]() { return parse_expression(next_precedence, allow_missing_operator_binding_); },
             RecoveryConfig::ForceStopAtBoundary({
                 TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
             })
@@ -123,7 +276,7 @@ namespace valuascript::compiler
         }
 
         auto right = ErrorRecovery::try_parse<ExprPtr>(
-            ctx, [&] { return parse_expression(Precedence::Unary); },
+            ctx, [&] { return parse_expression(Precedence::Unary, allow_missing_operator_binding_); },
             RecoveryConfig::ForceStopAtBoundary({
                 TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
             })
@@ -268,31 +421,29 @@ namespace valuascript::compiler
 
         try
         {
-            auto parse_bound = [&]() -> ExprPtr
+            auto parse_bound = [&](ExprPtr& out_expr)
             {
-                if (cursor.check(TokenType::Colon) || cursor.check(TokenType::RightBracket)) return nullptr;
-                auto expr = parse_expression();
+                if (cursor.check(TokenType::Colon) || cursor.check(TokenType::RightBracket)) return;
+                out_expr = parse_expression();
                 if (!cursor.check(TokenType::Colon) && !cursor.check(TokenType::RightBracket))
                 {
                     if (!TokenTraits::is_newline_statement_boundary(cursor.previous(), cursor.peek(),
                                                                     cursor.peek(1).type))
                     {
                         if (TokenTraits::is_expression_start(cursor.peek().type))
-                            cursor.report_error(
-                                cursor.peek(), E::MissingOperator);
+                            cursor.report_error(cursor.peek(), E::MissingOperator);
                         else if (cursor.check(TokenType::Comma))
-                            cursor.report_error(
-                                cursor.peek(), E::UnexpectedCommaInBracketAccess);
+                            cursor.report_error(cursor.peek(), E::UnexpectedCommaInBracketAccess);
                     }
                 }
-                return expr;
             };
 
-            index_expr = parse_bound();
+            parse_bound(index_expr);
 
             if (cursor.match({TokenType::Colon}))
             {
-                ExprPtr end_expr = parse_bound();
+                ExprPtr end_expr = nullptr;
+                parse_bound(end_expr);
                 const SourceSpan colon_span = index_expr ? index_expr->span : target_span;
                 const SourceSpan slice_end_span = end_expr
                                                       ? end_expr->span
@@ -718,6 +869,6 @@ namespace valuascript::compiler
                .on_missing_comma(E::MissingOperator)
                .with_recovery_boundaries(recovery_boundaries)
                .is_element_start([this]() { return TokenTraits::is_expression_start(cursor.peek().type); })
-               .parse_elements([this]() { return parse_expression(); });
+               .parse_elements([this]() { return parse_expression(Precedence::Or, false); });
     }
 }

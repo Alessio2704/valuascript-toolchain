@@ -161,6 +161,17 @@ namespace valuascript::compiler::test
                 IsSwitch(IsIdentifier("v"), {})
             );
 
+            reg("SwitchMissingOperatorInComplexCondition",
+                "switch (res {}) { case UP -> 1 }",
+                {
+                    {E::MissingOperator, 1, 13, 1, 14}
+                },
+                IsSwitch(
+                    IsBinary(TokenType::Error, IsIdentifier("res"), IsDict()),
+                    {SwitchCaseSpec{{"UP"}, IsNumber("1")}}
+                )
+            );
+
             reg("EmptySlotsInCaseCommaList",
                 "switch(v) {\n"
                 "    case A, , B -> 1\n"

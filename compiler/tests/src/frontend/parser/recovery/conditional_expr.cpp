@@ -42,9 +42,11 @@ namespace valuascript::compiler::test
             reg("MissingThenTokenRecoversBranches",
                 "if x 1 else 2",
                 {
-                    {E::MissingThenToken, 1, 5, 1, 6}
+                    {E::MissingOperator, 1, 6, 1, 7},
+                    {E::MissingThenToken, 1, 7, 1, 8}
                 },
-                IsConditional(IsIdentifier("x"), IsNumber("1"), IsNumber("2"))
+                IsConditional(IsBinary(TokenType::Error, IsIdentifier("x"), IsNumber("1")), IsNull(), IsNumber("2")),
+                {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
             );
 
             reg("MissingElseEntirelyNoExpression",
@@ -74,18 +76,23 @@ namespace valuascript::compiler::test
             reg("MissingElseTokenRecoversBranches",
                 "if x then 1 2",
                 {
-                    {E::MissingElseToken, 1, 12, 1, 13}
+                    {E::MissingOperator, 1, 13, 1, 14},
+                    {E::MissingElseToken, 1, 14, 1, 15}
                 },
-                IsConditional(IsIdentifier("x"), IsNumber("1"), IsNumber("2"))
+                IsConditional(IsIdentifier("x"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")), IsNull()),
+                {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
             );
 
             reg("MissingBothThenAndElseTokens",
                 "if x 1 2",
                 {
-                    {E::MissingThenToken, 1, 5, 1, 6},
-                    {E::MissingElseToken, 1, 7, 1, 8}
+                    {E::MissingOperator, 1, 6, 1, 7},
+                    {E::MissingOperator, 1, 8, 1, 9},
+                    {E::MissingThenToken, 1, 9, 1, 10},
+                    {E::MissingElseToken, 1, 9, 1, 10}
                 },
-                IsConditional(IsIdentifier("x"), IsNumber("1"), IsNumber("2"))
+                IsConditional(IsBinary(TokenType::Error, IsIdentifier("x"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))), IsNull(), IsNull()),
+                {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
             );
 
             reg("EmptyConditionRecoversThenAndElse",
@@ -107,14 +114,26 @@ namespace valuascript::compiler::test
             reg("MissingThenAndElseTokensButValidExpressionsMaintainsAstIntegrity",
                 "if x > 5 y * 2 z - 3",
                 {
-                    {E::MissingThenToken, 1, 9, 1, 10},
-                    {E::MissingElseToken, 1, 15, 1, 16}
+                    {E::MissingOperator, 1, 10, 1, 11},
+                    {E::MissingOperator, 1, 16, 1, 17},
+                    {E::MissingThenToken, 1, 21, 1, 22},
+                    {E::MissingElseToken, 1, 21, 1, 22}
                 },
                 IsConditional(
-                    IsBinary(TokenType::Greater, IsIdentifier("x"), IsNumber("5")),
-                    IsBinary(TokenType::Star, IsIdentifier("y"), IsNumber("2")),
-                    IsBinary(TokenType::Minus, IsIdentifier("z"), IsNumber("3"))
-                )
+                    IsBinary(TokenType::Greater,
+                        IsIdentifier("x"),
+                        IsBinary(TokenType::Minus,
+                            IsBinary(TokenType::Star,
+                                IsBinary(TokenType::Error, IsNumber("5"), IsIdentifier("y")),
+                                IsBinary(TokenType::Error, IsNumber("2"), IsIdentifier("z"))
+                            ),
+                            IsNumber("3")
+                        )
+                    ),
+                    IsNull(),
+                    IsNull()
+                ),
+                {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
             );
 
             reg("GarbageInConditionAndThenBranchRecoversElse",

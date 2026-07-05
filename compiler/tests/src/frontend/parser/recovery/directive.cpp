@@ -13,34 +13,41 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<DirectiveVerifier>& v)
+            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
+                          const OneOf<DirectiveVerifier>& v)
             {
                 ErrorRegistry::add(n, c, errs, v);
             };
 
             reg("MissingName", "#",
                 {{E::MissingDirectiveName, 1, 2, 1, 3}},
-                IsDirective("<error>"));
+                IsDirective("<error>")
+            );
 
             reg("MissingValueAfterEquals", "#dir = ",
                 {{E::MissingValueAfterEquals, 1, 7, 1, 8}},
-                IsDirective("dir", IsNull()));
+                IsDirective("dir", IsNull())
+            );
 
             reg("MissingHashValuelessDirective", "dir",
                 {{E::InvalidStandaloneStatement, 1, 1, 1, 4}},
-                IsNull());
+                IsNull()
+            );
 
             reg("MissingNamePlusValueWithoutEquals", "# \"string\"",
                 {{E::MissingDirectiveName, 1, 3, 1, 11}},
-                IsDirective("<error>", IsNull()));
+                IsDirective("<error>", IsNull())
+            );
 
             reg("InvalidMarkerAsteriskWithValue", "*iterations = 1000",
                 {{E::InvalidExpression, 1, 1, 1, 2}},
-                IsNull());
+                IsNull()
+            );
 
             reg("InvalidMarkerAsteriskNoValue", "*module",
                 {{E::InvalidExpression, 1, 1, 1, 2}},
-                IsNull());
+                IsNull()
+            );
 
             return true;
         }();
@@ -48,7 +55,7 @@ namespace valuascript::compiler::test
 
     TEST_P(DirectiveErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts]  = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
         ExpectDirectiveErrors(code, errors, verifier, skip_contexts);

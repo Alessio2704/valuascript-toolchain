@@ -550,7 +550,7 @@ namespace valuascript::compiler::test
             auto bracket = dynamic_cast<BracketAccess*>(reassign->target.get());
             ASSERT_NE(bracket, nullptr);
             ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr);
-            EXPECT_EQ(bracket->index, nullptr) << "Index should be null due to local comma error recovery";
+            EXPECT_NE(bracket->index, nullptr) << "Index should be preserved despite local comma error recovery";
 
             auto val = dynamic_cast<NumberLiteral*>(reassign->value.get());
             ASSERT_NE(val, nullptr);

@@ -116,11 +116,17 @@ namespace valuascript::compiler::test
 
             reg("MissingCommaAndColonBreaksList", "f(a: 1 b 2)",
                 {
-                    {E::MissingOperator, 1, 8, 1, 9}
+                    {E::MissingOperator, 1, 8, 1, 9},
+                    {E::MissingOperator, 1, 10, 1, 11},
                 },
                 IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")}
+                        {
+                            "a", IsBinary(
+                                TokenType::Error, IsNumber("1"),
+                                IsBinary(TokenType::Error, IsIdentifier("b"), IsNumber("2"))
+                            )
+                        }
                     }
                 )
             );

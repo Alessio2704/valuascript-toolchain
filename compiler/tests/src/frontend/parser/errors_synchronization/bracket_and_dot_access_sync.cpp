@@ -200,7 +200,7 @@ namespace valuascript::compiler::test
                         ExpectBracketAccess(l2, [](auto l1) {
                             ExpectDotAccess(l1, [](auto obj) { ExpectIdentifier(obj, "obj"); }, "let");
                             }, [](auto idx) {
-                            ASSERT_EQ(idx, nullptr);
+                            ASSERT_NE(idx, nullptr);
                             });
                         }, "if");
                     }, nullptr);

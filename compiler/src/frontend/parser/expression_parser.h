@@ -12,6 +12,7 @@ namespace valuascript::compiler
         Parser& parser;
         ParserContext& ctx;
         TokenCursor& cursor;
+        bool allow_missing_operator_binding_ = true;
 
         explicit ExpressionParser(Parser& p);
 
@@ -28,8 +29,9 @@ namespace valuascript::compiler
 
         static ParseRule get_rule(TokenType type);
 
-        ExprPtr parse_expression(Precedence min_precedence = Precedence::Or);
+        ExprPtr parse_expression(Precedence min_precedence = Precedence::Or, bool allow_missing_operator_binding = true);
         ExprPtr handle_invalid_expression_start();
+        bool is_reassignment_start_lookahead() const;
 
         template <typename T>
         ExprPtr parse_literal_prefix();

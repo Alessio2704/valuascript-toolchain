@@ -55,7 +55,7 @@ namespace valuascript::compiler::test
                 {
                     {E::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
                 },
-                IsBracket(IsIdentifier("arr"), IsNull())
+                IsBracket(IsIdentifier("arr"), IsNumber("1"))
             );
 
             reg("GarbageDotAccessProperty", "obj.*",
