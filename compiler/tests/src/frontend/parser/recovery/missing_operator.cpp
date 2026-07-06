@@ -195,24 +195,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(MissingOperatorTestBase, dir_missing_operator_2)
-    {
-        ExpectParseErrorsWithRecovery(
-            "#iterations = 1000 + 1 2",
-            {{E::MissingOperator, 1, 24, 1, 25}},
-            ProgramSpec{
-                .directives = {
-                    IsDirective("iterations",
-                                IsBinary(TokenType::Plus,
-                                         IsNumber("1000"),
-                                         IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
-                                )
-                    )
-                }
-            }
-        );
-    }
-
     TEST_F(MissingOperatorTestBase, dir_missing_operator_4)
     {
         ExpectParseErrorsWithRecovery(

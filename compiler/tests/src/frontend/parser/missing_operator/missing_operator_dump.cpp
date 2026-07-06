@@ -59,11 +59,16 @@ namespace valuascript::compiler::test
         out << "[DEBUG] Recovery expansion dump finished (" << file_index << " variations)";
     }
 
-    std::vector<MissingOperatorDumpTestCase> missing_operator_dump_cases() {
+    std::vector<MissingOperatorDumpTestCase> missing_operator_dump_cases()
+    {
         return {
             {
                 .name = "MissingOperator1",
                 .snippet = "1 2"
+            },
+            {
+                .name = "MissingOperator2",
+                .snippet = "100 + 1 2"
             }
         };
     }
@@ -73,7 +78,7 @@ namespace valuascript::compiler::test
         MissingOperatorDump,
         testing::ValuesIn(missing_operator_dump_cases()),
         [](const testing::TestParamInfo<MissingOperatorDumpTestCase>& param_info) {
-            return param_info.param.name;
+        return param_info.param.name;
         }
     );
 }
