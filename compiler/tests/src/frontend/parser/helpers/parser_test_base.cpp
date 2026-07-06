@@ -98,9 +98,29 @@ namespace valuascript::compiler::test
             {
                 bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
                     != item.skip_contexts.end();
+
+                UniversalVerifier final_verifier = item.verifier;
+                bool needs_transform = true;
+
+                if (auto* m_v_ptr = std::get_if<std::shared_ptr<MultiInjectVerifier>>(&item.verifier))
+                {
+                    if (auto m_v = *m_v_ptr)
+                    {
+                        if (ctx.operator_binding_required)
+                        {
+                            final_verifier = m_v->binding_required;
+                        }
+                        else
+                        {
+                            final_verifier = ctx.transform_multi_verifier(m_v->multi_element);
+                            needs_transform = false;
+                        }
+                    }
+                }
+
                 return ProcessingItem{
                     ctx.output_type, ctx.prefix + item.code + ctx.suffix,
-                    ctx.transform_verifier(item.verifier),
+                    needs_transform ? ctx.transform_verifier(final_verifier) : final_verifier,
                     item.path_name + " -> " + (next_rec_depth > item.recursion_depth
                                                    ? ctx.name + "(Recurse)"
                                                    : ctx.name),

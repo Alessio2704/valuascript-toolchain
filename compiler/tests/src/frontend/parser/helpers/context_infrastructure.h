@@ -26,6 +26,8 @@ namespace valuascript::compiler::test
         TopLevel
     };
 
+    struct MultiInjectVerifier;
+
     using UniversalVerifier = std::variant<
         NullVerifier,
         std::string,
@@ -41,8 +43,15 @@ namespace valuascript::compiler::test
         ExprStmtVerifier,
         ExprVerifier,
         ModifierVerifier,
-        TypeVerifier
+        TypeVerifier,
+        std::shared_ptr<MultiInjectVerifier>
     >;
+
+    struct MultiInjectVerifier
+    {
+        UniversalVerifier binding_required;
+        std::vector<UniversalVerifier> multi_element;
+    };
 
     template <class... Ts>
     struct overloaded : Ts...
@@ -84,5 +93,8 @@ namespace valuascript::compiler::test
         std::function<UniversalVerifier(const UniversalVerifier&,
                                         const std::vector<RecoveryBlock>&,
                                         const std::vector<RecoveryBlock>&)> transform_verifier_block = nullptr;
+
+        bool operator_binding_required = true;
+        std::function<UniversalVerifier(const std::vector<UniversalVerifier>&)> transform_multi_verifier = nullptr;
     };
 }

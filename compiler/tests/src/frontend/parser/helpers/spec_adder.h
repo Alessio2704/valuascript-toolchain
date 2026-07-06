@@ -43,6 +43,10 @@ namespace valuascript::compiler::test
         {
         }
 
+        static void add(ProgramSpec&, const std::shared_ptr<MultiInjectVerifier>&)
+        {
+        }
+
         template <typename T>
         static T get_v(const UniversalVerifier& v)
         {

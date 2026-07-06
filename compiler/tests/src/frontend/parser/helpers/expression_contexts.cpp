@@ -101,6 +101,15 @@ namespace valuascript::compiler::test
                 [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsTensor({SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")}));
+                },
+                BlockContext::None, nullptr,
+                false,
+                [](const std::vector<UniversalVerifier>& vs) -> UniversalVerifier
+                {
+                    std::vector<ExprVerifier> elements;
+                    for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
+                    elements.push_back(IsNumber("1"));
+                    return UniversalVerifier(IsTensor(elements));
                 }
             },
             {
