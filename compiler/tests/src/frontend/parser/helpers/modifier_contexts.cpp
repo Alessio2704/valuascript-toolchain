@@ -8,9 +8,12 @@ namespace valuascript::compiler::test
     {
         static const std::vector<Context> contexts = {
             {
-                ContextNames::ModBeforeLetSingle, {InjectableType::Modifier}, InjectableType::StrongStatement, "",
-                " let ctx_assign = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModBeforeLetSingle,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_assign = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
                         IsAssignment(
@@ -23,9 +26,12 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModBeforeLetMultiple, {InjectableType::Modifier}, InjectableType::StrongStatement, "",
-                " let ctx_a, ctx_b = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModBeforeLetMultiple,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_a, ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
                         IsAssignment(
@@ -40,11 +46,12 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModBeforeLetMultipleWithInner, {InjectableType::Modifier},
-                InjectableType::StrongStatement,
-                "",
-                " let ctx_a, @test ctx_b = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModBeforeLetMultipleWithInner,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_a, @test ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     auto mods_a = SpecAdder::get_v<ModifierVerifier>(v);
                     auto mods_b = mods_a;
@@ -61,10 +68,12 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModBeforeLetMultipleWithBothInner, {InjectableType::Modifier},
-                InjectableType::StrongStatement, "",
-                " let @test1 ctx_a, @test2 ctx_b = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModBeforeLetMultipleWithBothInner,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let @test1 ctx_a, @test2 ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     auto injected_mods = SpecAdder::get_v<ModifierVerifier>(v);
 
@@ -85,19 +94,24 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModAssignment, {InjectableType::Modifier}, InjectableType::StrongStatement, "let ",
-                " ctx_assign = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModAssignment,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "let ",
+                .suffix = " ctx_assign = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment({{SpecAdder::get_v<ModifierVerifier>(v), "ctx_assign"}},
                                                           IsNumber("1")));
                 }
             },
             {
-                ContextNames::ModMultiAssignment, {InjectableType::Modifier}, InjectableType::StrongStatement,
-                "let ctx_a, ",
-                " ctx_b = 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModMultiAssignment,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "let ctx_a, ",
+                .suffix = " ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsAssignment({
                                                               AssignmentTargetSpec("ctx_a"),
@@ -107,26 +121,35 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModImportStatement, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " import \"ctx_lib.vs\"\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModImportStatement,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " import \"ctx_lib.vs\"\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsImport("\"ctx_lib.vs\"", SpecAdder::get_v<ModifierVerifier>(v)));
                 }
             },
             {
-                ContextNames::ModReturnStatement, {InjectableType::Modifier}, InjectableType::WeakStatement, "",
-                " return 1\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModReturnStatement,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::WeakStatement,
+                .prefix = "",
+                .suffix = " return 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
                         ReturnVerifier(IsReturn(SpecAdder::get_v<ModifierVerifier>(v), {IsNumber("1")})));
                 }
             },
             {
-                ContextNames::ModSwitchCase, {InjectableType::Modifier}, InjectableType::Expression, "switch(1) { ",
-                " case A -> 1 }",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModSwitchCase,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch(1) { ",
+                .suffix = " case A -> 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsSwitch(IsNumber("1"), {
                                                           SwitchCaseSpec(
@@ -136,26 +159,36 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModSwitchDefault, {InjectableType::Modifier}, InjectableType::Expression, "switch(1) { ",
-                " default -> 1 }",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModSwitchDefault,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch(1) { ",
+                .suffix = " default -> 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsSwitch(IsNumber("1"), {}, SpecAdder::get_v<ModifierVerifier>(v),
                                                       IsNumber("1")));
                 }
             },
             {
-                ContextNames::ModFunctionDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " func ctx_func() -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModFunctionDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " func ctx_func() -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func", SpecAdder::get_v<ModifierVerifier>(v), {},
                                                            {IsType("void")}));
                 }
             },
             {
-                ContextNames::ModFunctionParameter, {InjectableType::Modifier}, InjectableType::TopLevel,
-                "func ctx_param(",
-                " p: int) -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModFunctionParameter,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_param(",
+                .suffix = " p: int) -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_param", {},
                                                            {
@@ -167,9 +200,12 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModFunctionParameterWithDefault, {InjectableType::Modifier}, InjectableType::TopLevel,
-                "func ctx_param(",
-                " p: int = 1) -> void {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModFunctionParameterWithDefault,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_param(",
+                .suffix = " p: int = 1) -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_param", {},
                                                            {
@@ -182,17 +218,23 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModStructDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " struct ctx_struct {}\n",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModStructDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " struct ctx_struct {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct", SpecAdder::get_v<ModifierVerifier>(v), {}));
                 }
             },
             {
-                ContextNames::ModStructField, {InjectableType::Modifier}, InjectableType::TopLevel,
-                "struct ctx_s_field { ",
-                " f: int }\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModStructField,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "struct ctx_s_field { ",
+                .suffix = " f: int }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_s_field", {}, {
                                                              FieldSpec{
@@ -203,17 +245,24 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModEnumDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " enum ctx_enum: int { A = 1 }\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModEnumDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " enum ctx_enum: int { A = 1 }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("ctx_enum", SpecAdder::get_v<ModifierVerifier>(v), IsType("int"),
                                                        {{"A", {}, IsNumber("1")}}));
                 }
             },
             {
-                ContextNames::ModEnumCase, {InjectableType::Modifier}, InjectableType::TopLevel,
-                "enum ctx_e_case: int { ",
-                " A = 1 }\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModEnumCase,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "enum ctx_e_case: int { ",
+                .suffix = " A = 1 }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("ctx_e_case", {}, IsType("int"), {
                                                            {"A", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
@@ -221,23 +270,35 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                ContextNames::ModTypealiasDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " typealias ctx_alias = int\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModTypealiasDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " typealias ctx_alias = int\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsTypeAlias("ctx_alias", SpecAdder::get_v<ModifierVerifier>(v),
                                                          IsType("int")));
                 }
             },
             {
-                ContextNames::ModExtensionDefinition, {InjectableType::Modifier}, InjectableType::TopLevel, "",
-                " extension ctx_target {}\n", [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModExtensionDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " extension ctx_target {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsExtensionDef(SpecAdder::get_v<ModifierVerifier>(v), IsType("ctx_target")));
                 }
             },
             {
-                ContextNames::ModDictItem, {InjectableType::Modifier}, InjectableType::Expression, "{ ", " k: 1 }",
-                [](const UniversalVerifier& v) -> UniversalVerifier
+                .name = ContextNames::ModDictItem,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ ",
+                .suffix = " k: 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsDict({
                         DictItemSpec{"k", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}

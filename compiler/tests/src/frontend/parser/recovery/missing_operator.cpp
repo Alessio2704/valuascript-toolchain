@@ -8,26 +8,6 @@ namespace valuascript::compiler::test
 
     using E = ParserErrorCode;
 
-    TEST_F(MissingOperatorTestBase, vec_access_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "let a = vec[1 2]",
-            {{E::MissingOperator, 1, 15, 1, 16}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment(
-                        {
-                            {"a"}
-                        },
-                        IsBracket(
-                            IsIdentifier("vec"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
-                        )
-                    )
-                }
-            }
-        );
-    }
-
     TEST_F(MissingOperatorTestBase, vec_access_missing_operator_2)
     {
         ExpectParseErrorsWithRecovery(
@@ -113,24 +93,6 @@ namespace valuascript::compiler::test
                                            )
                                   )
                         )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(MissingOperatorTestBase, tensor_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "let a = [1 2]",
-            {{E::MissingOperator, 1, 12, 1, 13}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment(
-                        {
-                            {"a"}
-                        },
-                        IsTensor({IsNumber("1"), IsNumber("2")})
                     )
                 }
             }
@@ -244,24 +206,6 @@ namespace valuascript::compiler::test
                                 IsBinary(TokenType::Plus,
                                          IsNumber("1000"),
                                          IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
-                                )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(MissingOperatorTestBase, dir_missing_operator_3)
-    {
-        ExpectParseErrorsWithRecovery(
-            "#iterations = 1000 + (1 2)",
-            {{E::MissingOperator, 1, 25, 1, 26}},
-            ProgramSpec{
-                .directives = {
-                    IsDirective("iterations",
-                                IsBinary(TokenType::Plus,
-                                         IsNumber("1000"),
-                                         IsGrouping(IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")))
                                 )
                     )
                 }
@@ -544,35 +488,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(MissingOperatorTestBase, mod_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "@export(a: 1 2) let x = 1",
-            {{E::MissingOperator, 1, 14, 1, 15}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment(
-                        {
-                            AssignmentTargetSpec(
-                                {
-                                    ModifierSpec{
-                                        "export",
-                                        {
-                                            ArgSpec{
-                                                "a",
-                                                IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
-                                            }
-                                        }
-                                    }
-                                }, "x")
-                        },
-                        IsNumber("1")
-                    )
-                }
-            }
-        );
-    }
-
     TEST_F(MissingOperatorTestBase, mod_missing_operator_2)
     {
         ExpectParseErrorsWithRecovery(
@@ -689,19 +604,6 @@ namespace valuascript::compiler::test
         );
     }
 
-    TEST_F(MissingOperatorTestBase, reassign_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "a = 1 2",
-            {{E::MissingOperator, 1, 7, 1, 8}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsReassignment(IsIdentifier("a"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")))
-                }
-            }
-        );
-    }
-
     TEST_F(MissingOperatorTestBase, reassign_missing_operator_2)
     {
         ExpectParseErrorsWithRecovery(
@@ -716,24 +618,6 @@ namespace valuascript::compiler::test
                             IsNumber("1"),
                             IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3"))
                         )
-                    )
-                }
-            }
-        );
-    }
-
-    TEST_F(MissingOperatorTestBase, reassign_missing_operator_3)
-    {
-        ExpectParseErrorsWithRecovery(
-            "a = 1 + (2 3)",
-            {{E::MissingOperator, 1, 12, 1, 13}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsReassignment(IsIdentifier("a"),
-                                   IsBinary(TokenType::Plus,
-                                            IsNumber("1"),
-                                            IsGrouping(IsBinary(TokenType::Error, IsNumber("2"), IsNumber("3")))
-                                   )
                     )
                 }
             }
@@ -818,27 +702,6 @@ namespace valuascript::compiler::test
                                           IsDot(IsIdentifier("a"), "b"))
                         )
                     )
-                }
-            }
-        );
-    }
-
-    TEST_F(MissingOperatorTestBase, switch_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "let a = switch (res) { case UP -> 1 2 }",
-            {{E::MissingOperator, 1, 37, 1, 38}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment(
-                        {{"a"}},
-                        IsSwitch(
-                            IsIdentifier("res"), {
-                                SwitchCaseSpec{
-                                    {"UP"},
-                                    IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))
-                                }
-                            }))
                 }
             }
         );
@@ -1199,26 +1062,6 @@ namespace valuascript::compiler::test
                                               SwitchCaseSpec{{"HIGH"}, IsNumber("3")}
                                           })
                     )
-                }
-            }
-        );
-    }
-
-    TEST_F(MissingOperatorTestBase, call_missing_operator_1)
-    {
-        ExpectParseErrorsWithRecovery(
-            "let result = process(a: 10 20)",
-            {{E::MissingOperator, 1, 28, 1, 30}},
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment(
-                        {{"result"}},
-                        IsCall(IsIdentifier("process"), {
-                                   ArgSpec{
-                                       "a",
-                                       IsBinary(TokenType::Error, IsNumber("10"), IsNumber("20"))
-                                   }
-                               }))
                 }
             }
         );

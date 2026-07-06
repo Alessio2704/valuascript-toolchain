@@ -42,43 +42,31 @@ namespace valuascript::compiler::test
         }
     }
 
-    namespace
-    {
-        using ASTCreator = std::function<UniversalVerifier(std::vector<StmtVerifier>)>;
-
-        Context make_block_context(std::string name, std::string prefix, std::string suffix, ASTCreator creator)
-        {
-            Context ctx;
-            ctx.name = std::move(name);
-            ctx.prefix = std::move(prefix);
-            ctx.suffix = std::move(suffix);
-            ctx.input_types = {InjectableType::WeakStatement, InjectableType::StrongStatement};
-            ctx.output_type = InjectableType::TopLevel;
-            ctx.block_context = BlockContext::FunctionBody;
-
-            ctx.transform_verifier = [creator](const UniversalVerifier& v)
-            {
-                return creator({extract_stmt_v(v)});
-            };
-
-            ctx.transform_verifier_block = [creator](const UniversalVerifier& v, const auto& pre, const auto& post)
-            {
-                return creator(build_block_body(v, pre, post));
-            };
-
-            return ctx;
-        }
-    }
-
     const std::vector<Context>& ContextRegistry::get_block_contexts_impl()
     {
         static const std::vector<Context> contexts = {
-            make_block_context(ContextNames::FunctionBodyWrapper, "func ctx_wrapper() -> void {\n  ", "\n}\n",
-                               [](auto body)
-                               {
-                                   return UniversalVerifier(
-                                       IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, std::move(body)));
-                               })
+            {
+                .name = ContextNames::FunctionBodyWrapper,
+                .input_types = {InjectableType::WeakStatement, InjectableType::StrongStatement},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_wrapper() -> void {\n  ",
+                .suffix = "\n}\n",
+                .transform_verifier = [](const UniversalVerifier& v)
+                {
+                    auto creator = [](const std::vector<StmtVerifier>& body) {
+                        return UniversalVerifier(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, body));
+                    };
+                    return creator({extract_stmt_v(v)});
+                },
+                .block_context = BlockContext::FunctionBody,
+                .transform_verifier_block = [](const UniversalVerifier& v, const auto& pre, const auto& post)
+                {
+                    auto creator = [](const std::vector<StmtVerifier>& body) {
+                        return UniversalVerifier(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, body));
+                    };
+                    return creator(build_block_body(v, pre, post));
+                }
+            }
         };
 
         return contexts;

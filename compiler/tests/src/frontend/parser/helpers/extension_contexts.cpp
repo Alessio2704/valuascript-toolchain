@@ -34,39 +34,29 @@ namespace valuascript::compiler::test
             for (const auto& b : post) b.add_to_spec(spec);
             return spec;
         }
-
-        Context make_extension_context(std::string name, std::string prefix, std::string suffix)
-        {
-            Context ctx;
-            ctx.name = std::move(name);
-            ctx.prefix = std::move(prefix);
-            ctx.suffix = std::move(suffix);
-            ctx.input_types = {
-                InjectableType::Function, InjectableType::Struct, InjectableType::Enum, InjectableType::StrongStatement
-            };
-            ctx.output_type = InjectableType::TopLevel;
-            ctx.block_context = BlockContext::ExtensionBody;
-
-            ctx.transform_verifier = [](const UniversalVerifier& v)
-            {
-                ProgramSpec spec;
-                add_to_spec(spec, v);
-                return UniversalVerifier(IsExtensionDef({}, IsType("ctx_target"), std::move(spec)));
-            };
-
-            ctx.transform_verifier_block = [](const UniversalVerifier& v, const auto& pre, const auto& post)
-            {
-                return UniversalVerifier(IsExtensionDef({}, IsType("ctx_target"), build_extension_spec(v, pre, post)));
-            };
-
-            return ctx;
-        }
     }
 
     const std::vector<Context>& ContextRegistry::get_extension_contexts()
     {
         static const std::vector<Context> contexts = {
-            make_extension_context(ContextNames::ExtensionBodyWrapper, "extension ctx_target {\n  ", "\n}\n")
+            {
+                .name = ContextNames::ExtensionBodyWrapper,
+                .input_types = {InjectableType::Function, InjectableType::Struct, InjectableType::Enum, InjectableType::StrongStatement},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "extension ctx_target {\n  ",
+                .suffix = "\n}\n",
+                .transform_verifier = [](const UniversalVerifier& v)
+                {
+                    ProgramSpec spec;
+                    add_to_spec(spec, v);
+                    return UniversalVerifier(IsExtensionDef({}, IsType("ctx_target"), std::move(spec)));
+                },
+                .block_context = BlockContext::ExtensionBody,
+                .transform_verifier_block = [](const UniversalVerifier& v, const auto& pre, const auto& post)
+                {
+                    return UniversalVerifier(IsExtensionDef({}, IsType("ctx_target"), build_extension_spec(v, pre, post)));
+                }
+            }
         };
 
         return contexts;
