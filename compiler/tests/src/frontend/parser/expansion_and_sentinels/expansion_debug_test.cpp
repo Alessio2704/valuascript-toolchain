@@ -9,7 +9,7 @@ namespace valuascript::compiler::test
     public:
         static void DumpExpansion(InjectableType type, const std::string& snippet, const std::string& label)
         {
-            DumpWriter writer("expansion_features_debug_" + label + ".txt");
+            DumpWriter writer("expansion_features_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
             auto& out = writer.out();
 

@@ -22,13 +22,6 @@ namespace valuascript::compiler::test
                 IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
             );
 
-            // reg("MissingOperatorBinary", "1 2",
-            //     {
-            //         {E::MissingOperator, 1, 3, 1, 4}
-            //     },
-            //     IsNumber("1")
-            // );
-
             reg("BinaryInvalidRight1", "1 + * 2",
                 {
                     {E::InvalidExpression, 1, 5, 1, 6}

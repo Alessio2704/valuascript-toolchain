@@ -12,7 +12,7 @@ namespace valuascript::compiler::test
     public:
         static void DumpKeywordTest(const std::string& keyword)
         {
-            DumpWriter writer("reserved_keyword_debug_" + keyword + ".txt");
+            DumpWriter writer("reserved_keyword_debug_" + keyword + ".txt", "reserved_keyword_dumps");
             if (!writer.is_open()) return;
             auto& out = writer.out();
 

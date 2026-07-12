@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
     class DumpWriter
     {
     public:
-        explicit DumpWriter(const std::string& filename, const std::string& folder = "fuzz_dumps")
+        explicit DumpWriter(const std::string& filename, const std::string& folder)
         {
             try
             {

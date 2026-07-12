@@ -2,7 +2,6 @@
 #include "synthetic_generator.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include <fstream>
-#include <iostream>
 
 namespace valuascript::compiler::test
 {
@@ -12,19 +11,12 @@ namespace valuascript::compiler::test
 
     TEST_F(SyntheticStressTest, InspectGeneratedPrograms)
     {
-        std::filesystem::path dump_dir = std::filesystem::current_path() / "fuzz_dumps";
-        std::filesystem::create_directories(dump_dir);
-
-        std::cout << "\n======================================================\n";
-        std::cout << "Dumping synthetic programs to: \n" << dump_dir.string() << "\n";
-        std::cout << "======================================================\n\n";
-
         for (size_t seed = 0; seed < 5; ++seed)
         {
             SyntheticGenerator gen(seed);
             auto [code, spec] = gen.generate_program(1000);
 
-            DumpWriter writer("program_seed_" + std::to_string(seed) + ".vs");
+            DumpWriter writer("program_seed_" + std::to_string(seed) + ".vs", "synthetic_generator_dumps");
 
             ASSERT_TRUE(writer.out().is_open()) << "Failed to open file for writing: " << writer.path_string();
 
@@ -40,23 +32,19 @@ namespace valuascript::compiler::test
     {
         SyntheticGeneratorConfig cfg;
 
-        std::filesystem::path dump_dir = std::filesystem::current_path() / "fuzz_dumps";
-        std::filesystem::create_directories(dump_dir);
-
         for (size_t seed = 0; seed < 5; ++seed)
         {
             SyntheticGenerator gen(seed, cfg);
             auto [code, spec] = gen.generate_program(1000);
 
-            std::filesystem::path file_path = dump_dir / ("experiment_seed_" + std::to_string(seed) + ".vs");
-            std::ofstream out(file_path);
+            DumpWriter writer("experiment_seed_" + std::to_string(seed) + ".vs", "synthetic_generator_dumps");
 
-            ASSERT_TRUE(out.is_open()) << "Failed to open file for writing: " << file_path;
+            ASSERT_TRUE(writer.out().is_open()) << "Failed to open file for writing: " << writer.path_string();
 
+            auto& out = writer.out();
             out << cfg.generate_report(seed);
             out << gen.get_stats().dump_report(seed);
             out << code;
-            out.close();
         }
     }
 }

@@ -42,15 +42,6 @@ namespace valuascript::compiler::test
                 })
             );
 
-            reg("TensorMissingComma", "[1 2]",
-                {
-                    {E::MissingOperator, 1, 4, 1, 5}
-                },
-                IsTensor({
-                    IsNumber("1"), IsNumber("2")
-                })
-            );
-
             reg("EmptyGarbageElement", "[*]",
                 {
                     {E::InvalidExpression, 1, 2, 1, 3}

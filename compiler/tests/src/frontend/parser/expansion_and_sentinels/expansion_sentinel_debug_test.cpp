@@ -12,7 +12,7 @@ namespace valuascript::compiler::test
                                           const std::vector<ParserExpectedError>& errors,
                                           const std::string& label)
         {
-            DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt");
+            DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
 
             auto& out = writer.out();
