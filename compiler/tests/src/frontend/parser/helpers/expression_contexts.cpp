@@ -184,6 +184,17 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                .name = ContextNames::ExprDictValueComma,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ k: ",
+                .suffix = ", }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsDict({{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}}));
+                }
+            },
+            {
                 .name = ContextNames::ExprBracketAccessIndex,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,

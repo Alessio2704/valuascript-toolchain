@@ -29,7 +29,9 @@ namespace valuascript::compiler::test
         size_t file_index = 0;
         size_t base_seed = 0;
 
-        std::string filename = "missing_operator_all_expansions_" + name + ".vs";
+        std::string safe_snippet = snippet;
+        std::replace(safe_snippet.begin(), safe_snippet.end(), '/', '_');
+        std::string filename = safe_snippet + ".txt";
         DumpWriter writer(filename, "missing_operator_dumps");
         ASSERT_TRUE(writer.is_open()) << "Failed to open file for writing: " << writer.path_string();
 
@@ -68,7 +70,107 @@ namespace valuascript::compiler::test
             },
             {
                 .name = "MissingOperator2",
+                .snippet = "1 a"
+            },
+            {
+                .name = "MissingOperator3",
+                .snippet = "a b"
+            },
+            {
+                .name = "MissingOperator4",
+                .snippet = "a 1"
+            },
+            {
+                .name = "MissingOperator5",
                 .snippet = "100 + 1 2"
+            },
+            {
+                .name = "MissingOperator6",
+                .snippet = "1 + (2 3)"
+            },
+            {
+                .name = "MissingOperator7",
+                .snippet = "1 (2 + 3)"
+            },
+            {
+                .name = "MissingOperator8",
+                .snippet = "1 + a() b()"
+            },
+            {
+                .name = "MissingOperator9",
+                .snippet = "1000 a() + b()"
+            },
+            {
+                .name = "MissingOperator10",
+                .snippet = "a + b (1 + 2)"
+            },
+            {
+                .name = "MissingOperator11",
+                .snippet = "a + b model.a"
+            },
+            {
+                .name = "MissingOperator12",
+                .snippet = "a + b vec[0]"
+            },
+            {
+                .name = "MissingOperator13",
+                .snippet = "a + b {}"
+            },
+            {
+                .name = "MissingOperator14",
+                .snippet = "a[1] + (b.a  c)"
+            },
+            {
+                .name = "MissingOperator15",
+                .snippet = "a[1] + (b.a  c[3].b)"
+            },
+            {
+                .name = "MissingOperator16",
+                .snippet = "a + a.key (1 + 2)"
+            },
+            {
+                .name = "MissingOperator17",
+                .snippet = "1 + a[0] + b[1:2] a.b"
+            },
+            {
+                .name = "MissingOperator18",
+                .snippet = "1 + a() (2 + 3)"
+            },
+            {
+                .name = "MissingOperator19",
+                .snippet = "a[1]  (b - c)"
+            },
+            {
+                .name = "MissingOperator20",
+                .snippet = "a[1] / (b  c)"
+            },
+            {
+                .name = "MissingOperator21",
+                .snippet = "a[1] / (1  c)"
+            },
+            {
+                .name = "MissingOperator22",
+                .snippet = "a[1] (1 + c)"
+            },
+            {
+                .name = "MissingOperator23",
+                .snippet = "a ([1, 2])"
+            },
+            {
+                .name = "MissingOperator24",
+                .snippet = "a ({1, 2})"
+            },
+            {
+                .name = "MissingOperator25",
+                .snippet = "a ([[1, 2], [3, 4]])"
+            },
+            {
+                .name = "MissingOperator26",
+                .snippet = "a (-5)"
+            },
+            {
+                .name = "MissingOperator27",
+                .snippet = "13_624 / 11%   4"
             }
         };
     }
