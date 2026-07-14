@@ -192,6 +192,12 @@ namespace valuascript::compiler
         context_.handle_error(ex);
     }
 
+    [[noreturn]] void TokenCursor::report_error(const SourceSpan& span, const ParserErrorCode code) const
+    {
+        report_error_no_panic(span, code);
+        throw ParseSyncException();
+    }
+
     [[noreturn]] void TokenCursor::report_error(const Token& token,
                                                 const ParserErrorCode code,
                                                 const bool use_exact_token_range) const

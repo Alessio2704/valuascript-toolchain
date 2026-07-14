@@ -59,6 +59,8 @@ namespace valuascript::compiler
         void report_error_no_panic(const Token& token, ParserErrorCode code,
                                    bool use_exact_token_range = false) const;
 
+        [[noreturn]] void report_error(const SourceSpan& span, ParserErrorCode code) const;
+
         [[noreturn]] void report_error(const Token& token, ParserErrorCode code,
                                        bool use_exact_token_range = false) const;
     };

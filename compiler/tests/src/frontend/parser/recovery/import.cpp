@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
             };
 
             reg("MissingImportKeyword", "file_path.vs",
-                {{E::InvalidStandaloneStatement, 1, 11, 1, 13}},
+                {{E::InvalidStandaloneStatement, 1, 1, 1, 13}},
                 IsNull());
 
             reg("MissingImportStringPath", "import ",

@@ -2,13 +2,19 @@
 #include "recovery_sentinel.h"
 #include "context_names.h"
 #include <utility>
+#include <optional>
 
 namespace valuascript::compiler::test
 {
     namespace
     {
-        StmtVerifier extract_stmt_v(const UniversalVerifier& v)
+        std::optional<StmtVerifier> extract_stmt_v(const UniversalVerifier& v)
         {
+            if (std::holds_alternative<NullVerifier>(v))
+            {
+                return std::nullopt;
+            }
+
             return std::visit(
                 overloaded{
                     [](const StmtVerifier& ver) { return ver; },
@@ -36,7 +42,10 @@ namespace valuascript::compiler::test
             };
 
             add_blocks(pre);
-            body.push_back(extract_stmt_v(v));
+            if (auto stmt = extract_stmt_v(v))
+            {
+                body.push_back(std::move(*stmt));
+            }
             add_blocks(post);
             return body;
         }
@@ -56,7 +65,11 @@ namespace valuascript::compiler::test
                     auto creator = [](const std::vector<StmtVerifier>& body) {
                         return UniversalVerifier(IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, body));
                     };
-                    return creator({extract_stmt_v(v)});
+                    if (auto stmt = extract_stmt_v(v))
+                    {
+                        return creator({std::move(*stmt)});
+                    }
+                    return creator({});
                 },
                 .block_context = BlockContext::FunctionBody,
                 .transform_verifier_block = [](const UniversalVerifier& v, const auto& pre, const auto& post)

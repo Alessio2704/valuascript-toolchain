@@ -70,6 +70,13 @@ namespace valuascript::compiler::test
         );
 
         DumpRecoveryExpansion(
+            InjectableType::StrongStatement,
+            "1 + 1",
+            {ParserExpectedError(ParserErrorCode::InvalidStandaloneStatement, 1, 6)},
+            "InvalidStandaloneStatement"
+        );
+
+        DumpRecoveryExpansion(
             InjectableType::Expression,
             "1 + ",
             {ParserExpectedError(ParserErrorCode::InvalidExpression, 1, 5)},

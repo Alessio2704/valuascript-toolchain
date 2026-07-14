@@ -228,7 +228,7 @@ namespace valuascript::compiler
             {
                 if (expr && expr->is_complete())
                 {
-                    cursor.report_error(cursor.previous(), E::InvalidLeftSideExpressionInReassignment);
+                    cursor.report_error(expr->span, E::InvalidLeftSideExpressionInReassignment);
                 }
             }
 
@@ -256,7 +256,7 @@ namespace valuascript::compiler
 
         if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
         {
-            if (expr && expr->is_complete()) cursor.report_error(cursor.previous(), E::InvalidStandaloneStatement);
+            if (expr && expr->is_complete()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
             return nullptr;
         }
 

@@ -27,6 +27,7 @@ namespace valuascript::compiler
         if (rule.precedence < min_prec || rule.precedence == Precedence::None || rule.infix == nullptr) return false;
         if (op_tok.line > cursor.previous().line && !inside_grouping)
         {
+            if (is_reassignment_start_lookahead()) return false;
             if (!TokenTraits::is_postfix_operator(op_tok.type)) return false;
         }
         return true;
@@ -59,13 +60,19 @@ namespace valuascript::compiler
         size_t offset = 0;
 
         TokenType start_type = cursor.peek(offset).type;
-        if (start_type != TokenType::Identifier && !TokenTraits::acts_like_identifier(
+        if (start_type == TokenType::LeftBracket || start_type == TokenType::LeftParen)
+        {
+            // Do not advance offset; the while loop below will handle parsing the balanced brackets/parens.
+        }
+        else if (start_type == TokenType::Identifier || TokenTraits::acts_like_identifier(
             cursor.peek(offset), cursor.peek(offset + 1).type))
+        {
+            offset++;
+        }
+        else
         {
             return false;
         }
-
-        offset++;
 
         while (true)
         {

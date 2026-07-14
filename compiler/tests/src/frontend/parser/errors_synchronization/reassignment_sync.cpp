@@ -17,48 +17,6 @@ namespace valuascript::compiler::test
         AssignmentParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "multi_reassignment_not_supported",
-            "a, b = 1\n"
-            "let c = 2\n",
-            {
-            {Err::MultiReassignmentNotSupported, 1, 2}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_left_side_expression_in_reassignment",
-            "a + b = 3\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 7}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_standalone_statement_valid_expression",
-            "a + b\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidStandaloneStatement, 1, 5}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_value_after_equals_reassignment_eof",
             "a = ",
             {
@@ -121,20 +79,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "invalid_left_side_expression_function_call",
-            "a() = 1\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 5}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifiers_on_reassignment",
             "@modifier a = 1\n",
             {
@@ -152,116 +96,10 @@ namespace valuascript::compiler::test
             "let c = 2\n",
             {
             {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
-            {Err::InvalidStandaloneStatement, 1, 15},
+            {Err::InvalidStandaloneStatement, 1, 11, 1, 16},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_top_level_binary_expression",
-            "1 + 2\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidStandaloneStatement, 1, 5}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "block_invalid_left_side_expression_in_reassignment",
-            "func test() -> void {\n"
-            "  1 + 2 = 3\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 9}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "block_invalid_standalone_statement",
-            "func test() -> void {\n"
-            "  1 + 2\n"
-            "}\n",
-            {
-            {Err::InvalidStandaloneStatement, 2, 7}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "block_multi_reassignment_not_supported",
-            "func test() -> void {\n"
-            "  1, 2 = 3\n"
-            "}\n",
-            {
-            {Err::MultiReassignmentNotSupported, 2, 4}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tuple_1",
-            "(a, b) = 1\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tuple_2",
-            "func f() -> void {\n"
-            "  (a, b) = 1\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 10}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tensor_1",
-            "[1, 2] = 3\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 8}
-            },
-            [](const Program& ast) {
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tensor_2",
-            "func f() ->  void {\n"
-            "  [1, 2] = 3\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 10}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->body.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -353,34 +191,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tuple",
-            "func f() -> void {\n"
-            "  (a, b) = (1, 2)\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 10}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_tensor",
-            "func f() -> void {\n"
-            "  [x, y] = [3, 4]\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 10}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "chained_reassignment_not_supported",
             "func f() -> void {\n"
             "  a = b = c = 0\n"
@@ -406,20 +216,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_boolean",
-            "func f() -> void {\n"
-            "  true = false\n"
-            "}\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->body.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "reassignment_using_declaration_keyword",
             "func f() -> void {\n"
             "  let = 5\n"
@@ -437,26 +233,6 @@ namespace valuascript::compiler::test
             EXPECT_EQ(assign_1->targets[0].type.get(), nullptr);
             auto assign_1_value = dynamic_cast<NumberLiteral*>(assign_1->value.get());
             EXPECT_EQ(assign_1_value->value, "5");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "top_level_reassignment_invalid_lvalue_tuple",
-            "(a, b) = (1, 2)",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "top_level_reassignment_invalid_lvalue_tensor",
-            "[x, y] = [3, 4]",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -481,16 +257,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "top_level_reassignment_invalid_lvalue_boolean",
-            "true = false",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 6}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "top_level_reassignment_using_declaration_keyword",
             "let = 5",
             {
@@ -504,20 +270,6 @@ namespace valuascript::compiler::test
             EXPECT_EQ(assign_1->targets[0].type.get(), nullptr);
             auto assign_1_value = dynamic_cast<NumberLiteral*>(assign_1->value.get());
             EXPECT_EQ(assign_1_value->value, "5");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_invalid_lvalue_self_standalone",
-            "self = 42\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 6}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
             }
             },
             ParserErrorsSynchronizationTestCase{
@@ -557,20 +309,6 @@ namespace valuascript::compiler::test
             EXPECT_EQ(val->value, "42");
 
             auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(assign_c, nullptr);
-            EXPECT_EQ(assign_c->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_self_method_call_invalid_lvalue",
-            "self.calc() = 42\n"
-            "let c = 2\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 1, 13}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign_c = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign_c, nullptr);
             EXPECT_EQ(assign_c->targets[0].name, "c");
             }

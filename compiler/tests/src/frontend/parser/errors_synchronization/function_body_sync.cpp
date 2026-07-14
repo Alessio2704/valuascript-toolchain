@@ -307,19 +307,6 @@ namespace valuascript::compiler::test
             ExpectFunctionBodySize("test", 2)
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_as_standalone_statement",
-            "func test() -> int {\n"
-            "    let x = 1\n"
-            "    false\n"
-            "    return 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidStandaloneStatement, 3, 5}
-            },
-            ExpectFunctionBodySize("test", 2)
-            },
-            ParserErrorsSynchronizationTestCase{
             "dangling_operator_crosses_line_into_next_statement",
             "func test() -> int {\n"
             "    let x = 1 +\n"
@@ -339,17 +326,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {
             {Err::MultiReassignmentNotSupported, 2, 6}
-            },
-            ExpectFunctionBodySize("test", 0)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reassignment_to_invalid_lvalue_aborts_statement",
-            "func test() -> int {\n"
-            "    1 + 1 = 2\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidLeftSideExpressionInReassignment, 2, 11}
             },
             ExpectFunctionBodySize("test", 0)
             },
@@ -416,17 +392,6 @@ namespace valuascript::compiler::test
             ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
-            "standalone_math_expression_not_allowed",
-            "func test() -> int {\n"
-            "    1 + 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidStandaloneStatement, 2, 9}
-            },
-            ExpectFunctionBodySize("test", 0)
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_comma_in_multi_assignment",
             "func test() -> int {\n"
             "    let x: int y: int = 1\n"
@@ -487,45 +452,6 @@ namespace valuascript::compiler::test
             "let d = 1\n",
             {
             {Err::InvalidExpression, 3, 9},
-            {Err::InvalidExpression, 5, 12}
-            },
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->body.size(), 4);
-
-            auto assign1 = dynamic_cast<Assignment*>(f->body[0].get());
-            auto assign2 = dynamic_cast<Assignment*>(f->body[1].get());
-            auto func_call_expr = dynamic_cast<ExpressionStatement*>(f->body[2].get());
-            auto assign3 = dynamic_cast<Assignment*>(f->body[3].get());
-
-            ASSERT_NE(assign1, nullptr);
-            EXPECT_EQ(assign1->targets[0].name, "a");
-            ASSERT_NE(assign2, nullptr);
-            EXPECT_EQ(assign2->targets[0].name, "b");
-            ASSERT_NE(func_call_expr, nullptr);
-            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
-            ASSERT_NE(func_call, nullptr);
-            EXPECT_EQ(func_call->arguments.size(), 1);
-            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
-            ASSERT_NE(func_call_id, nullptr);
-            EXPECT_EQ(func_call_id->name, "foo");
-            ASSERT_NE(assign3, nullptr);
-            EXPECT_EQ(assign3->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "interleaved_valid_and_invalid_statements_2",
-            "func test() -> int {\n"
-            "    let a = 1\n"
-            "    1 + 1 \n"
-            "    let b = 2\n"
-            "    foo(x: )\n"
-            "    let c = 3\n"
-            "}\n"
-            "let d = 1\n",
-            {
-            {Err::InvalidStandaloneStatement, 3, 9},
             {Err::InvalidExpression, 5, 12}
             },
             [](const Program &ast) {

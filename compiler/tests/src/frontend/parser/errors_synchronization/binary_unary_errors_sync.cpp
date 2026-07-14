@@ -83,18 +83,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "invalid_standalone_statement",
-            "1 + 1\n"
-            "let b = 2\n",
-            { {Err::InvalidStandaloneStatement, 1, 5} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].name, "b");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "binary_operator_dangling_on_next_line",
             "let a = 1\n"
             "* 2\n"
@@ -120,7 +108,7 @@ namespace valuascript::compiler::test
             "multiline_unary_becomes_standalone_and_is_rejected",
             "let a = 1\n"
             "+ 2\n",
-            { {Err::InvalidStandaloneStatement, 2, 3} },
+            { {Err::InvalidStandaloneStatement, 2, 1, 2, 4} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectNumber(expr, "1");
                 })
@@ -260,7 +248,7 @@ namespace valuascript::compiler::test
             "let a = (1\n"
             "+ 2)\n"
             "+ 3\n",
-            { {Err::InvalidStandaloneStatement, 3, 3} },
+            { {Err::InvalidStandaloneStatement, 3, 1, 3, 4} },
             VerifyAssignmentValue([](auto expr) {
                 ExpectGrouping(expr, [](auto inner) {
                     ExpectBinary(inner, TokenType::Plus,
