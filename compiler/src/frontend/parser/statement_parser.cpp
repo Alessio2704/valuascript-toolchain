@@ -192,7 +192,28 @@ namespace valuascript::compiler
         if (cursor.match({TokenType::Assign}))
         {
             if (is_at_boundary()) cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
-            else value = parser.parse_expression();
+            else
+            {
+                value = parser.parse_expression();
+                if (cursor.peek().type == TokenType::Assign)
+                {
+                    SourceSpan error_span = value->span;
+                    while (cursor.peek().type == TokenType::Assign)
+                    {
+                        cursor.advance();
+                        try
+                        {
+                            auto rhs = parser.parse_expression();
+                            if (rhs) value = std::move(rhs);
+                        }
+                        catch (const ParseSyncException&)
+                        {
+                        }
+                    }
+                    cursor.report_error_no_panic(cursor.combine_spans(error_span, value->span),
+                                                 E::ChainedAssignmentNotSupported);
+                }
+            }
         }
         else
         {
@@ -235,16 +256,38 @@ namespace valuascript::compiler
             ExprPtr value = nullptr;
             bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
                 (cursor.peek().type == TokenType::Return && ctx.is_active_closer(TokenType::RightBrace)) ||
-            (cursor.peek().line > cursor.previous().line && cursor.peek().type == TokenType::Identifier && cursor.
-                peek(1).type == TokenType::Assign);
+                (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
+                    cursor.peek(), cursor.peek(1).type)) ||
+                ctx.is_active_closer(cursor.peek().type);
 
             if (cursor.is_at_end() || is_pseudo_stmt)
             {
-                cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
+                const Token& report_at = (cursor.peek().line > cursor.previous().line && is_pseudo_stmt)
+                                             ? cursor.previous()
+                                             : cursor.peek();
+                cursor.report_error_no_panic(report_at, E::MissingValueAfterEquals, false);
             }
             else
             {
                 value = parser.parse_expression();
+                if (cursor.peek().type == TokenType::Assign)
+                {
+                    SourceSpan error_span = value->span;
+                    while (cursor.peek().type == TokenType::Assign)
+                    {
+                        cursor.advance();
+                        try
+                        {
+                            auto rhs = parser.parse_expression();
+                            if (rhs) value = std::move(rhs);
+                        }
+                        catch (const ParseSyncException&)
+                        {
+                        }
+                    }
+                    cursor.report_error_no_panic(cursor.combine_spans(error_span, value->span),
+                                                 E::ChainedAssignmentNotSupported);
+                }
             }
 
             const SourceSpan end_span = value ? value->span : start_span;

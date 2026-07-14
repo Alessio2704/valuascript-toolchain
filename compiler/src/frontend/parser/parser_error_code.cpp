@@ -75,6 +75,8 @@ namespace valuascript::compiler
         case ParserErrorCode::MissingValueAfterEquals: return "Syntax Error: Missing value after '='.";
         case ParserErrorCode::MultiReassignmentNotSupported: return
                 "Syntax Error: Multiple reassignment is not supported. Reassign variables individually.";
+        case ParserErrorCode::ChainedAssignmentNotSupported: return
+                "Syntax Error: Chained assignment is not supported. Assign variables individually.";
         case ParserErrorCode::InvalidLeftSideExpressionInReassignment: return
                 "Syntax Error: Invalid assignment target. You can only assign to variables, properties, or indices.";
         case ParserErrorCode::InvalidStandaloneStatement: return

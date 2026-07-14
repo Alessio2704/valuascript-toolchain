@@ -58,6 +58,7 @@ namespace valuascript::compiler
         IncompleteAssignment,
         MissingValueAfterEquals,
         MultiReassignmentNotSupported,
+        ChainedAssignmentNotSupported,
         InvalidLeftSideExpressionInReassignment,
         InvalidStandaloneStatement,
         ChainingNotAllowedForComparisonOperations,

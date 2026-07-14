@@ -58,6 +58,7 @@ namespace valuascript::compiler
     bool ExpressionParser::is_reassignment_start_lookahead() const
     {
         size_t offset = 0;
+        bool is_valid_lvalue_chain = true;
 
         TokenType start_type = cursor.peek(offset).type;
         if (start_type == TokenType::LeftBracket || start_type == TokenType::LeftParen)
@@ -79,6 +80,7 @@ namespace valuascript::compiler
             TokenType type = cursor.peek(offset).type;
             if (type == TokenType::LeftBracket)
             {
+                is_valid_lvalue_chain = true;
                 int depth = 1;
                 offset++;
                 while (depth > 0 && cursor.peek(offset).type != TokenType::EndOfFile)
@@ -90,6 +92,10 @@ namespace valuascript::compiler
             }
             else if (type == TokenType::LeftParen)
             {
+                if (offset > 0)
+                {
+                    is_valid_lvalue_chain = false;
+                }
                 int depth = 1;
                 offset++;
                 while (depth > 0 && cursor.peek(offset).type != TokenType::EndOfFile)
@@ -101,6 +107,7 @@ namespace valuascript::compiler
             }
             else if (type == TokenType::Dot)
             {
+                is_valid_lvalue_chain = true;
                 offset++;
                 if (cursor.peek(offset).type == TokenType::Identifier)
                 {
@@ -113,7 +120,7 @@ namespace valuascript::compiler
             }
             else if (type == TokenType::Assign)
             {
-                return true;
+                return is_valid_lvalue_chain;
             }
             else
             {

@@ -23,7 +23,7 @@ namespace valuascript::compiler
 
     bool TokenTraits::is_expression_statement_start(const Token& token, TokenType lookahead_type)
     {
-        if (token.type == TokenType::Identifier || acts_like_identifier(token, lookahead_type))
+        if (token.type == TokenType::Identifier || token.type == TokenType::Self || acts_like_identifier(token, lookahead_type))
         {
             return lookahead_type == TokenType::Assign ||
                 lookahead_type == TokenType::LeftParen ||

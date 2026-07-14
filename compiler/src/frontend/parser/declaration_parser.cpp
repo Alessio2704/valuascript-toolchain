@@ -47,9 +47,9 @@ namespace valuascript::compiler
         {
             if (cursor.match({TokenType::Assign}))
             {
-                bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) || (cursor.
-                    peek().line > cursor.previous().line && cursor.peek().type == TokenType::Identifier && cursor.
-                    peek(1).type == TokenType::Assign);
+                bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                    (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
+                        cursor.peek(), cursor.peek(1).type));
                 if (cursor.is_at_end() || is_pseudo_stmt || cursor.peek().line > cursor.previous().line || ctx.
                     is_active_closer(cursor.peek().type) || ctx.is_in_sync_set(cursor.peek().type))
                 {

@@ -127,6 +127,33 @@ namespace valuascript::compiler::test
                 IsNull()
             );
 
+            reg("ChainedReassignmentNotSupported",
+                "a = b = c = 0",
+                {{E::ChainedAssignmentNotSupported, 1, 5, 1, 14}},
+                IsReassignment(IsIdentifier("a"), IsNumber("0"))
+            );
+
+            reg("ModifiersOnReassignment",
+                "@modifier a = 1",
+                {{E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10}},
+                IsReassignment(IsIdentifier("a"), IsNumber("1"))
+            );
+
+            reg("ModifiersOnInvalidStandaloneStatement",
+                "@modifier 1 + 2",
+                {
+                    {E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10},
+                    {E::InvalidStandaloneStatement, 1, 11, 1, 16}
+                },
+                IsNull()
+            );
+
+            reg("MissingValueAfterEqualsReassignment",
+                "a = ",
+                {{E::MissingValueAfterEquals, 1, 3, 1, 4}},
+                IsReassignment(IsIdentifier("a"), IsNull())
+            );
+
             return true;
         }();
     }
