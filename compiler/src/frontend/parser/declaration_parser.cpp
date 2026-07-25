@@ -3,6 +3,7 @@
 #include "token/reserved_keyword_lookup.h"
 #include "ast_factory.h"
 #include "list_parser.h"
+#include "block_parser.h"
 #include "error_recovery.h"
 #include "declaration_rules.h"
 
@@ -366,32 +367,20 @@ namespace valuascript::compiler
         }
         else { cursor.consume(TokenType::Arrow, E::MissingArrowInFunction); }
 
-        cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeFunctionBody);
-        CloserTracker body_tracker(ctx, TokenType::RightBrace);
-
         std::optional<std::string> docstring = std::nullopt;
-        if (cursor.check(TokenType::DocString)) docstring = cursor.advance().lexeme;
-
         std::vector<StmtPtr> body;
-        while (!cursor.check(TokenType::RightBrace) && !cursor.is_at_end())
-        {
-            if (ctx.is_at_top_level_declaration() && ctx.is_missing_closing_brace()) break;
-            RecoveryConfig body_config;
-            body_config.stop_tokens = {TokenType::RightBrace, TokenType::Return};
-            body_config.options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp;
-            ErrorRecovery::attempt_parse_void(
-                ctx, [&]() { parser.parse_statement_or_declaration(ParseContextType::FunctionBody, nullptr, nullptr, body); },
-                body_config);
-        }
+
+        BlockParser(parser)
+            .on_missing_open_brace(E::ExpectedLeftBraceBeforeFunctionBody)
+            .on_missing_close_brace(E::ExpectedRightBraceAfterFunctionBody)
+            .with_recovery_config(RecoveryConfig{
+                .stop_tokens = {TokenType::RightBrace, TokenType::Return},
+                .options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp
+            })
+            .collect_docstring(docstring)
+            .parse_statements(ParseContextType::FunctionBody, body);
 
         Token end_token = cursor.previous();
-        try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterFunctionBody); }
-        catch (const ParseSyncException&)
-        {
-            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
-            end_token = cursor.previous();
-        }
-
         return AstFactory::make_node_with_span<FunctionDefinition>(
             cursor.make_span(start, end_token), std::move(modifiers), name.lexeme, std::move(params),
             std::move(return_types), std::move(body), std::move(docstring)
@@ -546,35 +535,18 @@ namespace valuascript::compiler
 
         auto extension = std::make_unique<ExtensionDefinition>(std::move(modifiers), std::move(target_type));
 
-        cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeExtensionBody);
+        BlockParser(parser)
+            .on_missing_open_brace(E::ExpectedLeftBraceBeforeExtensionBody)
+            .on_missing_close_brace(E::ExpectedRightBraceAfterExtensionBody)
+            .with_recovery_config(RecoveryConfig{
+                .options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp
+            })
+            .parse_body([&]() {
+                std::vector<StmtPtr> dummy_block;
+                parser.parse_statement_or_declaration(ParseContextType::ExtensionBody, nullptr, extension.get(), dummy_block);
+            });
 
-        CloserTracker tracker(ctx, TokenType::RightBrace);
-
-        while (!cursor.is_at_end() && !cursor.check(TokenType::RightBrace))
-        {
-            ErrorRecovery::attempt_parse_void(
-                ctx,
-                [&]() {
-                    std::vector<StmtPtr> dummy_block;
-                    parser.parse_statement_or_declaration(ParseContextType::ExtensionBody, nullptr, extension.get(), dummy_block);
-                },
-                RecoveryConfig::ForceStopAtBoundary()
-            );
-        }
-
-        Token end_token = cursor.previous();
-        try
-        {
-            end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterExtensionBody);
-        }
-        catch (const ParseSyncException&)
-        {
-            TokenType peek_type = cursor.peek().type;
-            if (TokenTraits::is_grouping_closer(peek_type) && !ctx.is_active_closer(peek_type))
-                end_token = cursor.advance();
-        }
-
-        extension->span = cursor.make_span(start, end_token);
+        extension->span = cursor.make_span(start, cursor.previous());
         return extension;
     }
 }
