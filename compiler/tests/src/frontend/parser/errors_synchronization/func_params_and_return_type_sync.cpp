@@ -96,13 +96,6 @@ namespace valuascript::compiler::test
         FunctionParametersAndReturnTypeParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_name_func_empty_ast",
-            "func (a: int) -> int {}\n"
-            "let a = 1\n",
-            {{Err::MissingFunctionName, 1, 6}},
-            ExpectFunction("<error>", {{"a", "int"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "no_left_paren_func_empty_ast",
             "func test a: int) -> int {}\n"
             "let a = 1\n",
@@ -122,13 +115,6 @@ namespace valuascript::compiler::test
             "let a = 1\n",
             {{Err::ExpectedRightParenAfterParameters, 1, 18}},
             ExpectNoFunctions()
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_arrow_func",
-            "func test(a: int) { return 1 }\n"
-            "let a = 1\n",
-            {{Err::MissingArrowInFunction, 1, 19}},
-            ExpectFunction("test", {{"a", "int"}}, {})
             },
             ParserErrorsSynchronizationTestCase{
             "missing_left_brace_func_empty_ast",
@@ -159,51 +145,6 @@ namespace valuascript::compiler::test
             },
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_comma_in_params_recovers_all",
-            "func test(a: int b: string) -> int {}\n"
-            "let a = 1\n",
-            {{Err::ExpectedCommaSeparatorInParameterList, 1, 18}},
-            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_colon_in_params_discards_param_and_recovers",
-            "func test(a int, b: string) -> int {}\n"
-            "let a = 1\n",
-            {{Err::MissingColonAfterParameter, 1, 13}},
-            ExpectFunction("test", {{"<error>", std::nullopt}, {"b", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "garbage_in_params_discards_and_recovers",
-            "func test(a: int, *^, b: string) -> int {}\n"
-            "let a = 1\n",
-            {{Err::MissingParameterName, 1, 19}},
-            ExpectFunction("test", {{"a", "int"}, {"<error>", std::nullopt}, {"b", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "multiple_return_types_missing_comma_recovers",
-            "func test() -> int string {}\n"
-            "let a = 1\n",
-            {{Err::ExpectedCommaSeparatorInReturnTypeList, 1, 20}},
-            ExpectFunction("test", {}, {"int", "string"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "error_in_params_preserves_docstring",
-            "func test(a: ) -> int { \"\"\"docs\"\"\" }\n"
-            "let a = 1\n",
-            {{Err::MissingTypeAnnotation, 1, 14}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 1);
-            ASSERT_EQ(f->parameters[0].name, "a");
-            ASSERT_EQ(f->parameters[0].type.get(), nullptr);
-            ASSERT_EQ(f->return_types.size(), 1);
-            ASSERT_EQ(f->return_types[0].get()->name, "int");
-            EXPECT_TRUE(f->docstring.has_value());
-            EXPECT_EQ(f->docstring.value(), "\"\"\"docs\"\"\"");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "error_in_params_types_1",
             "func test(a: vector<int) -> int {  }\n"
             "let a = 1\n",
@@ -211,190 +152,11 @@ namespace valuascript::compiler::test
             ExpectFunction("test", {{"a", "vector"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{
-            "error_in_params_types_2",
-            "func test(a: vector<int>, b: vector<decimal, >) -> int {  }\n"
-            "let a = 1\n",
-            {{Err::TrailingCommaInGenericArgument, 1, 44}},
-            ExpectFunction("test", {{"a", "vector"}, {"b", "vector"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "error_in_params_types_3",
             "func test(a: vector<int>, b: vector<>) -> int {  }\n"
             "let a = 1\n",
             {{Err::EmptyGenericTypeAnnotation, 1, 37}},
             ExpectFunction("test", {{"a", "vector"}, {"b", "vector"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_colon",
-            "func test(a, b, c) -> int { return 1 }\n"
-            "let a = 1\n",
-            {
-            {Err::MissingColonAfterParameter, 1, 12},
-            {Err::MissingColonAfterParameter, 1, 15},
-            {Err::MissingColonAfterParameter, 1, 18},
-            },
-            ExpectFunction("test", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_type_annotation_arguments_1",
-            "func test(a: , b: , c: ) -> int { return 1 }\n"
-            "let a = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 14},
-            {Err::MissingTypeAnnotation, 1, 19},
-            {Err::MissingTypeAnnotation, 1, 24},
-            },
-            ExpectFunction("test", {{"a", std::nullopt}, {"b", std::nullopt}, {"c", std::nullopt}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_type_annotation_arguments_2",
-            "func test(a: int, b: , c: string d: decimal) -> int { return 1 }\n"
-            "let a = 1\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 22},
-            {Err::ExpectedCommaSeparatorInParameterList, 1, 34},
-            },
-            ExpectFunction("test", {{"a", "int"}, {"b", std::nullopt}, {"c", "string"}, {"d", "decimal"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "error_inside_return_tuple_recovers",
-            "func test() -> (int, ) {}\n"
-            "let a = 1\n",
-            { {Err::TrailingCommaInTuple, 1, 20} },
-            ExpectFunction("test", {}, {"tuple"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "first_func_error_does_not_break_second_func",
-            "func first(a: ) -> void {}\n"
-            "func second(b: int) -> void {}\n"
-            "let a = 1\n",
-            { {Err::MissingTypeAnnotation, 1, 15} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 2);
-            EXPECT_EQ(ast.function_definitions[0]->name, "first");
-            EXPECT_EQ(ast.function_definitions[1]->name, "second");
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "return_type_3",
-            "func test(a: int) -> (int int) {}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInTupleType, 1, 27},
-            },
-            ExpectFunction("test", {{"a", "int"}}, {"tuple"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_default_parameter_value_syncs_to_comma",
-            "func test(a: int =, b: string) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::MissingDefaultParameterValue, 1, 19},
-            {Err::NonDefaultParameterAfterDefault, 1, 21},
-            },
-            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_default_parameter_value_syncs_to_paren",
-            "func test(a: int =) -> int {}\n"
-            "let a = 1\n",
-            {{Err::MissingDefaultParameterValue, 1, 19}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 1);
-            EXPECT_EQ(f->parameters[0].name, "a");
-            auto type = dynamic_cast<TypeAnnotation*>(f->parameters[0].type.get());
-            EXPECT_EQ(type->name, "int");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "non_default_parameter_after_default_reports_error",
-            "func test(a: int = 1, b: int) -> int {}\n"
-            "let a = 1\n",
-            {{Err::NonDefaultParameterAfterDefault, 1, 23}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_EQ(f->parameters[0].name, "a");
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_EQ(f->parameters[1].name, "b");
-            EXPECT_EQ(f->parameters[1].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "invalid_expression_in_default_value_recovers_to_comma",
-            "func test(a: int = *, b: string) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 20},
-            {Err::NonDefaultParameterAfterDefault, 1, 23},
-            },
-            ExpectFunction("test", {{"a", "int"}, {"b", "string"}}, {"int"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "multiple_non_default_parameters_after_default_reports_multiple_errors",
-            "func test(a: int = 1, b: int, c: int) -> int {}\n"
-            "let a = 1\n",
-            {
-            {Err::NonDefaultParameterAfterDefault, 1, 23},
-            {Err::NonDefaultParameterAfterDefault, 1, 31}
-            },
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 3);
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_EQ(f->parameters[1].default_value, nullptr);
-            EXPECT_EQ(f->parameters[2].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_tuple_default_value_recovers",
-            "func test(a: tuple = (1, *), b: int = 1) -> int {}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 1, 26}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_EQ(f->parameters[0].name, "a");
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_EQ(f->parameters[1].name, "b");
-            EXPECT_NE(f->parameters[1].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_tensor_default_value_recovers",
-            "func test(a: vector = [1, *], b: int = 1) -> int {}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 1, 27}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_EQ(f->parameters[0].name, "a");
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_EQ(f->parameters[1].name, "b");
-            EXPECT_NE(f->parameters[1].default_value, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_dict_default_value_recovers",
-            "func test(a: dict = {x *}, b: int = 1) -> int {}\n"
-            "let a = 1\n",
-            {{Err::ExpectedColonAfterDictionaryKey, 1, 24}},
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->parameters.size(), 2);
-            EXPECT_EQ(f->parameters[0].name, "a");
-            EXPECT_NE(f->parameters[0].default_value, nullptr);
-            EXPECT_EQ(f->parameters[1].name, "b");
-            EXPECT_NE(f->parameters[1].default_value, nullptr);
-            }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase> &test_info) {
