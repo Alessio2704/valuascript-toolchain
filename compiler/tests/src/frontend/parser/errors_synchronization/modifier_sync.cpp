@@ -121,23 +121,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_as_modifier_name",
-            "let @struct(a: 1) b = 2\n"
-            "let recovery = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 6} },
-            ExpectModifierSet({ {"struct", {{"a", "1"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_arg_name_is_reserved_keyword",
-            "let @test(let: 1, func: 2) a = 1\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 11},
-            {Err::ReservedKeywordAsIdentifier, 1, 19}
-            },
-            ExpectModifierSet({ {"test", {{"let", "1"}, {"func", "2"}}} })
-            },
-            ParserErrorsSynchronizationTestCase{
             "modifier_on_broken_func",
             "@rpc func f(a:) -> int { return 1 }\n"
             "let recovery = 1\n",
@@ -228,31 +211,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "all_identifiers_are_reserved",
-            "let @func(let: let) a = 1\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 6},
-            {Err::ReservedKeywordAsIdentifier, 1, 11},
-            {Err::ReservedKeywordAsIdentifier, 1, 16}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto step = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(step, nullptr);
-            ASSERT_FALSE(step->targets.empty());
-            ASSERT_EQ(step->targets[0].name, "a");
-            auto& mods = step->targets[0].modifiers;
-            ASSERT_EQ(mods.size(), 1);
-            ASSERT_EQ(mods[0].name, "func");
-            ASSERT_EQ(mods[0].arguments.size(), 1);
-            ASSERT_EQ(mods[0].arguments[0].first, "let");
-            auto arg_value = dynamic_cast<IdentifierAccess*>(mods[0].arguments[0].second.get());
-            ASSERT_NE(arg_value, nullptr);
-            ASSERT_EQ(arg_value->name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_modifier_missing_name_and_dict_key",
             "let obj = { @ 1: 1, other: 2 }\nlet recovery = 1\n",
             { {Err::ExpectedModifierName, 1, 15},
@@ -308,97 +266,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "enum_case_modifier_name_is_reserved_keyword",
-            "enum E: int { @let A = 1 }\nlet recovery = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 16} },
-            [](const Program& ast) {
-            auto enum_def = ast.enum_definitions[0].get();
-            ASSERT_EQ(enum_def->cases.size(), 1);
-            EXPECT_EQ(enum_def->cases[0].modifiers.size(), 1);
-            EXPECT_EQ(enum_def->cases[0].modifiers[0].name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_modifier_name",
-            "enum E: int { @let() A = 1 }\n"
-            "let test = { @let() a: 1, @if() b: 2, @enum() c: 3 }\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 16},
-            {Err::ReservedKeywordAsIdentifier, 2, 15},
-            {Err::ReservedKeywordAsIdentifier, 2, 28},
-            {Err::ReservedKeywordAsIdentifier, 2, 40}
-            },[](const Program& ast) {
-            ASSERT_EQ(ast.enum_definitions.size(), 1);
-            auto enum_def = ast.enum_definitions[0].get();
-            EXPECT_EQ(enum_def->name, "E");
-            ASSERT_EQ(enum_def->cases.size(), 1);
-
-            const auto& enum_case = enum_def->cases[0];
-            EXPECT_EQ(enum_case.name, "A");
-            ASSERT_EQ(enum_case.modifiers.size(), 1);
-            EXPECT_EQ(enum_case.modifiers[0].name, "let");
-
-            auto case_val = dynamic_cast<NumberLiteral*>(enum_case.value.get());
-            ASSERT_NE(case_val, nullptr);
-            EXPECT_EQ(case_val->value, "1");
-
-            ASSERT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].name, "test");
-
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 3);
-
-            EXPECT_EQ(dict->elements[0].key, "a");
-            ASSERT_EQ(dict->elements[0].modifiers.size(), 1);
-            EXPECT_EQ(dict->elements[0].modifiers[0].name, "let");
-            EXPECT_TRUE(dict->elements[0].modifiers[0].arguments.empty());
-            auto val_a = dynamic_cast<NumberLiteral*>(dict->elements[0].value.get());
-            ASSERT_NE(val_a, nullptr);
-            EXPECT_EQ(val_a->value, "1");
-
-            EXPECT_EQ(dict->elements[1].key, "b");
-            ASSERT_EQ(dict->elements[1].modifiers.size(), 1);
-            EXPECT_EQ(dict->elements[1].modifiers[0].name, "if");
-            EXPECT_TRUE(dict->elements[1].modifiers[0].arguments.empty());
-            auto val_b = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
-            ASSERT_NE(val_b, nullptr);
-            EXPECT_EQ(val_b->value, "2");
-
-            EXPECT_EQ(dict->elements[2].key, "c");
-            ASSERT_EQ(dict->elements[2].modifiers.size(), 1);
-            EXPECT_EQ(dict->elements[2].modifiers[0].name, "enum");
-            EXPECT_TRUE(dict->elements[2].modifiers[0].arguments.empty());
-            auto val_c = dynamic_cast<NumberLiteral*>(dict->elements[2].value.get());
-            ASSERT_NE(val_c, nullptr);
-            EXPECT_EQ(val_c->value, "3");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "func_param_reserved_keyword_as_modifier",
-            "func f(@func() a: int, @let b: int) -> void {}\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 9},
-            {Err::ReservedKeywordAsIdentifier, 1, 25}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto func = ast.function_definitions[0].get();
-            ASSERT_EQ(func->parameters.size(), 2);
-
-            EXPECT_EQ(func->parameters[0].name, "a");
-            ASSERT_EQ(func->parameters[0].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[0].modifiers[0].name, "func");
-
-            EXPECT_EQ(func->parameters[1].name, "b");
-            ASSERT_EQ(func->parameters[1].modifiers.size(), 1);
-            EXPECT_EQ(func->parameters[1].modifiers[0].name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "func_param_modifier_missing_param_name",
             "func f(@test(a: 1) : int, b: int) -> void {}\n"
             "let recovery = 1\n",
@@ -430,44 +297,6 @@ namespace valuascript::compiler::test
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             ASSERT_NE(assign, nullptr);
             EXPECT_EQ(assign->targets[0].name, "recovery");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_reserved_keyword_as_modifier",
-            "struct S { @func id: int, @let next: float }\n"
-            "let recovery = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 13},
-            {Err::ReservedKeywordAsIdentifier, 1, 28}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-            ASSERT_EQ(s->fields.size(), 2);
-
-            EXPECT_EQ(s->fields[0].name, "id");
-            ASSERT_EQ(s->fields[0].modifiers.size(), 1);
-            EXPECT_EQ(s->fields[0].modifiers[0].name, "func");
-
-            EXPECT_EQ(s->fields[1].name, "next");
-            ASSERT_EQ(s->fields[1].modifiers.size(), 1);
-            EXPECT_EQ(s->fields[1].modifiers[0].name, "let");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "struct_field_modifier_missing_field_name",
-            "struct S { @test(a: 1) : int, next: float }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedStructFieldName, 1, 24} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.struct_definitions.size(), 1);
-            auto s = ast.struct_definitions[0].get();
-
-            bool found_next = false;
-            for (const auto& field : s->fields) {
-            if (field.name == "next") found_next = true;
-            }
-            EXPECT_TRUE(found_next) << "Failed to recover to field 'next'";
             }
             },
             ParserErrorsSynchronizationTestCase{

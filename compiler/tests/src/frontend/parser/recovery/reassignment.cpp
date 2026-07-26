@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 ErrorRegistry::add(n, c, errs, v);
             };
 
-            reg("MissingValueAfterEqualsMultiAssignment",
+            reg("MultiReassignmentNotSupported",
                 "x, y = 1",
                 {{E::MultiReassignmentNotSupported, 1, 2, 1, 3}},
                 IsNull()

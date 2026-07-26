@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../../../src/frontend/frontend_orchestrator.h"
+#include "frontend/frontend_orchestrator.h"
 
 using namespace valuascript::compiler;
 

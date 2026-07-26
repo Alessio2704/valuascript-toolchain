@@ -606,7 +606,7 @@ namespace valuascript::compiler::test
         if (val_v) val_v(dir->value.get());
     }
 
-    inline void ExpectProgram(Program* p, const ProgramSpec& spec)
+    inline void ExpectProgram(const Program* p, const ProgramSpec& spec)
     {
         ASSERT_NE(p, nullptr) << "Expected Program node, but got nullptr.";
 

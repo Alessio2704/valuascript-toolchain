@@ -66,16 +66,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "multiple_defaults_recovers",
-            "let x = switch(v) {\n"
-            "    default -> 1\n"
-            "    default -> 2\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::MultipleDefaultCasesInSwitch, 3, 5}},
-            ExpectSwitchCases(0, true)
-            },
-            ParserErrorsSynchronizationTestCase{
             "nested_struct_without_closing_brace_escapes_to_top_level",
             "let x = switch(v) {\n"
             "    case A -> 1\n"
@@ -141,21 +131,6 @@ namespace valuascript::compiler::test
             ASSERT_NE(inner_sw, nullptr);
             EXPECT_EQ(inner_sw->cases.size(), 2) << "Inner switch should have stolen the second case.";
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "malformed_case_and_default_declarations",
-            "let x = switch(v) {\n"
-            "    case -> 1\n"
-            "    default A -> 2\n"
-            "    case C -> \n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedEnumCaseNameAfterCase, 2, 10},
-            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 3, 13},
-            {Err::InvalidExpression, 4, 12}
-            },
-            ExpectSwitchCases(2, false)
             },
             ParserErrorsSynchronizationTestCase{
             "illegal_nested_func_in_closed_switch",

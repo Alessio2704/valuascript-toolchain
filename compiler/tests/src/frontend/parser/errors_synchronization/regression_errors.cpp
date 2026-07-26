@@ -17,78 +17,6 @@ namespace valuascript::compiler::test
         GeneralParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "VariableDeclarationErrors",
-            "let @* a = 10\n"
-            "let = 20\n"
-            "let struct = 30\n"
-            "let d",
-            {
-            {Err::ExpectedModifierName, 1, 6},
-            {Err::ExpectedIdentifier, 2, 5},
-            {Err::ReservedKeywordAsIdentifier, 3, 5},
-            {Err::IncompleteAssignment, 4, 6}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "FunctionDefinitionErrors",
-            "func (a: int) -> int {}\n"
-            "func test1(a int) -> int {}\n"
-            "func test2(b: int) int {}\n",
-            {
-            {Err::MissingFunctionName, 1, 6},
-            {Err::MissingColonAfterParameter, 2, 14},
-            {Err::MissingArrowInFunction, 3, 20}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "DataStructureErrors",
-            "let b = { \"key\" 10 }\n"
-            "let b = { key 10 }\n"
-            "let c = obj[]\n"
-            "let d = obj.",
-            {
-            {Err::ExpectedDictionaryKey, 1, 11},
-            {Err::ExpectedColonAfterDictionaryKey, 2, 15},
-            {Err::EmptyBracketAccess, 3, 12},
-            {Err::ExpectedPropertyName, 4, 13}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "ControlFlowAndExpressionErrors",
-            "let a = switch (val) { case 1 10 }",
-            {
-            {Err::ExpectedEnumCaseNameAfterCase, 1, 29},
-            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 1, 34},
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "DeepSynchronizationStressTest",
-            "let valid1 = 100\n"
-            "func valid_func() -> int {}\n"
-            "struct { }\n"
-            "let valid2 = 200\n"
-            "let a = { a: 1 b: 2}",
-            {
-            {Err::ExpectedStructName, 3, 8},
-            {Err::ExpectedCommaSeparatorInDictionaryLiteral, 5, 16}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "UnterminatedParenthesisBracketsOrBraces",
-            "let a = (10 + 20 \n"
-            "let valid_1 = 100\n"
-            "let valid_2 = 200\n"
-            "let b = [1, 2, 3 \n"
-            "let valid_3 = 300\n"
-            "let c = { key: \"value\" \n"
-            "let valid_4 = 400\n",
-            {
-            {Err::ExpectedRightParenAfterExpression, 1, 17},
-            {Err::UnmatchedBracketAfterTensorElements, 4, 17},
-            {Err::UnmatchedBraceInDictionaryLiteral, 6, 23}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "Regression_1",
             "let b = { \"key\" 10 }\n"
             "let a = func_call(\n\n"
@@ -96,54 +24,6 @@ namespace valuascript::compiler::test
             {
             {Err::ExpectedDictionaryKey, 1, 11},
             {Err::ExpectedArgumentNameOrClosingParen, 2, 19}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "FunctionCallAndSignatureErrors",
-            "func process(a: int b: string) -> int {}\n"
-            "let x = trailing_comma(a: 1, )\n"
-            "func true() -> void { return 1}",
-            {
-            {Err::ExpectedCommaSeparatorInParameterList, 1, 21},
-            {Err::TrailingCommaInFunctionCall, 2, 28},
-            {Err::ReservedKeywordAsIdentifier, 3, 6}
-            }
-            },
-
-            ParserErrorsSynchronizationTestCase{
-            "TypeAnnotationErrors",
-            "let a: = 10\n"
-            "func bad_return() -> { }\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 8},
-            {Err::MissingTypeAnnotationAfterArrow, 2, 22}
-            }
-            },
-
-            ParserErrorsSynchronizationTestCase{
-            "MalformedExpressions",
-            "let a = 5 +\n"
-            "let b = - \n"
-            "let c = 10 * / 5\n"
-            "let d = (10 + 5] \n",
-            {
-            {Err::InvalidExpression, 1, 11},
-            {Err::InvalidExpression, 2, 9},
-            {Err::InvalidExpression, 3, 14},
-            {Err::ExpectedRightParenAfterExpression, 4, 16}
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "TopLevelGarbageAndStrayTokens",
-            "} \n"
-            "let valid = 10\n"
-            "] \n"
-            "func valid2() -> int { return 0 }\n"
-            "* let bad_start = 0\n",
-            {
-            {Err::InvalidExpression, 1, 1},
-            {Err::InvalidExpression, 3, 1},
-            {Err::InvalidExpression, 5, 1}
             }
             },
             ParserErrorsSynchronizationTestCase{

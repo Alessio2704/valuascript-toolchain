@@ -1,6 +1,6 @@
 #pragma once
 #include "frontend/lexer/lexer_stage.h"
-#include "../../../../../shared/src/token/token.h"
+#include "token/token.h"
 #include <string>
 #include <vector>
 #include "utils/parametrised_test_name_helper.h"

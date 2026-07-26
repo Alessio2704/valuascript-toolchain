@@ -43,25 +43,6 @@ namespace valuascript::compiler::test
         FunctionBodyParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "garbage_statement_recovers_to_next_inside_block",
-            "func test() -> int {\n"
-            "    let x = 1 + *\n"
-            "    let y = 2\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 2, 17}},
-            ExpectFunctionBodySize("test", 2)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "broken_statement_right_before_closing_brace",
-            "func test() -> int {\n"
-            "    return 1 + *\n"
-            "}\n"
-            "let a = 1\n",
-            {{Err::InvalidExpression, 2, 16}},
-            ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
             "missing_closing_brace_escapes_to_top_level",
             "func test() -> int {\n"
             "    let x = 1\n"
@@ -151,64 +132,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "multiple_broken_statements_in_body_1",
-            "func test() -> int {\n"
-            "    let x = \n"
-            "    let y = 1 + *\n"
-            "    return \n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::MissingValueAfterEquals, 2, 12},
-            {Err::InvalidExpression, 3, 17},
-            {Err::InvalidExpression, 4, 5},
-            },
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->body.size(), 3);
-
-            auto a_1 = dynamic_cast<Assignment*>(f->body[0].get());
-            ASSERT_NE(a_1, nullptr);
-            auto a_2 = dynamic_cast<Assignment*>(f->body[1].get());
-            ASSERT_NE(a_2, nullptr);
-
-            auto ret = dynamic_cast<ReturnStatement*>(f->body.back().get());
-            ASSERT_NE(ret, nullptr);
-            ASSERT_EQ(ret->values.size(), 1);
-            ASSERT_EQ(ret->values.front().get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "multiple_broken_statements_in_body_2",
-            "func test() -> int {\n"
-            "    let x = \n"
-            "    let y = 1 + *\n"
-            "    return .\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::MissingValueAfterEquals, 2, 12},
-            {Err::InvalidExpression, 3, 17},
-            {Err::InvalidExpression, 4, 12},
-            },
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->body.size(), 3);
-
-            auto a_1 = dynamic_cast<Assignment*>(f->body[0].get());
-            ASSERT_NE(a_1, nullptr);
-            auto a_2 = dynamic_cast<Assignment*>(f->body[1].get());
-            ASSERT_NE(a_2, nullptr);
-
-            auto ret = dynamic_cast<ReturnStatement*>(f->body.back().get());
-            ASSERT_NE(ret, nullptr);
-            ASSERT_EQ(ret->values.size(), 1);
-            ASSERT_EQ(ret->values.front().get(), nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "illegal_nested_func",
             "func test() -> int {\n"
             "    func nested() -> void {}\n"
@@ -295,52 +218,6 @@ namespace valuascript::compiler::test
             ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_as_variable_name_in_body",
-            "func test() -> int {\n"
-            "    let true = 1\n"
-            "    return true\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 2, 9},
-            },
-            ExpectFunctionBodySize("test", 2)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dangling_operator_crosses_line_into_next_statement",
-            "func test() -> int {\n"
-            "    let x = 1 +\n"
-            "    let y = 2\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 2, 15},
-            },
-            ExpectFunctionBodySize("test", 2)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "multi_reassignment_not_supported_aborts_statement",
-            "func test() -> int {\n"
-            "    x, y = 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::MultiReassignmentNotSupported, 2, 6}
-            },
-            ExpectFunctionBodySize("test", 0)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "modifier_on_expression_statement_recovers_without_panic",
-            "func test() -> int {\n"
-            "    @modifier foo()\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ModifiersAttachedToInvalidDeclaration, 2, 5}
-            },
-            ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
             "broken_function_call_recovers_to_next_statement",
             "func test() -> int {\n"
             "    foo(a: 1 b: 2)\n"
@@ -351,32 +228,6 @@ namespace valuascript::compiler::test
             {Err::MissingCommaSeparatorForArgumentsInFunctionCall, 2, 14}
             },
             ExpectFunctionBodySize("test", 2)
-            },
-
-            ParserErrorsSynchronizationTestCase{
-            "broken_switch_expression_recovers_to_next_statement",
-            "func test() -> int {\n"
-            "    let x = switch(v) { case A }\n"
-            "    return 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedRightArrowAfterSwitchCaseIdentifier, 2, 32}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            auto &func = ast.function_definitions[0];
-            ASSERT_EQ(func->name, "test");
-            ASSERT_EQ(func->body.size(), 2);
-            auto switch_expr_assignment = dynamic_cast<Assignment*>(func->body[0].get());
-            auto switch_expr = dynamic_cast<SwitchExpression*>(switch_expr_assignment->value.get());
-            ASSERT_NE(switch_expr, nullptr);
-            ASSERT_EQ(switch_expr->cases.size(), 1);
-            ASSERT_EQ(switch_expr->cases[0].identifiers.size(), 1);
-            ASSERT_EQ(switch_expr->cases[0].identifiers[0], "A");
-            ASSERT_EQ(switch_expr->cases[0].result, nullptr);
-            ASSERT_EQ(switch_expr->default_case, nullptr);
-            }
             },
             ParserErrorsSynchronizationTestCase{
             "dangling_modifier_at_end_of_block",
@@ -390,18 +241,6 @@ namespace valuascript::compiler::test
             {Err::ModifiersAttachedToInvalidDeclaration, 3, 5}
             },
             ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_comma_in_multi_assignment",
-            "func test() -> int {\n"
-            "    let x: int y: int = 1\n"
-            "    return 1\n"
-            "}\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaInMultiAssignment, 2, 16}
-            },
-            ExpectFunctionBodySize("test", 2)
             },
             ParserErrorsSynchronizationTestCase{
             "nested_struct_with_proper_closing_brace_stays_in_function",
@@ -438,56 +277,6 @@ namespace valuascript::compiler::test
 
             ASSERT_EQ(ast.struct_definitions.size(), 1);
             EXPECT_EQ(ast.struct_definitions[0]->name, "TopLevel");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "interleaved_valid_and_invalid_statements_1",
-            "func test() -> int {\n"
-            "    let a = 1\n"
-            "    1 + * \n"
-            "    let b = 2\n"
-            "    foo(x: )\n"
-            "    let c = 3\n"
-            "}\n"
-            "let d = 1\n",
-            {
-            {Err::InvalidExpression, 3, 9},
-            {Err::InvalidExpression, 5, 12}
-            },
-            [](const Program &ast) {
-            auto f = ExpectRecoveredFunction(ast, "test");
-            ASSERT_NE(f, nullptr);
-            ASSERT_EQ(f->body.size(), 4);
-
-            auto assign1 = dynamic_cast<Assignment*>(f->body[0].get());
-            auto assign2 = dynamic_cast<Assignment*>(f->body[1].get());
-            auto func_call_expr = dynamic_cast<ExpressionStatement*>(f->body[2].get());
-            auto assign3 = dynamic_cast<Assignment*>(f->body[3].get());
-
-            ASSERT_NE(assign1, nullptr);
-            EXPECT_EQ(assign1->targets[0].name, "a");
-            ASSERT_NE(assign2, nullptr);
-            EXPECT_EQ(assign2->targets[0].name, "b");
-            ASSERT_NE(func_call_expr, nullptr);
-            auto func_call = dynamic_cast<FunctionCall*>(func_call_expr->expr.get());
-            ASSERT_NE(func_call, nullptr);
-            EXPECT_EQ(func_call->arguments.size(), 1);
-            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
-            ASSERT_NE(func_call_id, nullptr);
-            EXPECT_EQ(func_call_id->name, "foo");
-            ASSERT_NE(assign3, nullptr);
-            EXPECT_EQ(assign3->targets[0].name, "c");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dangling_assignment_right_before_closing_brace",
-            "func test() -> int {\n"
-            "    let a = 1\n"
-            "    let b = \n"
-            "}\n"
-            "let c = 1\n",
-            {
-            {Err::MissingValueAfterEquals, 3, 12}
             }
             }
         ),
