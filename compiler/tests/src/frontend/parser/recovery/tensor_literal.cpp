@@ -17,18 +17,18 @@ namespace valuascript::compiler::test
                 {
                     {E::InvalidExpression, 1, 4, 1, 5}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1"), IsNull(), IsNumber("2")
-                })
+                )
             );
 
             reg("TensorTrailingCommaGarbage", "[1, 2, , ]",
                 {
                     {E::InvalidExpression, 1, 8, 1, 9}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1"), IsNumber("2"), IsNull()
-                })
+                )
             );
 
             reg("TensorEmptyElementsStress", "[ , , 1, , ]",
@@ -37,45 +37,45 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 5, 1, 6},
                     {E::InvalidExpression, 1, 10, 1, 11}
                 },
-                IsTensor({
+                IsTensor(
                     IsNull(), IsNull(), IsNumber("1"), IsNull()
-                })
+                )
             );
 
             reg("EmptyGarbageElement", "[*]",
                 {
                     {E::InvalidExpression, 1, 2, 1, 3}
                 },
-                IsTensor({
+                IsTensor(
                     IsNull()
-                })
+                )
             );
 
             reg("GarbageElement", "[1, *, 3]",
                 {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1"), IsNull(), IsNumber("3")
-                })
+                )
             );
 
             reg("InvalidExpressionAsFirst", "[*, 1]",
                 {
                     {E::InvalidExpression, 1, 2, 1, 3}
                 },
-                IsTensor({
+                IsTensor(
                     IsNull(), IsNumber("1")
-                })
+                )
             );
 
             reg("InvalidExpressionAsSecond", "[1, *]",
                 {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1"), IsNull()
-                })
+                )
             );
 
             reg("TensorBrokenMultiline",
@@ -87,11 +87,11 @@ namespace valuascript::compiler::test
                 {
                     {E::InvalidExpression, 3, 1, 3, 2}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1"),
                     IsNull(),
                     IsNumber("3")
-                })
+                )
             );
 
             reg("TensorRegressionComparison",
@@ -99,7 +99,7 @@ namespace valuascript::compiler::test
                 {
                     {E::InvalidExpression, 1, 12, 1, 13}
                 },
-                IsTensor({
+                IsTensor(
                     IsGrouping(
                         IsBinary(
                             TokenType::Greater,
@@ -108,28 +108,16 @@ namespace valuascript::compiler::test
                         )
                     ),
                     IsNull()
-                })
+                )
             );
-
-            // reg("TensorWithMismatchedNestedCloser", "[ ( 1 + 2 ], 3 ]",
-            //     {
-            //         {E::ExpectedRightParenAfterExpression, 1, 11, 1, 12}
-            //     },
-            //     IsTensor({
-            //         IsGrouping(
-            //             IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
-            //         ),
-            //         IsNumber("3")
-            //     })
-            // );
 
             reg("TensorLiteralWithSliceSyntax", "[1:2, 3 ]",
                 {
                     {E::UnmatchedBracketAfterTensorElements, 1, 3, 1, 4}
                 },
-                IsTensor({
+                IsTensor(
                     IsNumber("1")
-                })
+                )
             );
 
             return true;

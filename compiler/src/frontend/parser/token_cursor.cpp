@@ -14,52 +14,6 @@ namespace valuascript::compiler
     {
     }
 
-    const Token& TokenCursor::peek(const size_t lookahead) const
-    {
-        size_t target = current_ + lookahead;
-        if (target >= tokens_.size())
-        {
-            return tokens_.back();
-        }
-        return tokens_[target];
-    }
-
-    const Token& TokenCursor::previous(const size_t lookback) const
-    {
-        if (current_ < static_cast<size_t>(lookback))
-        {
-            return tokens_.front();
-        }
-        return tokens_[current_ - lookback];
-    }
-
-    bool TokenCursor::is_at_end() const
-    {
-        return peek().type == TokenType::EndOfFile;
-    }
-
-    bool TokenCursor::check(const TokenType type) const
-    {
-        if (is_at_end()) return false;
-        return peek().type == type;
-    }
-
-    const Token& TokenCursor::advance()
-    {
-        if (!is_at_end()) current_++;
-        return previous();
-    }
-
-    bool TokenCursor::match(const std::initializer_list<TokenType> types)
-    {
-        if (std::ranges::any_of(types, [this](const TokenType type) { return check(type); }))
-        {
-            advance();
-            return true;
-        }
-        return false;
-    }
-
     const Token& TokenCursor::consume(const TokenType type,
                                       const ParserErrorCode code,
                                       bool use_exact_token_range)

@@ -91,7 +91,7 @@ namespace valuascript::compiler
     CompilerStageArtifact ProjectResolverStage::run(CompilerContext& context,
                                                     const std::vector<CompilerStageArtifact>& artifacts)
     {
-        auto raw_file_path = extract_artifact_data<std::string>(
+        const auto& raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );
 

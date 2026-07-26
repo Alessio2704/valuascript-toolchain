@@ -17,19 +17,19 @@ namespace valuascript::compiler::test
                 {
                     {E::SingleElementTuplesNotAllowed, 1, 3, 1, 4},
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1")
-                })
+                )
             );
 
             reg("TrailingCommaInTuple", "(1, 2,)",
                 {
                     {E::TrailingCommaInTuple, 1, 6, 1, 7},
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
-                    IsNumber("2"),
-                })
+                    IsNumber("2")
+                )
             );
 
             reg("TupleMissingExpression", "(1, , , 3)",
@@ -37,9 +37,9 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 5, 1, 6},
                     {E::InvalidExpression, 1, 7, 1, 8},
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
-                })
+                )
             );
 
             reg("TupleGarbageBetweenElements", "(1, *, *, 3)",
@@ -47,9 +47,9 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 5, 1, 6},
                     {E::InvalidExpression, 1, 8, 1, 9},
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
-                })
+                )
             );
 
             reg("EmptyTupleWithGarbage", "(*)",
@@ -63,10 +63,10 @@ namespace valuascript::compiler::test
                 {
                     {E::ExpectedRightParenAfterTupleElements, 1, 6, 1, 7}
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsIdentifier("x")
-                })
+                )
             );
 
             reg("TupleMultilineRecovery",
@@ -78,11 +78,11 @@ namespace valuascript::compiler::test
                 {
                     {E::InvalidExpression, 3, 3, 3, 4}
                 },
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsNull(),
                     IsNumber("3")
-                })
+                )
             );
 
             reg("EmptyTupleWithCommaIsInvalid", "(,)",
@@ -90,7 +90,7 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 2, 1, 3},
                     {E::SingleElementTuplesNotAllowed, 1, 2, 1, 3}
                 },
-                IsTuple({})
+                IsTuple()
             );
 
             return true;

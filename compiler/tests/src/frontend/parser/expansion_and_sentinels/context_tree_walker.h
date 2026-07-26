@@ -13,7 +13,7 @@ namespace valuascript::compiler::test
     struct NextStep
     {
         StepKind kind;
-        std::optional<Context> context;
+        const Context* context = nullptr;
     };
 
     template <typename State>
@@ -62,12 +62,12 @@ namespace valuascript::compiler::test
 
             if (type == InjectableType::StrongStatement)
             {
-                possible_steps.push_back({StepKind::Promotion, std::nullopt});
+                possible_steps.push_back({StepKind::Promotion, nullptr});
             }
 
             if (depth < max_depth)
             {
-                auto contexts = ContextRegistry::get_all_for(type);
+                const auto& contexts = ContextRegistry::get_all_for(type);
                 for (const auto& ctx : contexts)
                 {
                     bool is_recursive = false;
@@ -82,7 +82,7 @@ namespace valuascript::compiler::test
 
                     if (is_recursive && rec_depth >= max_rec) continue;
 
-                    possible_steps.push_back({StepKind::Context, ctx});
+                    possible_steps.push_back({StepKind::Context, &ctx});
                 }
             }
 
@@ -96,9 +96,9 @@ namespace valuascript::compiler::test
                 {
                     cb.on_promotion(current);
                 }
-                else if (step.context.has_value())
+                else if (step.context != nullptr)
                 {
-                    const auto& ctx = step.context.value();
+                    const auto& ctx = *step.context;
                     bool is_recursive = false;
                     for (auto ctx_input_type : ctx.input_types)
                     {

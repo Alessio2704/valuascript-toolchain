@@ -36,17 +36,59 @@ namespace valuascript::compiler
         void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
         [[nodiscard]] bool get_suppress_errors() const { return suppress_errors_; }
 
-        [[nodiscard]] const Token& peek(size_t lookahead = 0) const;
+        [[nodiscard]] inline const Token& peek(const size_t lookahead = 0) const
+        {
+            const size_t target = current_ + lookahead;
+            if (target < tokens_.size()) [[likely]]
+            {
+                return tokens_[target];
+            }
+            return tokens_.back();
+        }
 
-        [[nodiscard]] const Token& previous(size_t lookback = 1) const;
+        [[nodiscard]] inline const Token& previous(const size_t lookback = 1) const
+        {
+            if (current_ >= lookback) [[likely]]
+            {
+                return tokens_[current_ - lookback];
+            }
+            return tokens_.front();
+        }
 
-        [[nodiscard]] bool is_at_end() const;
+        [[nodiscard]] inline bool is_at_end() const
+        {
+            return peek().type == TokenType::EndOfFile;
+        }
 
-        [[nodiscard]] bool check(TokenType type) const;
+        [[nodiscard]] inline bool check(const TokenType type) const
+        {
+            const Token& tok = peek();
+            return tok.type == type && tok.type != TokenType::EndOfFile;
+        }
 
-        const Token& advance();
+        inline const Token& advance()
+        {
+            if (current_ < tokens_.size() && tokens_[current_].type != TokenType::EndOfFile) [[likely]]
+            {
+                return tokens_[current_++];
+            }
+            return tokens_.back();
+        }
 
-        bool match(std::initializer_list<TokenType> types);
+        inline bool match(const std::initializer_list<TokenType> types)
+        {
+            const Token& tok = peek();
+            if (tok.type == TokenType::EndOfFile) return false;
+            for (TokenType type : types)
+            {
+                if (tok.type == type)
+                {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
 
         const Token& consume(TokenType type, ParserErrorCode code, bool use_exact_token_range = false);
 

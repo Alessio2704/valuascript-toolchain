@@ -1,54 +1,74 @@
 #include "context_registry.h"
 #include <algorithm>
+#include <unordered_map>
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_all_for(const InjectableType type)
+    const std::vector<Context>& ContextRegistry::get_all_for(const InjectableType type)
     {
-        const auto& cache = aggregate_all();
-        std::vector<Context> result;
-        for (const auto& ctx : cache)
+        static const auto map = []()
         {
-            if (std::find(ctx.input_types.begin(), ctx.input_types.end(), type) != ctx.input_types.end())
+            std::unordered_map<InjectableType, std::vector<Context>> m;
+            const auto& cache = aggregate_all();
+            for (const auto& ctx : cache)
             {
-                result.push_back(ctx);
-            }
-        }
-        return result;
-    }
-
-    std::vector<Context> ContextRegistry::get_container_contexts_for(const InjectableType type)
-    {
-        std::vector<Context> result;
-        for (const auto& ctx : get_all_for(type))
-        {
-            if (ctx.output_type == InjectableType::StrongStatement ||
-                ctx.output_type == InjectableType::WeakStatement ||
-                ctx.output_type == InjectableType::TopLevel)
-            {
-                result.push_back(ctx);
-            }
-        }
-        return result;
-    }
-
-    std::vector<Context> ContextRegistry::get_block_contexts()
-    {
-        std::vector<Context> result;
-        for (const auto& ctx : aggregate_all())
-        {
-            if (std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::StrongStatement) != ctx.
-                input_types.end() ||
-                std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::WeakStatement) != ctx.
-                input_types.end())
-            {
-                if (ctx.output_type == InjectableType::TopLevel)
+                for (const auto& in_type : ctx.input_types)
                 {
-                    result.push_back(ctx);
+                    m[in_type].push_back(ctx);
                 }
             }
-        }
-        return result;
+            return m;
+        }();
+
+        static const std::vector<Context> empty;
+        auto it = map.find(type);
+        return (it != map.end()) ? it->second : empty;
+    }
+
+    const std::vector<Context>& ContextRegistry::get_container_contexts_for(const InjectableType type)
+    {
+        static const auto map = []()
+        {
+            std::unordered_map<InjectableType, std::vector<Context>> m;
+            for (const auto& ctx : aggregate_all())
+            {
+                if (ctx.output_type == InjectableType::StrongStatement ||
+                    ctx.output_type == InjectableType::WeakStatement ||
+                    ctx.output_type == InjectableType::TopLevel)
+                {
+                    for (const auto& in_type : ctx.input_types)
+                    {
+                        m[in_type].push_back(ctx);
+                    }
+                }
+            }
+            return m;
+        }();
+
+        static const std::vector<Context> empty;
+        auto it = map.find(type);
+        return (it != map.end()) ? it->second : empty;
+    }
+
+    const std::vector<Context>& ContextRegistry::get_block_contexts()
+    {
+        static const std::vector<Context> cached = []()
+        {
+            std::vector<Context> result;
+            for (const auto& ctx : aggregate_all())
+            {
+                if (std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::StrongStatement) != ctx.input_types.end() ||
+                    std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::WeakStatement) != ctx.input_types.end())
+                {
+                    if (ctx.output_type == InjectableType::TopLevel)
+                    {
+                        result.push_back(ctx);
+                    }
+                }
+            }
+            return result;
+        }();
+        return cached;
     }
 
     const std::vector<Context>& ContextRegistry::aggregate_all()

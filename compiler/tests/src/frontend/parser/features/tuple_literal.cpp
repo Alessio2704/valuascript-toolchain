@@ -11,65 +11,65 @@ namespace valuascript::compiler::test
 
             reg("EmptyTuple",
                 "()",
-                IsTuple({}));
+                IsTuple());
 
             reg("StandardPair",
                 "(1, 2)",
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsNumber("2")
-                }));
+                ));
 
             reg("StandardTriple",
                 "(1, 2, 3)",
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsNumber("2"),
                     IsNumber("3")
-                }));
+                ));
 
             reg("TupleMixedTypes",
                 "(1, \"a\", true)",
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsString("\"a\""),
                     IsBoolean(true)
-                }));
+                ));
 
             reg("SimpleNestedTuples",
                 "((1, 2), 3)",
-                IsTuple({
-                    IsTuple({IsNumber("1"), IsNumber("2")}),
+                IsTuple(
+                    IsTuple(IsNumber("1"), IsNumber("2")),
                     IsNumber("3")
-                }));
+                ));
 
             reg("TupleDifferentiateFromGrouping",
                 "((1 + 2), 3)",
-                IsTuple({
+                IsTuple(
                     IsGrouping(
                         IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))),
                     IsNumber("3")
-                }));
+                ));
 
             reg("ComplexNestedTuples",
                 "((1, 2), (3, (4, 5)))",
-                IsTuple({
-                    IsTuple({IsNumber("1"), IsNumber("2")}),
-                    IsTuple({
+                IsTuple(
+                    IsTuple(IsNumber("1"), IsNumber("2")),
+                    IsTuple(
                         IsNumber("3"),
-                        IsTuple({IsNumber("4"), IsNumber("5")})
-                    })
-                }));
+                        IsTuple(IsNumber("4"), IsNumber("5"))
+                    )
+                ));
 
             reg("MultilineFormatting",
                 "(\n"
                 "  1,\n"
                 "  2\n"
                 ")",
-                IsTuple({
+                IsTuple(
                     IsNumber("1"),
                     IsNumber("2")
-                }));
+                ));
 
             reg("DistinctionFromGrouping",
                 "(1)",

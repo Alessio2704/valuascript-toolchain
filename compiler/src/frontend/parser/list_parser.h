@@ -75,6 +75,7 @@ namespace valuascript::compiler
             }
 
             std::vector<ElementType> elements;
+            elements.reserve(8);
 
             auto is_hard_stop = [&](const Token& token, TokenType next)
             {

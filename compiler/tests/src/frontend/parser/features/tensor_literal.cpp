@@ -3,11 +3,6 @@
 
 namespace valuascript::compiler::test
 {
-    class TensorLiteralExpressionRegistryRunner : public ParserTestBase,
-                                                  public testing::WithParamInterface<RegistryEntry<ExprVerifier>>
-    {
-    };
-
     namespace
     {
         const bool _ = []()
@@ -16,59 +11,59 @@ namespace valuascript::compiler::test
 
             reg("SimpleFlatTensor",
                 "[1, 2, 3]",
-                IsTensor({
+                IsTensor(
                     IsNumber("1"),
                     IsNumber("2"),
                     IsNumber("3")
-                }));
+                ));
 
             reg("EmptyTensor",
                 "[]",
-                IsTensor({}));
+                IsTensor());
 
             reg("TensorMixedTypes",
                 "[1, \"a\", true, 5%]",
-                IsTensor({
+                IsTensor(
                     IsNumber("1"),
                     IsString("\"a\""),
                     IsBoolean(true),
                     IsPercentage("5%")
-                }));
+                ));
 
             reg("SimpleNestedTensor",
                 "[[1], [2]]",
-                IsTensor({
-                    IsTensor({IsNumber("1")}),
-                    IsTensor({IsNumber("2")})
-                }));
+                IsTensor(
+                    IsTensor(IsNumber("1")),
+                    IsTensor(IsNumber("2"))
+                ));
 
             reg("ComplexNestedTensor",
                 "[[[1, 2, 3], [4, 5, 6], [], []]]",
-                IsTensor({
-                    IsTensor({
-                        IsTensor({IsNumber("1"), IsNumber("2"), IsNumber("3")}),
-                        IsTensor({IsNumber("4"), IsNumber("5"), IsNumber("6")}),
-                        IsTensor({}),
-                        IsTensor({})
-                    })
-                }));
+                IsTensor(
+                    IsTensor(
+                        IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        IsTensor(IsNumber("4"), IsNumber("5"), IsNumber("6")),
+                        IsTensor(),
+                        IsTensor()
+                    )
+                ));
 
             reg("DeepNesting",
                 "[[[[1]]]]",
-                IsTensor({
-                    IsTensor({
-                        IsTensor({
-                            IsTensor({IsNumber("1")})
-                        })
-                    })
-                }));
+                IsTensor(
+                    IsTensor(
+                        IsTensor(
+                            IsTensor(IsNumber("1"))
+                        )
+                    )
+                ));
 
             reg("TensorTrailingComma",
                 "[1, 2,]",
-                IsTensor({
+                IsTensor(
                     IsNumber("1"),
                     IsNumber("2")
-                }));
+                ));
 
             reg("TensorLiteralMultilineFormatting",
                 "[\n"
@@ -76,11 +71,11 @@ namespace valuascript::compiler::test
                 "  2,\n"
                 "  3\n"
                 "]",
-                IsTensor({
+                IsTensor(
                     IsNumber("1"),
                     IsNumber("2"),
                     IsNumber("3")
-                }));
+                ));
 
             return true;
         }();
