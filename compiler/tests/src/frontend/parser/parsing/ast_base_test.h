@@ -42,7 +42,7 @@ namespace valuascript::compiler::test
                                                 lexer_result
                                             });
 
-            return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
+            return extract_artifact_data<std::shared_ptr<Program>>({parser_result}, CompilerStageArtifactCode::Ast);
         }
 
         std::shared_ptr<Program> parse_expression_as_assignment(const std::string& expression)
@@ -62,7 +62,7 @@ namespace valuascript::compiler::test
                                                 lexer_result
                                             });
 
-            return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
+            return extract_artifact_data<std::shared_ptr<Program>>({parser_result}, CompilerStageArtifactCode::Ast);
         }
 
         std::shared_ptr<Program> parse_expression_as_type_annotation(const std::string& expression)
@@ -82,7 +82,7 @@ namespace valuascript::compiler::test
                                                 lexer_result
                                             });
 
-            return std::any_cast<std::shared_ptr<Program>>(parser_result.data);
+            return extract_artifact_data<std::shared_ptr<Program>>({parser_result}, CompilerStageArtifactCode::Ast);
         }
 
         Assignment* get_first_assignment(const std::shared_ptr<Program>& ast)

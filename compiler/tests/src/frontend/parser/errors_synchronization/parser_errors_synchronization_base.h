@@ -100,7 +100,7 @@ namespace valuascript::compiler::test
                 ASSERT_EQ(ast_artifact.code, CompilerStageArtifactCode::Ast)
                     << "Parser did not return an AST artifact.";
 
-                auto ast = std::any_cast<std::shared_ptr<Program>>(ast_artifact.data);
+                auto ast = extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
                 ASSERT_NE(ast, nullptr) << "Parsed AST is null.";
 
                 param.verify_ast(*ast);

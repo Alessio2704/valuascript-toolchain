@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
             };
 
             LexerStage lexer_stage;
-            auto [code, data] = lexer_stage.run(*context, history);
-            return std::any_cast<std::vector<Token>>(data);
+            auto result_artifact = lexer_stage.run(*context, history);
+            return extract_artifact_data<std::vector<Token>>({result_artifact}, CompilerStageArtifactCode::TokenStream);
         }
 
         static void ExpectTokens(const std::string& source_code,
