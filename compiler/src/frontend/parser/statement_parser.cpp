@@ -154,7 +154,7 @@ namespace valuascript::compiler
             );
 
             TypeAnnPtr type_annotation = nullptr;
-            if (cursor.match({TokenType::Colon}))
+            if (cursor.match(TokenType::Colon))
             {
                 type_annotation = ErrorRecovery::try_parse<TypeAnnPtr>(
                     ctx,
@@ -162,9 +162,9 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({std::move(target_mods), target.lexeme, std::move(type_annotation)});
+            targets.push_back({std::move(target_mods), std::move(target.lexeme), std::move(type_annotation)});
 
-            if (!cursor.match({TokenType::Comma}))
+            if (!cursor.match(TokenType::Comma))
             {
                 if (cursor.peek().type == TokenType::Identifier || cursor.peek().type == TokenType::At)
                 {
@@ -189,7 +189,7 @@ namespace valuascript::compiler
                 ctx.is_active_closer(cursor.peek().type);
         };
 
-        if (cursor.match({TokenType::Assign}))
+        if (cursor.match(TokenType::Assign))
         {
             if (is_at_boundary()) cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
             else
@@ -241,9 +241,9 @@ namespace valuascript::compiler
         auto expr = parser.parse_expression();
         const SourceSpan start_span = expr->span;
 
-        if (cursor.match({TokenType::Comma})) cursor.report_error(cursor.previous(), E::MultiReassignmentNotSupported);
+        if (cursor.match(TokenType::Comma)) cursor.report_error(cursor.previous(), E::MultiReassignmentNotSupported);
 
-        if (cursor.match({TokenType::Assign}))
+        if (cursor.match(TokenType::Assign))
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
@@ -297,7 +297,7 @@ namespace valuascript::compiler
                                                                  std::move(expr), std::move(value));
         }
 
-        if (dynamic_cast<FunctionCall*>(expr.get()) == nullptr)
+        if (!expr || expr->kind != AstKind::FunctionCall)
         {
             if (expr && expr->is_complete()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
             return nullptr;
@@ -311,6 +311,7 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.advance();
         std::vector<ExprPtr> return_values;
+        return_values.reserve(2);
 
         do
         {
@@ -319,7 +320,7 @@ namespace valuascript::compiler
                     RecoveryConfig::ForceStopAtBoundary({TokenType::Comma}))
             );
         }
-        while (cursor.match({TokenType::Comma}));
+        while (cursor.match(TokenType::Comma));
 
         verify_statement_end();
         return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(modifiers), std::move(return_values));

@@ -16,7 +16,7 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.peek();
 
-        if (cursor.match({TokenType::LeftParen}))
+        if (cursor.match(TokenType::LeftParen))
         {
             CloserTracker tracker(ctx, TokenType::RightParen);
 
@@ -44,7 +44,7 @@ namespace valuascript::compiler
         Token name_token = ctx.consume_identifier(E::MissingTypeAnnotation, false);
         std::vector<TypeAnnPtr> generic_args;
 
-        if (cursor.match({TokenType::Less}))
+        if (cursor.match(TokenType::Less))
         {
             generic_args = ListParser<TypeAnnPtr>(ctx)
                            .stop_at(TokenType::Greater)

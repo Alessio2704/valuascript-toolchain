@@ -37,7 +37,7 @@ namespace valuascript::compiler::test
                                                        size_t col_end)
         {
             SourceSpan span;
-            span.file_path = "test.vs";
+            span.file_path = std::make_shared<const std::string>("test.vs");
             span.line_start = line;
             span.line_end = line;
             span.column_start = col_start;

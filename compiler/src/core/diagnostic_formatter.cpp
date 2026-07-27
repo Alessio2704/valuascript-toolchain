@@ -14,9 +14,10 @@ namespace valuascript::compiler
             const auto& loc = err.get_span();
             std::string source_code;
 
-            if (source_registry.contains(loc.file_path))
+            auto it = source_registry.find(loc.path());
+            if (it != source_registry.end())
             {
-                source_code = source_registry.at(loc.file_path);
+                source_code = it->second;
             }
 
             std::cout << format_error(err, source_code) << "\n\n";
@@ -32,7 +33,7 @@ namespace valuascript::compiler
             << RESET << BOLD << err.what() << RESET << "\n";
 
         output << BLUE << "  --> " << RESET
-            << span.file_path << ":" << span.line_start << ":" << span.column_start << "\n";
+            << span.path() << ":" << span.line_start << ":" << span.column_start << "\n";
 
         size_t start = span.line_start;
         size_t end = (span.line_end > 0) ? span.line_end : start;

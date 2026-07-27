@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <string_view>
 #include <initializer_list>
 #include <stdexcept>
 
@@ -25,12 +26,13 @@ namespace valuascript::compiler
     {
     private:
         const std::vector<Token>& tokens_;
-        std::string file_path_;
+        std::shared_ptr<const std::string> file_path_;
         size_t current_ = 0;
         CompilerContext& context_;
         bool suppress_errors_ = false;
 
     public:
+        TokenCursor(const std::vector<Token>& tokens, std::shared_ptr<const std::string> file_path, CompilerContext& context);
         TokenCursor(const std::vector<Token>& tokens, std::string file_path, CompilerContext& context);
 
         void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
@@ -75,17 +77,15 @@ namespace valuascript::compiler
             return tokens_.back();
         }
 
-        inline bool match(const std::initializer_list<TokenType> types)
+        template <typename... Ts>
+        inline bool match(Ts... types)
         {
             const Token& tok = peek();
-            if (tok.type == TokenType::EndOfFile) return false;
-            for (TokenType type : types)
+            if (tok.type == TokenType::EndOfFile) [[unlikely]] return false;
+            if (((tok.type == types) || ...))
             {
-                if (tok.type == type)
-                {
-                    advance();
-                    return true;
-                }
+                advance();
+                return true;
             }
             return false;
         }

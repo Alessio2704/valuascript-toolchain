@@ -10,6 +10,10 @@
 #include <optional>
 #include <utility>
 #include <tuple>
+#include <variant>
+#include <span>
+#include <compare>
+#include <source_location>
 #include "frontend/parser/ast.h"
 #include "utils/demangle_name.h"
 
@@ -17,66 +21,38 @@ namespace valuascript::compiler::test
 {
     struct StringStorage
     {
-        std::string owned;
-        std::string_view view;
+        std::variant<std::string_view, std::string> data_;
 
-        StringStorage() : owned{}, view{}
+        constexpr StringStorage() : data_(std::in_place_index<0>, std::string_view{})
         {
         }
 
-        StringStorage(const char* s) : owned{}, view(s ? s : "")
+        constexpr StringStorage(const char* s) : data_(std::in_place_index<0>, std::string_view(s ? s : ""))
         {
         }
 
-        StringStorage(std::string_view sv) : owned{}, view(sv)
+        constexpr StringStorage(std::string_view sv) : data_(std::in_place_index<0>, sv)
         {
         }
 
-        StringStorage(std::string s) : owned(std::move(s)), view(this->owned)
+        StringStorage(std::string s) : data_(std::move(s))
         {
         }
 
-        StringStorage(const StringStorage& other)
-            : owned(other.owned), view(other.owned.empty() ? other.view : std::string_view(this->owned))
+        [[nodiscard]] operator std::string_view() const { return get(); }
+
+        [[nodiscard]] std::string_view get() const
         {
+            if (auto* sv = std::get_if<std::string_view>(&data_)) [[likely]] return *sv;
+            return std::get<std::string>(data_);
         }
 
-        StringStorage(StringStorage&& other) noexcept
-            : owned(std::move(other.owned)), view(this->owned.empty() ? other.view : std::string_view(this->owned))
-        {
-        }
+        [[nodiscard]] const char* data() const { return get().data(); }
+        [[nodiscard]] size_t size() const { return get().size(); }
+        [[nodiscard]] bool empty() const { return get().empty(); }
 
-        StringStorage& operator=(const StringStorage& other)
-        {
-            if (this != &other)
-            {
-                owned = other.owned;
-                view = owned.empty() ? other.view : std::string_view(owned);
-            }
-            return *this;
-        }
-
-        StringStorage& operator=(StringStorage&& other) noexcept
-        {
-            if (this != &other)
-            {
-                owned = std::move(other.owned);
-                view = owned.empty() ? other.view : std::string_view(owned);
-            }
-            return *this;
-        }
-
-        operator std::string_view() const { return view; }
-        [[nodiscard]] std::string_view get() const { return view; }
-        [[nodiscard]] const char* data() const { return view.data(); }
-        [[nodiscard]] size_t size() const { return view.size(); }
-        [[nodiscard]] bool empty() const { return view.empty(); }
-
-        friend bool operator==(const StringStorage& lhs, std::string_view rhs) { return lhs.view == rhs; }
-        friend bool operator==(std::string_view lhs, const StringStorage& rhs) { return lhs == rhs.view; }
-        friend bool operator==(const StringStorage& lhs, const std::string& rhs) { return lhs.view == std::string_view(rhs); }
-        friend bool operator==(const std::string& lhs, const StringStorage& rhs) { return std::string_view(lhs) == rhs.view; }
-        friend bool operator==(const StringStorage& lhs, const StringStorage& rhs) { return lhs.view == rhs.view; }
+        [[nodiscard]] friend bool operator==(const StringStorage& lhs, std::string_view rhs) { return lhs.get() == rhs; }
+        [[nodiscard]] friend std::strong_ordering operator<=>(const StringStorage& lhs, std::string_view rhs) { return lhs.get() <=> rhs; }
     };
 
     template <typename F, typename NodeT>
@@ -88,42 +64,42 @@ namespace valuascript::compiler::test
     template <typename F, typename NodeT>
     concept IsCompatibleNodeVerifier =
         (HasNodeType<F, NodeT> && std::derived_from<typename std::decay_t<F>::node_type, NodeT>) ||
-        (!HasNodeType<F, NodeT> && std::is_invocable_v<F, NodeT*>);
+        (!HasNodeType<F, NodeT> && std::invocable<F, NodeT*>);
 
-    template <typename NodeT, size_t BufferSize = 160>
+    template <typename NodeT, size_t BufferSize = 64>
     class InlineVerifier
     {
     private:
         struct VTable
         {
-            void (*invoker)(const char*, NodeT*);
-            void (*copy_ctor)(char*, const char*);
-            void (*move_ctor)(char*, char*);
-            void (*dtor)(char*);
+            void (*invoker)(const std::byte*, NodeT*);
+            void (*copy_ctor)(std::byte*, const std::byte*);
+            void (*move_ctor)(std::byte*, std::byte*);
+            void (*dtor)(std::byte*);
         };
 
-        alignas(std::max_align_t) char buffer_[BufferSize];
+        alignas(std::max_align_t) std::byte buffer_[BufferSize];
         const VTable* vtable_ = nullptr;
 
         template <typename DecayedF>
         static const VTable* get_inline_vtable()
         {
             static constexpr VTable vt{
-                [](const char* buf, NodeT* node)
+                [](const std::byte* buf, NodeT* node)
                 {
                     (*reinterpret_cast<const DecayedF*>(buf))(node);
                 },
-                [](char* dst, const char* src)
+                [](std::byte* dst, const std::byte* src)
                 {
-                    new(dst) DecayedF(*reinterpret_cast<const DecayedF*>(src));
+                    std::construct_at(reinterpret_cast<DecayedF*>(dst), *reinterpret_cast<const DecayedF*>(src));
                 },
-                [](char* dst, char* src)
+                [](std::byte* dst, std::byte* src)
                 {
-                    new(dst) DecayedF(std::move(*reinterpret_cast<DecayedF*>(src)));
+                    std::construct_at(reinterpret_cast<DecayedF*>(dst), std::move(*reinterpret_cast<DecayedF*>(src)));
                 },
-                [](char* buf)
+                [](std::byte* buf)
                 {
-                    reinterpret_cast<DecayedF*>(buf)->~DecayedF();
+                    std::destroy_at(reinterpret_cast<DecayedF*>(buf));
                 }
             };
             return &vt;
@@ -134,21 +110,21 @@ namespace valuascript::compiler::test
         {
             using SharedPtr = std::shared_ptr<DecayedF>;
             static constexpr VTable vt{
-                [](const char* buf, NodeT* node)
+                [](const std::byte* buf, NodeT* node)
                 {
                     (*(*reinterpret_cast<const SharedPtr*>(buf)))(node);
                 },
-                [](char* dst, const char* src)
+                [](std::byte* dst, const std::byte* src)
                 {
-                    new(dst) SharedPtr(*reinterpret_cast<const SharedPtr*>(src));
+                    std::construct_at(reinterpret_cast<SharedPtr*>(dst), *reinterpret_cast<const SharedPtr*>(src));
                 },
-                [](char* dst, char* src)
+                [](std::byte* dst, std::byte* src)
                 {
-                    new(dst) SharedPtr(std::move(*reinterpret_cast<SharedPtr*>(src)));
+                    std::construct_at(reinterpret_cast<SharedPtr*>(dst), std::move(*reinterpret_cast<SharedPtr*>(src)));
                 },
-                [](char* buf)
+                [](std::byte* buf)
                 {
-                    reinterpret_cast<SharedPtr*>(buf)->~SharedPtr();
+                    std::destroy_at(reinterpret_cast<SharedPtr*>(buf));
                 }
             };
             return &vt;
@@ -170,14 +146,14 @@ namespace valuascript::compiler::test
             using DecayedF = std::decay_t<F>;
             if constexpr (sizeof(DecayedF) <= BufferSize && alignof(DecayedF) <= alignof(std::max_align_t))
             {
-                new(buffer_) DecayedF(std::forward<F>(f));
+                std::construct_at(reinterpret_cast<DecayedF*>(buffer_), std::forward<F>(f));
                 vtable_ = get_inline_vtable<DecayedF>();
             }
             else
             {
                 using SharedPtr = std::shared_ptr<DecayedF>;
                 auto ptr = std::make_shared<DecayedF>(std::forward<F>(f));
-                new(buffer_) SharedPtr(std::move(ptr));
+                std::construct_at(reinterpret_cast<SharedPtr*>(buffer_), std::move(ptr));
                 vtable_ = get_heap_vtable<DecayedF>();
             }
         }
@@ -189,7 +165,7 @@ namespace valuascript::compiler::test
 
         InlineVerifier(const InlineVerifier& other)
         {
-            if (other.vtable_)
+            if (other.vtable_) [[likely]]
             {
                 other.vtable_->copy_ctor(buffer_, other.buffer_);
                 vtable_ = other.vtable_;
@@ -198,7 +174,7 @@ namespace valuascript::compiler::test
 
         InlineVerifier(InlineVerifier&& other) noexcept
         {
-            if (other.vtable_)
+            if (other.vtable_) [[likely]]
             {
                 other.vtable_->move_ctor(buffer_, other.buffer_);
                 vtable_ = other.vtable_;
@@ -208,10 +184,10 @@ namespace valuascript::compiler::test
 
         InlineVerifier& operator=(const InlineVerifier& other)
         {
-            if (this != &other)
+            if (this != &other) [[likely]]
             {
                 reset();
-                if (other.vtable_)
+                if (other.vtable_) [[likely]]
                 {
                     other.vtable_->copy_ctor(buffer_, other.buffer_);
                     vtable_ = other.vtable_;
@@ -222,10 +198,10 @@ namespace valuascript::compiler::test
 
         InlineVerifier& operator=(InlineVerifier&& other) noexcept
         {
-            if (this != &other)
+            if (this != &other) [[likely]]
             {
                 reset();
-                if (other.vtable_)
+                if (other.vtable_) [[likely]]
                 {
                     other.vtable_->move_ctor(buffer_, other.buffer_);
                     vtable_ = other.vtable_;
@@ -237,19 +213,19 @@ namespace valuascript::compiler::test
 
         void operator()(NodeT* node) const
         {
-            if (vtable_) vtable_->invoker(buffer_, node);
+            if (vtable_) [[likely]] vtable_->invoker(buffer_, node);
         }
 
-        explicit operator bool() const { return vtable_ != nullptr; }
+        [[nodiscard]] explicit operator bool() const { return vtable_ != nullptr; }
 
-        friend bool operator==(const InlineVerifier& v, std::nullptr_t) { return !static_cast<bool>(v); }
-        friend bool operator==(std::nullptr_t, const InlineVerifier& v) { return !static_cast<bool>(v); }
-        friend bool operator!=(const InlineVerifier& v, std::nullptr_t) { return static_cast<bool>(v); }
-        friend bool operator!=(std::nullptr_t, const InlineVerifier& v) { return static_cast<bool>(v); }
+        [[nodiscard]] friend bool operator==(const InlineVerifier& v, std::nullptr_t) { return !static_cast<bool>(v); }
+        [[nodiscard]] friend bool operator==(std::nullptr_t, const InlineVerifier& v) { return !static_cast<bool>(v); }
+        [[nodiscard]] friend bool operator!=(const InlineVerifier& v, std::nullptr_t) { return static_cast<bool>(v); }
+        [[nodiscard]] friend bool operator!=(std::nullptr_t, const InlineVerifier& v) { return static_cast<bool>(v); }
 
         void reset()
         {
-            if (vtable_)
+            if (vtable_) [[likely]]
             {
                 vtable_->dtor(buffer_);
                 vtable_ = nullptr;
@@ -259,21 +235,21 @@ namespace valuascript::compiler::test
 
     struct ModifierSpec;
 
-    using ExprVerifier = InlineVerifier<Expression, 128>;
-    using TypeVerifier = InlineVerifier<TypeAnnotation, 128>;
-    using ImportVerifier = InlineVerifier<ImportStatement, 128>;
-    using DirectiveVerifier = InlineVerifier<Directive, 192>;
-    using FuncVerifier = InlineVerifier<FunctionDefinition, 200>;
-    using ExtVerifier = InlineVerifier<ExtensionDefinition, 360>;
-    using StructVerifier = InlineVerifier<StructDefinition, 280>;
-    using EnumVerifier = InlineVerifier<EnumDefinition, 240>;
-    using AliasVerifier = InlineVerifier<TypeAliasDefinition, 200>;
+    using ExprVerifier = InlineVerifier<Expression>;
+    using TypeVerifier = InlineVerifier<TypeAnnotation>;
+    using ImportVerifier = InlineVerifier<ImportStatement>;
+    using DirectiveVerifier = InlineVerifier<Directive>;
+    using FuncVerifier = InlineVerifier<FunctionDefinition>;
+    using ExtVerifier = InlineVerifier<ExtensionDefinition>;
+    using StructVerifier = InlineVerifier<StructDefinition>;
+    using EnumVerifier = InlineVerifier<EnumDefinition>;
+    using AliasVerifier = InlineVerifier<TypeAliasDefinition>;
 
     using ModifierVerifier = std::vector<ModifierSpec>;
-    using AssignmentVerifier = InlineVerifier<Assignment, 192>;
-    using ReassignmentVerifier = InlineVerifier<Reassignment, 192>;
-    using ReturnVerifier = InlineVerifier<ReturnStatement, 192>;
-    using ExprStmtVerifier = InlineVerifier<ExpressionStatement, 192>;
+    using AssignmentVerifier = InlineVerifier<Assignment>;
+    using ReassignmentVerifier = InlineVerifier<Reassignment>;
+    using ReturnVerifier = InlineVerifier<ReturnStatement>;
+    using ExprStmtVerifier = InlineVerifier<ExpressionStatement>;
 
     struct ArgSpec
     {
@@ -374,72 +350,81 @@ namespace valuascript::compiler::test
 
     template <typename T>
         requires std::derived_from<T, AstNode>
-    T* ExpectNode(AstNode* node)
+    T* ExpectNode(AstNode* node, std::source_location loc = std::source_location::current())
     {
         if (!node) [[unlikely]]
         {
-            ADD_FAILURE() << "Expected AST node of type [" << get_demangled_name(typeid(T).name())
+            ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
+                << "Expected AST node of type [" << get_demangled_name(typeid(T).name())
                 << "], but got [nullptr].";
             return nullptr;
+        }
+        if constexpr (requires { T::KIND; })
+        {
+            if (node->kind == T::KIND) [[likely]]
+            {
+                return static_cast<T*>(node);
+            }
         }
         T* casted = dynamic_cast<T*>(node);
         if (!casted) [[unlikely]]
         {
-            ADD_FAILURE() << "Expected AST type [" << get_demangled_name(typeid(T).name())
+            ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
+                << "Expected AST type [" << get_demangled_name(typeid(T).name())
                 << "], but got [" << get_demangled_name(typeid(*node).name()) << "].";
             return nullptr;
         }
         return casted;
     }
 
-    struct StmtVerifier : public InlineVerifier<Statement, 208>
+    struct StmtVerifier : public InlineVerifier<Statement>
     {
         StmtVerifier() = default;
 
-        StmtVerifier(std::nullptr_t) : InlineVerifier<Statement, 208>(nullptr)
+        StmtVerifier(std::nullptr_t) : InlineVerifier<Statement>(nullptr)
         {
         }
 
         StmtVerifier(AssignmentVerifier v)
         {
-            if (v)
+            if (v) [[likely]]
             {
                 *this = StmtVerifier([ver = std::move(v)](Statement* s)
                 {
-                    if (auto* casted = ExpectNode<Assignment>(s)) ver(casted);
+                    if (auto* casted = ExpectNode<Assignment>(s)) [[likely]] ver(casted);
                 });
             }
         }
 
         StmtVerifier(ReassignmentVerifier v)
         {
-            if (v)
+            if (v) [[likely]]
             {
                 *this = StmtVerifier([ver = std::move(v)](Statement* s)
                 {
-                    if (auto* casted = ExpectNode<Reassignment>(s)) ver(casted);
+                    if (auto* casted = ExpectNode<Reassignment>(s)) [[likely]] ver(casted);
                 });
             }
         }
 
         StmtVerifier(ReturnVerifier v)
         {
-            if (v)
+            if (v) [[likely]]
             {
                 *this = StmtVerifier([ver = std::move(v)](Statement* s)
                 {
-                    if (auto* casted = ExpectNode<ReturnStatement>(s)) ver(casted);
+                    if (auto* casted = ExpectNode<ReturnStatement>(s)) [[likely]] ver(casted);
                 });
             }
         }
 
         StmtVerifier(ExprStmtVerifier v)
         {
-            if (v)
+            if (v) [[likely]]
             {
                 *this = StmtVerifier([ver = std::move(v)](Statement* s)
                 {
-                    if (auto* casted = ExpectNode<ExpressionStatement>(s)) ver(casted);
+                    if (auto* casted = ExpectNode<ExpressionStatement>(s)) [[likely]] ver(casted);
                 });
             }
         }
@@ -447,10 +432,10 @@ namespace valuascript::compiler::test
         template <typename F>
             requires (!std::derived_from<std::decay_t<F>, Statement> &&
                 !std::same_as<std::decay_t<F>, StmtVerifier> &&
-                !std::same_as<std::decay_t<F>, InlineVerifier<Statement, 208>> &&
+                !std::same_as<std::decay_t<F>, InlineVerifier<Statement>> &&
                 !std::same_as<std::decay_t<F>, std::nullptr_t> &&
                 IsCompatibleNodeVerifier<F, Statement>)
-        StmtVerifier(F&& f) : InlineVerifier<Statement, 208>(std::forward<F>(f))
+        StmtVerifier(F&& f) : InlineVerifier<Statement>(std::forward<F>(f))
         {
         }
     };
@@ -597,8 +582,8 @@ namespace valuascript::compiler::test
         ExpectNode<SelfExpression>(node);
     }
 
-    inline void ExpectArguments(const std::vector<std::pair<std::string, std::unique_ptr<Expression>>>& actual,
-                                const std::vector<ArgSpec>& specs)
+    inline void ExpectArguments(std::span<const std::pair<std::string, std::unique_ptr<Expression>>> actual,
+                                std::span<const ArgSpec> specs)
     {
         ASSERT_EQ(actual.size(), specs.size()) << "Arg count mismatch.";
         for (size_t i = 0; i < specs.size(); i++)
@@ -608,7 +593,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectModifiers(const std::vector<Modifier>& actual, const std::vector<ModifierSpec>& specs)
+    inline void ExpectModifiers(std::span<const Modifier> actual, std::span<const ModifierSpec> specs)
     {
         ASSERT_EQ(actual.size(), specs.size()) << "Modifier count mismatch.";
         for (size_t i = 0; i < specs.size(); i++)
@@ -660,7 +645,7 @@ namespace valuascript::compiler::test
     }
 
     template <typename T>
-    inline void ExpectCall(AstNode* node, const T& target_v, const std::vector<ArgSpec>& args)
+    inline void ExpectCall(AstNode* node, const T& target_v, std::span<const ArgSpec> args)
     {
         if (auto c = ExpectNode<FunctionCall>(node))
         {
@@ -690,8 +675,8 @@ namespace valuascript::compiler::test
     }
 
     template <typename T, typename D>
-    inline void ExpectSwitch(AstNode* node, const T& target_v, const std::vector<SwitchCaseSpec>& cases,
-                             const std::vector<ModifierSpec>& default_mods,
+    inline void ExpectSwitch(AstNode* node, const T& target_v, std::span<const SwitchCaseSpec> cases,
+                             std::span<const ModifierSpec> default_mods,
                              const D& def_v)
     {
         if (auto sw = ExpectNode<SwitchExpression>(node))
@@ -713,7 +698,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectTensor(AstNode* node, const std::vector<ExprVerifier>& elements)
+    inline void ExpectTensor(AstNode* node, std::span<const ExprVerifier> elements)
     {
         if (auto t = ExpectNode<TensorLiteral>(node))
         {
@@ -725,7 +710,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectTuple(AstNode* node, const std::vector<ExprVerifier>& elements)
+    inline void ExpectTuple(AstNode* node, std::span<const ExprVerifier> elements)
     {
         if (auto t = ExpectNode<TupleLiteral>(node))
         {
@@ -737,15 +722,14 @@ namespace valuascript::compiler::test
         }
     }
 
-    inline void ExpectDict(AstNode* node, const std::vector<DictItemSpec>& items)
+    inline void ExpectDict(AstNode* node, std::span<const DictItemSpec> items)
     {
         if (auto d = ExpectNode<DictLiteral>(node))
         {
             ASSERT_EQ(d->elements.size(), items.size()) << "Dictionary items count mismatch.";
             for (size_t i = 0; i < items.size(); i++)
             {
-                EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i <<
- ".";
+                EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i << ".";
                 ExpectModifiers(d->elements[i].modifiers, items[i].modifiers);
                 if (items[i].value_v) items[i].value_v(d->elements[i].value.get());
             }
@@ -753,19 +737,18 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectType(TypeAnnotation* node, std::string_view name,
-                           const std::vector<TypeVerifier>& generics = {})
+                           std::span<const TypeVerifier> generics = {})
     {
         ASSERT_NE(node, nullptr) << "Expected TypeAnnotation node, but got nullptr.";
         EXPECT_EQ(node->name, name) << "TypeAnnotation name mismatch.";
-        ASSERT_EQ(node->generic_args.size(), generics.size()) << "Generic arg count mismatch for type '" << name <<
- "'.";
+        ASSERT_EQ(node->generic_args.size(), generics.size()) << "Generic arg count mismatch for type '" << name << "'.";
         for (size_t i = 0; i < generics.size(); i++)
         {
             if (generics[i]) generics[i](node->generic_args[i].get());
         }
     }
 
-    inline void ExpectTupleType(TypeAnnotation* node, const std::vector<TypeVerifier>& elements)
+    inline void ExpectTupleType(TypeAnnotation* node, std::span<const TypeVerifier> elements)
     {
         if (auto t = ExpectNode<TupleTypeAnnotation>(node))
         {
@@ -778,7 +761,7 @@ namespace valuascript::compiler::test
     }
 
     template <typename V>
-    inline void ExpectAssignment(Statement* stmt, const std::vector<AssignmentTargetSpec>& targets,
+    inline void ExpectAssignment(Statement* stmt, std::span<const AssignmentTargetSpec> targets,
                                  const V& val_v)
     {
         if (auto a = ExpectNode<Assignment>(stmt))
@@ -787,8 +770,7 @@ namespace valuascript::compiler::test
             for (size_t i = 0; i < targets.size(); i++)
             {
                 ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
-                EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index " << i
- << ".";
+                EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index " << i << ".";
                 if (targets[i].type_v) targets[i].type_v(a->targets[i].type.get());
             }
             if (val_v) val_v(a->value.get());
@@ -806,8 +788,8 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectReturn(Statement* stmt,
-                             const std::vector<ModifierSpec>& modifiers,
-                             const std::vector<ExprVerifier>& values)
+                             std::span<const ModifierSpec> modifiers,
+                             std::span<const ExprVerifier> values)
     {
         if (auto r = ExpectNode<ReturnStatement>(stmt))
         {
@@ -830,10 +812,10 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectFunctionDef(FunctionDefinition* f, std::string_view name,
-                                  const std::vector<ModifierSpec>& modifiers,
-                                  const std::vector<ParamSpec>& params,
-                                  const std::vector<TypeVerifier>& returns,
-                                  const std::vector<StmtVerifier>& body,
+                                  std::span<const ModifierSpec> modifiers,
+                                  std::span<const ParamSpec> params,
+                                  std::span<const TypeVerifier> returns,
+                                  std::span<const StmtVerifier> body,
                                   const std::optional<StringStorage>& docstring)
     {
         ASSERT_NE(f, nullptr) << "Expected FunctionDefinition node, but got nullptr.";
@@ -841,22 +823,18 @@ namespace valuascript::compiler::test
         ExpectModifiers(f->modifiers, modifiers);
         if (docstring.has_value())
         {
-            EXPECT_EQ(f->docstring, docstring->get()) << "FunctionDefinition docstring mismatch for function '" << name
- << "'.";
+            EXPECT_EQ(f->docstring, docstring->get()) << "FunctionDefinition docstring mismatch for function '" << name << "'.";
         }
         else
         {
-            EXPECT_EQ(f->docstring, std::nullopt) << "FunctionDefinition docstring mismatch for function '" << name <<
- "'.";
+            EXPECT_EQ(f->docstring, std::nullopt) << "FunctionDefinition docstring mismatch for function '" << name << "'.";
         }
 
         ASSERT_EQ(f->parameters.size(), params.size()) << "FunctionDefinition parameters count mismatch for function '"
             << name << "'.";
         for (size_t i = 0; i < params.size(); i++)
         {
-            EXPECT_EQ(f->parameters[i].name, params[i].name.get()) << "Function parameter name mismatch at index " << i
- <<
-                " for function '" << name << "'.";
+            EXPECT_EQ(f->parameters[i].name, params[i].name.get()) << "Function parameter name mismatch at index " << i << " for function '" << name << "'.";
             ExpectModifiers(f->parameters[i].modifiers, params[i].modifiers);
             if (params[i].type_v) params[i].type_v(f->parameters[i].type.get());
             if (params[i].default_v) params[i].default_v(f->parameters[i].default_value.get());
@@ -878,7 +856,7 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectExtensionDef(ExtensionDefinition* e,
-                                   const std::vector<ModifierSpec>& modifiers,
+                                   std::span<const ModifierSpec> modifiers,
                                    const TypeVerifier& target,
                                    const ProgramSpec& spec)
     {
@@ -886,8 +864,7 @@ namespace valuascript::compiler::test
         ExpectModifiers(e->modifiers, modifiers);
         if (target) target(e->target_type.get());
 
-        ASSERT_EQ(e->execution_steps.size(), spec.execution_steps.size()) <<
- "Execution steps count mismatch in Extension.";
+        ASSERT_EQ(e->execution_steps.size(), spec.execution_steps.size()) << "Execution steps count mismatch in Extension.";
         for (size_t i = 0; i < spec.execution_steps.size(); i++)
             if (spec.execution_steps[i]) spec.execution_steps[i](e->execution_steps[i].get());
 
@@ -908,25 +885,26 @@ namespace valuascript::compiler::test
             if (spec.type_aliases[i]) spec.type_aliases[i](e->type_aliases[i].get());
     }
 
-    inline void ExpectStructDef(StructDefinition* s, std::string_view name, const std::vector<ModifierSpec>& modifiers,
-                                const std::vector<FieldSpec>& fields)
+    inline void ExpectStructDef(StructDefinition* s, std::string_view name,
+                                std::span<const ModifierSpec> modifiers,
+                                std::span<const FieldSpec> fields)
     {
         ASSERT_NE(s, nullptr) << "Expected StructDefinition node, but got nullptr.";
         EXPECT_EQ(s->name, name) << "StructDefinition name mismatch.";
         ExpectModifiers(s->modifiers, modifiers);
-        ASSERT_EQ(s->fields.size(), fields.size()) << "StructDefinition fields count mismatch for struct '" << name <<
-            "'.";
+        ASSERT_EQ(s->fields.size(), fields.size()) << "StructDefinition fields count mismatch for struct '" << name << "'.";
         for (size_t i = 0; i < fields.size(); i++)
         {
-            EXPECT_EQ(s->fields[i].name, fields[i].name.get()) << "Struct field name mismatch at index " << i <<
-                " for struct '" << name << "'.";
+            EXPECT_EQ(s->fields[i].name, fields[i].name.get()) << "Struct field name mismatch at index " << i << " for struct '" << name << "'.";
             ExpectModifiers(s->fields[i].modifiers, fields[i].modifiers);
             if (fields[i].type_v) fields[i].type_v(s->fields[i].type.get());
         }
     }
 
-    inline void ExpectEnumDef(EnumDefinition* e, std::string_view name, const std::vector<ModifierSpec>& modifiers,
-                              const TypeVerifier& und_v, const std::vector<EnumCaseSpec>& cases)
+    inline void ExpectEnumDef(EnumDefinition* e, std::string_view name,
+                              std::span<const ModifierSpec> modifiers,
+                              const TypeVerifier& und_v,
+                              std::span<const EnumCaseSpec> cases)
     {
         ASSERT_NE(e, nullptr) << "Expected EnumDefinition node, but got nullptr.";
         EXPECT_EQ(e->name, name) << "EnumDefinition name mismatch.";
@@ -935,16 +913,14 @@ namespace valuascript::compiler::test
         ASSERT_EQ(e->cases.size(), cases.size()) << "EnumDefinition cases count mismatch for enum '" << name << "'.";
         for (size_t i = 0; i < cases.size(); i++)
         {
-            EXPECT_EQ(e->cases[i].name, cases[i].name.get()) << "Enum case name mismatch at index " << i <<
- " for enum '" <<
-                name << "'.";
+            EXPECT_EQ(e->cases[i].name, cases[i].name.get()) << "Enum case name mismatch at index " << i << " for enum '" << name << "'.";
             ExpectModifiers(e->cases[i].modifiers, cases[i].modifiers);
             if (cases[i].value_v) cases[i].value_v(e->cases[i].value.get());
         }
     }
 
     inline void ExpectTypeAlias(TypeAliasDefinition* a, std::string_view name,
-                                const std::vector<ModifierSpec>& modifiers,
+                                std::span<const ModifierSpec> modifiers,
                                 const TypeVerifier& target_v)
     {
         ASSERT_NE(a, nullptr) << "Expected TypeAliasDefinition node, but got nullptr.";
@@ -954,7 +930,7 @@ namespace valuascript::compiler::test
     }
 
     inline void ExpectImport(ImportStatement* imp,
-                             const std::vector<ModifierSpec>& modifiers,
+                             std::span<const ModifierSpec> modifiers,
                              std::string_view path)
     {
         ASSERT_NE(imp, nullptr) << "Expected ImportStatement node, but got nullptr.";

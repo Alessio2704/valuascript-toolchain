@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include <memory>
@@ -39,24 +40,103 @@ namespace valuascript::compiler
         size_t column_start = 0;
         size_t line_end = 0;
         size_t column_end = 0;
-        std::string file_path;
+        std::shared_ptr<const std::string> file_path;
+
+        SourceSpan() = default;
+
+        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, std::shared_ptr<const std::string> fp)
+            : line_start(ls), column_start(cs), line_end(le), column_end(ce), file_path(std::move(fp)) {}
+
+        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, std::string fp)
+            : line_start(ls), column_start(cs), line_end(le), column_end(ce),
+              file_path(std::make_shared<const std::string>(std::move(fp))) {}
+
+        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, const char* fp)
+            : line_start(ls), column_start(cs), line_end(le), column_end(ce),
+              file_path(std::make_shared<const std::string>(fp ? fp : "")) {}
+
+        SourceSpan& operator=(std::string fp)
+        {
+            file_path = std::make_shared<const std::string>(std::move(fp));
+            return *this;
+        }
+
+        SourceSpan& operator=(const char* fp)
+        {
+            file_path = std::make_shared<const std::string>(fp ? fp : "");
+            return *this;
+        }
+
+        [[nodiscard]] std::string_view path() const noexcept
+        {
+            return file_path ? *file_path : std::string_view{};
+        }
+
+        [[nodiscard]] bool operator==(const SourceSpan& other) const
+        {
+            return line_start == other.line_start && column_start == other.column_start &&
+                   line_end == other.line_end && column_end == other.column_end &&
+                   (file_path == other.file_path || (file_path && other.file_path && *file_path == *other.file_path));
+        }
+    };
+
+    enum class AstKind : uint8_t
+    {
+        Unknown,
+        NumberLiteral,
+        PercentageLiteral,
+        StringLiteral,
+        BooleanLiteral,
+        IdentifierAccess,
+        SelfExpression,
+        BinaryExpression,
+        UnaryExpression,
+        GroupingExpression,
+        ConditionalExpression,
+        FunctionCall,
+        DictLiteral,
+        TensorLiteral,
+        TupleLiteral,
+        BracketAccess,
+        DotAccess,
+        SwitchExpression,
+        Assignment,
+        Reassignment,
+        ExpressionStatement,
+        ReturnStatement,
+        EnumDefinition,
+        Directive,
+        ImportStatement,
+        FunctionDefinition,
+        StructDefinition,
+        TypeAliasDefinition,
+        ExtensionDefinition,
+        Program,
+        TypeAnnotation,
+        TupleTypeAnnotation
     };
 
     class AstNode
     {
     public:
         SourceSpan span;
+        AstKind kind = AstKind::Unknown;
+
+        explicit AstNode(AstKind k = AstKind::Unknown) : kind(k) {}
         virtual ~AstNode() = default;
     };
 
     class Expression : public AstNode
     {
     public:
+        explicit Expression(AstKind k = AstKind::Unknown) : AstNode(k) {}
         [[nodiscard]] virtual bool is_complete() const { return true; }
     };
 
     class Statement : public AstNode
     {
+    public:
+        explicit Statement(AstKind k = AstKind::Unknown) : AstNode(k) {}
     };
 
     struct Modifier

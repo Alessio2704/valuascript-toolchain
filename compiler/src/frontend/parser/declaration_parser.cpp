@@ -41,12 +41,12 @@ namespace valuascript::compiler
                                                                RecoveryConfig::StopAtNewline());
         }
 
-        std::string directive_name = name_token.lexeme;
+        std::string directive_name = std::move(name_token.lexeme);
         ExprPtr value = nullptr;
 
         if (directive_name != "<error>")
         {
-            if (cursor.match({TokenType::Assign}))
+            if (cursor.match(TokenType::Assign))
             {
                 bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
                     (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
@@ -78,7 +78,8 @@ namespace valuascript::compiler
     std::vector<Modifier> DeclarationParser::parse_modifiers(bool is_statement_context)
     {
         std::vector<Modifier> modifiers;
-        while (cursor.match({TokenType::At}))
+        modifiers.reserve(4);
+        while (cursor.match(TokenType::At))
         {
             const Token& start_token = cursor.previous();
             try
@@ -97,7 +98,7 @@ namespace valuascript::compiler
                     ctx, E::ExpectedModifierName, config, is_statement_context);
                 std::vector<std::pair<std::string, ExprPtr>> arguments;
 
-                if (cursor.match({TokenType::LeftParen}))
+                if (cursor.match(TokenType::LeftParen))
                 {
                     CloserTracker tracker(ctx, TokenType::RightParen);
                     ParameterRuleSpec arg_spec{
@@ -200,7 +201,7 @@ namespace valuascript::compiler
 
         std::vector<StructField> fields;
         fields.reserve(fields_gen.size());
-        for (auto& g : fields_gen) fields.push_back({std::move(g.modifiers), g.name.lexeme, std::move(g.type), g.span});
+        for (auto& g : fields_gen) fields.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.type), g.span});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
@@ -267,7 +268,7 @@ namespace valuascript::compiler
 
         std::vector<EnumCase> cases;
         cases.reserve(cases_gen.size());
-        for (auto& g : cases_gen) cases.push_back({std::move(g.modifiers), g.name.lexeme, std::move(g.value)});
+        for (auto& g : cases_gen) cases.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.value)});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
@@ -332,7 +333,7 @@ namespace valuascript::compiler
             {
                 if (g.has_value_separator || g.value) seen_default_param = true;
                 else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
-                params.push_back({std::move(g.modifiers), g.name.lexeme, std::move(g.type), std::move(g.value)});
+                params.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.type), std::move(g.value)});
             }
         }
 
@@ -475,7 +476,7 @@ namespace valuascript::compiler
         if (spec.allow_value)
         {
             bool has_sep = false;
-            if (cursor.match({spec.value_separator}))
+            if (cursor.match(spec.value_separator))
             {
                 has_sep = true;
                 result.has_value_separator = true;

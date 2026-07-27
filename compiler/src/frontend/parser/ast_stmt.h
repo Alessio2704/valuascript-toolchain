@@ -15,12 +15,13 @@ namespace valuascript::compiler
     class Assignment : public Statement
     {
     public:
+        static constexpr AstKind KIND = AstKind::Assignment;
         std::vector<AssignmentTarget> targets;
         ExprPtr value;
 
         Assignment(std::vector<AssignmentTarget> tar,
                    ExprPtr val)
-            : targets(std::move(tar)), value(std::move(val))
+            : Statement(KIND), targets(std::move(tar)), value(std::move(val))
         {
         }
     };
@@ -28,11 +29,12 @@ namespace valuascript::compiler
     class Reassignment : public Statement
     {
     public:
+        static constexpr AstKind KIND = AstKind::Reassignment;
         ExprPtr target;
         ExprPtr value;
 
         Reassignment(ExprPtr tar, ExprPtr val)
-            : target(std::move(tar)), value(std::move(val))
+            : Statement(KIND), target(std::move(tar)), value(std::move(val))
         {
         }
     };
@@ -40,10 +42,11 @@ namespace valuascript::compiler
     class ExpressionStatement : public Statement
     {
     public:
+        static constexpr AstKind KIND = AstKind::ExpressionStatement;
         ExprPtr expr;
 
         explicit ExpressionStatement(ExprPtr e)
-            : expr(std::move(e))
+            : Statement(KIND), expr(std::move(e))
         {
         }
     };
@@ -51,11 +54,12 @@ namespace valuascript::compiler
     class ReturnStatement : public Statement
     {
     public:
+        static constexpr AstKind KIND = AstKind::ReturnStatement;
         std::vector<Modifier> modifiers;
         std::vector<ExprPtr> values;
 
         explicit ReturnStatement(std::vector<Modifier> mods, std::vector<ExprPtr> return_values)
-            : modifiers(std::move(mods)), values(std::move(return_values))
+            : Statement(KIND), modifiers(std::move(mods)), values(std::move(return_values))
         {
         }
     };
@@ -70,17 +74,19 @@ namespace valuascript::compiler
     class EnumDefinition : public Statement
     {
     public:
+        static constexpr AstKind KIND = AstKind::EnumDefinition;
         std::vector<Modifier> modifiers;
         std::string name;
         TypeAnnPtr underlying_type;
         std::vector<EnumCase> cases;
 
         EnumDefinition(std::vector<Modifier> mods,
-                       std::string n,
+                       std::string_view n,
                        TypeAnnPtr type,
                        std::vector<EnumCase> c)
-            : modifiers(std::move(mods)),
-              name(std::move(n)),
+            : Statement(KIND),
+              modifiers(std::move(mods)),
+              name(n),
               underlying_type(std::move(type)),
               cases(std::move(c))
         {

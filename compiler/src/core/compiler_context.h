@@ -5,7 +5,7 @@
 #include "valuascript_exception.h"
 
 namespace valuascript::compiler {
-    using SourceRegistry = std::map<std::string, std::string>;
+    using SourceRegistry = std::map<std::string, std::string, std::less<>>;
 
     class CompilerContext {
     public:

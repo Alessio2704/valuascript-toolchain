@@ -10,11 +10,12 @@ namespace valuascript::compiler
     class Directive : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::Directive;
         std::string name;
         ExprPtr value;
 
-        explicit Directive(std::string n, ExprPtr val)
-            : name(std::move(n)), value(std::move(val))
+        explicit Directive(std::string_view n, ExprPtr val)
+            : AstNode(KIND), name(n), value(std::move(val))
         {
         }
     };
@@ -22,11 +23,12 @@ namespace valuascript::compiler
     class ImportStatement : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::ImportStatement;
         std::vector<Modifier> modifiers;
         std::string path;
 
-        explicit ImportStatement(std::vector<Modifier> mods, std::string p)
-            : modifiers(std::move(mods)), path(std::move(p))
+        explicit ImportStatement(std::vector<Modifier> mods, std::string_view p)
+            : AstNode(KIND), modifiers(std::move(mods)), path(p)
         {
         }
     };
@@ -42,6 +44,7 @@ namespace valuascript::compiler
     class FunctionDefinition : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::FunctionDefinition;
         std::vector<Modifier> modifiers;
         std::string name;
         std::vector<FunctionParameter> parameters;
@@ -50,12 +53,12 @@ namespace valuascript::compiler
         std::optional<std::string> docstring;
 
         explicit FunctionDefinition(std::vector<Modifier> mods,
-                                    std::string n,
+                                    std::string_view n,
                                     std::vector<FunctionParameter> params,
                                     std::vector<TypeAnnPtr> ret_types,
                                     std::vector<StmtPtr> b,
                                     std::optional<std::string> docs = std::nullopt)
-            : modifiers(std::move(mods)), name(std::move(n)), parameters(std::move(params)),
+            : AstNode(KIND), modifiers(std::move(mods)), name(n), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs))
         {
         }
@@ -72,14 +75,15 @@ namespace valuascript::compiler
     class StructDefinition : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::StructDefinition;
         std::vector<Modifier> modifiers;
         std::string name;
         std::vector<StructField> fields;
 
         explicit StructDefinition(std::vector<Modifier> mods,
-                                  std::string n,
+                                  std::string_view n,
                                   std::vector<StructField> f)
-            : modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f))
+            : AstNode(KIND), modifiers(std::move(mods)), name(n), fields(std::move(f))
         {
         }
     };
@@ -87,14 +91,15 @@ namespace valuascript::compiler
     class TypeAliasDefinition : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::TypeAliasDefinition;
         std::vector<Modifier> modifiers;
         std::string name;
         TypeAnnPtr target_type;
 
         explicit TypeAliasDefinition(std::vector<Modifier> mods,
-                                     std::string n,
+                                     std::string_view n,
                                      TypeAnnPtr t_type)
-            : modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type))
+            : AstNode(KIND), modifiers(std::move(mods)), name(n), target_type(std::move(t_type))
         {
         }
     };
@@ -102,6 +107,7 @@ namespace valuascript::compiler
     class ExtensionDefinition : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::ExtensionDefinition;
         std::vector<Modifier> modifiers;
         TypeAnnPtr target_type;
         std::vector<StmtPtr> execution_steps;
@@ -112,7 +118,7 @@ namespace valuascript::compiler
 
         explicit ExtensionDefinition(std::vector<Modifier> mods,
                                      TypeAnnPtr target)
-            : modifiers(std::move(mods)), target_type(std::move(target))
+            : AstNode(KIND), modifiers(std::move(mods)), target_type(std::move(target))
         {
         }
     };
@@ -120,6 +126,7 @@ namespace valuascript::compiler
     class Program : public AstNode
     {
     public:
+        static constexpr AstKind KIND = AstKind::Program;
         std::vector<ImportPtr> import_statements;
         std::vector<DirectivePtr> directives;
         std::vector<StmtPtr> execution_steps;
@@ -128,5 +135,7 @@ namespace valuascript::compiler
         std::vector<EnumDefPtr> enum_definitions;
         std::vector<TypeAliasPtr> type_aliases;
         std::vector<ExtensionDefPtr> extension_definitions;
+
+        Program() : AstNode(KIND) {}
     };
 }

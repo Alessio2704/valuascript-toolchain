@@ -454,7 +454,7 @@ namespace valuascript::compiler
 
             parse_bound(index_expr);
 
-            if (cursor.match({TokenType::Colon}))
+            if (cursor.match(TokenType::Colon))
             {
                 ExprPtr end_expr = nullptr;
                 parse_bound(end_expr);
@@ -505,7 +505,7 @@ namespace valuascript::compiler
         const Token& start = cursor.advance();
         CloserTracker tracker(ctx, TokenType::RightParen);
 
-        if (cursor.match({TokenType::RightParen}))
+        if (cursor.match(TokenType::RightParen))
             return AstFactory::make_node<TupleLiteral>(
                 cursor, start, std::vector<ExprPtr>{});
 
@@ -516,7 +516,7 @@ namespace valuascript::compiler
 
         auto first_expr = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf, &failed);
 
-        if (cursor.match({TokenType::Comma})) return complete_tuple(std::move(first_expr), start);
+        if (cursor.match(TokenType::Comma)) return complete_tuple(std::move(first_expr), start);
         return complete_grouping(std::move(first_expr), failed, start);
     }
 
@@ -608,7 +608,7 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({std::move(g.modifiers), g.name.lexeme, std::move(g.value)});
+        for (auto& g : items_gen) elements.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.value)});
 
         try
         {
@@ -637,7 +637,7 @@ namespace valuascript::compiler
 
         auto condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
 
-        bool has_then = cursor.match({TokenType::Then});
+        bool has_then = cursor.match(TokenType::Then);
         if (!has_then) cursor.report_error_no_panic(cursor.peek(), E::MissingThenToken);
 
         ExprPtr then_branch = nullptr;
@@ -661,7 +661,7 @@ namespace valuascript::compiler
             then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
-        bool has_else = cursor.match({TokenType::Else});
+        bool has_else = cursor.match(TokenType::Else);
         if (!has_else) cursor.report_error_no_panic(cursor.peek(), E::MissingElseToken);
 
         ExprPtr else_branch = nullptr;
@@ -731,7 +731,7 @@ namespace valuascript::compiler
                 conf.options = RecoveryOptions::SkipNestedGroupings |
                     RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 Token id = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedEnumCaseNameAfterCase, conf);
-                identifiers.push_back(id.lexeme);
+                identifiers.emplace_back(id.lexeme);
             }
             else
             {
@@ -748,7 +748,7 @@ namespace valuascript::compiler
                     ErrorRecovery::synchronize_with(ctx, conf);
                 }
             }
-            if (cursor.match({TokenType::Comma})) continue;
+            if (cursor.match(TokenType::Comma)) continue;
             if (cursor.check(TokenType::Identifier) || (is_reserved_keyword(cursor.peek()) &&
                 TokenTraits::acts_like_identifier(cursor.peek(), cursor.peek(1).type)))
             {
@@ -830,6 +830,7 @@ namespace valuascript::compiler
     void ExpressionParser::parse_switch_body(std::vector<SwitchCase>& cases, std::vector<Modifier>& default_mods,
                                              ExprPtr& default_case)
     {
+        cases.reserve(8);
         SyncSetTracker tracker(ctx, {TokenType::Case, TokenType::Default});
         while (!cursor.check(TokenType::RightBrace) && !cursor.is_at_end())
         {
@@ -847,8 +848,8 @@ namespace valuascript::compiler
             {
                 auto modifiers = parser.parse_modifiers();
 
-                if (cursor.match({TokenType::Case})) cases.push_back(parse_switch_case(std::move(modifiers)));
-                else if (cursor.match({TokenType::Default}))
+                if (cursor.match(TokenType::Case)) cases.push_back(parse_switch_case(std::move(modifiers)));
+                else if (cursor.match(TokenType::Default))
                 {
                     if (default_case != nullptr)
                         cursor.report_error_no_panic(

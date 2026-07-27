@@ -12,7 +12,7 @@ namespace valuascript::compiler::test {
             EXPECT_EQ(span.column_start, col_start) << "Mismatch in column_start";
             EXPECT_EQ(span.line_end, line_end) << "Mismatch in line_end";
             EXPECT_EQ(span.column_end, col_end) << "Mismatch in column_end";
-            EXPECT_EQ(span.file_path, "test.vs") << "Mismatch in file_path";
+            EXPECT_EQ(span.path(), "test.vs") << "Mismatch in file_path";
         }
     };
 

@@ -169,7 +169,7 @@ namespace valuascript::compiler::test
 
                 if (expected.file_path.has_value())
                 {
-                    EXPECT_EQ(actual.get_span().file_path, expected.file_path.value())
+                    EXPECT_EQ(actual.get_span().path(), expected.file_path.value())
                         << "File path mismatch at error index " << i << " (" << actual.what() << ")";
                 }
 

@@ -29,18 +29,17 @@ namespace valuascript::compiler::test
 
     std::shared_ptr<Program> ParserTestBase::run_parser(const std::string& code, CompilerContext& context)
     {
-        std::vector<CompilerStageArtifact> initial_artifacts = {
-            {CompilerStageArtifactCode::SourceCode, code},
-            {CompilerStageArtifactCode::FilePath, std::string("test_script.vs")}
-        };
+        thread_local LexerStage lexer;
+        thread_local ParserStage parser;
 
-        LexerStage lexer;
-        ParserStage parser;
+        std::vector<CompilerStageArtifact> artifacts;
+        artifacts.reserve(3);
+        artifacts.emplace_back(CompilerStageArtifactCode::SourceCode, code);
+        artifacts.emplace_back(CompilerStageArtifactCode::FilePath, std::string("test_script.vs"));
 
-        auto lexer_artifacts = initial_artifacts;
-        lexer_artifacts.push_back(lexer.run(context, initial_artifacts));
+        artifacts.push_back(lexer.run(context, artifacts));
 
-        CompilerStageArtifact ast_artifact = parser.run(context, lexer_artifacts);
+        CompilerStageArtifact ast_artifact = parser.run(context, artifacts);
         return extract_artifact_data<std::shared_ptr<Program>>({ast_artifact}, CompilerStageArtifactCode::Ast);
     }
 

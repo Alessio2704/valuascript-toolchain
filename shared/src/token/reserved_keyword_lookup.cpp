@@ -2,9 +2,9 @@
 
 namespace valuascript::shared
 {
-    const std::unordered_map<std::string, TokenType>& get_reserved_keywords()
+    const KeywordMap& get_reserved_keywords()
     {
-        static const std::unordered_map<std::string, TokenType> kReservedKeywords = {
+        static const KeywordMap kReservedKeywords = {
             {"import", TokenType::Import},
             {"let", TokenType::Let},
             {"if", TokenType::If},
@@ -30,7 +30,7 @@ namespace valuascript::shared
         return kReservedKeywords;
     }
 
-    std::optional<TokenType> get_keyword_type(const std::string& lexeme)
+    std::optional<TokenType> get_keyword_type(std::string_view lexeme)
     {
         auto& keywords = get_reserved_keywords();
         if (const auto it = keywords.find(lexeme); it != keywords.end())

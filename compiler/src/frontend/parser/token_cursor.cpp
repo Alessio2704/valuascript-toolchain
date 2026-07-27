@@ -8,9 +8,15 @@ namespace valuascript::compiler
 {
     using E = ParserErrorCode;
 
-    TokenCursor::TokenCursor(const std::vector<Token>& tokens, std::string file_path,
+    TokenCursor::TokenCursor(const std::vector<Token>& tokens, std::shared_ptr<const std::string> file_path,
                              CompilerContext& context)
         : tokens_(tokens), file_path_(std::move(file_path)), context_(context)
+    {
+    }
+
+    TokenCursor::TokenCursor(const std::vector<Token>& tokens, std::string file_path,
+                             CompilerContext& context)
+        : tokens_(tokens), file_path_(std::make_shared<const std::string>(std::move(file_path))), context_(context)
     {
     }
 
