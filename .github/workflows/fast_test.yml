@@ -47,7 +47,12 @@ jobs:
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Build and Test Project
-        uses: ./.github/actions/build_and_test
+      - name: Build Project
+        uses: ./.github/actions/build
+        with:
+          cmake_preset: 'Release'
+
+      - name: Test Project
+        uses: ./.github/actions/test
         with:
           cmake_preset: 'Release'
