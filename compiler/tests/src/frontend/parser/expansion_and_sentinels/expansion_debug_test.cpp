@@ -33,6 +33,7 @@ namespace valuascript::compiler::test
         }
     };
 
+#if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_F(ExpansionDebugger, GenerateExpressionReport)
     {
         DumpExpansion(InjectableType::Expression, "1 + 1", "BasicArithmetic");
@@ -41,4 +42,5 @@ namespace valuascript::compiler::test
         DumpExpansion(InjectableType::WeakStatement, "return 1", "BasicReturn");
         DumpExpansion(InjectableType::StrongStatement, "let res = 1", "BasicAssign");
     }
+#endif
 }

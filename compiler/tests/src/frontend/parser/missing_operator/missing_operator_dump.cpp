@@ -53,6 +53,7 @@ namespace valuascript::compiler::test
     {
     };
 
+#if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_P(MissingOperatorTwoLeavesDump, InspectGeneratedPrograms)
     {
         auto tc = GetParam();
@@ -159,4 +160,5 @@ namespace valuascript::compiler::test
         return param_info.param.test_name;
         }
     );
+#endif
 }

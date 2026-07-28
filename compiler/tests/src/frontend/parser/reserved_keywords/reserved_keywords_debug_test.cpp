@@ -63,10 +63,12 @@ namespace valuascript::compiler::test
         }
     };
 
+#if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_F(ReservedKeywordDebugger, GenerateKeywordReport)
     {
         DumpKeywordTest("struct");
         DumpKeywordTest("let");
         DumpKeywordTest("mod");
     }
+#endif
 }

@@ -4,4 +4,5 @@ auto_build_component(vsc
         FUZZ_ITERATIONS
         EXPANSION_DEPTH
         EXPANSION_RECURSION
+        ENABLE_DEBUG_DUMPS
 )

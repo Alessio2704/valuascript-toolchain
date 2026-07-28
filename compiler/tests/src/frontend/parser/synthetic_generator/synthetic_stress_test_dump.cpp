@@ -9,6 +9,7 @@ namespace valuascript::compiler::test
     {
     };
 
+#if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_F(SyntheticStressTest, InspectGeneratedPrograms)
     {
         for (size_t seed = 0; seed < 5; ++seed)
@@ -47,4 +48,5 @@ namespace valuascript::compiler::test
             out << code;
         }
     }
+#endif
 }

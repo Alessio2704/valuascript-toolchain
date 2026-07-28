@@ -58,6 +58,7 @@ namespace valuascript::compiler::test
         }
     };
 
+#if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_F(ExpansionRecoveryDebugger, GenerateRecoveryReport)
     {
         DumpRecoveryExpansion(
@@ -95,4 +96,5 @@ namespace valuascript::compiler::test
             "BrokenModifier"
         );
     }
+#endif
 }

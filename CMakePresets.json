@@ -14,7 +14,8 @@
       "environment": {
         "FUZZ_ITERATIONS": "10000",
         "EXPANSION_DEPTH": "4",
-        "EXPANSION_RECURSION": "3"
+        "EXPANSION_RECURSION": "3",
+        "ENABLE_DEBUG_DUMPS": "0"
       }
     },
     {
@@ -25,6 +26,19 @@
         "CMAKE_BUILD_TYPE": "Release",
         "ENABLE_SANITIZERS": "OFF",
         "ENABLE_IWYU": "ON"
+      }
+    },
+    {
+      "name": "Release-Dump",
+      "displayName": "Release-Dump",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "OFF",
+        "ENABLE_IWYU": "ON"
+      },
+      "environment": {
+        "ENABLE_DEBUG_DUMPS": "1"
       }
     },
     {
@@ -72,6 +86,10 @@
       "configurePreset": "Release"
     },
     {
+      "name": "Release-Dump",
+      "configurePreset": "Release-Dump"
+    },
+    {
       "name": "Release-Sanitizers",
       "configurePreset": "Release-Sanitizers"
     },
@@ -101,6 +119,11 @@
       "name": "Release",
       "inherits": "base-test",
       "configurePreset": "Release"
+    },
+    {
+      "name": "Release-Dump",
+      "inherits": "base-test",
+      "configurePreset": "Release-Dump"
     },
     {
       "name": "Release-Sanitizers",
