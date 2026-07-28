@@ -7,12 +7,31 @@
 namespace valuascript::compiler::test
 {
     enum class TemplateType { TwoLeaves, ThreeLeaves, FourLeaves, SpecialCases };
+    enum class ExpansionPosition { Pos1, Pos2, Pos3 };
 
     struct MissingOperatorTemplateBase
     {
         std::string test_name;
         TemplateType type;
     };
+
+    struct MissingOperatorExpansionDef
+    {
+        std::string test_name;
+        TemplateType type;
+        ExpansionPosition position;
+    };
+
+    inline std::vector<MissingOperatorExpansionDef> get_expansion_cases()
+    {
+        return {
+            {"ThreeLeaves_Pos1", TemplateType::ThreeLeaves, ExpansionPosition::Pos1},
+            {"ThreeLeaves_Pos2", TemplateType::ThreeLeaves, ExpansionPosition::Pos2},
+            {"FourLeaves_Pos1", TemplateType::FourLeaves, ExpansionPosition::Pos1},
+            {"FourLeaves_Pos2", TemplateType::FourLeaves, ExpansionPosition::Pos2},
+            {"FourLeaves_Pos3", TemplateType::FourLeaves, ExpansionPosition::Pos3},
+        };
+    }
 
     struct SpecialCaseDef
     {

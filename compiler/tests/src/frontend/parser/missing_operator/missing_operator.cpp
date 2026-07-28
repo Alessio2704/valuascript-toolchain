@@ -41,7 +41,7 @@ namespace valuascript::compiler::test
     );
 
     class MissingOperatorExpansionRunner : public ParserTestBase,
-                                           public testing::WithParamInterface<MissingOperatorTemplateBase>
+                                           public testing::WithParamInterface<MissingOperatorExpansionDef>
     {
     };
 
@@ -52,11 +52,12 @@ namespace valuascript::compiler::test
 
         if (tc.type == TemplateType::ThreeLeaves)
         {
-            {
-                const auto& a = atoms[0];
-                const auto& b = atoms[1];
-                const auto& c = atoms[2];
+            const auto& a = atoms[0];
+            const auto& b = atoms[1];
+            const auto& c = atoms[2];
 
+            if (tc.position == ExpansionPosition::Pos1)
+            {
                 std::string snippet = a.code + " " + b.code + " + " + c.code;
                 size_t start_col = a.code.length() + 2;
                 size_t end_col = start_col + b.first_token_len;
@@ -70,13 +71,10 @@ namespace valuascript::compiler::test
 
                 auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                         tc.test_name + "_Pos1_" + a.name + "_" + b.name + "_" + c.name);
+                                         tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name);
             }
+            else if (tc.position == ExpansionPosition::Pos2)
             {
-                const auto& a = atoms[0];
-                const auto& b = atoms[1];
-                const auto& c = atoms[2];
-
                 std::string snippet = a.code + " + " + b.code + " " + c.code;
                 size_t start_col = a.code.length() + 3 + b.code.length() + 2;
                 size_t end_col = start_col + c.first_token_len;
@@ -90,17 +88,18 @@ namespace valuascript::compiler::test
 
                 auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                         tc.test_name + "_Pos2_" + a.name + "_" + b.name + "_" + c.name);
+                                         tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name);
             }
         }
         else if (tc.type == TemplateType::FourLeaves)
         {
-            {
-                const auto& a = atoms[0];
-                const auto& b = atoms[1];
-                const auto& c = atoms[2];
-                const auto& d = atoms[3];
+            const auto& a = atoms[0];
+            const auto& b = atoms[1];
+            const auto& c = atoms[2];
+            const auto& d = atoms[3];
 
+            if (tc.position == ExpansionPosition::Pos1)
+            {
                 std::string snippet = a.code + " " + b.code + " + " + c.code + " + " + d.code;
                 size_t start_col = a.code.length() + 2;
                 size_t end_col = start_col + b.first_token_len;
@@ -120,14 +119,10 @@ namespace valuascript::compiler::test
 
                 auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                         tc.test_name + "_Pos1_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
+                                         tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
+            else if (tc.position == ExpansionPosition::Pos2)
             {
-                const auto& a = atoms[0];
-                const auto& b = atoms[1];
-                const auto& c = atoms[2];
-                const auto& d = atoms[3];
-
                 std::string snippet = a.code + " + " + b.code + " " + c.code + " + " + d.code;
                 size_t start_col = a.code.length() + 3 + b.code.length() + 2;
                 size_t end_col = start_col + c.first_token_len;
@@ -146,14 +141,10 @@ namespace valuascript::compiler::test
 
                 auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                         tc.test_name + "_Pos2_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
+                                         tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
+            else if (tc.position == ExpansionPosition::Pos3)
             {
-                const auto& a = atoms[0];
-                const auto& b = atoms[1];
-                const auto& c = atoms[2];
-                const auto& d = atoms[3];
-
                 std::string snippet = a.code + " + " + b.code + " + " + c.code + " " + d.code;
                 size_t start_col = a.code.length() + 3 + b.code.length() + 3 + c.code.length() + 2;
                 size_t end_col = start_col + d.first_token_len;
@@ -171,10 +162,19 @@ namespace valuascript::compiler::test
 
                 auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                         tc.test_name + "_Pos3_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
+                                         tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
         }
     }
+
+    INSTANTIATE_TEST_SUITE_P(
+        ExpressionTemplates,
+        MissingOperatorExpansionRunner,
+        testing::ValuesIn(get_expansion_cases()),
+        [](const testing::TestParamInfo<MissingOperatorExpansionDef>& param_info) {
+            return param_info.param.test_name;
+        }
+    );
 
     class MissingOperatorSpecialCasesRunner : public ParserTestBase,
                                               public testing::WithParamInterface<SpecialCaseDef>
@@ -196,23 +196,6 @@ namespace valuascript::compiler::test
         testing::ValuesIn(get_special_cases()),
         [](const testing::TestParamInfo<SpecialCaseDef>& param_info) {
             return param_info.param.test_name;
-        }
-    );
-
-    std::vector<MissingOperatorTemplateBase> missing_operator_templates()
-    {
-        return {
-            {"ThreeLeaves", TemplateType::ThreeLeaves},
-            {"FourLeaves", TemplateType::FourLeaves}
-        };
-    }
-
-    INSTANTIATE_TEST_SUITE_P(
-        ExpressionTemplates,
-        MissingOperatorExpansionRunner,
-        testing::ValuesIn(missing_operator_templates()),
-        [](const testing::TestParamInfo<MissingOperatorTemplateBase>& param_info) {
-        return param_info.param.test_name;
         }
     );
 }
