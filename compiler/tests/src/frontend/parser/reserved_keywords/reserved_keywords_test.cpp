@@ -17,43 +17,13 @@ namespace valuascript::compiler::test
 
         ParserExpectedError base_error(ParserErrorCode::ReservedKeywordAsIdentifier, 1, 1, 1, keyword.length() + 1);
 
-        auto items = apply_context_augmentations(
+        ExpectParseErrorsUnified(
             InjectableType::Identifier,
             keyword,
+            {base_error},
             UniversalVerifier(keyword),
             "KeywordTest"
         );
-
-        expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
-        {
-            if (item.is_skipped) return;
-
-            const auto& post_sentinels = RecoverySentinel::get_all_top_level_sentinels();
-
-            for (size_t i = 0; i < post_sentinels.size(); ++i)
-            {
-                size_t seed = std::hash<std::string>{}(item.path_name + keyword) ^ i;
-                auto pre_sentinel = RecoverySentinel::generate_top_level_sentinel(seed);
-
-                const auto& post_sentinel = post_sentinels[i];
-
-                std::string full_code = pre_sentinel.source + "\n\n" + item.code + "\n\n" + post_sentinel.source + "\n";
-                std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
-
-                ProgramSpec full_spec;
-                if (pre_sentinel.add_to_spec) pre_sentinel.add_to_spec(full_spec);
-
-                std::visit([&](auto&& ver) { SpecAdder::add(full_spec, ver); }, item.verifier);
-
-                if (post_sentinel.add_to_spec) post_sentinel.add_to_spec(full_spec);
-
-                auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, {base_error});
-
-                SCOPED_TRACE("Context Path: " + item.path_name);
-
-                ExpectParseErrors(full_code, shifted_errors, full_spec);
-            }
-        }, true, ExpansionPolicy{4, 3});
     }
 
     INSTANTIATE_TEST_SUITE_P(

@@ -19,9 +19,7 @@ namespace valuascript::compiler::test
             out << "============================================================\n\n";
 
             size_t count = 0;
-            auto items = apply_context_augmentations(type, snippet, NullVerifier{}, label);
-
-            expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
+            expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
             {
                 count++;
                 out << "--- VARIATION " << count << " ---\n";

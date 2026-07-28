@@ -23,34 +23,30 @@ namespace valuascript::compiler::test
             size_t count = 0;
             ParserExpectedError base_error(ParserErrorCode::ReservedKeywordAsIdentifier, 1, 1, 1, keyword.length() + 1);
 
-            auto items = apply_context_augmentations(
+            size_t scenario_index = 0;
+            size_t base_seed = std::hash<std::string>{}("ReservedKeywordDebugger_" + keyword);
+
+            expand_to_top_level_stream(
                 InjectableType::Identifier,
                 keyword,
                 UniversalVerifier(keyword),
-                "KeywordTest"
-            );
-
-            expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
-            {
-                if (item.is_skipped) return;
-
-                const auto& post_sentinels = RecoverySentinel::get_all_top_level_sentinels();
-
-                for (size_t i = 0; i < post_sentinels.size(); ++i)
+                "KeywordTest",
+                [&](ProcessingItem&& item)
                 {
-                    count++;
-                    size_t seed = std::hash<std::string>{}(item.path_name + keyword) ^ i;
-                    auto pre_sentinel = RecoverySentinel::generate_top_level_sentinel(seed);
-                    auto post_sentinel = post_sentinels[i];
+                    if (item.is_skipped) return;
 
-                    std::string full_code = pre_sentinel.source + "\n\n" + item.code + "\n\n" + post_sentinel.source +
-                        "\n";
-                    std::string prefix_for_shifting = pre_sentinel.source + "\n\n" + item.cumulative_prefix;
-                    auto shifted_errors = ErrorShifter::shift_errors(prefix_for_shifting, {base_error});
+                    count++;
+                    size_t seed = base_seed + (scenario_index++ * 2);
+
+                    ProgramSpec item_spec;
+                    std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
+
+                    auto prog = BuildRecoveryProgram(std::move(item.code), std::move(item_spec), item.cumulative_prefix, seed);
+                    auto shifted_errors = ErrorShifter::shift_errors(prog.prefix_for_shifting, {base_error});
 
                     out << "--- VARIATION " << count << " ---\n";
                     out << "PATH:  " << item.path_name << "\n";
-                    out << "CODE:\n" << full_code << "\n";
+                    out << "CODE:\n" << prog.full_code << "\n";
                     out << "EXPECTED ERRORS:\n";
                     for (const auto& err : shifted_errors)
                     {
@@ -59,8 +55,9 @@ namespace valuascript::compiler::test
                             << ", Col: " << err.column_start << "\n";
                     }
                     out << "------------------------------------------------------------\n\n";
-                }
-            }, true, ExpansionPolicy{4, 3});
+                },
+                true
+            );
 
             out << "[DEBUG] Reserved keyword dump finished (" << count << " variations)\n";
         }

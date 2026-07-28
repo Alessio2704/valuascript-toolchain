@@ -34,12 +34,39 @@ namespace valuascript::compiler::test
                                                bool inject_sentinels = false,
                                                std::optional<ExpansionPolicy> policy_override = std::nullopt);
 
+        template <typename Verifier>
+        static void expand_to_top_level_stream(InjectableType type,
+                                               const std::string& snippet,
+                                               const Verifier& verifier,
+                                               const std::string& group_name,
+                                               const ExpansionCallback& callback,
+                                               bool inject_sentinels = false,
+                                               const std::vector<std::string_view>& skip_contexts = {},
+                                               std::optional<ExpansionPolicy> policy_override = std::nullopt)
+        {
+            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts);
+            expand_to_top_level_stream(std::move(items), callback, inject_sentinels, policy_override);
+        }
+
+        template <typename Verifier>
+        static size_t get_augmentation_count(InjectableType type,
+                                             const std::string& snippet,
+                                             const Verifier& verifier,
+                                             const std::string& group_name,
+                                             const std::vector<std::string_view>& skip_contexts = {})
+        {
+            return apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts).size();
+        }
+
+    private:
         static std::vector<ProcessingItem> apply_context_augmentations(InjectableType type,
                                                                        const std::string& snippet,
                                                                        const UniversalVerifier& verifier,
                                                                        const std::string& group_name,
                                                                        const std::vector<std::string_view>&
                                                                            skip_contexts = {});
+
+    protected:
 
         static ConstructedRecoveryProgram BuildRecoveryProgram(std::string inner_code,
                                                                ProgramSpec inner_spec,

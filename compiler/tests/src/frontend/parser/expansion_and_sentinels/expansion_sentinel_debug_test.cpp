@@ -25,9 +25,7 @@ namespace valuascript::compiler::test
             size_t scenario_index = 0;
             size_t base_seed = std::hash<std::string>{}(label);
 
-            auto items = apply_context_augmentations(type, snippet, NullVerifier{}, label);
-
-            expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
+            expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
             {
                 ProgramSpec item_spec;
                 auto prog = BuildRecoveryProgram(

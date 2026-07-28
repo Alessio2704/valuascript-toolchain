@@ -102,7 +102,7 @@ namespace valuascript::compiler::test
         size_t count_happy_executions(InjectableType type, const UniversalVerifier& dummy_verifier)
         {
             size_t count = 0;
-            size_t augmentations = apply_context_augmentations(type, "dummy", dummy_verifier, "test", {}).size();
+            size_t augmentations = ParserTestBase::get_augmentation_count(type, "dummy", dummy_verifier, "test", {});
 
             auto add = [&](const auto& registry)
             {
@@ -147,7 +147,7 @@ namespace valuascript::compiler::test
         size_t count_sad_executions(InjectableType type, const UniversalVerifier& dummy_verifier)
         {
             size_t count = 0;
-            size_t augmentations = apply_context_augmentations(type, "dummy", dummy_verifier, "test", {}).size();
+            size_t augmentations = ParserTestBase::get_augmentation_count(type, "dummy", dummy_verifier, "test", {});
 
             auto add = [&](const auto& registry)
             {
@@ -291,9 +291,9 @@ namespace valuascript::compiler::test
 
         for (const auto& [type, dummy_verifier] : injectables_with_verifiers)
         {
-            auto variations = apply_context_augmentations(type, "dummy_snippet", dummy_verifier, "test_group");
+            size_t variations = ParserTestBase::get_augmentation_count(type, "dummy_snippet", dummy_verifier, "test_group");
             out << std::left << std::setw(18) << injectable_to_string(type)
-                << "| " << variations.size() << "\n";
+                << "| " << variations << "\n";
         }
         out << "\n";
 
@@ -343,7 +343,7 @@ namespace valuascript::compiler::test
         for (const auto& [type, dummy_verifier] : injectables_with_verifiers)
         {
             auto [happy_cnt, sad_cnt] = get_registry_counts(type);
-            size_t aug_cnt = apply_context_augmentations(type, "dummy", dummy_verifier, "test").size();
+            size_t aug_cnt = ParserTestBase::get_augmentation_count(type, "dummy", dummy_verifier, "test");
             size_t expansions = ExpansionCalculator::compute_expected_expansions(type);
 
             size_t happy_executions = count_happy_executions(type, dummy_verifier);

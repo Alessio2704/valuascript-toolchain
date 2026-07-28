@@ -12,8 +12,6 @@ namespace valuascript::compiler::test
     protected:
         void run_dump_for_snippet(const std::string& name, const std::string& snippet)
         {
-            auto items = apply_context_augmentations(InjectableType::Expression, snippet, NullVerifier{}, name);
-
             size_t file_index = 0;
             size_t base_seed = 0;
 
@@ -29,7 +27,7 @@ namespace valuascript::compiler::test
             out << "Snippet: " << snippet << "\n";
             out << "============================================================\n\n";
 
-            expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& out_item)
+            expand_to_top_level_stream(InjectableType::Expression, snippet, NullVerifier{}, name, [&](ProcessingItem&& out_item)
             {
                 if (out_item.is_skipped) return;
 
