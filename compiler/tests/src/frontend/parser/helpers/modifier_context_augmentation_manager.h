@@ -35,10 +35,13 @@ namespace valuascript::compiler::test
                 {"@mod3(p: 1)", {{"mod3", {{"p", IsNumber("1")}}}}, false}
             };
 
-            std::vector<int> indices = {0, 1, 2, 3};
-            std::sort(indices.begin(), indices.end());
+            std::vector<std::vector<int>> permutation_list = {
+                {0, 1, 2, 3},
+                {1, 0, 2, 3},
+                {1, 2, 3, 0}
+            };
 
-            do
+            for (const auto& indices : permutation_list)
             {
                 ProcessingItem var = initial_item;
                 std::string full_code;
@@ -66,17 +69,16 @@ namespace valuascript::compiler::test
                 std::string path_desc = "Stacked [";
                 for (size_t k = 0; k < indices.size(); ++k)
                 {
-                    path_desc += (atoms[k].is_target
+                    path_desc += (atoms[static_cast<size_t>(indices[k])].is_target
                                       ? "Target"
                                       : "Mod" + std::to_string(indices[k]));
                     if (k < indices.size() - 1) path_desc += ", ";
                 }
-                path_desc += "]";
+                path_desc += ']';
 
                 var.path_name = initial_item.path_name + " (" + path_desc + ")";
                 items.push_back(std::move(var));
             }
-            while (std::next_permutation(indices.begin(), indices.end()));
 
             return items;
         }
