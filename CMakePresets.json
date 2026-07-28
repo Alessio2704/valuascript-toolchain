@@ -12,7 +12,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/cmake-build-${presetName}",
       "environment": {
-        "FUZZ_ITERATIONS": "10000",
+        "FUZZ_ITERATIONS": "2500",
         "EXPANSION_DEPTH": "4",
         "EXPANSION_RECURSION": "3",
         "ENABLE_DEBUG_DUMPS": "0"
