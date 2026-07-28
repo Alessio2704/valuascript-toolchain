@@ -7,6 +7,39 @@ namespace valuascript::compiler::test
 {
     using E = ParserErrorCode;
 
+    class MissingOperatorTwoLeavesRunner : public ParserTestBase,
+                                           public testing::WithParamInterface<TwoLeavesPairDef>
+    {
+    };
+
+    TEST_P(MissingOperatorTwoLeavesRunner, ValidatesInAllContexts)
+    {
+        auto tc = GetParam();
+        const auto& a = tc.a;
+        const auto& b = tc.b;
+
+        std::string snippet = a.code + " " + b.code;
+        size_t start_col = a.code.length() + 2;
+        size_t end_col = start_col + b.first_token_len;
+
+        std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, start_col, 1, end_col}};
+        auto req = IsBinary(TokenType::Error, a.verifier, b.verifier);
+        std::vector<UniversalVerifier> multi = {a.verifier, b.verifier};
+
+        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+        ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
+                                 "TwoLeaves_" + a.name + "_" + b.name);
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        TwoLeaves,
+        MissingOperatorTwoLeavesRunner,
+        testing::ValuesIn(get_two_leaves_pairs()),
+        [](const testing::TestParamInfo<TwoLeavesPairDef>& param_info) {
+            return param_info.param.test_name;
+        }
+    );
+
     class MissingOperatorExpansionRunner : public ParserTestBase,
                                            public testing::WithParamInterface<MissingOperatorTemplateBase>
     {
@@ -17,27 +50,7 @@ namespace valuascript::compiler::test
         auto tc = GetParam();
         const auto& atoms = get_atoms();
 
-        if (tc.type == TemplateType::TwoLeaves)
-        {
-            for (const auto& a : atoms)
-            {
-                for (const auto& b : atoms)
-                {
-                    std::string snippet = a.code + " " + b.code;
-                    size_t start_col = a.code.length() + 2;
-                    size_t end_col = start_col + b.first_token_len;
-
-                    std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, start_col, 1, end_col}};
-                    auto req = IsBinary(TokenType::Error, a.verifier, b.verifier);
-                    std::vector<UniversalVerifier> multi = {a.verifier, b.verifier};
-
-                    auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
-                    ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
-                                             tc.test_name + "_" + a.name + "_" + b.name);
-                }
-            }
-        }
-        else if (tc.type == TemplateType::ThreeLeaves)
+        if (tc.type == TemplateType::ThreeLeaves)
         {
             {
                 const auto& a = atoms[0];
@@ -161,30 +174,41 @@ namespace valuascript::compiler::test
                                          tc.test_name + "_Pos3_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
         }
-        else if (tc.type == TemplateType::SpecialCases)
-        {
-            for (const auto& special_case : get_special_cases())
-            {
-                std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, special_case.start_col, 1, special_case.end_col}};
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{special_case.verifier, special_case.multi});
-                ExpectParseErrorsUnified(InjectableType::Expression, special_case.snippet, errs, m_v,
-                                         tc.test_name + "_" + special_case.test_name);
-            }
-        }
     }
+
+    class MissingOperatorSpecialCasesRunner : public ParserTestBase,
+                                              public testing::WithParamInterface<SpecialCaseDef>
+    {
+    };
+
+    TEST_P(MissingOperatorSpecialCasesRunner, ValidatesInAllContexts)
+    {
+        const auto& special_case = GetParam();
+        std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, special_case.start_col, 1, special_case.end_col}};
+        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{special_case.verifier, special_case.multi});
+        ExpectParseErrorsUnified(InjectableType::Expression, special_case.snippet, errs, m_v,
+                                 "SpecialCases_" + special_case.test_name);
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        SpecialCases,
+        MissingOperatorSpecialCasesRunner,
+        testing::ValuesIn(get_special_cases()),
+        [](const testing::TestParamInfo<SpecialCaseDef>& param_info) {
+            return param_info.param.test_name;
+        }
+    );
 
     std::vector<MissingOperatorTemplateBase> missing_operator_templates()
     {
         return {
-            {"TwoLeaves", TemplateType::TwoLeaves},
             {"ThreeLeaves", TemplateType::ThreeLeaves},
-            {"FourLeaves", TemplateType::FourLeaves},
-            {"SpecialCases", TemplateType::SpecialCases}
+            {"FourLeaves", TemplateType::FourLeaves}
         };
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        Expression,
+        ExpressionTemplates,
         MissingOperatorExpansionRunner,
         testing::ValuesIn(missing_operator_templates()),
         [](const testing::TestParamInfo<MissingOperatorTemplateBase>& param_info) {

@@ -6,11 +6,10 @@
 
 namespace valuascript::compiler::test
 {
-    class MissingOperatorDump : public ParserTestBase,
-                                public testing::WithParamInterface<MissingOperatorTemplateBase>
+    class MissingOperatorDumpBase : public ParserTestBase
     {
     protected:
-        void run_dump_for_snippet(const std::string& name, const std::string& snippet)
+        static void run_dump_for_snippet(const std::string& name, const std::string& snippet)
         {
             size_t file_index = 0;
             size_t base_seed = 0;
@@ -49,28 +48,58 @@ namespace valuascript::compiler::test
         }
     };
 
+    class MissingOperatorTwoLeavesDump : public MissingOperatorDumpBase,
+                                         public testing::WithParamInterface<TwoLeavesPairDef>
+    {
+    };
+
+    TEST_P(MissingOperatorTwoLeavesDump, InspectGeneratedPrograms)
+    {
+        auto tc = GetParam();
+        std::string snippet = tc.a.code + " " + tc.b.code;
+        run_dump_for_snippet("TwoLeaves_" + tc.a.name + "_" + tc.b.name, snippet);
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        TwoLeaves,
+        MissingOperatorTwoLeavesDump,
+        testing::ValuesIn(get_two_leaves_pairs()),
+        [](const testing::TestParamInfo<TwoLeavesPairDef>& param_info) {
+            return param_info.param.test_name;
+        }
+    );
+
+    class MissingOperatorSpecialCasesDump : public MissingOperatorDumpBase,
+                                            public testing::WithParamInterface<SpecialCaseDef>
+    {
+    };
+
+    TEST_P(MissingOperatorSpecialCasesDump, InspectGeneratedPrograms)
+    {
+        const auto& special_case = GetParam();
+        run_dump_for_snippet("SpecialCases_" + special_case.test_name, special_case.snippet);
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+        SpecialCases,
+        MissingOperatorSpecialCasesDump,
+        testing::ValuesIn(get_special_cases()),
+        [](const testing::TestParamInfo<SpecialCaseDef>& param_info) {
+            return param_info.param.test_name;
+        }
+    );
+
+    class MissingOperatorDump : public MissingOperatorDumpBase,
+                                public testing::WithParamInterface<MissingOperatorTemplateBase>
+    {
+    };
+
     TEST_P(MissingOperatorDump, InspectGeneratedPrograms)
     {
         auto tc = GetParam();
         const auto& atoms = get_atoms();
 
-        std::cout << "\n======================================================\n";
-        std::cout << "Dumping missing operator recovery programs to: missing_operator_dumps/\n";
-        std::cout << "Template: " << tc.test_name << "\n";
-        std::cout << "======================================================\n\n";
-
-        if (tc.type == TemplateType::TwoLeaves)
-        {
-            for (const auto& a : atoms)
-            {
-                for (const auto& b : atoms)
-                {
-                    std::string snippet = a.code + " " + b.code;
-                    run_dump_for_snippet(tc.test_name + "_" + a.name + "_" + b.name, snippet);
-                }
-            }
-        }
-        else if (tc.type == TemplateType::ThreeLeaves)
+        if (tc.type == TemplateType::ThreeLeaves)
         {
             {
                 const auto& a = atoms[0];
@@ -112,27 +141,18 @@ namespace valuascript::compiler::test
                 }
             }
         }
-        else if (tc.type == TemplateType::SpecialCases)
-        {
-            for (const auto& special_case : get_special_cases())
-            {
-                run_dump_for_snippet(tc.test_name + "_" + special_case.test_name, special_case.snippet);
-            }
-        }
     }
 
     std::vector<MissingOperatorTemplateBase> missing_operator_dump_templates()
     {
         return {
-            {"TwoLeaves", TemplateType::TwoLeaves},
             {"ThreeLeaves", TemplateType::ThreeLeaves},
-            {"FourLeaves", TemplateType::FourLeaves},
-            {"SpecialCases", TemplateType::SpecialCases}
+            {"FourLeaves", TemplateType::FourLeaves}
         };
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        Expression,
+        ExpressionTemplates,
         MissingOperatorDump,
         testing::ValuesIn(missing_operator_dump_templates()),
         [](const testing::TestParamInfo<MissingOperatorTemplateBase>& param_info) {

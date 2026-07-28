@@ -47,6 +47,27 @@ namespace valuascript::compiler::test
         return atoms;
     }
 
+    struct TwoLeavesPairDef
+    {
+        AtomDef a;
+        AtomDef b;
+        std::string test_name;
+    };
+
+    inline std::vector<TwoLeavesPairDef> get_two_leaves_pairs()
+    {
+        std::vector<TwoLeavesPairDef> pairs;
+        const auto& atoms = get_atoms();
+        for (const auto& a : atoms)
+        {
+            for (const auto& b : atoms)
+            {
+                pairs.push_back({a, b, a.name + "_" + b.name});
+            }
+        }
+        return pairs;
+    }
+
     inline const std::vector<SpecialCaseDef>& get_special_cases()
     {
         static std::vector<SpecialCaseDef> cases = {
