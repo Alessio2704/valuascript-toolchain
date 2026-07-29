@@ -38,7 +38,7 @@ namespace valuascript::compiler::test {
             "tuple_missing_closing_paren",
             "let a = (1, 2 \n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
+            { {Err::ExpectedRightParenAfterTupleElements, 1, 13} },
             ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
@@ -48,9 +48,9 @@ namespace valuascript::compiler::test {
             "let c = (5, 6 \n"
             "let recovery = 1\n",
             {
-            {Err::ExpectedRightParenAfterTupleElements, 1, 14},
-            {Err::ExpectedRightParenAfterTupleElements, 2, 14},
-            {Err::ExpectedRightParenAfterTupleElements, 3, 14}
+            {Err::ExpectedRightParenAfterTupleElements, 1, 13},
+            {Err::ExpectedRightParenAfterTupleElements, 2, 13},
+            {Err::ExpectedRightParenAfterTupleElements, 3, 13}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 4);
@@ -60,7 +60,7 @@ namespace valuascript::compiler::test {
             "array_inside_tuple_first_element_error",
             "let a = ([1, 2)\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 15} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 14} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -75,7 +75,7 @@ namespace valuascript::compiler::test {
             "array_inside_tuple_second_element_error",
             "let a = (1, [1, 2)\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 18} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 17} },
             ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
@@ -84,7 +84,7 @@ namespace valuascript::compiler::test {
             "let recovery = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 1, 13},
-            {Err::ExpectedRightParenAfterTupleElements, 1, 22}
+            {Err::ExpectedRightParenAfterTupleElements, 1, 21}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -106,7 +106,7 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "tuple_eof_after_comma",
             "let a = (1, \n",
-            { {Err::ExpectedRightParenAfterTupleElements, 1, 12} },
+            { {Err::ExpectedRightParenAfterTupleElements, 1, 11} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
             const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -117,7 +117,7 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "tuple_eof_after_first_element",
             "let a = (1 \n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 11} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 10} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
             const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -130,7 +130,7 @@ namespace valuascript::compiler::test {
             "tuple_closed_with_wrong_bracket",
             "let a = (1, 2]\n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterTupleElements, 1, 14} },
+            { {Err::ExpectedRightParenAfterTupleElements, 1, 13} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             }
@@ -140,7 +140,7 @@ namespace valuascript::compiler::test {
             "let a = (1,[2, 3}, 4)\n"
             "let recovery = 1\n",
             {
-            {Err::UnmatchedBracketAfterTensorElements, 1, 17}
+            {Err::UnmatchedBracketAfterTensorElements, 1, 16}
             },
             ExpectTuple(3)
             },
@@ -157,10 +157,10 @@ namespace valuascript::compiler::test {
             "tuple_deep_unclosed_cascade",
             "let a = (1, (2, (3, (4, \n",
             {
-            {Err::ExpectedRightParenAfterTupleElements, 1, 24},
-            {Err::ExpectedRightParenAfterTupleElements, 1, 24},
-            {Err::ExpectedRightParenAfterTupleElements, 1, 24},
-            {Err::ExpectedRightParenAfterTupleElements, 1, 24}
+            {Err::ExpectedRightParenAfterTupleElements, 1, 23},
+            {Err::ExpectedRightParenAfterTupleElements, 1, 23},
+            {Err::ExpectedRightParenAfterTupleElements, 1, 23},
+            {Err::ExpectedRightParenAfterTupleElements, 1, 23}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 1);

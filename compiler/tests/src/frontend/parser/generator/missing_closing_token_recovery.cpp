@@ -94,13 +94,13 @@ namespace valuascript::compiler::test {
                     std::string combined_source = scenario.source + follow.source;
 
                     size_t exp_line = 1;
-                    size_t exp_col = scenario.source.length();
+                    size_t exp_col = scenario.source.find_last_not_of(" \t\n\r") + 1;
 
                     if (scenario.name == "func" && !follow.is_top_level_only) {
                         exp_line = 2;
                         std::string stripped = follow.source;
                         while (!stripped.empty() && stripped.back() == '\n') stripped.pop_back();
-                        exp_col = stripped.length() + 1;
+                        exp_col = stripped.find_last_not_of(" \t\n\r") + 1;
                     }
 
                     test_cases.push_back({

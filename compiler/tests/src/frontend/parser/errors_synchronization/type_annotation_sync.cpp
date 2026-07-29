@@ -52,7 +52,7 @@ namespace valuascript::compiler::test
             "generic_missing_closing_bracket",
             "let a: vector<int = 1\n"
             "let b = 2\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 19} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 17} },
             ExpectAssignmentType([](const TypeAnnotation* type) {
                 ExpectBaseType(type, "vector", 1);
                 ExpectBaseType(type->generic_args[0].get(), "int", 0);
@@ -61,7 +61,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "tuple_type_missing_closing_paren",
             "let a: (int, string = 1\n",
-            { {Err::UnmatchedParenthesisInTuple, 1, 21} },
+            { {Err::UnmatchedParenthesisInTuple, 1, 19} },
             ExpectAssignmentType([](const TypeAnnotation* type) {
                 ExpectTupleType(type, 2);
                 auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
@@ -72,7 +72,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "generic_unclosed_nested_error",
             "let a: map<string, vector<int> = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 32} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 30} },
             ExpectAssignmentType([](const TypeAnnotation* type) {
                 ExpectBaseType(type, "map", 2);
                 ExpectBaseType(type->generic_args[0].get(), "string", 0);
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
             "eof_inside_generic",
             "let a: vector<int, ",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 19},
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 18},
             {Err::IncompleteAssignment, 1, 19}
             },
             [](const Program& ast) {
@@ -104,7 +104,7 @@ namespace valuascript::compiler::test
             "eof_inside_tuple_type",
             "let a: (int, ",
             {
-            {Err::UnmatchedParenthesisInTuple, 1, 13},
+            {Err::UnmatchedParenthesisInTuple, 1, 12},
             {Err::IncompleteAssignment, 1, 13}
             },
             [](const Program& ast) {
@@ -124,7 +124,7 @@ namespace valuascript::compiler::test
             "let a: vector<int = 1\n"
             "let b = 2\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 19},
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 17},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -142,7 +142,7 @@ namespace valuascript::compiler::test
             "let a: (int = 1\n"
             "let b = 2\n",
             {
-            {Err::UnmatchedParenthesisInTuple, 1, 13},
+            {Err::UnmatchedParenthesisInTuple, 1, 11},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -159,7 +159,7 @@ namespace valuascript::compiler::test
             "generic_closed_with_wrong_bracket",
             "let a: vector<int} = 1\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 18}
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 17}
             },
             ExpectAssignmentType([](const TypeAnnotation* type) {
                 ExpectBaseType(type, "vector", 1);
@@ -170,7 +170,7 @@ namespace valuascript::compiler::test
             "tuple_type_closed_with_wrong_bracket",
             "let a: (int, string] = 1\n",
             {
-            {Err::UnmatchedParenthesisInTuple, 1, 20}
+            {Err::UnmatchedParenthesisInTuple, 1, 19}
             },
             ExpectAssignmentType([](const TypeAnnotation* type) {
                 ExpectTupleType(type, 2);
@@ -201,7 +201,7 @@ namespace valuascript::compiler::test
             "  b: string\n"
             "}\n"
             "let a = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 2, 16} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 2, 15} },
             [](const Program& ast) {
             ASSERT_EQ(ast.struct_definitions.size(), 1);
             auto s = ast.struct_definitions[0].get();
@@ -220,7 +220,7 @@ namespace valuascript::compiler::test
             "  A = 1\n"
             "}\n"
             "let a = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 20} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 18} },
             [](const Program& ast) {
             ASSERT_EQ(ast.enum_definitions.size(), 1);
             auto e = ast.enum_definitions[0].get();
@@ -235,7 +235,7 @@ namespace valuascript::compiler::test
             "  return 1\n"
             "}\n"
             "let a = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 39} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 37} },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             auto f = ast.function_definitions[0].get();
@@ -261,7 +261,7 @@ namespace valuascript::compiler::test
             "func test(a: vector<int,\n"
             "          b: string) -> void {\n"
             "}\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 24} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 23} },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             auto f = ast.function_definitions[0].get();
@@ -280,7 +280,7 @@ namespace valuascript::compiler::test
             "  a: (int, string,\n"
             "  b: bool\n"
             "}\n",
-            { {Err::UnmatchedParenthesisInTuple, 2, 18} },
+            { {Err::UnmatchedParenthesisInTuple, 2, 17} },
             [](const Program& ast) {
             ASSERT_EQ(ast.struct_definitions.size(), 1);
             auto s = ast.struct_definitions[0].get();
@@ -302,8 +302,8 @@ namespace valuascript::compiler::test
             "  b: float\n"
             "}\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 2, 29},
-            {Err::UnmatchedBracketAfterGenericArgs, 2, 29}
+            {Err::UnmatchedBracketAfterGenericArgs, 2, 28},
+            {Err::UnmatchedBracketAfterGenericArgs, 2, 28}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.struct_definitions.size(), 1);
@@ -324,7 +324,7 @@ namespace valuascript::compiler::test
             "func_param_missing_bracket_and_comma_recovers",
             "func test(a: vector<int b: string) -> void {}\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 25},
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 23},
             {Err::ExpectedCommaSeparatorInParameterList, 1, 25}
             },
             [](const Program& ast) {
@@ -341,7 +341,7 @@ namespace valuascript::compiler::test
             "func test() -> vector<int {\n"
             "  let a = 1\n"
             "}\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 27} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 25} },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             auto f = ast.function_definitions[0].get();
@@ -356,7 +356,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "enum_underlying_type_broken_generic_recovers_cases",
             "enum E: vector<int { A }",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 20} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 18} },
             [](const Program& ast) {
             ASSERT_EQ(ast.enum_definitions.size(), 1);
             auto e = ast.enum_definitions[0].get();

@@ -48,7 +48,7 @@ namespace valuascript::compiler::test
             "let wacc = get_wacc()\n"
             "enum Scenario: scalar { LOW, BASE, HIGH }\n",
             {
-            {Err::ExpectedRightBraceAfterFunctionBody, 5, 22}
+            {Err::ExpectedRightBraceAfterFunctionBody, 5, 21}
             }
             },
             ParserErrorsSynchronizationTestCase{

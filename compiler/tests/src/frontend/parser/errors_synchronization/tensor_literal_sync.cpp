@@ -56,7 +56,7 @@ namespace valuascript::compiler::test
             "tensor_missing_closing_bracket",
             "let a =[ 1, 2 \n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 14} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 13} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             }
@@ -66,7 +66,7 @@ namespace valuascript::compiler::test
             "let a =[ 1, 2 }\n"
             "let recovery = 1\n",
             {
-            {Err::UnmatchedBracketAfterTensorElements, 1, 15}
+            {Err::UnmatchedBracketAfterTensorElements, 1, 13}
             },
             ExpectTensor({"1", "2"})
             },
@@ -75,7 +75,7 @@ namespace valuascript::compiler::test
             "let a = [ 1, 2\n"
             "let b = 3\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 15} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 14} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 3);
             auto* b_assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "tensor_eof_immediately_after_bracket",
             "let a = [",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 10} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 9} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
@@ -95,7 +95,7 @@ namespace valuascript::compiler::test
             "tensor_with_mismatched_nested_closer",
             "let a = [ ( 1 + 2 ], 3 ]\n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 19} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 17} },
             [](const Program& ast) {
             const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
             auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
@@ -113,7 +113,7 @@ namespace valuascript::compiler::test
             "let recovery = 1\n",
             {
             {LexerErrorCode::UnclosedString, 1, 11},
-            {Err::UnmatchedBracketAfterTensorElements, 1, 25}
+            {Err::UnmatchedBracketAfterTensorElements, 1, 24}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -137,7 +137,7 @@ namespace valuascript::compiler::test
             "]\n"
             "let recovery = 1\n",
             {
-            {Err::UnmatchedBracketAfterTensorElements, 1, 10},
+            {Err::UnmatchedBracketAfterTensorElements, 1, 9},
             {Err::InvalidExpression, 2, 20},
             },
             [](const Program& ast) {

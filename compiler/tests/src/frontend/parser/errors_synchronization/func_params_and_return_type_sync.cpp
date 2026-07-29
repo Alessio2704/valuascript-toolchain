@@ -106,14 +106,14 @@ namespace valuascript::compiler::test
             "missing_right_paren_1_func_empty_ast",
             "func test(a: int -> int {}\n"
             "let a = 1\n",
-            {{Err::ExpectedRightParenAfterParameters, 1, 18}},
+            {{Err::ExpectedRightParenAfterParameters, 1, 16}},
             ExpectNoFunctions()
             },
             ParserErrorsSynchronizationTestCase{
             "missing_right_paren_2_func_empty_ast",
             "func test(a: int { return 1 }\n"
             "let a = 1\n",
-            {{Err::ExpectedRightParenAfterParameters, 1, 18}},
+            {{Err::ExpectedRightParenAfterParameters, 1, 16}},
             ExpectNoFunctions()
             },
             ParserErrorsSynchronizationTestCase{
@@ -126,7 +126,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "missing_right_brace_func",
             "func test(a: int) -> int  { return 1 \n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 1, 37}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 1, 36}},
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             ASSERT_EQ(ast.function_definitions[0]->body.size(), 1);
@@ -137,7 +137,7 @@ namespace valuascript::compiler::test
             "missing_right_brace_but_valid_body_after",
             "func test(a: int) -> int  { return 1 \n"
             "let a = 1\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 10}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 9}},
             [](const Program& ast) {
             EXPECT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->body.size(), 2);
@@ -148,7 +148,7 @@ namespace valuascript::compiler::test
             "error_in_params_types_1",
             "func test(a: vector<int) -> int {  }\n"
             "let a = 1\n",
-            {{Err::UnmatchedBracketAfterGenericArgs, 1, 24}},
+            {{Err::UnmatchedBracketAfterGenericArgs, 1, 23}},
             ExpectFunction("test", {{"a", "vector"}}, {"int"})
             },
             ParserErrorsSynchronizationTestCase{

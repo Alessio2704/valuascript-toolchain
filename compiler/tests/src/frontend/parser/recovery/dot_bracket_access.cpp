@@ -41,7 +41,7 @@ namespace valuascript::compiler::test
 
             reg("MultipleColumnsInBracketSlice", "arr[1:2:3]",
                 {
-                    {E::UnmatchedBracketAfterTensorIndex, 1, 8, 1, 9}
+                    {E::UnmatchedBracketAfterTensorIndex, 1, 7, 1, 8}
                 },
                 IsBracket(IsIdentifier("arr"),
                           IsBinary(TokenType::Colon,

@@ -113,7 +113,7 @@ namespace valuascript::compiler::test
 
             reg("TensorLiteralWithSliceSyntax", "[1:2, 3 ]",
                 {
-                    {E::UnmatchedBracketAfterTensorElements, 1, 3, 1, 4}
+                    {E::UnmatchedBracketAfterTensorElements, 1, 2, 1, 3}
                 },
                 IsTensor(
                     IsNumber("1")

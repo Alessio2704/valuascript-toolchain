@@ -56,7 +56,7 @@ namespace valuascript::compiler::test
             "}",
             {
                 {LexerErrorCode::UnclosedString, 2, 1, 4, 3},
-                {E::ExpectedRightBraceAfterFunctionBody, 4, 2, 4, 3}
+                {E::ExpectedRightBraceAfterFunctionBody, 4, 1, 4, 2}
             },
             ProgramSpec{
                 .functions = {
@@ -79,7 +79,7 @@ namespace valuascript::compiler::test
             R"(let t = ("first", "unclosed))",
             {
                 {LexerErrorCode::UnclosedString, 1, 19, 1, 29},
-                {E::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30}
+                {E::ExpectedRightParenAfterTupleElements, 1, 28, 1, 29}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -105,7 +105,7 @@ namespace valuascript::compiler::test
             "let d = { key: \"unclosed_val }",
             {
                 {LexerErrorCode::UnclosedString, 1, 16, 1, 31},
-                {E::UnmatchedBraceInDictionaryLiteral, 1, 31, 1, 32}
+                {E::UnmatchedBraceInDictionaryLiteral, 1, 30, 1, 31}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -130,7 +130,7 @@ namespace valuascript::compiler::test
             R"(let v =["val1", "val2])",
             {
                 {LexerErrorCode::UnclosedString, 1, 17, 1, 23},
-                {E::UnmatchedBracketAfterTensorElements, 1, 23, 1, 24}
+                {E::UnmatchedBracketAfterTensorElements, 1, 22, 1, 23}
             },
             ProgramSpec{
                 .execution_steps = {
@@ -156,15 +156,15 @@ namespace valuascript::compiler::test
             "enum Status: string { Error = \"failure }",
             {
                 {LexerErrorCode::UnclosedString, 1, 31, 1, 41},
-                {E::ExpectedRightBraceAfterEnumBody, 1, 41, 1, 42}
+                {E::ExpectedRightBraceAfterEnumBody, 1, 40, 1, 41}
             },
             ProgramSpec{
                 .enums = {
                     IsEnumDef("Status", {},
-                              IsType("string"),
-                              {
-                                  {"Error", {}, IsString("\"failure }")}
-                              }
+                               IsType("string"),
+                               {
+                                   {"Error", {}, IsString("\"failure }")}
+                               }
                     )
                 }
             }
@@ -178,7 +178,7 @@ namespace valuascript::compiler::test
             "x = 1",
             {
                 {LexerErrorCode::UnclosedString, 1, 25, 1, 35},
-                {E::UnmatchedParenthesisAfterModifierArgs, 1, 35, 1, 36}
+                {E::UnmatchedParenthesisAfterModifierArgs, 1, 34, 1, 35}
             },
             ProgramSpec{
                 .execution_steps = {

@@ -61,7 +61,7 @@ namespace valuascript::compiler::test
 
             reg("TupleWithColonInsteadOfComma", "(1, x: 2)",
                 {
-                    {E::ExpectedRightParenAfterTupleElements, 1, 6, 1, 7}
+                    {E::ExpectedRightParenAfterTupleElements, 1, 5, 1, 6}
                 },
                 IsTuple(
                     IsNumber("1"),

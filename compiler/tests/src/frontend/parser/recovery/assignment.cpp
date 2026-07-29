@@ -72,7 +72,7 @@ namespace valuascript::compiler::test
                 IsAssignment({{"a", IsNullType()}}, IsNumber("1")));
 
             reg("BrokenNestedTypeAnnotation", "let a: vector<int = 1",
-                {{E::UnmatchedBracketAfterGenericArgs, 1, 19, 1, 20}},
+                {{E::UnmatchedBracketAfterGenericArgs, 1, 17, 1, 18}},
                 IsAssignment({{"a", IsType("vector", {IsType("int")})}}, IsNumber("1")));
 
             reg("ReservedKeywordAsTarget", "let func = 1",

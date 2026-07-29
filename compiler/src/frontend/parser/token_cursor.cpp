@@ -84,7 +84,8 @@ namespace valuascript::compiler
 
             bool should_shift = token.type == TokenType::EndOfFile;
 
-            if (!should_shift && (code == E::MissingThenToken || code == E::MissingElseToken))
+            if (!should_shift && (code == E::MissingThenToken || code == E::MissingElseToken ||
+                                  TokenTraits::is_missing_closing_delimiter_error(code)))
             {
                 should_shift = true;
             }
@@ -135,9 +136,18 @@ namespace valuascript::compiler
                     }
                 }
 
-                err_line = final_line;
-                err_column_start = final_col;
-                err_column_end = final_col + 1;
+                if (TokenTraits::is_missing_closing_delimiter_error(code))
+                {
+                    err_line = final_line;
+                    err_column_start = final_col > 1 ? final_col - 1 : final_col;
+                    err_column_end = final_col;
+                }
+                else
+                {
+                    err_line = final_line;
+                    err_column_start = final_col;
+                    err_column_end = final_col + 1;
+                }
             }
         }
 

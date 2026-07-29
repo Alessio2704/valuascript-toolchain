@@ -29,7 +29,7 @@ namespace valuascript::compiler::test
             // );
 
             reg("MissingStructClosingBrace", "struct Test {",
-                {{E::ExpectedRightBraceAfterStructBody, 1, 14, 1, 15}},
+                {{E::ExpectedRightBraceAfterStructBody, 1, 13, 1, 14}},
                 IsStructDef("Test", {}, {})
             );
 
@@ -84,7 +84,7 @@ namespace valuascript::compiler::test
 
             reg("NoRightBraceStruct",
                 "struct Test { id: int ",
-                {{E::ExpectedRightBraceAfterStructBody, 1, 22, 1, 23}},
+                {{E::ExpectedRightBraceAfterStructBody, 1, 21, 1, 22}},
                 IsStructDef("Test", {}, {
                                 {"id", {}, IsType("int")}
                             })

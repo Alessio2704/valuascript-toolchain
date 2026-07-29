@@ -47,7 +47,7 @@ namespace valuascript::compiler::test
             "func test() -> int {\n"
             "    let x = 1\n"
             "let a = 1\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 3, 10}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 3, 9}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             ASSERT_EQ(ast.function_definitions[0]->body.size(), 2);
@@ -59,7 +59,7 @@ namespace valuascript::compiler::test
             "func test() -> int {\n"
             "    let x = 1\n"
             "enum State: int { A = 1 }\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 14}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 13}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->name, "test");
@@ -74,7 +74,7 @@ namespace valuascript::compiler::test
             "func test() -> int {\n"
             "    let x = 1\n"
             "@export @packed(align: 4) struct Data { id: int }\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 14}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 13}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->body.size(), 1);
@@ -90,7 +90,7 @@ namespace valuascript::compiler::test
             "func first() -> int {\n"
             "    let x = 1\n"
             "@test @test_1 @test_2(a: 1) func second() -> void {}\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 14}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 13}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 2);
 
@@ -107,7 +107,7 @@ namespace valuascript::compiler::test
             "func test() -> int {\n"
             "    let x = 1\n"
             "#pragma = 1\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 14}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 13}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->body.size(), 1);
@@ -122,7 +122,7 @@ namespace valuascript::compiler::test
             "func test() -> int {\n"
             "    let x = 1\n"
             "import \"module.vs\"\n",
-            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 14}},
+            {{Err::ExpectedRightBraceAfterFunctionBody, 2, 13}},
             [](const Program &ast) {
             ASSERT_EQ(ast.function_definitions.size(), 1);
             EXPECT_EQ(ast.function_definitions[0]->body.size(), 1);
@@ -268,7 +268,7 @@ namespace valuascript::compiler::test
             "    struct TopLevel { id: int }\n"
             "let c = 1\n",
             {
-            {Err::ExpectedRightBraceAfterFunctionBody, 2, 14}
+            {Err::ExpectedRightBraceAfterFunctionBody, 2, 13}
             },
             [](const Program &ast) {
             auto f = ExpectRecoveredFunction(ast, "test");

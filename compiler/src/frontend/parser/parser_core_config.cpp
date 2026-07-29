@@ -105,4 +105,30 @@ namespace valuascript::compiler
         default: return false;
         }
     }
+
+    bool TokenTraits::is_missing_closing_delimiter_error(const ParserErrorCode code)
+    {
+        switch (code)
+        {
+        case ParserErrorCode::UnmatchedBracketAfterGenericArgs:
+        case ParserErrorCode::UnmatchedParenthesisInTuple:
+        case ParserErrorCode::UnmatchedBracketAfterTensorIndex:
+        case ParserErrorCode::UnmatchedBracketAfterTensorElements:
+        case ParserErrorCode::UnmatchedBraceInDictionaryLiteral:
+        case ParserErrorCode::UnmatchedParenthesisAfterModifierArgs:
+        case ParserErrorCode::ExpectedRightParenAfterParameters:
+        case ParserErrorCode::ExpectedRightParenAfterArguments:
+        case ParserErrorCode::ExpectedRightParenAfterTupleElements:
+        case ParserErrorCode::ExpectedRightParenAfterExpression:
+        case ParserErrorCode::ExpectedRightParenAfterSwitchTarget:
+        case ParserErrorCode::ExpectedRightBraceAfterStructBody:
+        case ParserErrorCode::ExpectedRightBraceAfterEnumBody:
+        case ParserErrorCode::ExpectedRightBraceAfterFunctionBody:
+        case ParserErrorCode::ExpectedRightBraceAfterSwitchBody:
+        case ParserErrorCode::ExpectedRightBraceAfterExtensionBody:
+            return true;
+        default:
+            return false;
+        }
+    }
 }

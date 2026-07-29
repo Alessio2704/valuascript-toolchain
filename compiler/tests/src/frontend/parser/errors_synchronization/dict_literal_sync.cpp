@@ -80,7 +80,7 @@ namespace valuascript::compiler::test
             "dict_missing_closing_brace",
             "let a = { x: 1 \n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 15} },
+            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 14} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
             }
@@ -92,9 +92,9 @@ namespace valuascript::compiler::test
             "let c = { x: 1 \n"
             "let recovery = 1\n",
             {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 15},
-            {Err::UnmatchedBraceInDictionaryLiteral, 2, 15},
-            {Err::UnmatchedBraceInDictionaryLiteral, 3, 15}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 14},
+            {Err::UnmatchedBraceInDictionaryLiteral, 2, 14},
+            {Err::UnmatchedBraceInDictionaryLiteral, 3, 14}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 4);
@@ -104,7 +104,7 @@ namespace valuascript::compiler::test
             "array_inside_dict_with_error",
             "let a = {a: [1, 2}\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 18} },
+            { {Err::UnmatchedBracketAfterTensorElements, 1, 17} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -121,7 +121,7 @@ namespace valuascript::compiler::test
             "let recovery = 1\n",
             {
             {Err::TopLevelDeclarationNotAllowedHere, 1, 17},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 26}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 25}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -132,7 +132,7 @@ namespace valuascript::compiler::test
             "let a = { x: 1,\n"
             "let y = 2\n"
             "let recovery = 1\n",
-            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 16} },
+            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 15} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 3);
             }
@@ -142,7 +142,7 @@ namespace valuascript::compiler::test
             "let a = { x\n",
             {
             {Err::ExpectedColonAfterDictionaryKey, 1, 12},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 12}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 11}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
@@ -157,7 +157,7 @@ namespace valuascript::compiler::test
             "let a = { x: \n",
             {
             {Err::InvalidExpression, 1, 13},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 13}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 12}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
@@ -168,7 +168,7 @@ namespace valuascript::compiler::test
             "dict_eof_after_comma",
             "let a = { x: 1, \n",
             {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 16}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 15}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
@@ -183,7 +183,7 @@ namespace valuascript::compiler::test
             "let a = { x: 1 ]\n"
             "let recovery = 1\n",
             {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 16}
+            {Err::UnmatchedBraceInDictionaryLiteral, 1, 14}
             },
             ExpectDict({{"x", "1"}})
             },

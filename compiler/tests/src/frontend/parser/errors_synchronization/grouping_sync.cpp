@@ -40,7 +40,7 @@ namespace valuascript::compiler::test {
             "grouping_unclosed",
             "let a = ( 1 + 2 \n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 16} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
             [](const Program& ast) {
             ExpectGroupingLiteral(ast);
             }
@@ -49,14 +49,14 @@ namespace valuascript::compiler::test {
             "grouping_closed_with_wrong_bracket",
             "let a = ( 1 + 2 ]\n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 17} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
             ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{
             "grouping_mismatched_bracket_in_nested_list",
             "let a = [ ( 1 + 2 ], 3 ]\n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 19} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 17} },
             [](const Program& ast) {
             auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
             auto *tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
@@ -79,7 +79,7 @@ namespace valuascript::compiler::test {
             ParserErrorsSynchronizationTestCase{
             "grouping_eof_mid_expression",
             "let a = ( 1 + ",
-            { {Err::InvalidExpression, 1, 14}, {Err::ExpectedRightParenAfterExpression, 1, 14} },
+            { {Err::InvalidExpression, 1, 14}, {Err::ExpectedRightParenAfterExpression, 1, 13} },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 1);
             }
@@ -99,9 +99,9 @@ namespace valuascript::compiler::test {
             "let a = (((1 + 2\n"
             "let recovery = 1\n",
             {
-            {Err::ExpectedRightParenAfterExpression, 1, 17},
-            {Err::ExpectedRightParenAfterExpression, 1, 17},
-            {Err::ExpectedRightParenAfterExpression, 1, 17}
+            {Err::ExpectedRightParenAfterExpression, 1, 16},
+            {Err::ExpectedRightParenAfterExpression, 1, 16},
+            {Err::ExpectedRightParenAfterExpression, 1, 16}
             },
             [](const Program& ast) {
             auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -127,7 +127,7 @@ namespace valuascript::compiler::test {
             "grouping_mismatched_closer_no_comma_heuristic",
             "let a = ( 1 + 2 }\n"
             "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 17} },
+            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
             ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{

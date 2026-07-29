@@ -36,7 +36,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "unterminated_grouping_in_condition_recovers_then_and_else",
             "let a = if (x + 1 then 2 else 3\n",
-            {{Err::ExpectedRightParenAfterExpression, 1, 19}},
+            {{Err::ExpectedRightParenAfterExpression, 1, 17}},
             [](const Program& ast) {
             const auto* cond = GetAssignedConditional(ast);
             ASSERT_NE(cond, nullptr);
@@ -53,7 +53,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "unterminated_grouping_in_then_branch_recovers_else",
             "let a = if x then (1 + 2 else 3\n",
-            {{Err::ExpectedRightParenAfterExpression, 1, 26}},
+            {{Err::ExpectedRightParenAfterExpression, 1, 24}},
             [](const Program& ast) {
             const auto* cond = GetAssignedConditional(ast);
             ASSERT_NE(cond, nullptr);
@@ -73,7 +73,7 @@ namespace valuascript::compiler::test
             "let a = if x then 1 else (2 + 3\n"
             "let b = 2\n",
             {
-            {Err::ExpectedRightParenAfterExpression, 1, 32},
+            {Err::ExpectedRightParenAfterExpression, 1, 31},
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
@@ -99,7 +99,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
             "nested_if_as_condition_missing_parenthesis_recovers_outer_branches",
             "let a = if (if x then 1 else 2 then 3 else 4\n",
-            {{Err::ExpectedRightParenAfterExpression, 1, 32}},
+            {{Err::ExpectedRightParenAfterExpression, 1, 30}},
             [](const Program& ast) {
             const auto* cond = GetAssignedConditional(ast);
             ASSERT_NE(cond, nullptr);

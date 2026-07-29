@@ -55,7 +55,7 @@ namespace valuascript::compiler::test
             "let x = switch(v) {\n"
             "    case A -> 1\n"
             "func top_level() -> void {}\n",
-            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 16}},
+            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 15}},
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
@@ -71,7 +71,7 @@ namespace valuascript::compiler::test
             "    case A -> 1\n"
             "    struct TopLevel { id: int }\n"
             "let c = 1\n",
-            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 16}},
+            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 15}},
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
@@ -87,7 +87,7 @@ namespace valuascript::compiler::test
             "    case A -> 1\n"
             "    enum TopLevel: int { A = 1 }\n"
             "let c = 1\n",
-            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 16}},
+            {{Err::ExpectedRightBraceAfterSwitchBody, 2, 15}},
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
             ASSERT_NE(sw, nullptr);
@@ -120,7 +120,7 @@ namespace valuascript::compiler::test
             "}\n"
             "let a = 1\n",
             {
-            {Err::ExpectedRightBraceAfterSwitchBody, 5, 2}
+            {Err::ExpectedRightBraceAfterSwitchBody, 5, 1}
             },
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
@@ -177,7 +177,7 @@ namespace valuascript::compiler::test
             "    case A -> 1\n"
             "func top_level() -> void {}\n",
             {
-            {Err::ExpectedRightBraceAfterSwitchBody, 2, 16}
+            {Err::ExpectedRightBraceAfterSwitchBody, 2, 15}
             },
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
@@ -194,7 +194,7 @@ namespace valuascript::compiler::test
             "    case A -> 1\n"
             "#pragma = 1\n",
             {
-            {Err::ExpectedRightBraceAfterSwitchBody, 2, 16}
+            {Err::ExpectedRightBraceAfterSwitchBody, 2, 15}
             },
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
@@ -211,7 +211,7 @@ namespace valuascript::compiler::test
             "    case A -> 1\n"
             "@export struct TopLevel { id: int }\n",
             {
-            {Err::ExpectedRightBraceAfterSwitchBody, 2, 16}
+            {Err::ExpectedRightBraceAfterSwitchBody, 2, 15}
             },
             [](const Program &ast) {
             auto sw = ExpectRecoveredSwitch(ast);
@@ -242,7 +242,7 @@ namespace valuascript::compiler::test
             "}\n"
             "let a = 1\n",
             {
-            {Err::ExpectedRightParenAfterSwitchTarget, 1, 20}
+            {Err::ExpectedRightParenAfterSwitchTarget, 1, 18}
             },
             ExpectSwitchCases(1, false)
             },
@@ -297,8 +297,8 @@ namespace valuascript::compiler::test
             {
             {Err::CaseOrDefaultMissingInSwitchAfterResult, 1, 33},
             {Err::ExpectedCaseOrDefaultInsideSwitchBody, 1, 33},
-            {Err::ExpectedRightBraceAfterSwitchBody, 1, 38},
-            {Err::ExpectedRightParenAfterExpression, 1, 38}
+            {Err::ExpectedRightBraceAfterSwitchBody, 1, 37},
+            {Err::ExpectedRightParenAfterExpression, 1, 37}
             },
             [](const Program &ast) {
             EXPECT_GE(ast.execution_steps.size(), 1);

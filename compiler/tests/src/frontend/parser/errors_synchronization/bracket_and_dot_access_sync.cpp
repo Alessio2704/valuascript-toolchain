@@ -96,7 +96,7 @@ namespace valuascript::compiler::test
             "bracket_wrong_closing_preserves_index_and_next_stmt",
             "let a = arr[1}\n"
             "let b = 2\n",
-            { {Err::UnmatchedBracketAfterTensorIndex, 1, 14} },
+            { {Err::UnmatchedBracketAfterTensorIndex, 1, 13} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -115,7 +115,7 @@ namespace valuascript::compiler::test
             "bracket_slice_missing_right_bracket_preserves_slice",
             "let a = arr[1:2 \n"
             "let b = 2\n",
-            { {Err::UnmatchedBracketAfterTensorIndex, 1, 16} },
+            { {Err::UnmatchedBracketAfterTensorIndex, 1, 15} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -339,7 +339,7 @@ namespace valuascript::compiler::test
             "bracket_access_unclosed_at_eof",
             "let a = arr[1",
             {
-            {Err::UnmatchedBracketAfterTensorIndex, 1, 14},
+            {Err::UnmatchedBracketAfterTensorIndex, 1, 13},
             },
             VerifyAssignmentValue([](auto expr) {
                 ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {

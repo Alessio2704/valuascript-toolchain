@@ -65,7 +65,7 @@ namespace valuascript::compiler::test
             "run_on_generic_into_next_statement",
             "typealias MyType = vector<int\n"
             "let a = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 30} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 29} },
             [](const Program& ast) {
             ASSERT_EQ(ast.type_aliases.size(), 1);
             EXPECT_EQ(ast.type_aliases[0]->name, "MyType");
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
             "run_on_tuple_into_next_statement",
             "typealias MyType = (int, string\n"
             "let a = 1\n",
-            { {Err::UnmatchedParenthesisInTuple, 1, 32} },
+            { {Err::UnmatchedParenthesisInTuple, 1, 31} },
             [](const Program& ast) {
             ASSERT_EQ(ast.type_aliases.size(), 1);
             EXPECT_EQ(ast.type_aliases[0]->name, "MyType");
@@ -91,7 +91,7 @@ namespace valuascript::compiler::test
             "typealias Valid = bool\n",
             {
             {Err::ExpectedCommaSeparatorInGenericArgs, 1, 32},
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 43}
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 42}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.type_aliases.size(), 2);
@@ -107,7 +107,7 @@ namespace valuascript::compiler::test
             "type_alias_interleaved_with_struct_error_recovery",
             "struct Broken { a: vector<int }\n"
             "typealias Safe = string\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 31} },
+            { {Err::UnmatchedBracketAfterGenericArgs, 1, 29} },
             [](const Program& ast) {
             ASSERT_EQ(ast.struct_definitions.size(), 1);
             EXPECT_EQ(ast.struct_definitions[0]->name, "Broken");
@@ -124,7 +124,7 @@ namespace valuascript::compiler::test
             "typealias C = map<int, >\n"
             "let d = 1\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 25},
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 24},
             {Err::ExpectedTypeAliasName, 2, 11},
             {Err::TrailingCommaInGenericArgument, 3, 22}
             },
@@ -149,7 +149,7 @@ namespace valuascript::compiler::test
             "typealias C = map<int, >\n"
             "let d = 1\n",
             {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 25},
+            {Err::UnmatchedBracketAfterGenericArgs, 1, 24},
             {Err::ExpectedAssignAfterTypeAliasName, 2, 13},
             {Err::TrailingCommaInGenericArgument, 3, 22}
             },

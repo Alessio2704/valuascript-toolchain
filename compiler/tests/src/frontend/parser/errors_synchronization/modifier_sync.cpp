@@ -105,7 +105,7 @@ namespace valuascript::compiler::test
             "let @test(a: 1\n"
             "a = 1"
             "let recovery = 1\n",
-            { {Err::UnmatchedParenthesisAfterModifierArgs, 1, 15} },
+            { {Err::UnmatchedParenthesisAfterModifierArgs, 1, 14} },
             ExpectModifierSet({{"test", {"a"}}})
             },
             ParserErrorsSynchronizationTestCase{
@@ -144,7 +144,7 @@ namespace valuascript::compiler::test
             "modifier_unmatched_arg_paren_at_eof",
             "@test(a: 1\n",
             {
-            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 11},
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 10},
             {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
             },
             [](const Program& ast) {
@@ -193,7 +193,7 @@ namespace valuascript::compiler::test
             "modifier_eof_after_paren",
             "@test(",
             {
-            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 7},
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 6},
             {Err::ModifiersAttachedToInvalidDeclaration, 1, 1},
             },
             [](const Program& ast) {
@@ -229,7 +229,7 @@ namespace valuascript::compiler::test
             "let obj = { @test(a: 1 key: 1 }\nlet recovery = 1\n",
             {
             {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 24},
-            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 31}
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 29}
             },
             [](const Program& ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -288,7 +288,7 @@ namespace valuascript::compiler::test
             {
             {Err::MissingCommaSeparatorForArgumentsInModifier, 1, 19},
             {Err::MissingParameterName, 1, 27},
-            {Err::ExpectedRightParenAfterParameters, 1, 37}
+            {Err::ExpectedRightParenAfterParameters, 1, 36}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.function_definitions.size(), 0);
@@ -304,7 +304,7 @@ namespace valuascript::compiler::test
             "struct S { @test(a: 1) id: int \n"
             "let recovery = 1\n",
             {
-            {Err::ExpectedRightBraceAfterStructBody, 1, 31}
+            {Err::ExpectedRightBraceAfterStructBody, 1, 30}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.struct_definitions.size(), 1);
@@ -320,9 +320,9 @@ namespace valuascript::compiler::test
             "struct_field_modifier_unmatched_paren_stretches_to_eof",
             "struct S { @test(a: 1 \n",
             {
-            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 22},
+            {Err::UnmatchedParenthesisAfterModifierArgs, 1, 21},
             {Err::ExpectedStructFieldName, 1, 22},
-            {Err::ExpectedRightBraceAfterStructBody, 1, 22}
+            {Err::ExpectedRightBraceAfterStructBody, 1, 21}
             },
             [](const Program& ast) {
             EXPECT_EQ(ast.execution_steps.size(), 0);

@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -14,9 +15,10 @@ namespace valuascript::compiler::test
         const bool _ = []()
         {
             auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<TypeVerifier>& v)
+                          const OneOf<TypeVerifier>& v,
+                          const std::vector<std::string_view>& skip_contexts = {})
             {
-                ErrorRegistry::add(n, c, errs, v);
+                ErrorRegistry::add(n, c, errs, v, skip_contexts);
             };
 
             reg("GarbageType", "123",
@@ -114,6 +116,26 @@ namespace valuascript::compiler::test
                         IsType("double"),
                     }
                 )
+            );
+
+            reg("GenericMissingClosingBracket", "vector<int",
+                {
+                    {E::UnmatchedBracketAfterGenericArgs, 1, 10, 1, 11},
+                },
+                IsType("vector", {
+                           IsType("int")
+                       }
+                ),
+                {
+                    ContextNames::TypeMultiAssignmentTarget1,
+                    ContextNames::TypeFunctionMultiReturn,
+                    ContextNames::TypeTupleTypeStart,
+                    ContextNames::TypeTupleTypeMiddle,
+                    ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeGenericTypeStart,
+                    ContextNames::TypeGenericTypeMiddle,
+                    ContextNames::TypeGenericTypeEnd,
+                }
             );
 
             return true;

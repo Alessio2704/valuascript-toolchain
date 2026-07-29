@@ -114,7 +114,7 @@ namespace valuascript::compiler::test
             "let a = f(a: 1\n"
             "let recovery = 1\n",
             {
-            {Err::ExpectedRightParenAfterArguments, 1, 15},
+            {Err::ExpectedRightParenAfterArguments, 1, 14},
             },
             [](const Program &ast) {
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -132,7 +132,7 @@ namespace valuascript::compiler::test
             "f(a: 1 \n"
             "let recovery = 1\n",
             {
-            {Err::ExpectedRightParenAfterArguments, 1, 7}
+            {Err::ExpectedRightParenAfterArguments, 1, 6}
             },
             ExpectFunctionCall("f", {{"a", "1"}})
             },
