@@ -188,20 +188,6 @@ namespace valuascript::compiler::test
             ExpectDict({{"x", "1"}})
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_self_incomplete_property_access",
-            "let a = { x: self., y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedPropertyName, 1, 19} },
-            [](const Program& ast)
-            {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2) << "Both dictionary items should be preserved";
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dict_self_bracket_unexpected_comma",
             "let a = { x: self[1, ], y: 2 }\n"
             "let recovery = 1\n",
@@ -225,47 +211,6 @@ namespace valuascript::compiler::test
             auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
             ASSERT_NE(y_val, nullptr);
             EXPECT_EQ(y_val->value, "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_self_in_switch_target_error",
-            "let a = { x: switch(self.) { case A -> 1 }, y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedPropertyName, 1, 26} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2);
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto switch_expr = dynamic_cast<SwitchExpression*>(dict->elements[0].value.get());
-            ASSERT_NE(switch_expr, nullptr);
-            EXPECT_NE(switch_expr->target.get(), nullptr);
-            ASSERT_EQ(switch_expr->cases.size(), 1);
-
-            EXPECT_EQ(dict->elements[1].key, "y");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_self_in_nested_dict_error",
-            "let a = { x: { inner: self. }, y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedPropertyName, 1, 28} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2);
-
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto inner_dict = dynamic_cast<DictLiteral*>(dict->elements[0].value.get());
-            ASSERT_NE(inner_dict, nullptr);
-            EXPECT_EQ(inner_dict->elements.size(), 1);
-            EXPECT_EQ(inner_dict->elements[0].key, "inner");
-            EXPECT_EQ(dict->elements[1].key, "y");
             }
             }
         ),

@@ -18,6 +18,7 @@ namespace valuascript::compiler::test::ContextNames
     inline constexpr const char* ExprTensorElement = "tensor_element";
     inline constexpr const char* ExprTensorSingleElement = "tensor_single_element";
     inline constexpr const char* ExprDictValue = "dict_value";
+    inline constexpr const char* ExprDictValueFirst = "dict_value_first";
     inline constexpr const char* ExprDictValueComma = "dict_value_comma";
     inline constexpr const char* ExprBracketAccessIndex = "bracket_access_index";
     inline constexpr const char* ExprFunctionCallArg = "function_call_arg";

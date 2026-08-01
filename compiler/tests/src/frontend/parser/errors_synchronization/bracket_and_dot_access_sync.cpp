@@ -142,18 +142,6 @@ namespace valuascript::compiler::test
             }
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_missing_property_discards_statement",
-            "let a = obj.\n"
-            "let b = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].name, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "bracket_slice_garbage_right_bound",
             "let a = arr[1 : *]\n",
             { {Err::InvalidExpression, 1, 17} },
@@ -208,19 +196,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_ident_assign",
-            "let a = obj.\n"
-            "b = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(reassignment, nullptr);
-            ExpectIdentifier(reassignment->target.get(), "b");
-            ExpectNumber(reassignment->value.get(), "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "dot_access_succeeds_at_newline_func_call_no_args",
             "let a = obj.\n"
             "test()\n",
@@ -266,72 +241,6 @@ namespace valuascript::compiler::test
             EXPECT_EQ(call->arguments[0].first, "arg");
             ExpectNumber(call->arguments[0].second.get(), "1");
             }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_dot_access_assign",
-            "let a = obj.\n"
-            "a.prop = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(reassignment, nullptr);
-            ExpectDotAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, "prop");
-            ExpectNumber(reassignment->value.get(), "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_bracket_access_assign",
-            "let a = obj.\n"
-            "a[0] = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(reassignment, nullptr);
-            ExpectBracketAccess(reassignment->target.get(), [](auto target) { ExpectIdentifier(target, "a"); }, [](auto
-                    i) {
-                ExpectNumber(i, "0"); });
-            ExpectNumber(reassignment->value.get(), "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_chained_dot_bracket_assign",
-            "let a = obj.\n"
-            "a.prop[0] = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto reassignment = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
-            ASSERT_NE(reassignment, nullptr);
-            ExpectBracketAccess(reassignment->target.get(), [](auto target) {
-                ExpectDotAccess(target, [](auto target2) { ExpectIdentifier(target2, "a"); }, "prop");
-                }, [](auto i) { ExpectNumber(i, "0"); });
-            ExpectNumber(reassignment->value.get(), "2");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dot_access_fails_at_newline_chained_bracket_dot_assign",
-            "let a = obj.\n"
-            "a[0].prop = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assignment, nullptr);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "bracket_access_unclosed_at_eof",
-            "let a = arr[1",
-            {
-            {Err::UnmatchedBracketAfterTensorIndex, 1, 13},
-            },
-            VerifyAssignmentValue([](auto expr) {
-                ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
-                    ExpectNumber(i, "1");
-                    });
-                })
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

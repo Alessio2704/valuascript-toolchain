@@ -184,6 +184,17 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                .name = ContextNames::ExprDictValueFirst,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ k: ",
+                .suffix = ", x: 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsDict({{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}, {"x", {}, IsNumber("1")}}));
+                }
+            },
+            {
                 .name = ContextNames::ExprDictValueComma,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,

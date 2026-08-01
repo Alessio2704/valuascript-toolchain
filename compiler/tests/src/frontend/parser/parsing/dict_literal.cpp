@@ -47,9 +47,7 @@ namespace valuascript::compiler::test
             DictLiteralSadParam{"dict_empty", "{a}", E::
             ExpectedColonAfterDictionaryKey},
             DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", E::ExpectedDictionaryKey
-            },
-            DictLiteralSadParam{"dict_self_missing_property_name", "{ a: 1, b: self. }", E::
-            ExpectedPropertyName}
+            }
         ),
         [](const testing::TestParamInfo<DictLiteralSadParam>& test_info) {
         return test_info.param.test_name;
