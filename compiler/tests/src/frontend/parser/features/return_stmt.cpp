@@ -12,33 +12,40 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ReturnVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("ReturnSingleValue",
-                "return 1",
-                IsReturn({}, {IsNumber("1")}));
+            reg({
+                .name = "ReturnSingleValue",
+                .code = "return 1",
+                .verifier = IsReturn({}, {IsNumber("1")})
+            });
 
-            reg("ReturnMultipleValues",
-                "return 1, true, \"success\"",
-                IsReturn({}, {
-                             IsNumber("1"),
-                             IsBoolean(true),
-                             IsString("\"success\"")
-                         }));
+            reg({
+                .name = "ReturnMultipleValues",
+                .code = "return 1, true, \"success\"",
+                .verifier = IsReturn({}, {
+                    IsNumber("1"),
+                    IsBoolean(true),
+                    IsString("\"success\"")
+                })
+            });
 
-            reg("ReturnWithIdentifier",
-                "return result",
-                IsReturn({}, {IsIdentifier("result")}));
+            reg({
+                .name = "ReturnWithIdentifier",
+                .code = "return result",
+                .verifier = IsReturn({}, {IsIdentifier("result")})
+            });
 
-            reg("MultilineFormatting",
-                "return \n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "return \n"
                 "  1, \n"
                 "  2",
-                IsReturn({},
-                         {
-                             IsNumber("1"),
-                             IsNumber("2")
-                         }));
+                .verifier = IsReturn({}, {
+                    IsNumber("1"),
+                    IsNumber("2")
+                })
+            });
 
             return true;
         }();

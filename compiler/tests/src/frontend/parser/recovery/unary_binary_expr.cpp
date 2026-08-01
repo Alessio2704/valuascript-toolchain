@@ -9,102 +9,124 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v,
-                          const std::vector<std::string_view>& skip_contexts = {})
-            {
-                ErrorRegistry::add(n, c, errs, v, skip_contexts);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("BinaryMissingRight", "1 + ",
-                {
+            reg({
+                .name = "BinaryMissingRight",
+                .code = "1 + ",
+                .errors = {
                     {E::InvalidExpression, 0, 0, 0, 0, true}
                 },
-                IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
-            );
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
+            });
 
-            reg("BinaryInvalidRight1", "1 + * 2",
-                {
+            reg({
+                .name = "BinaryInvalidRight1",
+                .code = "1 + * 2",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
-            );
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
+            });
 
-            reg("BinaryInvalidRight2", "1 + *",
-                {
+            reg({
+                .name = "BinaryInvalidRight2",
+                .code = "1 + *",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
-            );
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
+            });
 
-            reg("BinaryInvalidRight3", "1 + - * 2",
-                {
+            reg({
+                .name = "BinaryInvalidRight3",
+                .code = "1 + - * 2",
+                .errors = {
                     {E::InvalidExpression, 1, 7, 1, 8}
                 },
-                IsBinary(TokenType::Plus,
+                .verifier = IsBinary(TokenType::Plus,
                          IsNumber("1"),
                          IsUnary(TokenType::Minus,
                                  IsNull())
-                ));
+                )
+            });
 
-            reg("UnaryInvalidRight1", "+ *",
-                {
+            reg({
+                .name = "UnaryInvalidRight1",
+                .code = "+ *",
+                .errors = {
                     {E::InvalidExpression, 1, 3, 1, 4}
                 },
-                IsUnary(TokenType::Plus, IsNull())
-            );
+                .verifier = IsUnary(TokenType::Plus, IsNull())
+            });
 
-            reg("UnaryInvalidRight2", "+ * 2",
-                {
+            reg({
+                .name = "UnaryInvalidRight2",
+                .code = "+ * 2",
+                .errors = {
                     {E::InvalidExpression, 1, 3, 1, 4}
                 },
-                IsUnary(TokenType::Plus, IsNull())
-            );
+                .verifier = IsUnary(TokenType::Plus, IsNull())
+            });
 
-            reg("UnaryInvalidRight3", "- + * 2",
-                {
+            reg({
+                .name = "UnaryInvalidRight3",
+                .code = "- + * 2",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsUnary(TokenType::Minus,
+                .verifier = IsUnary(TokenType::Minus,
                         IsUnary(TokenType::Plus,
                                 IsNull()
                         )
-                ));
+                )
+            });
 
-            reg("UnaryInvalidRight4", "+ .",
-                {
+            reg({
+                .name = "UnaryInvalidRight4",
+                .code = "+ .",
+                .errors = {
                     {E::InvalidExpression, 1, 3, 1, 4}
                 },
-                IsUnary(TokenType::Plus, IsNull())
-            );
+                .verifier = IsUnary(TokenType::Plus, IsNull())
+            });
 
-            reg("UnaryMissingRight1", "- ",
-                {
+            reg({
+                .name = "UnaryMissingRight1",
+                .code = "- ",
+                .errors = {
                     {E::InvalidExpression, 0, 0, 0, 0, true}
                 },
-                IsUnary(TokenType::Minus, IsNull())
-            );
+                .verifier = IsUnary(TokenType::Minus, IsNull())
+            });
 
-            reg("UnaryMissingRight2", "not ",
-                {
+            reg({
+                .name = "UnaryMissingRight2",
+                .code = "not ",
+                .errors = {
                     {E::InvalidExpression, 0, 0, 0, 0, true}
                 },
-                IsUnary(TokenType::Not, IsNull())
-            );
+                .verifier = IsUnary(TokenType::Not, IsNull())
+            });
 
-            reg("RightAssociativeMissingOperand", "2 ^ ^ 3 ",
-                {
+            reg({
+                .name = "RightAssociativeMissingOperand",
+                .code = "2 ^ ^ 3 ",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsBinary(TokenType::Caret, IsNumber("2"), IsNull())
-            );
+                .verifier = IsBinary(TokenType::Caret, IsNumber("2"), IsNull())
+            });
 
-            reg("ModifierInsideExpressionContext", "1 + @test 2",
-                {
+            reg({
+                .name = "ModifierInsideExpressionContext",
+                .code = "1 + @test 2",
+                .errors = {
                     {E::TopLevelDeclarationNotAllowedHere, 1, 5, 1, 10},
                     {E::ModifiersAttachedToInvalidDeclaration, 1, 5, 1, 10}
                 },
-                IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
-            );
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
+            });
 
             return true;
         }();

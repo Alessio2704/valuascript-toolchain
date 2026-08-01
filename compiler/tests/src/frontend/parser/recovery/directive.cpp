@@ -13,41 +13,49 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<DirectiveVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<DirectiveVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("MissingName", "#",
-                {{E::MissingDirectiveName, 1, 2, 1, 3}},
-                IsDirective("<error>")
-            );
+            reg({
+                .name = "MissingName",
+                .code = "#",
+                .errors = {{E::MissingDirectiveName, 1, 2, 1, 3}},
+                .verifier = IsDirective("<error>")
+            });
 
-            reg("MissingValueAfterEquals", "#dir = ",
-                {{E::MissingValueAfterEquals, 1, 7, 1, 8}},
-                IsDirective("dir", IsNull())
-            );
+            reg({
+                .name = "MissingValueAfterEquals",
+                .code = "#dir = ",
+                .errors = {{E::MissingValueAfterEquals, 1, 7, 1, 8}},
+                .verifier = IsDirective("dir", IsNull())
+            });
 
-            reg("MissingHashValuelessDirective", "dir",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 4}},
-                IsNull()
-            );
+            reg({
+                .name = "MissingHashValuelessDirective",
+                .code = "dir",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 4}},
+                .verifier = IsNull()
+            });
 
-            reg("MissingNamePlusValueWithoutEquals", "# \"string\"",
-                {{E::MissingDirectiveName, 1, 3, 1, 11}},
-                IsDirective("<error>", IsNull())
-            );
+            reg({
+                .name = "MissingNamePlusValueWithoutEquals",
+                .code = "# \"string\"",
+                .errors = {{E::MissingDirectiveName, 1, 3, 1, 11}},
+                .verifier = IsDirective("<error>", IsNull())
+            });
 
-            reg("InvalidMarkerAsteriskWithValue", "*iterations = 1000",
-                {{E::InvalidExpression, 1, 1, 1, 2}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidMarkerAsteriskWithValue",
+                .code = "*iterations = 1000",
+                .errors = {{E::InvalidExpression, 1, 1, 1, 2}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidMarkerAsteriskNoValue", "*module",
-                {{E::InvalidExpression, 1, 1, 1, 2}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidMarkerAsteriskNoValue",
+                .code = "*module",
+                .errors = {{E::InvalidExpression, 1, 1, 1, 2}},
+                .verifier = IsNull()
+            });
 
             return true;
         }();

@@ -60,9 +60,44 @@ namespace valuascript::compiler::test
         std::vector<SentinelKind> accepted_sentinels = {};
     };
 
+    template <typename T>
+    struct RecoveryCase
+    {
+        std::string name;
+        std::string code;
+        std::vector<ParserExpectedError> errors;
+        OneOf<T> verifier;
+        std::vector<std::string_view> skip_contexts = {};
+        std::vector<ContextOverride<T>> context_overrides = {};
+        std::vector<SentinelKind> excluded_sentinels = {};
+        std::vector<SentinelKind> accepted_sentinels = {};
+    };
+
+    using ImportCase = RecoveryCase<ImportVerifier>;
+    using DirectiveCase = RecoveryCase<DirectiveVerifier>;
+    using FuncCase = RecoveryCase<FuncVerifier>;
+    using ExtCase = RecoveryCase<ExtVerifier>;
+    using StructCase = RecoveryCase<StructVerifier>;
+    using EnumCase = RecoveryCase<EnumVerifier>;
+    using AliasCase = RecoveryCase<AliasVerifier>;
+    using AssignmentCase = RecoveryCase<AssignmentVerifier>;
+    using ReassignmentCase = RecoveryCase<ReassignmentVerifier>;
+    using ReturnCase = RecoveryCase<ReturnVerifier>;
+    using ExprStmtCase = RecoveryCase<ExprStmtVerifier>;
+    using ExprCase = RecoveryCase<ExprVerifier>;
+    using ModifierCase = RecoveryCase<ModifierVerifier>;
+    using TypeCase = RecoveryCase<TypeVerifier>;
+
     class ErrorRegistry
     {
     public:
+        template <typename T>
+        static void add(const RecoveryCase<T>& spec)
+        {
+            add(spec.name, spec.code, spec.errors, spec.verifier,
+                spec.skip_contexts, spec.context_overrides,
+                spec.excluded_sentinels, spec.accepted_sentinels);
+        }
         static std::vector<ErrorRegistryEntry<ImportVerifier>>& imports();
         static std::vector<ErrorRegistryEntry<DirectiveVerifier>>& directives();
         static std::vector<ErrorRegistryEntry<FuncVerifier>>& functions();
@@ -204,4 +239,10 @@ namespace valuascript::compiler::test
             type_annotations().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
     };
+
+    template <typename T>
+    inline void reg(const RecoveryCase<T>& spec)
+    {
+        ErrorRegistry::add(spec);
+    }
 }

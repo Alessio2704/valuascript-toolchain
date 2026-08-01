@@ -7,77 +7,92 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("EmptyDictionary",
-                "{}",
-                IsDict({}));
+            reg({
+                .name = "EmptyDictionary",
+                .code = "{}",
+                .verifier = IsDict({})
+            });
 
-            reg("SingleItem",
-                "{ key: 1 }",
-                IsDict({
+            reg({
+                .name = "SingleItem",
+                .code = "{ key: 1 }",
+                .verifier = IsDict({
                     {"key", {}, IsNumber("1")}
-                }));
+                })
+            });
 
-            reg("MultipleItems",
-                "{ a: 1, b: \"val\", c: true }",
-                IsDict({
+            reg({
+                .name = "MultipleItems",
+                .code = "{ a: 1, b: \"val\", c: true }",
+                .verifier = IsDict({
                     {"a", {}, IsNumber("1")},
                     {"b", {}, IsString("\"val\"")},
                     {"c", {}, IsBoolean(true)}
-                }));
+                })
+            });
 
-            reg("NestedDictionaries",
-                "{ outer: { inner: 1 } }",
-                IsDict({
+            reg({
+                .name = "NestedDictionaries",
+                .code = "{ outer: { inner: 1 } }",
+                .verifier = IsDict({
                     {
                         "outer", {}, IsDict({
                             {"inner", {}, IsNumber("1")}
                         })
                     }
-                }));
+                })
+            });
 
-            reg("DictTrailingComma",
-                "{ a: 1, b: 2, }",
-                IsDict({
+            reg({
+                .name = "DictTrailingComma",
+                .code = "{ a: 1, b: 2, }",
+                .verifier = IsDict({
                     {"a", {}, IsNumber("1")},
                     {"b", {}, IsNumber("2")}
-                }));
+                })
+            });
 
-            reg("MixedModifiedAndUnmodifiedKeys",
-                "{ @sealed a: 1, b: 2, @hidden c: 3 }",
-                IsDict({
+            reg({
+                .name = "MixedModifiedAndUnmodifiedKeys",
+                .code = "{ @sealed a: 1, b: 2, @hidden c: 3 }",
+                .verifier = IsDict({
                     {"a", {{"sealed"}}, IsNumber("1")},
                     {"b", {}, IsNumber("2")},
                     {"c", {{"hidden"}}, IsNumber("3")}
-                }));
+                })
+            });
 
-            reg("DictLiteralMultilineFormatting",
-                "{\n"
+            reg({
+                .name = "DictLiteralMultilineFormatting",
+                .code = "{\n"
                 "  first_name: \"John\",\n"
                 "  last_name: \"Doe\",\n"
                 "  age: 30\n"
                 "}",
-                IsDict({
+                .verifier = IsDict({
                     {"first_name", {}, IsString("\"John\"")},
                     {"last_name", {}, IsString("\"Doe\"")},
                     {"age", {}, IsNumber("30")}
-                }));
+                })
+            });
 
-            reg("DictComplexRegression",
-                "{ x: { y: { z: 1 } } }",
-                IsDict({
+            reg({
+                .name = "DictComplexRegression",
+                .code = "{ x: { y: { z: 1 } } }",
+                .verifier = IsDict({
                     {
                         "x", {}, IsDict({
-                                {
-                                    "y", {}, IsDict({
-                                        {"z", {}, IsNumber("1")}
-                                    })
-                                }
+                            {
+                                "y", {}, IsDict({
+                                    {"z", {}, IsNumber("1")}
+                                })
                             }
-                        )
+                        })
                     }
-                }));
+                })
+            });
 
             return true;
         }();

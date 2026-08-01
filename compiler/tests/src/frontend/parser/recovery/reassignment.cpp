@@ -13,146 +13,164 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<ReassignmentVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ReassignmentVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("MultiReassignmentNotSupported",
-                "x, y = 1",
-                {{E::MultiReassignmentNotSupported, 1, 2, 1, 3}},
-                IsNull()
-            );
+            reg({
+                .name = "MultiReassignmentNotSupported",
+                .code = "x, y = 1",
+                .errors = {{E::MultiReassignmentNotSupported, 1, 2, 1, 3}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement1",
-                "x + y",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement1",
+                .code = "x + y",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement2",
-                "a[0] + y",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 9}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement2",
+                .code = "a[0] + y",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 9}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement3",
-                "a[0].a + y",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 11}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement3",
+                .code = "a[0].a + y",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 11}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement4",
-                "a",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 2}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement4",
+                .code = "a",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 2}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement5",
-                "a[0]",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement5",
+                .code = "a[0]",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement6",
-                "{} + a",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 7}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement6",
+                .code = "{} + a",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 7}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement7",
-                "-1",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 3}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement7",
+                .code = "-1",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 3}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement8",
-                "1 + 2",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement8",
+                .code = "1 + 2",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidStandaloneStatement9",
-                "true",
-                {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidStandaloneStatement9",
+                .code = "true",
+                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide1",
-                "a() = 1",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 4}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide1",
+                .code = "a() = 1",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 4}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide2",
-                "(a, b) = 1",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide2",
+                .code = "(a, b) = 1",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide3",
-                "[1, 2] = 3",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide3",
+                .code = "[1, 2] = 3",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide4",
-                "true = false",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide4",
+                .code = "true = false",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide5",
-                "self = 42",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide5",
+                .code = "self = 42",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide6",
-                "self.calc() = 42",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 12}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide6",
+                .code = "self.calc() = 42",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 12}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide7",
-                "{} = 42",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 3}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide7",
+                .code = "{} = 42",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 3}},
+                .verifier = IsNull()
+            });
 
-            reg("InvalidLeftSide8",
-                "a + b = 3",
-                {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 6}},
-                IsNull()
-            );
+            reg({
+                .name = "InvalidLeftSide8",
+                .code = "a + b = 3",
+                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 6}},
+                .verifier = IsNull()
+            });
 
-            reg("ChainedReassignmentNotSupported",
-                "a = b = c = 0",
-                {{E::ChainedAssignmentNotSupported, 1, 5, 1, 14}},
-                IsReassignment(IsIdentifier("a"), IsNumber("0"))
-            );
+            reg({
+                .name = "ChainedReassignmentNotSupported",
+                .code = "a = b = c = 0",
+                .errors = {{E::ChainedAssignmentNotSupported, 1, 5, 1, 14}},
+                .verifier = IsReassignment(IsIdentifier("a"), IsNumber("0"))
+            });
 
-            reg("ModifiersOnReassignment",
-                "@modifier a = 1",
-                {{E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10}},
-                IsReassignment(IsIdentifier("a"), IsNumber("1"))
-            );
+            reg({
+                .name = "ModifiersOnReassignment",
+                .code = "@modifier a = 1",
+                .errors = {{E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10}},
+                .verifier = IsReassignment(IsIdentifier("a"), IsNumber("1"))
+            });
 
-            reg("ModifiersOnInvalidStandaloneStatement",
-                "@modifier 1 + 2",
-                {
+            reg({
+                .name = "ModifiersOnInvalidStandaloneStatement",
+                .code = "@modifier 1 + 2",
+                .errors = {
                     {E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10},
                     {E::InvalidStandaloneStatement, 1, 11, 1, 16}
                 },
-                IsNull()
-            );
+                .verifier = IsNull()
+            });
 
-            reg("MissingValueAfterEqualsReassignment",
-                "a = ",
-                {{E::MissingValueAfterEquals, 1, 3, 1, 4}},
-                IsReassignment(IsIdentifier("a"), IsNull())
-            );
+            reg({
+                .name = "MissingValueAfterEqualsReassignment",
+                .code = "a = ",
+                .errors = {{E::MissingValueAfterEquals, 1, 3, 1, 4}},
+                .verifier = IsReassignment(IsIdentifier("a"), IsNull())
+            });
 
             return true;
         }();

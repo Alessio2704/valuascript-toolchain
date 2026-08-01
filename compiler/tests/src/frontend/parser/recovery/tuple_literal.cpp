@@ -8,90 +8,102 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("SingleElementTupleNotAllowed", "(1,)",
-                {
-                    {E::SingleElementTuplesNotAllowed, 1, 3, 1, 4},
+            reg({
+                .name = "SingleElementTupleNotAllowed",
+                .code = "(1,)",
+                .errors = {
+                    {E::SingleElementTuplesNotAllowed, 1, 3, 1, 4}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1")
                 )
-            );
+            });
 
-            reg("TrailingCommaInTuple", "(1, 2,)",
-                {
-                    {E::TrailingCommaInTuple, 1, 6, 1, 7},
+            reg({
+                .name = "TrailingCommaInTuple",
+                .code = "(1, 2,)",
+                .errors = {
+                    {E::TrailingCommaInTuple, 1, 6, 1, 7}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsNumber("2")
                 )
-            );
+            });
 
-            reg("TupleMissingExpression", "(1, , , 3)",
-                {
+            reg({
+                .name = "TupleMissingExpression",
+                .code = "(1, , , 3)",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 7, 1, 8},
+                    {E::InvalidExpression, 1, 7, 1, 8}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
                 )
-            );
+            });
 
-            reg("TupleGarbageBetweenElements", "(1, *, *, 3)",
-                {
+            reg({
+                .name = "TupleGarbageBetweenElements",
+                .code = "(1, *, *, 3)",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 8, 1, 9},
+                    {E::InvalidExpression, 1, 8, 1, 9}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
                 )
-            );
+            });
 
-            reg("EmptyTupleWithGarbage", "(*)",
-                {
+            reg({
+                .name = "EmptyTupleWithGarbage",
+                .code = "(*)",
+                .errors = {
                     {E::InvalidExpression, 1, 2, 1, 3}
                 },
-                IsGrouping(IsNull())
-            );
+                .verifier = IsGrouping(IsNull())
+            });
 
-            reg("TupleWithColonInsteadOfComma", "(1, x: 2)",
-                {
+            reg({
+                .name = "TupleWithColonInsteadOfComma",
+                .code = "(1, x: 2)",
+                .errors = {
                     {E::ExpectedRightParenAfterTupleElements, 1, 5, 1, 6}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsIdentifier("x")
                 )
-            );
+            });
 
-            reg("TupleMultilineRecovery",
-                "(\n"
+            reg({
+                .name = "TupleMultilineRecovery",
+                .code = "(\n"
                 "  1,\n"
                 "  *,\n"
                 "  3\n"
                 ")",
-                {
+                .errors = {
                     {E::InvalidExpression, 3, 3, 3, 4}
                 },
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsNull(),
                     IsNumber("3")
                 )
-            );
+            });
 
-            reg("EmptyTupleWithCommaIsInvalid", "(,)",
-                {
+            reg({
+                .name = "EmptyTupleWithCommaIsInvalid",
+                .code = "(,)",
+                .errors = {
                     {E::InvalidExpression, 1, 2, 1, 3},
                     {E::SingleElementTuplesNotAllowed, 1, 2, 1, 3}
                 },
-                IsTuple()
-            );
+                .verifier = IsTuple()
+            });
 
             return true;
         }();

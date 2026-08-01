@@ -12,34 +12,46 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ReassignmentVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("SimpleIdentifierTarget",
-                "a = 1",
-                IsReassignment(IsIdentifier("a"), IsNumber("1")));
+            reg({
+                .name = "SimpleIdentifierTarget",
+                .code = "a = 1",
+                .verifier = IsReassignment(IsIdentifier("a"), IsNumber("1"))
+            });
 
-            reg("DotAccessTarget",
-                "obj.prop = 1",
-                IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1")));
+            reg({
+                .name = "DotAccessTarget",
+                .code = "obj.prop = 1",
+                .verifier = IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1"))
+            });
 
-            reg("BracketAccessTarget",
-                "arr[0] = 1",
-                IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1")));
+            reg({
+                .name = "BracketAccessTarget",
+                .code = "arr[0] = 1",
+                .verifier = IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1"))
+            });
 
-            reg("SelfDotTarget",
-                "self.field = 1",
-                IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1")));
+            reg({
+                .name = "SelfDotTarget",
+                .code = "self.field = 1",
+                .verifier = IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1"))
+            });
 
-            reg("CallResultDotTarget",
-                "get().val = 1",
-                IsReassignment(IsDot(IsCall(IsIdentifier("get"), {}), "val"), IsNumber("1")));
+            reg({
+                .name = "CallResultDotTarget",
+                .code = "get().val = 1",
+                .verifier = IsReassignment(IsDot(IsCall(IsIdentifier("get"), {}), "val"), IsNumber("1"))
+            });
 
-            reg("MultilineFormatting",
-                "obj \n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "obj \n"
                 "  .prop \n"
                 "  = \n"
                 "  1",
-                IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1")));
+                .verifier = IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1"))
+            });
 
             return true;
         }();

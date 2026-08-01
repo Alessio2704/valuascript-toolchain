@@ -7,45 +7,57 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("NoArguments",
-                "f()",
-                IsCall(IsIdentifier("f"), {}));
+            reg({
+                .name = "NoArguments",
+                .code = "f()",
+                .verifier = IsCall(IsIdentifier("f"), {})
+            });
 
-            reg("SingleLabeledArgument",
-                "f(x: 1)",
-                IsCall(IsIdentifier("f"), {
-                           {"x", IsNumber("1")}
-                       }));
+            reg({
+                .name = "SingleLabeledArgument",
+                .code = "f(x: 1)",
+                .verifier = IsCall(IsIdentifier("f"), {
+                    {"x", IsNumber("1")}
+                })
+            });
 
-            reg("MultipleLabeledArguments",
-                "f(x: 1, y: true, z: \"hi\")",
-                IsCall(IsIdentifier("f"), {
-                           {"x", IsNumber("1")},
-                           {"y", IsBoolean(true)},
-                           {"z", IsString("\"hi\"")}
-                       }));
+            reg({
+                .name = "MultipleLabeledArguments",
+                .code = "f(x: 1, y: true, z: \"hi\")",
+                .verifier = IsCall(IsIdentifier("f"), {
+                    {"x", IsNumber("1")},
+                    {"y", IsBoolean(true)},
+                    {"z", IsString("\"hi\"")}
+                })
+            });
 
-            reg("NestedFunctionCallsAsArguments",
-                "f(x: g(y: 1))",
-                IsCall(IsIdentifier("f"), {
-                           {
-                               "x", IsCall(IsIdentifier("g"), {
-                                               {"y", IsNumber("1")}
-                                           })
-                           }
-                       }));
+            reg({
+                .name = "NestedFunctionCallsAsArguments",
+                .code = "f(x: g(y: 1))",
+                .verifier = IsCall(IsIdentifier("f"), {
+                    {
+                        "x", IsCall(IsIdentifier("g"), {
+                            {"y", IsNumber("1")}
+                        })
+                    }
+                })
+            });
 
-            reg("CallReturningFunctionCalledImmediately",
-                "get_handler()()",
-                IsCall(IsCall(IsIdentifier("get_handler"), {}), {}));
+            reg({
+                .name = "CallReturningFunctionCalledImmediately",
+                .code = "get_handler()()",
+                .verifier = IsCall(IsCall(IsIdentifier("get_handler"), {}), {})
+            });
 
-            reg("CallWithGroupingTarget",
-                "(f)(x: 1)",
-                IsCall(IsGrouping(IsIdentifier("f")), {
-                           {"x", IsNumber("1")}
-                       }));
+            reg({
+                .name = "CallWithGroupingTarget",
+                .code = "(f)(x: 1)",
+                .verifier = IsCall(IsGrouping(IsIdentifier("f")), {
+                    {"x", IsNumber("1")}
+                })
+            });
 
             return true;
         }();

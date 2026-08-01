@@ -7,85 +7,103 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("EmptyTuple",
-                "()",
-                IsTuple());
+            reg({
+                .name = "EmptyTuple",
+                .code = "()",
+                .verifier = IsTuple()
+            });
 
-            reg("StandardPair",
-                "(1, 2)",
-                IsTuple(
+            reg({
+                .name = "StandardPair",
+                .code = "(1, 2)",
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsNumber("2")
-                ));
+                )
+            });
 
-            reg("StandardTriple",
-                "(1, 2, 3)",
-                IsTuple(
+            reg({
+                .name = "StandardTriple",
+                .code = "(1, 2, 3)",
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsNumber("2"),
                     IsNumber("3")
-                ));
+                )
+            });
 
-            reg("TupleMixedTypes",
-                "(1, \"a\", true)",
-                IsTuple(
+            reg({
+                .name = "TupleMixedTypes",
+                .code = "(1, \"a\", true)",
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsString("\"a\""),
                     IsBoolean(true)
-                ));
+                )
+            });
 
-            reg("SimpleNestedTuples",
-                "((1, 2), 3)",
-                IsTuple(
+            reg({
+                .name = "SimpleNestedTuples",
+                .code = "((1, 2), 3)",
+                .verifier = IsTuple(
                     IsTuple(IsNumber("1"), IsNumber("2")),
                     IsNumber("3")
-                ));
+                )
+            });
 
-            reg("TupleDifferentiateFromGrouping",
-                "((1 + 2), 3)",
-                IsTuple(
+            reg({
+                .name = "TupleDifferentiateFromGrouping",
+                .code = "((1 + 2), 3)",
+                .verifier = IsTuple(
                     IsGrouping(
                         IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))),
                     IsNumber("3")
-                ));
+                )
+            });
 
-            reg("ComplexNestedTuples",
-                "((1, 2), (3, (4, 5)))",
-                IsTuple(
+            reg({
+                .name = "ComplexNestedTuples",
+                .code = "((1, 2), (3, (4, 5)))",
+                .verifier = IsTuple(
                     IsTuple(IsNumber("1"), IsNumber("2")),
                     IsTuple(
                         IsNumber("3"),
                         IsTuple(IsNumber("4"), IsNumber("5"))
                     )
-                ));
+                )
+            });
 
-            reg("MultilineFormatting",
-                "(\n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "(\n"
                 "  1,\n"
                 "  2\n"
                 ")",
-                IsTuple(
+                .verifier = IsTuple(
                     IsNumber("1"),
                     IsNumber("2")
-                ));
+                )
+            });
 
-            reg("DistinctionFromGrouping",
-                "(1)",
-                IsGrouping(IsNumber("1"))
-            );
+            reg({
+                .name = "DistinctionFromGrouping",
+                .code = "(1)",
+                .verifier = IsGrouping(IsNumber("1"))
+            });
 
-            reg("TupleComplexRegression",
-                "(( ( 1 ) ))",
-                IsGrouping(
+            reg({
+                .name = "TupleComplexRegression",
+                .code = "(( ( 1 ) ))",
+                .verifier = IsGrouping(
                     IsGrouping(
                         IsGrouping(
                             IsNumber("1")
                         )
                     )
                 )
-            );
+            });
 
             return true;
         }();

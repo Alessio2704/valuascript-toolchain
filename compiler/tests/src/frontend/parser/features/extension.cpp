@@ -12,23 +12,31 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExtVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("MinimalExtension",
-                "extension TargetType {}",
-                IsExtensionDef({}, IsType("TargetType"), {}));
+            reg({
+                .name = "MinimalExtension",
+                .code = "extension TargetType {}",
+                .verifier = IsExtensionDef({}, IsType("TargetType"), {})
+            });
 
-            reg("ModifiedExtension",
-                "@modifier extension TargetType {}",
-                IsExtensionDef({{"modifier"}}, IsType("TargetType"), {}));
+            reg({
+                .name = "ModifiedExtension",
+                .code = "@modifier extension TargetType {}",
+                .verifier = IsExtensionDef({{"modifier"}}, IsType("TargetType"), {})
+            });
 
-            reg("ModifiedWithArgs",
-                "@modifier(p: 1) extension TargetType {}",
-                IsExtensionDef({{"modifier", {{"p", IsNumber("1")}}}}, IsType("TargetType"), {}));
+            reg({
+                .name = "ModifiedWithArgs",
+                .code = "@modifier(p: 1) extension TargetType {}",
+                .verifier = IsExtensionDef({{"modifier", {{"p", IsNumber("1")}}}}, IsType("TargetType"), {})
+            });
 
-            reg("ComplexTargetType",
-                "extension map<string, int> {}",
-                IsExtensionDef({}, IsType("map", {IsType("string"), IsType("int")}), {}));
+            reg({
+                .name = "ComplexTargetType",
+                .code = "extension map<string, int> {}",
+                .verifier = IsExtensionDef({}, IsType("map", {IsType("string"), IsType("int")}), {})
+            });
 
             return true;
         }();

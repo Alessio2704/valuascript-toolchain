@@ -7,38 +7,38 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("IntegerLiteral", "42", IsNumber("42"));
-            reg("IntegerWithSeparators", "1_000_000", IsNumber("1_000_000"));
-            reg("DecimalLiteral", "3.14159", IsNumber("3.14159"));
-            reg("DecimalWithSeparators", "1_234.56_78", IsNumber("1_234.56_78"));
-            reg("ZeroLiteral", "0", IsNumber("0"));
-            reg("DecimalStartingWithZero", "0.001", IsNumber("0.001"));
-            reg("DecimalNotStartingWithZero", ".5", IsNumber(".5"));
-            reg("PercentageDecimalNotStartingWithZero", ".5%", IsPercentage(".5%"));
+            reg({.name = "IntegerLiteral", .code = "42", .verifier = IsNumber("42")});
+            reg({.name = "IntegerWithSeparators", .code = "1_000_000", .verifier = IsNumber("1_000_000")});
+            reg({.name = "DecimalLiteral", .code = "3.14159", .verifier = IsNumber("3.14159")});
+            reg({.name = "DecimalWithSeparators", .code = "1_234.56_78", .verifier = IsNumber("1_234.56_78")});
+            reg({.name = "ZeroLiteral", .code = "0", .verifier = IsNumber("0")});
+            reg({.name = "DecimalStartingWithZero", .code = "0.001", .verifier = IsNumber("0.001")});
+            reg({.name = "DecimalNotStartingWithZero", .code = ".5", .verifier = IsNumber(".5")});
+            reg({.name = "PercentageDecimalNotStartingWithZero", .code = ".5%", .verifier = IsPercentage(".5%")});
 
-            reg("BooleanTrue", "true", IsBoolean(true));
-            reg("BooleanFalse", "false", IsBoolean(false));
+            reg({.name = "BooleanTrue", .code = "true", .verifier = IsBoolean(true)});
+            reg({.name = "BooleanFalse", .code = "false", .verifier = IsBoolean(false)});
 
-            reg("SimpleString", "\"hello\"", IsString("\"hello\""));
-            reg("StringWithSpaces", "\"hello world\"", IsString("\"hello world\""));
-            reg("EmptyString", "\"\"", IsString("\"\""));
-            reg("StringWithSpecialCharacters", "\"@#$%^&*()_+{}|:<>?\"", IsString("\"@#$%^&*()_+{}|:<>?\""));
+            reg({.name = "SimpleString", .code = "\"hello\"", .verifier = IsString("\"hello\"")});
+            reg({.name = "StringWithSpaces", .code = "\"hello world\"", .verifier = IsString("\"hello world\"")});
+            reg({.name = "EmptyString", .code = "\"\"", .verifier = IsString("\"\"")});
+            reg({.name = "StringWithSpecialCharacters", .code = "\"@#$%^&*()_+{}|:<>?\"", .verifier = IsString("\"@#$%^&*()_+{}|:<>?\"")});
 
-            reg("IntegerPercentage", "1%", IsPercentage("1%"));
-            reg("DecimalPercentage", "2.5%", IsPercentage("2.5%"));
-            reg("PercentageWithSeparators", "1_000.5%", IsPercentage("1_000.5%"));
-            reg("PercentageWithComplexSeparators", "1_000.5_000_1%", IsPercentage("1_000.5_000_1%"));
+            reg({.name = "IntegerPercentage", .code = "1%", .verifier = IsPercentage("1%")});
+            reg({.name = "DecimalPercentage", .code = "2.5%", .verifier = IsPercentage("2.5%")});
+            reg({.name = "PercentageWithSeparators", .code = "1_000.5%", .verifier = IsPercentage("1_000.5%")});
+            reg({.name = "PercentageWithComplexSeparators", .code = "1_000.5_000_1%", .verifier = IsPercentage("1_000.5_000_1%")});
 
-            reg("StandardIdentifier", "my_variable_name", IsIdentifier("my_variable_name"));
-            reg("CamelCaseIdentifier", "myVariableName", IsIdentifier("myVariableName"));
-            reg("PascalCaseIdentifier", "MyVariableName", IsIdentifier("MyVariableName"));
-            reg("IdentifierWithNumbers", "var42_item7", IsIdentifier("var42_item7"));
-            reg("SingleUnderscoreIdentifier", "_", IsIdentifier("_"));
-            reg("DoubleUnderscoreIdentifier", "__internal_id__", IsIdentifier("__internal_id__"));
+            reg({.name = "StandardIdentifier", .code = "my_variable_name", .verifier = IsIdentifier("my_variable_name")});
+            reg({.name = "CamelCaseIdentifier", .code = "myVariableName", .verifier = IsIdentifier("myVariableName")});
+            reg({.name = "PascalCaseIdentifier", .code = "MyVariableName", .verifier = IsIdentifier("MyVariableName")});
+            reg({.name = "IdentifierWithNumbers", .code = "var42_item7", .verifier = IsIdentifier("var42_item7")});
+            reg({.name = "SingleUnderscoreIdentifier", .code = "_", .verifier = IsIdentifier("_")});
+            reg({.name = "DoubleUnderscoreIdentifier", .code = "__internal_id__", .verifier = IsIdentifier("__internal_id__")});
 
-            reg("SelfExpression", "self", IsSelf());
+            reg({.name = "SelfExpression", .code = "self", .verifier = IsSelf()});
 
             return true;
         }();

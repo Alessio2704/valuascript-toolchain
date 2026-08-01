@@ -12,39 +12,76 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<AssignmentVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("Simple", "let a = 1", IsAssignment({{{}, "a"}}, IsNumber("1")));
+            reg({
+                .name = "Simple",
+                .code = "let a = 1",
+                .verifier = IsAssignment({{{}, "a"}}, IsNumber("1"))
+            });
 
-            reg("UnderscoreAndNumbers", "let _a_1 = 1", IsAssignment({{{}, "_a_1"}}, IsNumber("1")));
+            reg({
+                .name = "UnderscoreAndNumbers",
+                .code = "let _a_1 = 1",
+                .verifier = IsAssignment({{{}, "_a_1"}}, IsNumber("1"))
+            });
 
-            reg("KeywordInsideIdentifier", "let ifthenelse = 1", IsAssignment({{{}, "ifthenelse"}}, IsNumber("1")));
+            reg({
+                .name = "KeywordInsideIdentifier",
+                .code = "let ifthenelse = 1",
+                .verifier = IsAssignment({{{}, "ifthenelse"}}, IsNumber("1"))
+            });
 
-            reg("ExplicitType", "let a: int = 1", IsAssignment({{{}, "a", IsType("int")}}, IsNumber("1")));
+            reg({
+                .name = "ExplicitType",
+                .code = "let a: int = 1",
+                .verifier = IsAssignment({{{}, "a", IsType("int")}}, IsNumber("1"))
+            });
 
-            reg("MultiBasic2Vars", "let a, b = 1", IsAssignment({{{}, "a"}, {{}, "b"}}, IsNumber("1")));
+            reg({
+                .name = "MultiBasic2Vars",
+                .code = "let a, b = 1",
+                .verifier = IsAssignment({{{}, "a"}, {{}, "b"}}, IsNumber("1"))
+            });
 
-            reg("MultiBasic5Vars", "let a, b, c, d, e = 1",
-                IsAssignment({{{}, "a"}, {{}, "b"}, {{}, "c"}, {{}, "d"}, {{}, "e"}}, IsNumber("1")));
+            reg({
+                .name = "MultiBasic5Vars",
+                .code = "let a, b, c, d, e = 1",
+                .verifier = IsAssignment({{{}, "a"}, {{}, "b"}, {{}, "c"}, {{}, "d"}, {{}, "e"}}, IsNumber("1"))
+            });
 
-            reg("MultiTypeAtStart", "let a: string, b = 1",
-                IsAssignment({{{}, "a", IsType("string")}, {{}, "b"}}, IsNumber("1")));
+            reg({
+                .name = "MultiTypeAtStart",
+                .code = "let a: string, b = 1",
+                .verifier = IsAssignment({{{}, "a", IsType("string")}, {{}, "b"}}, IsNumber("1"))
+            });
 
-            reg("MultiTypeInMiddle", "let a, b: string, c = 1",
-                IsAssignment({{{}, "a"}, {{}, "b", IsType("string")}, {{}, "c"}}, IsNumber("1")));
+            reg({
+                .name = "MultiTypeInMiddle",
+                .code = "let a, b: string, c = 1",
+                .verifier = IsAssignment({{{}, "a"}, {{}, "b", IsType("string")}, {{}, "c"}}, IsNumber("1"))
+            });
 
-            reg("MultiTypeAtEnd", "let a, b: bool = 1",
-                IsAssignment({{{}, "a"}, {{}, "b", IsType("bool")}}, IsNumber("1")));
+            reg({
+                .name = "MultiTypeAtEnd",
+                .code = "let a, b: bool = 1",
+                .verifier = IsAssignment({{{}, "a"}, {{}, "b", IsType("bool")}}, IsNumber("1"))
+            });
 
-            reg("MultiTypeEverywhere", "let a: int, b: int = 1",
-                IsAssignment({{{}, "a", IsType("int")}, {{}, "b", IsType("int")}}, IsNumber("1")));
+            reg({
+                .name = "MultiTypeEverywhere",
+                .code = "let a: int, b: int = 1",
+                .verifier = IsAssignment({{{}, "a", IsType("int")}, {{}, "b", IsType("int")}}, IsNumber("1"))
+            });
 
-            reg("Multiline",
-                "let \n"
+            reg({
+                .name = "Multiline",
+                .code = "let \n"
                 "  a, \n"
                 "  b: int \n"
                 "= 1",
-                IsAssignment({{{}, "a"}, {{}, "b", IsType("int")}}, IsNumber("1")));
+                .verifier = IsAssignment({{{}, "a"}, {{}, "b", IsType("int")}}, IsNumber("1"))
+            });
 
             return true;
         }();

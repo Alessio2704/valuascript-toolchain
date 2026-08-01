@@ -12,60 +12,75 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<EnumVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("EmptyEnum",
-                "enum E: int { }",
-                IsEnumDef("E", {}, IsType("int"), {}));
+            reg({
+                .name = "EmptyEnum",
+                .code = "enum E: int { }",
+                .verifier = IsEnumDef("E", {}, IsType("int"), {})
+            });
 
-            reg("MinimalEnum",
-                "enum E: int { A }",
-                IsEnumDef("E", {}, IsType("int"), {
-                              {"A"}
-                          }));
+            reg({
+                .name = "MinimalEnum",
+                .code = "enum E: int { A }",
+                .verifier = IsEnumDef("E", {}, IsType("int"), {
+                    {"A"}
+                })
+            });
 
-            reg("MultipleCases",
-                "enum Color: int { Red, Green, Blue }",
-                IsEnumDef("Color", {}, IsType("int"), {
-                              {"Red"},
-                              {"Green"},
-                              {"Blue"}
-                          }));
+            reg({
+                .name = "MultipleCases",
+                .code = "enum Color: int { Red, Green, Blue }",
+                .verifier = IsEnumDef("Color", {}, IsType("int"), {
+                    {"Red"},
+                    {"Green"},
+                    {"Blue"}
+                })
+            });
 
-            reg("CasesWithExplicitValues",
-                "enum Status: int { Active = 1, Inactive = 0, Pending = 2 }",
-                IsEnumDef("Status", {}, IsType("int"), {
-                              {"Active", {}, IsNumber("1")},
-                              {"Inactive", {}, IsNumber("0")},
-                              {"Pending", {}, IsNumber("2")}
-                          }));
+            reg({
+                .name = "CasesWithExplicitValues",
+                .code = "enum Status: int { Active = 1, Inactive = 0, Pending = 2 }",
+                .verifier = IsEnumDef("Status", {}, IsType("int"), {
+                    {"Active", {}, IsNumber("1")},
+                    {"Inactive", {}, IsNumber("0")},
+                    {"Pending", {}, IsNumber("2")}
+                })
+            });
 
-            reg("MixedValuedAndUnvaluedCases",
-                "enum Flag: int { None = 0, First, Second, Last = 10 }",
-                IsEnumDef("Flag", {}, IsType("int"), {
-                              {"None", {}, IsNumber("0")},
-                              {"First"},
-                              {"Second"},
-                              {"Last", {}, IsNumber("10")}
-                          }));
+            reg({
+                .name = "MixedValuedAndUnvaluedCases",
+                .code = "enum Flag: int { None = 0, First, Second, Last = 10 }",
+                .verifier = IsEnumDef("Flag", {}, IsType("int"), {
+                    {"None", {}, IsNumber("0")},
+                    {"First"},
+                    {"Second"},
+                    {"Last", {}, IsNumber("10")}
+                })
+            });
 
-            reg("TrailingComma",
-                "enum E: int { A, B, }",
-                IsEnumDef("E", {}, IsType("int"), {
-                              {"A"},
-                              {"B"}
-                          }));
+            reg({
+                .name = "TrailingComma",
+                .code = "enum E: int { A, B, }",
+                .verifier = IsEnumDef("E", {}, IsType("int"), {
+                    {"A"},
+                    {"B"}
+                })
+            });
 
-            reg("InterleavingModifiedCases",
-                "enum E: int { @primary A, B, @deprecated C = 99 }",
-                IsEnumDef("E", {}, IsType("int"), {
-                              {"A", {{"primary"}}},
-                              {"B"},
-                              {"C", {{"deprecated"}}, IsNumber("99")}
-                          }));
+            reg({
+                .name = "InterleavingModifiedCases",
+                .code = "enum E: int { @primary A, B, @deprecated C = 99 }",
+                .verifier = IsEnumDef("E", {}, IsType("int"), {
+                    {"A", {{"primary"}}},
+                    {"B"},
+                    {"C", {{"deprecated"}}, IsNumber("99")}
+                })
+            });
 
-            reg("MultilineFormatting",
-                "enum\n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "enum\n"
                 "  State\n"
                 "  : \n"
                 "  string \n"
@@ -73,10 +88,11 @@ namespace valuascript::compiler::test
                 "  @init Open = \"open\",\n"
                 "  Closed = \"closed\"\n"
                 "}",
-                IsEnumDef("State", {}, IsType("string"), {
-                              {"Open", {{"init"}}, IsString("\"open\"")},
-                              {"Closed", {}, IsString("\"closed\"")}
-                          }));
+                .verifier = IsEnumDef("State", {}, IsType("string"), {
+                    {"Open", {{"init"}}, IsString("\"open\"")},
+                    {"Closed", {}, IsString("\"closed\"")}
+                })
+            });
 
             return true;
         }();

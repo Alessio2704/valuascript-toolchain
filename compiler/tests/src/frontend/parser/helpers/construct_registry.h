@@ -15,9 +15,23 @@ namespace valuascript::compiler::test
         Verifier verifier;
     };
 
+    template <typename Verifier>
+    struct ConstructCase
+    {
+        std::string name;
+        std::string code;
+        Verifier verifier;
+    };
+
     class ConstructRegistry
     {
     public:
+        template <typename Verifier>
+        static void add(const ConstructCase<Verifier>& spec)
+        {
+            add(spec.name, spec.code, spec.verifier);
+        }
+
         static std::vector<RegistryEntry<ImportVerifier>>& imports();
         static std::vector<RegistryEntry<ImportVerifier>>& modified_imports();
         static std::vector<RegistryEntry<DirectiveVerifier>>& directives();

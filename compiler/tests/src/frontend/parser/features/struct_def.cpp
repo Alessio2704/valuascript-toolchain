@@ -12,43 +12,54 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<StructVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("MinimalStruct",
-                "struct S {}",
-                IsStructDef("S", {}, {}));
+            reg({
+                .name = "MinimalStruct",
+                .code = "struct S {}",
+                .verifier = IsStructDef("S", {}, {})
+            });
 
-            reg("SingleField",
-                "struct S { f: int }",
-                IsStructDef("S", {}, {
-                                FieldSpec{"f", {}, IsType("int")}
-                            }));
+            reg({
+                .name = "SingleField",
+                .code = "struct S { f: int }",
+                .verifier = IsStructDef("S", {}, {
+                    FieldSpec{"f", {}, IsType("int")}
+                })
+            });
 
-            reg("MultipleFields",
-                "struct Point { x: float, y: float, z: float }",
-                IsStructDef("Point", {}, {
-                                FieldSpec{"x", {}, IsType("float")},
-                                FieldSpec{"y", {}, IsType("float")},
-                                FieldSpec{"z", {}, IsType("float")}
-                            }));
+            reg({
+                .name = "MultipleFields",
+                .code = "struct Point { x: float, y: float, z: float }",
+                .verifier = IsStructDef("Point", {}, {
+                    FieldSpec{"x", {}, IsType("float")},
+                    FieldSpec{"y", {}, IsType("float")},
+                    FieldSpec{"z", {}, IsType("float")}
+                })
+            });
 
-            reg("TrailingComma",
-                "struct S { f1: int, f2: bool, }",
-                IsStructDef("S", {}, {
-                                FieldSpec{"f1", {}, IsType("int")},
-                                FieldSpec{"f2", {}, IsType("bool")}
-                            }));
+            reg({
+                .name = "TrailingComma",
+                .code = "struct S { f1: int, f2: bool, }",
+                .verifier = IsStructDef("S", {}, {
+                    FieldSpec{"f1", {}, IsType("int")},
+                    FieldSpec{"f2", {}, IsType("bool")}
+                })
+            });
 
-            reg("InterleavingModifiedFields",
-                "struct User { @id id: int, username: string, @optional bio: string }",
-                IsStructDef("User", {}, {
-                                FieldSpec{"id", {{"id"}}, IsType("int")},
-                                FieldSpec{"username", {}, IsType("string")},
-                                FieldSpec{"bio", {{"optional"}}, IsType("string")}
-                            }));
+            reg({
+                .name = "InterleavingModifiedFields",
+                .code = "struct User { @id id: int, username: string, @optional bio: string }",
+                .verifier = IsStructDef("User", {}, {
+                    FieldSpec{"id", {{"id"}}, IsType("int")},
+                    FieldSpec{"username", {}, IsType("string")},
+                    FieldSpec{"bio", {{"optional"}}, IsType("string")}
+                })
+            });
 
-            reg("MultilineFormatting",
-                "struct \n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "struct \n"
                 "  Config \n"
                 "{\n"
                 "  @internal \n"
@@ -56,10 +67,11 @@ namespace valuascript::compiler::test
                 "  \n"
                 "  version: int \n"
                 "}",
-                IsStructDef("Config", {}, {
-                                FieldSpec{"secret", {{"internal"}}, IsType("string")},
-                                FieldSpec{"version", {}, IsType("int")}
-                            }));
+                .verifier = IsStructDef("Config", {}, {
+                    FieldSpec{"secret", {{"internal"}}, IsType("string")},
+                    FieldSpec{"version", {}, IsType("int")}
+                })
+            });
 
             return true;
         }();

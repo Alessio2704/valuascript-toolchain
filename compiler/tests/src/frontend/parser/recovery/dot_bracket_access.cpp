@@ -9,110 +9,98 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](
-                auto n,
-                auto c,
-                const std::vector<ParserExpectedError>& errs,
-                const OneOf<ExprVerifier>& v,
-                const std::vector<std::string_view>& skip_contexts = {},
-                const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {},
-                const std::vector<SentinelKind>& excluded_sentinels = {},
-                const std::vector<SentinelKind>& accepted_sentinels = {}
-            )
-            {
-                ErrorRegistry::add(n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels,
-                                   accepted_sentinels);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("EmptyBracket", "arr[]",
-                {
+            reg({
+                .name = "EmptyBracket",
+                .code = "arr[]",
+                .errors = {
                     {E::EmptyBracketAccess, 1, 4, 1, 5}
                 },
-                IsBracket(IsIdentifier("arr"), IsNull())
-            );
+                .verifier = IsBracket(IsIdentifier("arr"), IsNull())
+            });
 
-            reg("InvalidExpressionInBracket", "arr[*]",
-                {
+            reg({
+                .name = "InvalidExpressionInBracket",
+                .code = "arr[*]",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6}
                 },
-                IsBracket(IsIdentifier("arr"), IsNull())
-            );
+                .verifier = IsBracket(IsIdentifier("arr"), IsNull())
+            });
 
-            // reg("InvalidRightExpressionInBracketSlice", "arr[1 : *]",
-            //     {
-            //         {E::InvalidExpression, 1, 9, 1, 10}
-            //     },
-            //     IsBracket(IsIdentifier("arr"),
-            //               IsBinary(TokenType::Colon,
-            //                        IsNumber("1"),
-            //                        IsNull()
-            //               )
-            //     )
-            // );
-
-            reg("MultipleColumnsInBracketSlice", "arr[1:2:3]",
-                {
+            reg({
+                .name = "MultipleColumnsInBracketSlice",
+                .code = "arr[1:2:3]",
+                .errors = {
                     {E::UnmatchedBracketAfterTensorIndex, 1, 7, 1, 8}
                 },
-                IsBracket(IsIdentifier("arr"),
-                          IsBinary(TokenType::Colon,
-                                   IsNumber("1"),
-                                   IsNumber("2")
-                          )
+                .verifier = IsBracket(
+                    IsIdentifier("arr"),
+                    IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2"))
                 )
-            );
+            });
 
-            reg("UnexpectedCommaInBracket", "arr[1, 2]",
-                {
+            reg({
+                .name = "UnexpectedCommaInBracket",
+                .code = "arr[1, 2]",
+                .errors = {
                     {E::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
                 },
-                IsBracket(IsIdentifier("arr"), IsNumber("1"))
-            );
+                .verifier = IsBracket(IsIdentifier("arr"), IsNumber("1"))
+            });
 
-            reg("GarbageDotAccessProperty", "obj.*",
-                {
+            reg({
+                .name = "GarbageDotAccessProperty",
+                .code = "obj.*",
+                .errors = {
                     {E::ExpectedPropertyName, 1, 5, 1, 6}
                 },
-                IsDot(IsIdentifier("obj"), "<error>")
-            );
+                .verifier = IsDot(IsIdentifier("obj"), "<error>")
+            });
 
-            reg("MissingDotAccessProperty", "obj.",
-                {
+            reg({
+                .name = "MissingDotAccessProperty",
+                .code = "obj.",
+                .errors = {
                     {E::ExpectedPropertyName, 1, 5, 1, 6}
                 },
-                IsDot(IsIdentifier("obj"), "<error>"),
-                {},
-                {
-                    ContextOverride<ExprVerifier>{
+                .verifier = IsDot(IsIdentifier("obj"), "<error>"),
+                .context_overrides = {
+                    {
                         .context_name = ContextNames::ExprSingleAssignment,
                         .accepted_sentinels = SentinelKinds::all()
                     }
                 },
-                {
+                .excluded_sentinels = {
                     SentinelKind::ExprStmt
                 }
-            );
+            });
 
-            reg("ConsecutiveInvalidBracketAccess1", "arr[*][*]",
-                {
+            reg({
+                .name = "ConsecutiveInvalidBracketAccess1",
+                .code = "arr[*][*]",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 8, 1, 9},
+                    {E::InvalidExpression, 1, 8, 1, 9}
                 },
-                IsBracket(
+                .verifier = IsBracket(
                     IsBracket(
                         IsIdentifier("arr"),
                         IsNull()
                     ),
                     IsNull()
                 )
-            );
+            });
 
-            reg("ConsecutiveInvalidBracketAccess2", "arr[*][1][*]",
-                {
+            reg({
+                .name = "ConsecutiveInvalidBracketAccess2",
+                .code = "arr[*][1][*]",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 11, 1, 12},
+                    {E::InvalidExpression, 1, 11, 1, 12}
                 },
-                IsBracket(
+                .verifier = IsBracket(
                     IsBracket(
                         IsBracket(
                             IsIdentifier("arr"),
@@ -122,28 +110,32 @@ namespace valuascript::compiler::test
                     ),
                     IsNull()
                 )
-            );
+            });
 
-            reg("ConsecutiveInvalidDotAccess1", "arr.*.*",
-                {
+            reg({
+                .name = "ConsecutiveInvalidDotAccess1",
+                .code = "arr.*.*",
+                .errors = {
                     {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 7, 1, 8},
+                    {E::ExpectedPropertyName, 1, 7, 1, 8}
                 },
-                IsDot(
+                .verifier = IsDot(
                     IsDot(
                         IsIdentifier("arr"),
                         "<error>"
                     ),
                     "<error>"
                 )
-            );
+            });
 
-            reg("ConsecutiveInvalidDotAccess2", "arr.*.a.*",
-                {
+            reg({
+                .name = "ConsecutiveInvalidDotAccess2",
+                .code = "arr.*.a.*",
+                .errors = {
                     {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 9, 1, 10},
+                    {E::ExpectedPropertyName, 1, 9, 1, 10}
                 },
-                IsDot(
+                .verifier = IsDot(
                     IsDot(
                         IsDot(
                             IsIdentifier("arr"),
@@ -153,48 +145,54 @@ namespace valuascript::compiler::test
                     ),
                     "<error>"
                 )
-            );
+            });
 
-            reg("ConsecutiveInvalidInterleaved1", "obj.*[*]",
-                {
+            reg({
+                .name = "ConsecutiveInvalidInterleaved1",
+                .code = "obj.*[*]",
+                .errors = {
                     {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 7, 1, 8},
+                    {E::InvalidExpression, 1, 7, 1, 8}
                 },
-                IsBracket(
+                .verifier = IsBracket(
                     IsDot(
                         IsIdentifier("obj"),
                         "<error>"
                     ),
                     IsNull()
                 )
-            );
+            });
 
-            reg("ConsecutiveInvalidInterleaved2", "arr[*].*",
-                {
+            reg({
+                .name = "ConsecutiveInvalidInterleaved2",
+                .code = "arr[*].*",
+                .errors = {
                     {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 8, 1, 9},
+                    {E::ExpectedPropertyName, 1, 8, 1, 9}
                 },
-                IsDot(
+                .verifier = IsDot(
                     IsBracket(
                         IsIdentifier("arr"),
                         IsNull()
                     ),
                     "<error>"
                 )
-            );
+            });
 
-            reg("DoubleDotAccess", "obj..a",
-                {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6},
+            reg({
+                .name = "DoubleDotAccess",
+                .code = "obj..a",
+                .errors = {
+                    {E::ExpectedPropertyName, 1, 5, 1, 6}
                 },
-                IsDot(
+                .verifier = IsDot(
                     IsDot(
                         IsIdentifier("obj"),
                         "<error>"
                     ),
                     "a"
                 )
-            );
+            });
 
             return true;
         }();

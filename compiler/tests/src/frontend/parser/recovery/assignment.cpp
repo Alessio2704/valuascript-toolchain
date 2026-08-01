@@ -13,83 +13,133 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<AssignmentVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<AssignmentVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("MissingVariableName", "let = 1",
-                {{E::ExpectedIdentifier, 1, 5, 1, 6}},
-                IsAssignment({{"<error>"}}, IsNumber("1")));
+            reg({
+                .name = "MissingVariableName",
+                .code = "let = 1",
+                .errors = {{E::ExpectedIdentifier, 1, 5, 1, 6}},
+                .verifier = IsAssignment({{"<error>"}}, IsNumber("1"))
+            });
 
-            reg("InvalidCharacter1", "let a! = 1",
-                {{LexerErrorCode::InvalidCharacter, 1, 6, 1, 7}},
-                IsAssignment({{"a"}}, IsNumber("1")));
+            reg({
+                .name = "InvalidCharacter1",
+                .code = "let a! = 1",
+                .errors = {{LexerErrorCode::InvalidCharacter, 1, 6, 1, 7}},
+                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+            });
 
-            reg("InvalidCharacter2", "let a ! = 1",
-                {{LexerErrorCode::InvalidCharacter, 1, 7, 1, 8}},
-                IsAssignment({{"a"}}, IsNumber("1")));
+            reg({
+                .name = "InvalidCharacter2",
+                .code = "let a ! = 1",
+                .errors = {{LexerErrorCode::InvalidCharacter, 1, 7, 1, 8}},
+                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+            });
 
-            reg("InvalidVariableNameStart", "let 123 = 1",
-                {{E::ExpectedIdentifier, 1, 5, 1, 8}},
-                IsAssignment({{"<error>"}}, IsNumber("1")));
+            reg({
+                .name = "InvalidVariableNameStart",
+                .code = "let 123 = 1",
+                .errors = {{E::ExpectedIdentifier, 1, 5, 1, 8}},
+                .verifier = IsAssignment({{"<error>"}}, IsNumber("1"))
+            });
 
-            reg("IncompleteAssignmentMissingEquals", "let a 1",
-                {{E::IncompleteAssignment, 1, 7, 1, 8}},
-                IsAssignment({{"a"}}, IsNumber("1")));
+            reg({
+                .name = "IncompleteAssignmentMissingEquals",
+                .code = "let a 1",
+                .errors = {{E::IncompleteAssignment, 1, 7, 1, 8}},
+                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+            });
 
-            reg("IncompleteMultipleAssignmentMissingEquals", "let a, b 1",
-                {{E::IncompleteAssignment, 1, 10, 1, 11}},
-                IsAssignment({{"a"}, {"b"}}, IsNumber("1")));
+            reg({
+                .name = "IncompleteMultipleAssignmentMissingEquals",
+                .code = "let a, b 1",
+                .errors = {{E::IncompleteAssignment, 1, 10, 1, 11}},
+                .verifier = IsAssignment({{"a"}, {"b"}}, IsNumber("1"))
+            });
 
-            reg("MissingValueAfterEquals", "let a = ",
-                {{E::MissingValueAfterEquals, 1, 8, 1, 9}},
-                IsAssignment({{"a"}}, IsNull()));
+            reg({
+                .name = "MissingValueAfterEquals",
+                .code = "let a = ",
+                .errors = {{E::MissingValueAfterEquals, 1, 8, 1, 9}},
+                .verifier = IsAssignment({{"a"}}, IsNull())
+            });
 
-            reg("MissingValueAfterEqualsWithTypeAnnotation", "let a: int =",
-                {{E::MissingValueAfterEquals, 1, 13, 1, 14}},
-                IsAssignment({{"a", IsType("int")}}, IsNull()));
+            reg({
+                .name = "MissingValueAfterEqualsWithTypeAnnotation",
+                .code = "let a: int =",
+                .errors = {{E::MissingValueAfterEquals, 1, 13, 1, 14}},
+                .verifier = IsAssignment({{"a", IsType("int")}}, IsNull())
+            });
 
-            reg("IncompleteAssignmentAtEOF", "let a",
-                {{E::IncompleteAssignment, 1, 5, 1, 6}},
-                IsAssignment({{"a"}}, IsNull()));
+            reg({
+                .name = "IncompleteAssignmentAtEOF",
+                .code = "let a",
+                .errors = {{E::IncompleteAssignment, 1, 5, 1, 6}},
+                .verifier = IsAssignment({{"a"}}, IsNull())
+            });
 
-            reg("MultiAssignmentTrailingComma", "let a, = 1",
-                {{E::ExpectedIdentifier, 1, 8, 1, 9}},
-                IsAssignment({{"a"}, {"<error>"}}, IsNumber("1")));
+            reg({
+                .name = "MultiAssignmentTrailingComma",
+                .code = "let a, = 1",
+                .errors = {{E::ExpectedIdentifier, 1, 8, 1, 9}},
+                .verifier = IsAssignment({{"a"}, {"<error>"}}, IsNumber("1"))
+            });
 
-            reg("MultiAssignmentMissingComma", "let a b = 1",
-                {{E::ExpectedCommaInMultiAssignment, 1, 7, 1, 8}},
-                IsAssignment({{"a"}, {"b"}}, IsNumber("1")));
+            reg({
+                .name = "MultiAssignmentMissingComma",
+                .code = "let a b = 1",
+                .errors = {{E::ExpectedCommaInMultiAssignment, 1, 7, 1, 8}},
+                .verifier = IsAssignment({{"a"}, {"b"}}, IsNumber("1"))
+            });
 
-            reg("MultiAssignmentDoubleComma", "let a,, b = 1",
-                {{E::ExpectedIdentifier, 1, 7, 1, 8}},
-                IsAssignment({{"a"}, {"<error>"}, {"b"}}, IsNumber("1")));
+            reg({
+                .name = "MultiAssignmentDoubleComma",
+                .code = "let a,, b = 1",
+                .errors = {{E::ExpectedIdentifier, 1, 7, 1, 8}},
+                .verifier = IsAssignment({{"a"}, {"<error>"}, {"b"}}, IsNumber("1"))
+            });
 
-            reg("MissingTypeAfterColon", "let a: = 1",
-                {{E::MissingTypeAnnotation, 1, 8, 1, 9}},
-                IsAssignment({{"a", IsNullType()}}, IsNumber("1")));
+            reg({
+                .name = "MissingTypeAfterColon",
+                .code = "let a: = 1",
+                .errors = {{E::MissingTypeAnnotation, 1, 8, 1, 9}},
+                .verifier = IsAssignment({{"a", IsNullType()}}, IsNumber("1"))
+            });
 
-            reg("BrokenNestedTypeAnnotation", "let a: vector<int = 1",
-                {{E::UnmatchedBracketAfterGenericArgs, 1, 17, 1, 18}},
-                IsAssignment({{"a", IsType("vector", {IsType("int")})}}, IsNumber("1")));
+            reg({
+                .name = "BrokenNestedTypeAnnotation",
+                .code = "let a: vector<int = 1",
+                .errors = {{E::UnmatchedBracketAfterGenericArgs, 1, 17, 1, 18}},
+                .verifier = IsAssignment({{"a", IsType("vector", {IsType("int")})}}, IsNumber("1"))
+            });
 
-            reg("ReservedKeywordAsTarget", "let func = 1",
-                {{E::ReservedKeywordAsIdentifier, 1, 5, 1, 9}},
-                IsAssignment({{"func"}}, IsNumber("1")));
+            reg({
+                .name = "ReservedKeywordAsTarget",
+                .code = "let func = 1",
+                .errors = {{E::ReservedKeywordAsIdentifier, 1, 5, 1, 9}},
+                .verifier = IsAssignment({{"func"}}, IsNumber("1"))
+            });
 
-            reg("ReservedKeywordInMultiAssignment", "let a, if = 1",
-                {{E::ReservedKeywordAsIdentifier, 1, 8, 1, 10}},
-                IsAssignment({{"a"}, {"if"}}, IsNumber("1")));
+            reg({
+                .name = "ReservedKeywordInMultiAssignment",
+                .code = "let a, if = 1",
+                .errors = {{E::ReservedKeywordAsIdentifier, 1, 8, 1, 10}},
+                .verifier = IsAssignment({{"a"}, {"if"}}, IsNumber("1"))
+            });
 
-            reg("MissingTypeAfterColonInMultiAssignment", "let a: integer, b: = 1",
-                {{E::MissingTypeAnnotation, 1, 20, 1, 21}},
-                IsAssignment({{"a", IsType("integer")}, {"b", IsNullType()}}, IsNumber("1")));
+            reg({
+                .name = "MissingTypeAfterColonInMultiAssignment",
+                .code = "let a: integer, b: = 1",
+                .errors = {{E::MissingTypeAnnotation, 1, 20, 1, 21}},
+                .verifier = IsAssignment({{"a", IsType("integer")}, {"b", IsNullType()}}, IsNumber("1"))
+            });
 
-            reg("MissingValueAfterEqualsMultiAssignment", "let x, y = ",
-                {{E::MissingValueAfterEquals, 1, 11, 1, 12}},
-                IsAssignment({{"x"}, {"y"}}, IsNull()));
+            reg({
+                .name = "MissingValueAfterEqualsMultiAssignment",
+                .code = "let x, y = ",
+                .errors = {{E::MissingValueAfterEquals, 1, 11, 1, 12}},
+                .verifier = IsAssignment({{"x"}, {"y"}}, IsNull())
+            });
 
             return true;
         }();

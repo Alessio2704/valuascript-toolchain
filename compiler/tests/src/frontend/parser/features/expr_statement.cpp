@@ -12,18 +12,22 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprStmtVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("SimpleCallStatement",
-                "init()",
-                IsExprStmt(IsCall(IsIdentifier("init"), {})));
+            reg({
+                .name = "SimpleCallStatement",
+                .code = "init()",
+                .verifier = IsExprStmt(IsCall(IsIdentifier("init"), {}))
+            });
 
-            reg("MultilineFormatting",
-                "my_function \n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "my_function \n"
                 "  ( \n"
                 "    arg: 1 \n"
                 "  )",
-                IsExprStmt(IsCall(IsIdentifier("my_function"), {{"arg", IsNumber("1")}})));
+                .verifier = IsExprStmt(IsCall(IsIdentifier("my_function"), {{"arg", IsNumber("1")}}))
+            });
 
             return true;
         }();

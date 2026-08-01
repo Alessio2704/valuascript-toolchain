@@ -7,76 +7,100 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("SimpleDotAccess",
-                "obj.property",
-                IsDot(IsIdentifier("obj"), "property"));
+            reg({
+                .name = "SimpleDotAccess",
+                .code = "obj.property",
+                .verifier = IsDot(IsIdentifier("obj"), "property")
+            });
 
-            reg("DotAccessNewLine",
-                "obj\n.property\n.property",
-                IsDot(IsDot(IsIdentifier("obj"), "property"), "property"));
+            reg({
+                .name = "DotAccessNewLine",
+                .code = "obj\n.property\n.property",
+                .verifier = IsDot(IsDot(IsIdentifier("obj"), "property"), "property")
+            });
 
-            reg("SimpleDotAccessWithSpace",
-                "obj      .         property",
-                IsDot(IsIdentifier("obj"), "property"));
+            reg({
+                .name = "SimpleDotAccessWithSpace",
+                .code = "obj      .         property",
+                .verifier = IsDot(IsIdentifier("obj"), "property")
+            });
 
-            reg("ChainedDotAccess",
-                "a.b.c",
-                IsDot(
+            reg({
+                .name = "ChainedDotAccess",
+                .code = "a.b.c",
+                .verifier = IsDot(
                     IsDot(IsIdentifier("a"), "b"),
                     "c"
-                ));
+                )
+            });
 
-            reg("SimpleBracketIndex",
-                "arr[0]",
-                IsBracket(IsIdentifier("arr"), IsNumber("0")));
+            reg({
+                .name = "SimpleBracketIndex",
+                .code = "arr[0]",
+                .verifier = IsBracket(IsIdentifier("arr"), IsNumber("0"))
+            });
 
-            reg("SimpleBracketIndexWithSpace",
-                "arr      [0]",
-                IsBracket(IsIdentifier("arr"), IsNumber("0")));
+            reg({
+                .name = "SimpleBracketIndexWithSpace",
+                .code = "arr      [0]",
+                .verifier = IsBracket(IsIdentifier("arr"), IsNumber("0"))
+            });
 
-            reg("ChainedBracketAccess",
-                "matrix[0][1]",
-                IsBracket(
+            reg({
+                .name = "ChainedBracketAccess",
+                .code = "matrix[0][1]",
+                .verifier = IsBracket(
                     IsBracket(IsIdentifier("matrix"), IsNumber("0")),
                     IsNumber("1")
-                ));
+                )
+            });
 
-            reg("NestedBracketAccess",
-                "arr[ids[0]]",
-                IsBracket(
+            reg({
+                .name = "NestedBracketAccess",
+                .code = "arr[ids[0]]",
+                .verifier = IsBracket(
                     IsIdentifier("arr"),
                     IsBracket(IsIdentifier("ids"), IsNumber("0"))
-                ));
+                )
+            });
 
-            reg("FullSlice",
-                "a[0:10]",
-                IsBracket(
+            reg({
+                .name = "FullSlice",
+                .code = "a[0:10]",
+                .verifier = IsBracket(
                     IsIdentifier("a"),
                     IsBinary(TokenType::Colon, IsNumber("0"), IsNumber("10"))
-                ));
+                )
+            });
 
-            reg("SliceImplicitStart",
-                "a[:10]",
-                IsBracket(
+            reg({
+                .name = "SliceImplicitStart",
+                .code = "a[:10]",
+                .verifier = IsBracket(
                     IsIdentifier("a"),
                     IsBinary(TokenType::Colon, IsNull(), IsNumber("10"))
-                ));
+                )
+            });
 
-            reg("SliceImplicitEnd",
-                "a[0:]",
-                IsBracket(
+            reg({
+                .name = "SliceImplicitEnd",
+                .code = "a[0:]",
+                .verifier = IsBracket(
                     IsIdentifier("a"),
                     IsBinary(TokenType::Colon, IsNumber("0"), IsNull())
-                ));
+                )
+            });
 
-            reg("SliceFullImplicit",
-                "a[:]",
-                IsBracket(
+            reg({
+                .name = "SliceFullImplicit",
+                .code = "a[:]",
+                .verifier = IsBracket(
                     IsIdentifier("a"),
                     IsBinary(TokenType::Colon, IsNull(), IsNull())
-                ));
+                )
+            });
 
             return true;
         }();

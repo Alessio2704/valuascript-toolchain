@@ -7,19 +7,22 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("SimpleConditional",
-                "if a then 1 else 0",
-                IsConditional(
+            reg({
+                .name = "SimpleConditional",
+                .code = "if a then 1 else 0",
+                .verifier = IsConditional(
                     IsIdentifier("a"),
                     IsNumber("1"),
                     IsNumber("0")
-                ));
+                )
+            });
 
-            reg("NestedElseIf",
-                "if a then 1 else if b then 2 else 3",
-                IsConditional(
+            reg({
+                .name = "NestedElseIf",
+                .code = "if a then 1 else if b then 2 else 3",
+                .verifier = IsConditional(
                     IsIdentifier("a"),
                     IsNumber("1"),
                     IsConditional(
@@ -27,11 +30,13 @@ namespace valuascript::compiler::test
                         IsNumber("2"),
                         IsNumber("3")
                     )
-                ));
+                )
+            });
 
-            reg("NestedThen",
-                "if a then if b then 1 else 2 else 3",
-                IsConditional(
+            reg({
+                .name = "NestedThen",
+                .code = "if a then if b then 1 else 2 else 3",
+                .verifier = IsConditional(
                     IsIdentifier("a"),
                     IsConditional(
                         IsIdentifier("b"),
@@ -39,11 +44,13 @@ namespace valuascript::compiler::test
                         IsNumber("2")
                     ),
                     IsNumber("3")
-                ));
+                )
+            });
 
-            reg("DeeplyNested",
-                "if a then 1 else if b then 2 else if c then 3 else 4",
-                IsConditional(
+            reg({
+                .name = "DeeplyNested",
+                .code = "if a then 1 else if b then 2 else if c then 3 else 4",
+                .verifier = IsConditional(
                     IsIdentifier("a"),
                     IsNumber("1"),
                     IsConditional(
@@ -55,17 +62,20 @@ namespace valuascript::compiler::test
                             IsNumber("4")
                         )
                     )
-                ));
+                )
+            });
 
-            reg("ConditionalExprMultilineFormatting",
-                "if is_valid\n"
+            reg({
+                .name = "ConditionalExprMultilineFormatting",
+                .code = "if is_valid\n"
                 "then \"yes\"\n"
                 "else \"no\"",
-                IsConditional(
+                .verifier = IsConditional(
                     IsIdentifier("is_valid"),
                     IsString("\"yes\""),
                     IsString("\"no\"")
-                ));
+                )
+            });
 
             return true;
         }();

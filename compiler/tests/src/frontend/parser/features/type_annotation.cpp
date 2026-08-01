@@ -12,116 +12,146 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<TypeVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("Simple",
-                "string",
-                IsType("string"));
+            reg({
+                .name = "Simple",
+                .code = "string",
+                .verifier = IsType("string")
+            });
 
-            reg("Generic",
-                "vector<string>",
-                IsType("vector", {IsType("string")}));
+            reg({
+                .name = "Generic",
+                .code = "vector<string>",
+                .verifier = IsType("vector", {IsType("string")})
+            });
 
-            reg("NestedGeneric",
-                "map<string, vector<decimal>>",
-                IsType("map", {
-                           IsType("string"),
-                           IsType("vector", {IsType("decimal")})
-                       }));
+            reg({
+                .name = "NestedGeneric",
+                .code = "map<string, vector<decimal>>",
+                .verifier = IsType("map", {
+                    IsType("string"),
+                    IsType("vector", {IsType("decimal")})
+                })
+            });
 
-            reg("Tuple",
-                "(string, integer, bool)",
-                IsTupleType({
+            reg({
+                .name = "Tuple",
+                .code = "(string, integer, bool)",
+                .verifier = IsTupleType({
                     IsType("string"),
                     IsType("integer"),
                     IsType("bool")
-                }));
+                })
+            });
 
-            reg("DeeplyNestedGenerics",
-                "Box<Box<Box<scalar>>>",
-                IsType("Box", {
-                           IsType("Box", {
-                                      IsType("Box", {IsType("scalar")})
-                                  })
-                       }));
+            reg({
+                .name = "DeeplyNestedGenerics",
+                .code = "Box<Box<Box<scalar>>>",
+                .verifier = IsType("Box", {
+                    IsType("Box", {
+                        IsType("Box", {IsType("scalar")})
+                    })
+                })
+            });
 
-            reg("TuplesContainingGenerics",
-                "(map<string, any>, vector<string>)",
-                IsTupleType({
+            reg({
+                .name = "TuplesContainingGenerics",
+                .code = "(map<string, any>, vector<string>)",
+                .verifier = IsTupleType({
                     IsType("map", {IsType("string"), IsType("any")}),
                     IsType("vector", {IsType("string")})
-                }));
+                })
+            });
 
-            reg("GenericsContainingTuples",
-                "map<string, vector<(integer, integer)>>",
-                IsType("map", {
-                           IsType("string"),
-                           IsType("vector", {
-                                      IsTupleType({IsType("integer"), IsType("integer")})
-                                  })
-                       }));
+            reg({
+                .name = "GenericsContainingTuples",
+                .code = "map<string, vector<(integer, integer)>>",
+                .verifier = IsType("map", {
+                    IsType("string"),
+                    IsType("vector", {
+                        IsTupleType({IsType("integer"), IsType("integer")})
+                    })
+                })
+            });
 
-            reg("DeeplyNestedTuples",
-                "((int, int), (string, (bool, bool)))",
-                IsTupleType({
+            reg({
+                .name = "DeeplyNestedTuples",
+                .code = "((int, int), (string, (bool, bool)))",
+                .verifier = IsTupleType({
                     IsTupleType({IsType("int"), IsType("int")}),
                     IsTupleType({
                         IsType("string"),
                         IsTupleType({IsType("bool"), IsType("bool")})
                     })
-                }));
+                })
+            });
 
-            reg("HighArityGenerics",
-                "multi_map<int, string, bool, float, any>",
-                IsType("multi_map", {
-                           IsType("int"),
-                           IsType("string"),
-                           IsType("bool"),
-                           IsType("float"),
-                           IsType("any")
-                       }));
+            reg({
+                .name = "HighArityGenerics",
+                .code = "multi_map<int, string, bool, float, any>",
+                .verifier = IsType("multi_map", {
+                    IsType("int"),
+                    IsType("string"),
+                    IsType("bool"),
+                    IsType("float"),
+                    IsType("any")
+                })
+            });
 
-            reg("ExoticTypeIdentifiers_InternalType",
-                "_InternalType",
-                IsType("_InternalType"));
+            reg({
+                .name = "ExoticTypeIdentifiers_InternalType",
+                .code = "_InternalType",
+                .verifier = IsType("_InternalType")
+            });
 
-            reg("ExoticTypeIdentifiers_Type42",
-                "Type42",
-                IsType("Type42"));
+            reg({
+                .name = "ExoticTypeIdentifiers_Type42",
+                .code = "Type42",
+                .verifier = IsType("Type42")
+            });
 
-            reg("ExoticTypeIdentifiers_Extreme",
-                "__extreme__",
-                IsType("__extreme__"));
+            reg({
+                .name = "ExoticTypeIdentifiers_Extreme",
+                .code = "__extreme__",
+                .verifier = IsType("__extreme__")
+            });
 
-            reg("WhitespaceInsensitivity",
-                "vector  < \n  map  < \n    int  , \n    string \n  > \n >",
-                IsType("vector", {
-                           IsType("map", {
-                                      IsType("int"),
-                                      IsType("string")
-                                  })
-                       }));
+            reg({
+                .name = "WhitespaceInsensitivity",
+                .code = "vector  < \n  map  < \n    int  , \n    string \n  > \n >",
+                .verifier = IsType("vector", {
+                    IsType("map", {
+                        IsType("int"),
+                        IsType("string")
+                    })
+                })
+            });
 
-            reg("ExtremeHybridNesting",
-                "map<(string, int), Box<vector<(bool, any)>>>",
-                IsType("map", {
-                           IsTupleType({IsType("string"), IsType("int")}),
-                           IsType("Box", {
-                                      IsType("vector", {
-                                                 IsTupleType({IsType("bool"), IsType("any")})
-                                             })
-                                  })
-                       }));
+            reg({
+                .name = "ExtremeHybridNesting",
+                .code = "map<(string, int), Box<vector<(bool, any)>>>",
+                .verifier = IsType("map", {
+                    IsTupleType({IsType("string"), IsType("int")}),
+                    IsType("Box", {
+                        IsType("vector", {
+                            IsTupleType({IsType("bool"), IsType("any")})
+                        })
+                    })
+                })
+            });
 
-            reg("TripleNestedGenericsWithTuples",
-                "A<B<C<(int, int)>>>",
-                IsType("A", {
-                           IsType("B", {
-                                      IsType("C", {
-                                                 IsTupleType({IsType("int"), IsType("int")})
-                                             })
-                                  })
-                       }));
+            reg({
+                .name = "TripleNestedGenericsWithTuples",
+                .code = "A<B<C<(int, int)>>>",
+                .verifier = IsType("A", {
+                    IsType("B", {
+                        IsType("C", {
+                            IsTupleType({IsType("int"), IsType("int")})
+                        })
+                    })
+                })
+            });
 
             return true;
         }();

@@ -12,20 +12,22 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<AliasVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("Simple",
-                "typealias Identifier = string",
-                IsTypeAlias("Identifier", {},
-                            IsType("string")
-                ));
+            reg({
+                .name = "Simple",
+                .code = "typealias Identifier = string",
+                .verifier = IsTypeAlias("Identifier", {}, IsType("string"))
+            });
 
-            reg("MultilineFormatting",
-                "typealias\n"
+            reg({
+                .name = "MultilineFormatting",
+                .code = "typealias\n"
                 "Data\n "
                 "= \n"
                 "string\n",
-                IsTypeAlias("Data", {}, IsType("string")));
+                .verifier = IsTypeAlias("Data", {}, IsType("string"))
+            });
 
             return true;
         }();

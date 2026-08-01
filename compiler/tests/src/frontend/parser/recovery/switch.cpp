@@ -8,172 +8,181 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("GarbageTokenRecoversToNextCase",
-                "switch(v) {\n"
+            reg({
+                .name = "GarbageTokenRecoversToNextCase",
+                .code = "switch(v) {\n"
                 "    garbage\n"
                 "    case A -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5, 2, 12}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {
                         SwitchCaseSpec{{"A"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
-            reg("NumberAsCase",
-                "switch (res) { case 1 -> 10 }",
-                {
+            reg({
+                .name = "NumberAsCase",
+                .code = "switch (res) { case 1 -> 10 }",
+                .errors = {
                     {E::ExpectedEnumCaseNameAfterCase, 1, 21, 1, 22}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("res"), {
                         SwitchCaseSpec{{"<error>"}, IsNumber("10")}
                     }
                 )
-            );
+            });
 
-            reg("StringAsCase",
-                "switch (res) { case \"UP\" -> 10 }",
-                {
+            reg({
+                .name = "StringAsCase",
+                .code = "switch (res) { case \"UP\" -> 10 }",
+                .errors = {
                     {E::ExpectedEnumCaseNameAfterCase, 1, 21, 1, 25}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("res"), {
                         SwitchCaseSpec{{"<error>"}, IsNumber("10")}
                     }
                 )
-            );
+            });
 
-            reg("MissingArrowRecoversToDefault",
-                "switch(v) {\n"
+            reg({
+                .name = "MissingArrowRecoversToDefault",
+                .code = "switch(v) {\n"
                 "    case A 1\n"
                 "    default -> 2\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedRightArrowAfterSwitchCaseIdentifier, 2, 12, 2, 13}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {
                         SwitchCaseSpec{{"A"}, IsNull()}
                     },
                     IsNumber("2")
                 )
-            );
+            });
 
-            reg("MultipleDefaultsRecovers",
-                "switch(v) {\n"
+            reg({
+                .name = "MultipleDefaultsRecovers",
+                .code = "switch(v) {\n"
                 "    default -> 1\n"
                 "    default -> 2\n"
                 "}",
-                {
+                .errors = {
                     {E::MultipleDefaultCasesInSwitch, 3, 5, 3, 12}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {}, IsNumber("2")
                 )
-            );
+            });
 
-            reg("MissingCommaInCaseIdentifiers",
-                "switch(v) {\n"
+            reg({
+                .name = "MissingCommaInCaseIdentifiers",
+                .code = "switch(v) {\n"
                 "    case A B -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedCommaBetweenCaseIdentifiers, 2, 12, 2, 13}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {
                         SwitchCaseSpec{{"A", "B"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
-            reg("DanglingArrowRightBeforeClosingBrace",
-                "switch(v) {\n"
+            reg({
+                .name = "DanglingArrowRightBeforeClosingBrace",
+                .code = "switch(v) {\n"
                 "    case A -> \n"
                 "}",
-                {
+                .errors = {
                     {E::InvalidExpression, 2, 12, 2, 14}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {
                         SwitchCaseSpec{{"A"}, IsNull()}
                     }
                 )
-            );
+            });
 
-            reg("SwitchTargetMissingParentheses",
-                "switch v {\n"
+            reg({
+                .name = "SwitchTargetMissingParentheses",
+                .code = "switch v {\n"
                 "    case A -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedLeftParenAfterSwitch, 1, 8, 1, 9}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsNull(), {
                         SwitchCaseSpec{{"A"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
-            reg("SwitchTargetCompletelyEmptyParens",
-                "switch() {\n"
+            reg({
+                .name = "SwitchTargetCompletelyEmptyParens",
+                .code = "switch() {\n"
                 "    case A -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::InvalidExpression, 1, 8, 1, 9}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsNull(), {
                         SwitchCaseSpec{{"A"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
-            reg("SwitchTargetGarbageBetweenParens",
-                "switch( . ) {\n"
+            reg({
+                .name = "SwitchTargetGarbageBetweenParens",
+                .code = "switch( . ) {\n"
                 "    case A -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::InvalidExpression, 1, 9, 1, 10}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsNull(), {
                         SwitchCaseSpec{{"A"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
-            reg("EmptySwitchBodyWithGarbage",
-                "switch(v) {\n"
+            reg({
+                .name = "EmptySwitchBodyWithGarbage",
+                .code = "switch(v) {\n"
                 "    + - * /\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5, 2, 6}
                 },
-                IsSwitch(IsIdentifier("v"), {})
-            );
+                .verifier = IsSwitch(IsIdentifier("v"), {})
+            });
 
-            reg("EmptySlotsInCaseCommaList",
-                "switch(v) {\n"
+            reg({
+                .name = "EmptySlotsInCaseCommaList",
+                .code = "switch(v) {\n"
                 "    case A, , B -> 1\n"
                 "}",
-                {
+                .errors = {
                     {E::ExpectedEnumCaseNameAfterCase, 2, 13, 2, 14}
                 },
-                IsSwitch(
+                .verifier = IsSwitch(
                     IsIdentifier("v"), {
                         SwitchCaseSpec{{"A", "<error>", "B"}, IsNumber("1")}
                     }
                 )
-            );
+            });
 
             return true;
         }();

@@ -7,11 +7,12 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("StandardPrecedence",
-                "1 + 2 * 3 ^ 4",
-                IsBinary(TokenType::Plus,
+            reg({
+                .name = "StandardPrecedence",
+                .code = "1 + 2 * 3 ^ 4",
+                .verifier = IsBinary(TokenType::Plus,
                          IsNumber("1"),
                          IsBinary(TokenType::Star,
                                   IsNumber("2"),
@@ -20,31 +21,37 @@ namespace valuascript::compiler::test
                                            IsNumber("4")
                                   )
                          )
-                ));
+                )
+            });
 
-            reg("LeftAssociativitySubtraction",
-                "10 - 5 - 2",
-                IsBinary(TokenType::Minus,
+            reg({
+                .name = "LeftAssociativitySubtraction",
+                .code = "10 - 5 - 2",
+                .verifier = IsBinary(TokenType::Minus,
                          IsBinary(TokenType::Minus,
                                   IsNumber("10"),
                                   IsNumber("5")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("LeftAssociativityDivision",
-                "20 / 5 / 2",
-                IsBinary(TokenType::Slash,
+            reg({
+                .name = "LeftAssociativityDivision",
+                .code = "20 / 5 / 2",
+                .verifier = IsBinary(TokenType::Slash,
                          IsBinary(TokenType::Slash,
                                   IsNumber("20"),
                                   IsNumber("5")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("FactorLeftAssociativityMixed",
-                "a * b / c mod d",
-                IsBinary(TokenType::Mod,
+            reg({
+                .name = "FactorLeftAssociativityMixed",
+                .code = "a * b / c mod d",
+                .verifier = IsBinary(TokenType::Mod,
                          IsBinary(TokenType::Slash,
                                   IsBinary(TokenType::Star,
                                            IsIdentifier("a"),
@@ -53,42 +60,52 @@ namespace valuascript::compiler::test
                                   IsIdentifier("c")
                          ),
                          IsIdentifier("d")
-                ));
+                )
+            });
 
-            reg("UnaryMinusPrecedence",
-                "-5 * 2",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "UnaryMinusPrecedence",
+                .code = "-5 * 2",
+                .verifier = IsBinary(TokenType::Star,
                          IsUnary(TokenType::Minus,
                                  IsNumber("5")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("Modulo",
-                "10 mod 5",
-                IsBinary(TokenType::Mod,
+            reg({
+                .name = "Modulo",
+                .code = "10 mod 5",
+                .verifier = IsBinary(TokenType::Mod,
                          IsNumber("10"),
                          IsNumber("5")
-                ));
+                )
+            });
 
-            reg("UnaryPlusBasic",
-                "+42",
-                IsUnary(TokenType::Plus,
+            reg({
+                .name = "UnaryPlusBasic",
+                .code = "+42",
+                .verifier = IsUnary(TokenType::Plus,
                         IsNumber("42")
-                ));
+                )
+            });
 
-            reg("UnaryBindsTighterThanPower",
-                "-2 ^ 2",
-                IsBinary(TokenType::Caret,
+            reg({
+                .name = "UnaryBindsTighterThanPower",
+                .code = "-2 ^ 2",
+                .verifier = IsBinary(TokenType::Caret,
                          IsUnary(TokenType::Minus,
                                  IsNumber("2")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("MixedRightAssociativityAndUnary",
-                "2 ^ -3 ^ 4",
-                IsBinary(TokenType::Caret,
+            reg({
+                .name = "MixedRightAssociativityAndUnary",
+                .code = "2 ^ -3 ^ 4",
+                .verifier = IsBinary(TokenType::Caret,
                          IsNumber("2"),
                          IsBinary(TokenType::Caret,
                                   IsUnary(TokenType::Minus,
@@ -96,21 +113,25 @@ namespace valuascript::compiler::test
                                   ),
                                   IsNumber("4")
                          )
-                ));
+                )
+            });
 
-            reg("ConsecutiveDifferentUnary",
-                "not - + x",
-                IsUnary(TokenType::Not,
+            reg({
+                .name = "ConsecutiveDifferentUnary",
+                .code = "not - + x",
+                .verifier = IsUnary(TokenType::Not,
                         IsUnary(TokenType::Minus,
                                 IsUnary(TokenType::Plus,
                                         IsIdentifier("x")
                                 )
                         )
-                ));
+                )
+            });
 
-            reg("ParenthesesOverride",
-                "(1 + 2) * 3",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "ParenthesesOverride",
+                .code = "(1 + 2) * 3",
+                .verifier = IsBinary(TokenType::Star,
                          IsGrouping(
                              IsBinary(TokenType::Plus,
                                       IsNumber("1"),
@@ -118,11 +139,13 @@ namespace valuascript::compiler::test
                              )
                          ),
                          IsNumber("3")
-                ));
+                )
+            });
 
-            reg("DeepParenthesesNesting",
-                "((1 + 2) * (3 - 4)) / 5",
-                IsBinary(TokenType::Slash,
+            reg({
+                .name = "DeepParenthesesNesting",
+                .code = "((1 + 2) * (3 - 4)) / 5",
+                .verifier = IsBinary(TokenType::Slash,
                          IsGrouping(
                              IsBinary(TokenType::Star,
                                       IsGrouping(
@@ -140,11 +163,13 @@ namespace valuascript::compiler::test
                              )
                          ),
                          IsNumber("5")
-                ));
+                )
+            });
 
-            reg("GroupingRedundancy",
-                "(((x))) + 1",
-                IsBinary(TokenType::Plus,
+            reg({
+                .name = "GroupingRedundancy",
+                .code = "(((x))) + 1",
+                .verifier = IsBinary(TokenType::Plus,
                          IsGrouping(
                              IsGrouping(
                                  IsGrouping(
@@ -153,11 +178,13 @@ namespace valuascript::compiler::test
                              )
                          ),
                          IsNumber("1")
-                ));
+                )
+            });
 
-            reg("RelationalPrecedence",
-                "1 + 2 > 3 * 4",
-                IsBinary(TokenType::Greater,
+            reg({
+                .name = "RelationalPrecedence",
+                .code = "1 + 2 > 3 * 4",
+                .verifier = IsBinary(TokenType::Greater,
                          IsBinary(TokenType::Plus,
                                   IsNumber("1"),
                                   IsNumber("2")
@@ -166,41 +193,49 @@ namespace valuascript::compiler::test
                                   IsNumber("3"),
                                   IsNumber("4")
                          )
-                ));
+                )
+            });
 
-            reg("EqualityPrecedence",
-                "x == y + 1",
-                IsBinary(TokenType::Equals,
+            reg({
+                .name = "EqualityPrecedence",
+                .code = "x == y + 1",
+                .verifier = IsBinary(TokenType::Equals,
                          IsIdentifier("x"),
                          IsBinary(TokenType::Plus,
                                   IsIdentifier("y"),
                                   IsNumber("1")
                          )
-                ));
+                )
+            });
 
-            reg("ModuloPrecedence",
-                "10 mod 3 * 2",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "ModuloPrecedence",
+                .code = "10 mod 3 * 2",
+                .verifier = IsBinary(TokenType::Star,
                          IsBinary(TokenType::Mod,
                                   IsNumber("10"),
                                   IsNumber("3")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("RightAssociativityPower",
-                "2 ^ 3 ^ 4",
-                IsBinary(TokenType::Caret,
+            reg({
+                .name = "RightAssociativityPower",
+                .code = "2 ^ 3 ^ 4",
+                .verifier = IsBinary(TokenType::Caret,
                          IsNumber("2"),
                          IsBinary(TokenType::Caret,
                                   IsNumber("3"),
                                   IsNumber("4")
                          )
-                ));
+                )
+            });
 
-            reg("RightAssociativityPowerMixed",
-                "2 ^ 3 ^ 4 * 5 + 6",
-                IsBinary(TokenType::Plus,
+            reg({
+                .name = "RightAssociativityPowerMixed",
+                .code = "2 ^ 3 ^ 4 * 5 + 6",
+                .verifier = IsBinary(TokenType::Plus,
                          IsBinary(TokenType::Star,
                                   IsBinary(TokenType::Caret,
                                            IsNumber("2"),
@@ -212,21 +247,25 @@ namespace valuascript::compiler::test
                                   IsNumber("5")
                          ),
                          IsNumber("6")
-                ));
+                )
+            });
 
-            reg("LogicalAndOrPrecedence",
-                "true or false and true",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "LogicalAndOrPrecedence",
+                .code = "true or false and true",
+                .verifier = IsBinary(TokenType::Or,
                          IsBoolean(true),
                          IsBinary(TokenType::And,
                                   IsBoolean(false),
                                   IsBoolean(true)
                          )
-                ));
+                )
+            });
 
-            reg("RelationalBeforeLogical",
-                "x > y and z == w",
-                IsBinary(TokenType::And,
+            reg({
+                .name = "RelationalBeforeLogical",
+                .code = "x > y and z == w",
+                .verifier = IsBinary(TokenType::And,
                          IsBinary(TokenType::Greater,
                                   IsIdentifier("x"),
                                   IsIdentifier("y")
@@ -235,11 +274,13 @@ namespace valuascript::compiler::test
                                   IsIdentifier("z"),
                                   IsIdentifier("w")
                          )
-                ));
+                )
+            });
 
-            reg("LogicalMixedWithArithmeticAndEquality",
-                "a + 1 == b and c * 2 != d or e",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "LogicalMixedWithArithmeticAndEquality",
+                .code = "a + 1 == b and c * 2 != d or e",
+                .verifier = IsBinary(TokenType::Or,
                          IsBinary(TokenType::And,
                                   IsBinary(TokenType::Equals,
                                            IsBinary(TokenType::Plus,
@@ -257,106 +298,130 @@ namespace valuascript::compiler::test
                                   )
                          ),
                          IsIdentifier("e")
-                ));
+                )
+            });
 
-            reg("StringConcatenation",
-                "\"hello\" + \" \" + \"world\"",
-                IsBinary(TokenType::Plus,
+            reg({
+                .name = "StringConcatenation",
+                .code = "\"hello\" + \" \" + \"world\"",
+                .verifier = IsBinary(TokenType::Plus,
                          IsBinary(TokenType::Plus,
                                   IsString("\"hello\""),
                                   IsString("\" \"")
                          ),
                          IsString("\"world\"")
-                ));
+                )
+            });
 
-            reg("PrefixPostfixInteraction",
-                "not a.b[0]()",
-                IsUnary(TokenType::Not,
+            reg({
+                .name = "PrefixPostfixInteraction",
+                .code = "not a.b[0]()",
+                .verifier = IsUnary(TokenType::Not,
                         IsCall(
                             IsBracket(
                                 IsDot(IsIdentifier("a"), "b"),
                                 IsNumber("0")
                             )
                         )
-                ));
+                )
+            });
 
-            reg("PostfixAndPrefixPrecedence",
-                "-b() * 2",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "PostfixAndPrefixPrecedence",
+                .code = "-b() * 2",
+                .verifier = IsBinary(TokenType::Star,
                          IsUnary(TokenType::Minus,
                                  IsCall(IsIdentifier("b"))
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("BracketAccessPrecedence",
-                "b[0] * 2",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "BracketAccessPrecedence",
+                .code = "b[0] * 2",
+                .verifier = IsBinary(TokenType::Star,
                          IsBracket(
                              IsIdentifier("b"),
                              IsNumber("0")
                          ),
                          IsNumber("2")
-                ));
+                )
+            });
 
-            reg("PercentageInMathExpressions",
-                "100 * 5% + 2%",
-                IsBinary(TokenType::Plus,
+            reg({
+                .name = "PercentageInMathExpressions",
+                .code = "100 * 5% + 2%",
+                .verifier = IsBinary(TokenType::Plus,
                          IsBinary(TokenType::Star,
                                   IsNumber("100"),
                                   IsPercentage("5%")
                          ),
                          IsPercentage("2%")
-                ));
+                )
+            });
 
-            reg("ArithmeticNegation",
-                "-5",
-                IsUnary(TokenType::Minus,
+            reg({
+                .name = "ArithmeticNegation",
+                .code = "-5",
+                .verifier = IsUnary(TokenType::Minus,
                         IsNumber("5")
-                ));
+                )
+            });
 
-            reg("LogicalInversion",
-                "not is_active",
-                IsUnary(TokenType::Not,
+            reg({
+                .name = "LogicalInversion",
+                .code = "not is_active",
+                .verifier = IsUnary(TokenType::Not,
                         IsIdentifier("is_active")
-                ));
+                )
+            });
 
-            reg("UnaryPrecedenceOverBinary",
-                "-a * b",
-                IsBinary(TokenType::Star,
+            reg({
+                .name = "UnaryPrecedenceOverBinary",
+                .code = "-a * b",
+                .verifier = IsBinary(TokenType::Star,
                          IsUnary(TokenType::Minus,
                                  IsIdentifier("a")
                          ),
                          IsIdentifier("b")
-                ));
+                )
+            });
 
-            reg("NestedUnaryChaining1",
-                "not not flag",
-                IsUnary(TokenType::Not,
+            reg({
+                .name = "NestedUnaryChaining1",
+                .code = "not not flag",
+                .verifier = IsUnary(TokenType::Not,
                         IsUnary(TokenType::Not,
                                 IsIdentifier("flag")
                         )
-                ));
+                )
+            });
 
-            reg("NestedUnaryChaining2",
-                "+ + flag",
-                IsUnary(TokenType::Plus,
+            reg({
+                .name = "NestedUnaryChaining2",
+                .code = "+ + flag",
+                .verifier = IsUnary(TokenType::Plus,
                         IsUnary(TokenType::Plus,
                                 IsIdentifier("flag")
                         )
-                ));
+                )
+            });
 
-            reg("NestedUnaryChaining3",
-                "- - flag",
-                IsUnary(TokenType::Minus,
+            reg({
+                .name = "NestedUnaryChaining3",
+                .code = "- - flag",
+                .verifier = IsUnary(TokenType::Minus,
                         IsUnary(TokenType::Minus,
                                 IsIdentifier("flag")
                         )
-                ));
+                )
+            });
 
-            reg("DeeplyNestedUnaryAndBinaryMath",
-                "-a * (b + c) - (not d) / e",
-                IsBinary(TokenType::Minus,
+            reg({
+                .name = "DeeplyNestedUnaryAndBinaryMath",
+                .code = "-a * (b + c) - (not d) / e",
+                .verifier = IsBinary(TokenType::Minus,
                          IsBinary(TokenType::Star,
                                   IsUnary(TokenType::Minus,
                                           IsIdentifier("a")
@@ -376,11 +441,13 @@ namespace valuascript::compiler::test
                                   ),
                                   IsIdentifier("e")
                          )
-                ));
+                )
+            });
 
-            reg("DeeplyNestedUnaryAndBinaryMath2",
-                "-a * (b + c) - not d / e",
-                IsBinary(TokenType::Minus,
+            reg({
+                .name = "DeeplyNestedUnaryAndBinaryMath2",
+                .code = "-a * (b + c) - not d / e",
+                .verifier = IsBinary(TokenType::Minus,
                          IsBinary(TokenType::Star,
                                   IsUnary(TokenType::Minus,
                                           IsIdentifier("a")
@@ -398,11 +465,13 @@ namespace valuascript::compiler::test
                                   ),
                                   IsIdentifier("e")
                          )
-                ));
+                )
+            });
 
-            reg("ComplexMixedPrecedence",
-                "-a.b ^ c[0] * d + e == f and not g or h",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "ComplexMixedPrecedence",
+                .code = "-a.b ^ c[0] * d + e == f and not g or h",
+                .verifier = IsBinary(TokenType::Or,
                          IsBinary(TokenType::And,
                                   IsBinary(TokenType::Equals,
                                            IsBinary(TokenType::Plus,
@@ -424,80 +493,102 @@ namespace valuascript::compiler::test
                                   )
                          ),
                          IsIdentifier("h")
-                ));
+                )
+            });
 
-            reg("OrExpr",
-                "x or y",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "OrExpr",
+                .code = "x or y",
+                .verifier = IsBinary(TokenType::Or,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("AndExpr",
-                "x and y",
-                IsBinary(TokenType::And,
+            reg({
+                .name = "AndExpr",
+                .code = "x and y",
+                .verifier = IsBinary(TokenType::And,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("NotExpr",
-                "not x",
-                IsUnary(TokenType::Not,
+            reg({
+                .name = "NotExpr",
+                .code = "not x",
+                .verifier = IsUnary(TokenType::Not,
                         IsIdentifier("x")
-                ));
+                )
+            });
 
-            reg("EqExpr",
-                "x == y",
-                IsBinary(TokenType::Equals,
+            reg({
+                .name = "EqExpr",
+                .code = "x == y",
+                .verifier = IsBinary(TokenType::Equals,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("NeqExpr",
-                "x != y",
-                IsBinary(TokenType::NotEquals,
+            reg({
+                .name = "NeqExpr",
+                .code = "x != y",
+                .verifier = IsBinary(TokenType::NotEquals,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("GtExpr",
-                "x > y",
-                IsBinary(TokenType::Greater,
+            reg({
+                .name = "GtExpr",
+                .code = "x > y",
+                .verifier = IsBinary(TokenType::Greater,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("LtExpr",
-                "x < y",
-                IsBinary(TokenType::Less,
+            reg({
+                .name = "LtExpr",
+                .code = "x < y",
+                .verifier = IsBinary(TokenType::Less,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("GteExpr",
-                "x >= y",
-                IsBinary(TokenType::GreaterEqual,
+            reg({
+                .name = "GteExpr",
+                .code = "x >= y",
+                .verifier = IsBinary(TokenType::GreaterEqual,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("LteExpr",
-                "x <= y",
-                IsBinary(TokenType::LessEqual,
+            reg({
+                .name = "LteExpr",
+                .code = "x <= y",
+                .verifier = IsBinary(TokenType::LessEqual,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("PowExpr",
-                "x ^ y",
-                IsBinary(TokenType::Caret,
+            reg({
+                .name = "PowExpr",
+                .code = "x ^ y",
+                .verifier = IsBinary(TokenType::Caret,
                          IsIdentifier("x"),
                          IsIdentifier("y")
-                ));
+                )
+            });
 
-            reg("BoolGrouped",
-                "(a and b) or (c and not d)",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "BoolGrouped",
+                .code = "(a and b) or (c and not d)",
+                .verifier = IsBinary(TokenType::Or,
                          IsGrouping(
                              IsBinary(TokenType::And,
                                       IsIdentifier("a"),
@@ -512,11 +603,13 @@ namespace valuascript::compiler::test
                                       )
                              )
                          )
-                ));
+                )
+            });
 
-            reg("ValidatesBooleanPrecedence",
-                "x or y and not z",
-                IsBinary(TokenType::Or,
+            reg({
+                .name = "ValidatesBooleanPrecedence",
+                .code = "x or y and not z",
+                .verifier = IsBinary(TokenType::Or,
                          IsIdentifier("x"),
                          IsBinary(TokenType::And,
                                   IsIdentifier("y"),
@@ -524,11 +617,13 @@ namespace valuascript::compiler::test
                                           IsIdentifier("z")
                                   )
                          )
-                ));
+                )
+            });
 
-            reg("ValidatesBooleanGrouping",
-                "(x or y) and z",
-                IsBinary(TokenType::And,
+            reg({
+                .name = "ValidatesBooleanGrouping",
+                .code = "(x or y) and z",
+                .verifier = IsBinary(TokenType::And,
                          IsGrouping(
                              IsBinary(TokenType::Or,
                                       IsIdentifier("x"),
@@ -536,7 +631,8 @@ namespace valuascript::compiler::test
                              )
                          ),
                          IsIdentifier("z")
-                ));
+                )
+            });
 
             return true;
         }();

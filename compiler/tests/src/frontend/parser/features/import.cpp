@@ -12,15 +12,19 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ImportVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("ValidatesImportStatement1",
-                "import \"file.vs\"",
-                IsImport("\"file.vs\""));
+            reg({
+                .name = "ValidatesImportStatement1",
+                .code = "import \"file.vs\"",
+                .verifier = IsImport("\"file.vs\"")
+            });
 
-            reg("ValidatesImportStatement2",
-                "import \"path/to/file.vs\"",
-                IsImport("\"path/to/file.vs\""));
+            reg({
+                .name = "ValidatesImportStatement2",
+                .code = "import \"path/to/file.vs\"",
+                .verifier = IsImport("\"path/to/file.vs\"")
+            });
 
             return true;
         }();

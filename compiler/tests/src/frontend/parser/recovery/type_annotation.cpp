@@ -14,118 +14,131 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<TypeVerifier>& v,
-                          const std::vector<std::string_view>& skip_contexts = {},
-                          const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {})
-            {
-                ErrorRegistry::add(n, c, errs, v, skip_contexts, context_overrides);
-            };
+            auto reg = [](const RecoveryCase<TypeVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("GarbageType", "123",
-                {{E::MissingTypeAnnotation, 1, 1, 1, 4}},
-                IsNullType()
-            );
+            reg({
+                .name = "GarbageType",
+                .code = "123",
+                .errors = {{E::MissingTypeAnnotation, 1, 1, 1, 4}},
+                .verifier = IsNullType()
+            });
 
-            reg("TupleTypeMissingElement", "(int, , string)",
-                {{E::MissingTypeAnnotation, 1, 7, 1, 8}},
-                IsTupleType({
+            reg({
+                .name = "TupleTypeMissingElement",
+                .code = "(int, , string)",
+                .errors = {{E::MissingTypeAnnotation, 1, 7, 1, 8}},
+                .verifier = IsTupleType({
                     IsType("int"),
                     IsNullType(),
                     IsType("string"),
                 })
-            );
+            });
 
-            reg("TupleTypeBrokenElement", "(int, *, string)",
-                {{E::MissingTypeAnnotation, 1, 7, 1, 8}},
-                IsTupleType({
+            reg({
+                .name = "TupleTypeBrokenElement",
+                .code = "(int, *, string)",
+                .errors = {{E::MissingTypeAnnotation, 1, 7, 1, 8}},
+                .verifier = IsTupleType({
                     IsType("int"),
                     IsNullType(),
                     IsType("string"),
                 })
-            );
+            });
 
-            reg("TupleTypeSingleElementDisallowed", "(int, )",
-                {{E::TrailingCommaInTuple, 1, 5, 1, 6}},
-                IsTupleType({
+            reg({
+                .name = "TupleTypeSingleElementDisallowed",
+                .code = "(int, )",
+                .errors = {{E::TrailingCommaInTuple, 1, 5, 1, 6}},
+                .verifier = IsTupleType({
                     IsType("int"),
                 })
-            );
+            });
 
-            reg("TupleTrailingCommaDisallowed", "(int, string, )",
-                {{E::TrailingCommaInTuple, 1, 13, 1, 14}},
-                IsTupleType({
+            reg({
+                .name = "TupleTrailingCommaDisallowed",
+                .code = "(int, string, )",
+                .errors = {{E::TrailingCommaInTuple, 1, 13, 1, 14}},
+                .verifier = IsTupleType({
                     IsType("int"),
                     IsType("string"),
                 })
-            );
+            });
 
-            reg("EmptyGeneric", "map<>",
-                {{E::EmptyGenericTypeAnnotation, 1, 5, 1, 6}},
-                IsType("map", {})
-            );
+            reg({
+                .name = "EmptyGeneric",
+                .code = "map<>",
+                .errors = {{E::EmptyGenericTypeAnnotation, 1, 5, 1, 6}},
+                .verifier = IsType("map", {})
+            });
 
-            reg("GenericMissingTypeAfterComma", "map<string, >",
-                {{E::TrailingCommaInGenericArgument, 1, 11, 1, 12}},
-                IsType("map", {
-                           IsType("string")
-                       }
-                )
-            );
+            reg({
+                .name = "GenericMissingTypeAfterComma",
+                .code = "map<string, >",
+                .errors = {{E::TrailingCommaInGenericArgument, 1, 11, 1, 12}},
+                .verifier = IsType("map", {
+                    IsType("string")
+                })
+            });
 
-            reg("GenericGarbageArgument", "map<string, *, int>",
-                {{E::MissingTypeAnnotation, 1, 13, 1, 14}},
-                IsType("map", {
-                           IsType("string"),
-                           IsNullType(),
-                           IsType("int"),
-                       }
-                )
-            );
+            reg({
+                .name = "GenericGarbageArgument",
+                .code = "map<string, *, int>",
+                .errors = {{E::MissingTypeAnnotation, 1, 13, 1, 14}},
+                .verifier = IsType("map", {
+                    IsType("string"),
+                    IsNullType(),
+                    IsType("int"),
+                })
+            });
 
-            reg("GenericEmptyArgument", "map<string, , int>",
-                {{E::MissingTypeAnnotation, 1, 13, 1, 14}},
-                IsType("map", {
-                           IsType("string"),
-                           IsNullType(),
-                           IsType("int"),
-                       }
-                )
-            );
+            reg({
+                .name = "GenericEmptyArgument",
+                .code = "map<string, , int>",
+                .errors = {{E::MissingTypeAnnotation, 1, 13, 1, 14}},
+                .verifier = IsType("map", {
+                    IsType("string"),
+                    IsNullType(),
+                    IsType("int"),
+                })
+            });
 
-            reg("GenericMissingCommasBetweenArguments", "map<string int double>",
-                {
+            reg({
+                .name = "GenericMissingCommasBetweenArguments",
+                .code = "map<string int double>",
+                .errors = {
                     {E::ExpectedCommaSeparatorInGenericArgs, 1, 12, 1, 15},
                     {E::ExpectedCommaSeparatorInGenericArgs, 1, 16, 1, 22}
                 },
-                IsType("map", {
-                           IsType("string"),
-                           IsType("int"),
-                           IsType("double"),
-                       }
-                )
-            );
+                .verifier = IsType("map", {
+                    IsType("string"),
+                    IsType("int"),
+                    IsType("double"),
+                })
+            });
 
-            reg("TupleMissingCommasBetweenArguments", "(string int double)",
-                {
+            reg({
+                .name = "TupleMissingCommasBetweenArguments",
+                .code = "(string int double)",
+                .errors = {
                     {E::ExpectedCommaSeparatorInTupleType, 1, 9, 1, 12},
                     {E::ExpectedCommaSeparatorInTupleType, 1, 13, 1, 19}
                 },
-                IsTupleType({
-                        IsType("string"),
-                        IsType("int"),
-                        IsType("double"),
-                    }
-                )
-            );
+                .verifier = IsTupleType({
+                    IsType("string"),
+                    IsType("int"),
+                    IsType("double"),
+                })
+            });
 
-            reg("GenericUnclosedNoArguments", "vector<",
-                {
+            reg({
+                .name = "GenericUnclosedNoArguments",
+                .code = "vector<",
+                .errors = {
                     {E::EmptyGenericTypeAnnotation, 1, 8, 1, 9},
                     {E::UnmatchedBracketAfterGenericArgs, 1, 7, 1, 8},
                 },
-                IsType("vector", {}),
-                {
+                .verifier = IsType("vector", {}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -133,7 +146,7 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeAssignmentTarget,
                         .errors = std::vector<ParserExpectedError>{
@@ -219,24 +232,25 @@ namespace valuascript::compiler::test
                         .verifier = OneOf<TypeVerifier>(IsEnumDef("ctx_enum", {}, IsType("vector", {}), {EnumCaseSpec{.name = "A"}}))
                     }
                 }
-            );
+            });
 
-            reg("GenericMissingClosingBracket", "vector<int",
-                {
+            reg({
+                .name = "GenericMissingClosingBracket",
+                .code = "vector<int",
+                .errors = {
                     {E::UnmatchedBracketAfterGenericArgs, 1, 10, 1, 11},
                 },
-                IsType("vector", {
-                           IsType("int")
-                       }
-                ),
-                {
+                .verifier = IsType("vector", {
+                    IsType("int")
+                }),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
@@ -291,16 +305,18 @@ namespace valuascript::compiler::test
                             {E::UnmatchedBracketAfterGenericArgs, 1, 12, 1, 13}
                         },
                         .verifier = IsType("vector", {IsType("int"), IsType("string"), IsType("vector", {IsType("int")})})
-                    },
+                    }
                 }
-            );
+            });
 
-            reg("TupleMissingClosingParen", "(int, string",
-                {
+            reg({
+                .name = "TupleMissingClosingParen",
+                .code = "(int, string",
+                .errors = {
                     {E::UnmatchedParenthesisInTuple, 1, 12, 1, 13},
                 },
-                IsTupleType({IsType("int"), IsType("string")}),
-                {
+                .verifier = IsTupleType({IsType("int"), IsType("string")}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -308,7 +324,7 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionParameter,
                         .errors = std::vector<ParserExpectedError>{
@@ -389,17 +405,19 @@ namespace valuascript::compiler::test
                             {E::UnmatchedParenthesisInTuple, 1, 14, 1, 15}
                         },
                         .verifier = IsType("vector", {IsType("int"), IsType("string"), IsTupleType({IsType("int"), IsType("string")})})
-                    },
+                    }
                 }
-            );
+            });
 
-            reg("TupleMissingClosingParenNestedInGeneric", "vector<(int, string>",
-                {
+            reg({
+                .name = "TupleMissingClosingParenNestedInGeneric",
+                .code = "vector<(int, string>",
+                .errors = {
                     {E::UnmatchedParenthesisInTuple, 1, 19, 1, 20},
                     {E::UnmatchedBracketAfterGenericArgs, 1, 20, 1, 21},
                 },
-                IsType("vector", {IsTupleType({IsType("int"), IsType("string")})}),
-                {
+                .verifier = IsType("vector", {IsTupleType({IsType("int"), IsType("string")})}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -407,7 +425,7 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
@@ -427,14 +445,16 @@ namespace valuascript::compiler::test
                                                                       {IsType("vector", {IsTupleType({IsType("int"), IsType("string")}), IsType("int")})}))
                     }
                 }
-            );
+            });
 
-            reg("TupleMissingClosingParenNestedInTuple", "((int, string, float)",
-                {
+            reg({
+                .name = "TupleMissingClosingParenNestedInTuple",
+                .code = "((int, string, float)",
+                .errors = {
                     {E::UnmatchedParenthesisInTuple, 1, 21, 1, 22},
                 },
-                IsTupleType({IsTupleType({IsType("int"), IsType("string"), IsType("float")})}),
-                {
+                .verifier = IsTupleType({IsTupleType({IsType("int"), IsType("string"), IsType("float")})}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -442,7 +462,7 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
@@ -474,14 +494,16 @@ namespace valuascript::compiler::test
                         .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {}, {ParamSpec{.name = "p1", .type_v = IsType("int")}, ParamSpec{.name = "p2", .type_v = IsTupleType({IsTupleType({IsType("int"), IsType("string"), IsType("float")})})}}, {IsType("void")}))
                     }
                 }
-            );
+            });
 
-            reg("GenericMissingClosingBracketNestedInTuple", "(vector<int, string)",
-                {
+            reg({
+                .name = "GenericMissingClosingBracketNestedInTuple",
+                .code = "(vector<int, string)",
+                .errors = {
                     {E::UnmatchedBracketAfterGenericArgs, 1, 19, 1, 20},
                 },
-                IsTupleType({IsType("vector", {IsType("int"), IsType("string")})}),
-                {
+                .verifier = IsTupleType({IsType("vector", {IsType("int"), IsType("string")})}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -489,14 +511,16 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 }
-            );
+            });
 
-            reg("GenericMissingClosingBracketNestedInGeneric", "vector<map<int, string>",
-                {
+            reg({
+                .name = "GenericMissingClosingBracketNestedInGeneric",
+                .code = "vector<map<int, string>",
+                .errors = {
                     {E::UnmatchedBracketAfterGenericArgs, 1, 23, 1, 24},
                 },
-                IsType("vector", {IsType("map", {IsType("int"), IsType("string")})}),
-                {
+                .verifier = IsType("vector", {IsType("map", {IsType("int"), IsType("string")})}),
+                .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
@@ -504,7 +528,7 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd
                 },
-                {
+                .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
@@ -522,7 +546,7 @@ namespace valuascript::compiler::test
                                                                       {IsType("vector", {IsType("map", {IsType("int"), IsType("string")}), IsType("int")})}))
                     }
                 }
-            );
+            });
 
             return true;
         }();

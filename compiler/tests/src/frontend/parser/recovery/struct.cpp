@@ -13,106 +13,106 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<StructVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<StructVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            // reg("OnlyStruct", "struct",
-            //     {{E::ExpectedStructName, 1, 8, 1, 9}},
-            //     IsStructDef("<error>", {}, {})
-            // );
+            reg({
+                .name = "MissingStructClosingBrace",
+                .code = "struct Test {",
+                .errors = {{E::ExpectedRightBraceAfterStructBody, 1, 13, 1, 14}},
+                .verifier = IsStructDef("Test", {}, {})
+            });
 
-            // reg("OnlyStructName", "struct Test",
-            //     {{E::ExpectedBraceInStructDefinition, 1, 12, 1, 13}},
-            //     IsStructDef("Test", {}, {})
-            // );
+            reg({
+                .name = "MissingStructName",
+                .code = "struct { id: int }",
+                .errors = {{E::ExpectedStructName, 1, 8, 1, 9}},
+                .verifier = IsStructDef("<error>", {}, {
+                    {"id", {}, IsType("int")}
+                })
+            });
 
-            reg("MissingStructClosingBrace", "struct Test {",
-                {{E::ExpectedRightBraceAfterStructBody, 1, 13, 1, 14}},
-                IsStructDef("Test", {}, {})
-            );
+            reg({
+                .name = "MissingStructColumn",
+                .code = "struct Test { id int }",
+                .errors = {{E::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
+                .verifier = IsStructDef("Test", {}, {
+                    {"<error>", {}, IsNullType()}
+                })
+            });
 
-            reg("MissingStructName", "struct { id: int }",
-                {{E::ExpectedStructName, 1, 8, 1, 9}},
-                IsStructDef("<error>", {}, {
-                                {"id", {}, IsType("int")}
-                            }
-                )
-            );
+            reg({
+                .name = "MissingStructFieldType",
+                .code = "struct Test { id: }",
+                .errors = {{E::MissingTypeAnnotation, 1, 19, 1, 20}},
+                .verifier = IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
+            });
 
-            reg("MissingStructColumn", "struct Test { id int }",
-                {{E::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
-                IsStructDef("Test", {}, {
-                                {"<error>", {}, IsNullType()}
-                            }
-                )
-            );
+            reg({
+                .name = "MissingStructComma",
+                .code = "struct Test { id: int name: string }",
+                .errors = {{E::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
+                .verifier = IsStructDef("Test", {}, {
+                    {"id", {}, IsType("int")},
+                    {"name", {}, IsType("string")}
+                })
+            });
 
-            reg("MissingStructFieldType", "struct Test { id: }",
-                {{E::MissingTypeAnnotation, 1, 19, 1, 20}},
-                IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
-            );
+            reg({
+                .name = "MissingStructLeftBrace",
+                .code = "struct Test id: int }",
+                .errors = {{E::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
+                .verifier = IsNull()
+            });
 
-            reg("MissingStructComma", "struct Test { id: int name: string }",
-                {{E::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
-                IsStructDef("Test", {}, {
-                                {"id", {}, IsType("int")},
-                                {"name", {}, IsType("string")},
-                            }
-                )
-            );
-
-            reg("MissingStructLeftBrace", "struct Test id: int }",
-                {{E::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
-                IsNull()
-            );
-
-            reg("NoColonRecoversOtherFields", "struct Test { host: string port: int speed int mode: string }",
-                {
+            reg({
+                .name = "NoColonRecoversOtherFields",
+                .code = "struct Test { host: string port: int speed int mode: string }",
+                .errors = {
                     {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
                     {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
                     {E::ExpectedColonAfterStructFieldName, 1, 44, 1, 47}
                 },
-                IsStructDef("Test", {}, {
-                                {"host", {}, IsType("string")},
-                                {"port", {}, IsType("int")},
-                                {"<error>", {}, IsNullType()},
-                            }
-                )
-            );
+                .verifier = IsStructDef("Test", {}, {
+                    {"host", {}, IsType("string")},
+                    {"port", {}, IsType("int")},
+                    {"<error>", {}, IsNullType()}
+                })
+            });
 
-            reg("NoRightBraceStruct",
-                "struct Test { id: int ",
-                {{E::ExpectedRightBraceAfterStructBody, 1, 21, 1, 22}},
-                IsStructDef("Test", {}, {
-                                {"id", {}, IsType("int")}
-                            })
-            );
+            reg({
+                .name = "NoRightBraceStruct",
+                .code = "struct Test { id: int ",
+                .errors = {{E::ExpectedRightBraceAfterStructBody, 1, 21, 1, 22}},
+                .verifier = IsStructDef("Test", {}, {
+                    {"id", {}, IsType("int")}
+                })
+            });
 
-            reg("NoFieldNameInStruct",
-                "struct Test { : int }",
-                {{E::ExpectedStructFieldName, 1, 15, 1, 16}},
-                IsStructDef("Test", {}, {
-                                {"<error>", {}, IsType("int")}
-                            })
-            );
+            reg({
+                .name = "NoFieldNameInStruct",
+                .code = "struct Test { : int }",
+                .errors = {{E::ExpectedStructFieldName, 1, 15, 1, 16}},
+                .verifier = IsStructDef("Test", {}, {
+                    {"<error>", {}, IsType("int")}
+                })
+            });
 
-            reg("MissingCommasAndTrailingTypeInStruct",
-                "struct Test { host: string port: int speed: int mode: }",
-                {
+            reg({
+                .name = "MissingCommasAndTrailingTypeInStruct",
+                .code = "struct Test { host: string port: int speed: int mode: }",
+                .errors = {
                     {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
                     {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
                     {E::ExpectedCommaSeparatorInStruct, 1, 49, 1, 53},
                     {E::MissingTypeAnnotation, 1, 55, 1, 56}
                 },
-                IsStructDef("Test", {}, {
-                                {"host", {}, IsType("string")},
-                                {"port", {}, IsType("int")},
-                                {"speed", {}, IsType("int")},
-                                {"mode", {}, IsNullType()}
-                            })
-            );
+                .verifier = IsStructDef("Test", {}, {
+                    {"host", {}, IsType("string")},
+                    {"port", {}, IsType("int")},
+                    {"speed", {}, IsType("int")},
+                    {"mode", {}, IsNullType()}
+                })
+            });
 
             return true;
         }();

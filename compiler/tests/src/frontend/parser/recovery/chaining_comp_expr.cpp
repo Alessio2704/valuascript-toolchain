@@ -8,84 +8,85 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("ChainingNotAllowedForComparisonOperations1", "1 < 2 < 3",
-                {
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperations1",
+                .code = "1 < 2 < 3",
+                .errors = {
                     {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
-                IsBinary(TokenType::Less,
-                         IsBinary(TokenType::Less,
-                                  IsNumber("1"),
-                                  IsNumber("2")
-                         ),
-                         IsNumber("3")
-                ));
-
-            reg("ChainingNotAllowedForComparisonOperations2", "1 > 2 > 3",
-                {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
-                },
-                IsBinary(TokenType::Greater,
-                         IsBinary(TokenType::Greater,
-                                  IsNumber("1"),
-                                  IsNumber("2")
-                         ),
-                         IsNumber("3")
-                ));
-
-            reg("ChainingNotAllowedForComparisonOperations3", "1 != 2 != 3 ",
-                {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
-                },
-                IsBinary(TokenType::NotEquals,
-                         IsBinary(TokenType::NotEquals,
-                                  IsNumber("1"),
-                                  IsNumber("2")
-                         ),
-                         IsNumber("3")
-                ));
-
-            reg("ChainingNotAllowedForComparisonOperations4", "x == y == z",
-                {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
-                },
-                IsBinary(TokenType::Equals,
-                         IsBinary(TokenType::Equals,
-                                  IsIdentifier("x"),
-                                  IsIdentifier("y")
-                         ),
-                         IsIdentifier("z")
+                .verifier = IsBinary(
+                    TokenType::Less,
+                    IsBinary(TokenType::Less, IsNumber("1"), IsNumber("2")),
+                    IsNumber("3")
                 )
-            );
+            });
 
-            reg("ChainingNotAllowedForComparisonOperationsMixedOperators1", "1 < 2 > 3",
-                {
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperations2",
+                .code = "1 > 2 > 3",
+                .errors = {
                     {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
                 },
-                IsBinary(TokenType::Greater,
-                         IsBinary(TokenType::Less,
-                                  IsNumber("1"),
-                                  IsNumber("2")
-                         ),
-                         IsNumber("3")
+                .verifier = IsBinary(
+                    TokenType::Greater,
+                    IsBinary(TokenType::Greater, IsNumber("1"), IsNumber("2")),
+                    IsNumber("3")
                 )
-            );
+            });
 
-            reg("ChainingNotAllowedForComparisonOperationsMixedOperators2", "1 == 2 != 3",
-                {
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperations3",
+                .code = "1 != 2 != 3 ",
+                .errors = {
                     {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
                 },
-                IsBinary(TokenType::NotEquals,
-                         IsBinary(TokenType::Equals,
-                                  IsNumber("1"),
-                                  IsNumber("2")
-                         ),
-                         IsNumber("3")
-                ));
+                .verifier = IsBinary(
+                    TokenType::NotEquals,
+                    IsBinary(TokenType::NotEquals, IsNumber("1"), IsNumber("2")),
+                    IsNumber("3")
+                )
+            });
+
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperations4",
+                .code = "x == y == z",
+                .errors = {
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                },
+                .verifier = IsBinary(
+                    TokenType::Equals,
+                    IsBinary(TokenType::Equals, IsIdentifier("x"), IsIdentifier("y")),
+                    IsIdentifier("z")
+                )
+            });
+
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperationsMixedOperators1",
+                .code = "1 < 2 > 3",
+                .errors = {
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                },
+                .verifier = IsBinary(
+                    TokenType::Greater,
+                    IsBinary(TokenType::Less, IsNumber("1"), IsNumber("2")),
+                    IsNumber("3")
+                )
+            });
+
+            reg({
+                .name = "ChainingNotAllowedForComparisonOperationsMixedOperators2",
+                .code = "1 == 2 != 3",
+                .errors = {
+                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                },
+                .verifier = IsBinary(
+                    TokenType::NotEquals,
+                    IsBinary(TokenType::Equals, IsNumber("1"), IsNumber("2")),
+                    IsNumber("3")
+                )
+            });
 
             return true;
         }();

@@ -13,50 +13,63 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExtVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ExtVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("MissingTypeName", "extension {}",
-                {{E::MissingTypeAnnotation, 1, 11, 1, 12}},
-                IsExtensionDef({}, IsNullType(), {})
-            );
+            reg({
+                .name = "MissingTypeName",
+                .code = "extension {}",
+                .errors = {{E::MissingTypeAnnotation, 1, 11, 1, 12}},
+                .verifier = IsExtensionDef({}, IsNullType(), {})
+            });
 
-            reg("MissingTypeNameWithTrailingCharacters", "extension 123 {}",
-                {{E::MissingTypeAnnotation, 1, 11, 1, 14}},
-                IsExtensionDef({}, IsNullType(), {})
-            );
+            reg({
+                .name = "MissingTypeNameWithTrailingCharacters",
+                .code = "extension 123 {}",
+                .errors = {{E::MissingTypeAnnotation, 1, 11, 1, 14}},
+                .verifier = IsExtensionDef({}, IsNullType(), {})
+            });
 
-            reg("MissingBrace", "extension Target",
-                {{E::ExpectedLeftBraceBeforeExtensionBody, 1, 17, 1, 18}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "MissingBrace",
+                .code = "extension Target",
+                .errors = {{E::ExpectedLeftBraceBeforeExtensionBody, 1, 17, 1, 18}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
-            reg("ModifierMissingTarget", "@* extension Target {}",
-                {{E::ExpectedModifierName, 1, 2, 1, 3}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "ModifierMissingTarget",
+                .code = "@* extension Target {}",
+                .errors = {{E::ExpectedModifierName, 1, 2, 1, 3}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
-            reg("ForbiddenImport", "extension Target { import \"abc\" }",
-                {{E::ImportNotAllowedInExtension, 1, 20, 1, 26}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "ForbiddenImport",
+                .code = "extension Target { import \"abc\" }",
+                .errors = {{E::ImportNotAllowedInExtension, 1, 20, 1, 26}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
-            reg("ForbiddenDirective1", "extension Target { #no_value }",
-                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "ForbiddenDirective1",
+                .code = "extension Target { #no_value }",
+                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
-            reg("ForbiddenDirective2", "extension Target { #value = 10 }",
-                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 31}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "ForbiddenDirective2",
+                .code = "extension Target { #value = 10 }",
+                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 31}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
-            reg("ForbiddenDirective3", "extension Target { #value 10 }",
-                {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
-                IsExtensionDef({}, IsType("Target"), {})
-            );
+            reg({
+                .name = "ForbiddenDirective3",
+                .code = "extension Target { #value 10 }",
+                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                .verifier = IsExtensionDef({}, IsType("Target"), {})
+            });
 
             return true;
         }();

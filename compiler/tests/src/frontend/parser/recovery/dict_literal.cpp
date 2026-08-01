@@ -8,152 +8,174 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("DictMissingKey", "{ : 1, y: 2 }",
-                {
+            reg({
+                .name = "DictMissingKey",
+                .code = "{ : 1, y: 2 }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNumber("1")},
                     {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
-            reg("DictMissingComma", "{ x: 1 y: 2 }",
-                {
+            reg({
+                .name = "DictMissingComma",
+                .code = "{ x: 1 y: 2 }",
+                .errors = {
                     {E::ExpectedCommaSeparatorInDictionaryLiteral, 1, 8, 1, 9}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"x", {}, IsNumber("1")},
                     {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
-            reg("DictMissingExpressionValue", "{ x: , y: 2 }",
-                {
+            reg({
+                .name = "DictMissingExpressionValue",
+                .code = "{ x: , y: 2 }",
+                .errors = {
                     {E::InvalidExpression, 1, 6, 1, 7}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"x", {}, IsNull()},
                     {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
-            reg("DictBrokenExpressionValues", "{ x: *, y: *, z: 3 }",
-                {
+            reg({
+                .name = "DictBrokenExpressionValues",
+                .code = "{ x: *, y: *, z: 3 }",
+                .errors = {
                     {E::InvalidExpression, 1, 6, 1, 7},
-                    {E::InvalidExpression, 1, 12, 1, 13},
+                    {E::InvalidExpression, 1, 12, 1, 13}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"x", {}, IsNull()},
                     {"y", {}, IsNull()},
                     {"z", {}, IsNumber("3")}
                 })
-            );
+            });
 
-            reg("GarbageBetweenPairs", "{ x: 1, +, y: 2 }",
-                {
+            reg({
+                .name = "GarbageBetweenPairs",
+                .code = "{ x: 1, +, y: 2 }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 9, 1, 10}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"x", {}, IsNumber("1")},
                     {"<error>", {}, IsNull()},
                     {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
-            reg("DictEmptyComma", "{ , }",
-                {
+            reg({
+                .name = "DictEmptyComma",
+                .code = "{ , }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNull()}
                 })
-            );
+            });
 
-            reg("DictEmptyGarbage", "{ * }",
-                {
+            reg({
+                .name = "DictEmptyGarbage",
+                .code = "{ * }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNull()}
                 })
-            );
+            });
 
-            reg("MissingBothKeyAndValue", "{ :, :, z: 3}",
-                {
+            reg({
+                .name = "MissingBothKeyAndValue",
+                .code = "{ :, :, z: 3}",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4},
                     {E::InvalidExpression, 1, 4, 1, 5},
                     {E::ExpectedDictionaryKey, 1, 6, 1, 7},
-                    {E::InvalidExpression, 1, 7, 1, 8},
+                    {E::InvalidExpression, 1, 7, 1, 8}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNull()},
                     {"<error>", {}, IsNull()},
-                    {"z", {}, IsNumber("3")},
+                    {"z", {}, IsNumber("3")}
                 })
-            );
+            });
 
-            reg("MissingBothKeyAndValueVertical",
-                "{\n"
+            reg({
+                .name = "MissingBothKeyAndValueVertical",
+                .code = "{\n"
                 ":,\n"
                 ":,\n"
                 "z: 3\n}",
-                {
+                .errors = {
                     {E::ExpectedDictionaryKey, 2, 1, 2, 2},
                     {E::InvalidExpression, 2, 2, 2, 3},
                     {E::ExpectedDictionaryKey, 3, 1, 3, 2},
-                    {E::InvalidExpression, 3, 2, 3, 3},
+                    {E::InvalidExpression, 3, 2, 3, 3}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNull()},
                     {"<error>", {}, IsNull()},
-                    {"z", {}, IsNumber("3")},
+                    {"z", {}, IsNumber("3")}
                 })
-            );
+            });
 
-            reg("DoubleCommaBetweenPairs", "{ x: 1,, y: 2 }",
-                {
+            reg({
+                .name = "DoubleCommaBetweenPairs",
+                .code = "{ x: 1,, y: 2 }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 8, 1, 9}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"x", {}, IsNumber("1")},
                     {"<error>", {}, IsNull()},
                     {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
-            reg("DictKeyIsString", "{ \"x\": 1 }",
-                {
+            reg({
+                .name = "DictKeyIsString",
+                .code = "{ \"x\": 1 }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 6}
                 },
-                IsDict({
-                    {"<error>", {}, IsNumber("1")},
+                .verifier = IsDict({
+                    {"<error>", {}, IsNumber("1")}
                 })
-            );
+            });
 
-            reg("DictKeyIsNumber", "{ 1: 1 }",
-                {
+            reg({
+                .name = "DictKeyIsNumber",
+                .code = "{ 1: 1 }",
+                .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                IsDict({
-                    {"<error>", {}, IsNumber("1")},
+                .verifier = IsDict({
+                    {"<error>", {}, IsNumber("1")}
                 })
-            );
+            });
 
-            reg("DictMissingColon", "{ x 1, y: 2 }",
-                {
+            reg({
+                .name = "DictMissingColon",
+                .code = "{ x 1, y: 2 }",
+                .errors = {
                     {E::ExpectedColonAfterDictionaryKey, 1, 5, 1, 6}
                 },
-                IsDict({
+                .verifier = IsDict({
                     {"<error>", {}, IsNull()},
-                    {"y", {}, IsNumber("2")},
+                    {"y", {}, IsNumber("2")}
                 })
-            );
+            });
 
             return true;
         }();

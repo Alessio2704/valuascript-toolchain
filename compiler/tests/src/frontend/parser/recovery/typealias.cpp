@@ -13,40 +13,43 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
-                          const OneOf<AliasVerifier>& v)
-            {
-                ErrorRegistry::add(n, c, errs, v);
-            };
+            auto reg = [](const RecoveryCase<AliasVerifier>& spec) { ErrorRegistry::add(spec); };
 
-            reg("MissingAliasName", "typealias = int",
-                {
+            reg({
+                .name = "MissingAliasName",
+                .code = "typealias = int",
+                .errors = {
                     {E::ExpectedTypeAliasName, 1, 11, 1, 12}
                 },
-                IsTypeAlias("<error>", {}, IsType("int"))
-            );
+                .verifier = IsTypeAlias("<error>", {}, IsType("int"))
+            });
 
-            reg("MissingTargetTypeAnnotation", "typealias MyType =",
-                {
+            reg({
+                .name = "MissingTargetTypeAnnotation",
+                .code = "typealias MyType =",
+                .errors = {
                     {E::MissingTypeAnnotation, 1, 19, 1, 20}
                 },
-                IsTypeAlias("MyType", {}, IsNullType())
-            );
+                .verifier = IsTypeAlias("MyType", {}, IsNullType())
+            });
 
-            reg("GarbageTargetTypeAnnotation", "typealias MyType = *",
-                {
+            reg({
+                .name = "GarbageTargetTypeAnnotation",
+                .code = "typealias MyType = *",
+                .errors = {
                     {E::MissingTypeAnnotation, 1, 20, 1, 21}
                 },
-                IsTypeAlias("MyType", {}, IsNullType())
-            );
+                .verifier = IsTypeAlias("MyType", {}, IsNullType())
+            });
 
-            reg("GarbageAtEndOfOtherwiseValidAlias", "typealias User = string ^^",
-                {
+            reg({
+                .name = "GarbageAtEndOfOtherwiseValidAlias",
+                .code = "typealias User = string ^^",
+                .errors = {
                     {E::InvalidExpression, 1, 25, 1, 26}
                 },
-                IsTypeAlias("User", {}, IsType("string"))
-            );
-
+                .verifier = IsTypeAlias("User", {}, IsType("string"))
+            });
 
             return true;
         }();
