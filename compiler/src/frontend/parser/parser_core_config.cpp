@@ -5,9 +5,9 @@ namespace valuascript::compiler
 {
     bool TokenTraits::is_valid_lvalue(const Expression* target_expression)
     {
-        return dynamic_cast<const IdentifierAccess*>(target_expression) ||
-            dynamic_cast<const DotAccess*>(target_expression) ||
-            dynamic_cast<const BracketAccess*>(target_expression);
+        return ast_cast<const IdentifierAccess>(target_expression) ||
+            ast_cast<const DotAccess>(target_expression) ||
+            ast_cast<const BracketAccess>(target_expression);
     }
 
     bool TokenTraits::is_expression_start(const TokenType type)

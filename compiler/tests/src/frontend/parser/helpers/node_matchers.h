@@ -378,14 +378,7 @@ namespace valuascript::compiler::test
                 << "], but got [nullptr].";
             return nullptr;
         }
-        if constexpr (requires { T::KIND; })
-        {
-            if (node->kind == T::KIND) [[likely]]
-            {
-                return static_cast<T*>(node);
-            }
-        }
-        T* casted = dynamic_cast<T*>(node);
+        T* casted = ast_cast<T>(node);
         if (!casted) [[unlikely]]
         {
             ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))

@@ -27,85 +27,111 @@ namespace valuascript::compiler
         {
             if (!expr) return nullptr;
 
-            if (auto* e = dynamic_cast<const NumberLiteral*>(expr))
-                return AstFactory::make_node_with_span<NumberLiteral>(e->span, e->value);
-            if (auto* e = dynamic_cast<const PercentageLiteral*>(expr))
-                return AstFactory::make_node_with_span<PercentageLiteral>(e->span, e->value);
-            if (auto* e = dynamic_cast<const StringLiteral*>(expr))
-                return AstFactory::make_node_with_span<StringLiteral>(e->span, e->value);
-            if (auto* e = dynamic_cast<const BooleanLiteral*>(expr))
-                return AstFactory::make_node_with_span<BooleanLiteral>(e->span, e->value);
-            if (auto* e = dynamic_cast<const IdentifierAccess*>(expr))
-                return AstFactory::make_node_with_span<IdentifierAccess>(e->span, e->name);
-            if (auto* e = dynamic_cast<const SelfExpression*>(expr))
-                return AstFactory::make_node_with_span<SelfExpression>(e->span);
-            if (auto* e = dynamic_cast<const UnaryExpression*>(expr))
-                return AstFactory::make_node_with_span<UnaryExpression>(
-                    e->span, e->op, clone_expression(e->right.get()));
-            if (auto* e = dynamic_cast<const BinaryExpression*>(expr))
-                return AstFactory::make_node_with_span<BinaryExpression>(
-                    e->span, clone_expression(e->left.get()), e->op, clone_expression(e->right.get()));
-            if (auto* e = dynamic_cast<const GroupingExpression*>(expr))
-                return AstFactory::make_node_with_span<GroupingExpression>(
-                    e->span, clone_expression(e->expression.get()));
-            if (auto* e = dynamic_cast<const ConditionalExpression*>(expr))
-                return AstFactory::make_node_with_span<ConditionalExpression>(
-                    e->span, clone_expression(e->condition.get()), clone_expression(e->then_branch.get()),
-                    clone_expression(e->else_branch.get()));
-            if (auto* e = dynamic_cast<const BracketAccess*>(expr))
-                return AstFactory::make_node_with_span<BracketAccess>(e->span, clone_expression(e->target.get()),
-                                                                      clone_expression(e->index.get()));
-            if (auto* e = dynamic_cast<const DotAccess*>(expr))
-                return AstFactory::make_node_with_span<DotAccess>(e->span, clone_expression(e->target.get()),
-                                                                  e->property_name);
-            if (auto* e = dynamic_cast<const TupleLiteral*>(expr))
+            switch (expr->kind)
             {
-                std::vector<ExprPtr> elems;
-                for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
-                return AstFactory::make_node_with_span<TupleLiteral>(e->span, std::move(elems));
-            }
-            if (auto* e = dynamic_cast<const TensorLiteral*>(expr))
-            {
-                std::vector<ExprPtr> elems;
-                for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
-                return AstFactory::make_node_with_span<TensorLiteral>(e->span, std::move(elems));
-            }
-            if (auto* e = dynamic_cast<const FunctionCall*>(expr))
-            {
-                std::vector<std::pair<std::string, ExprPtr>> args;
-                for (const auto& [n, v] : e->arguments) args.push_back({n, clone_expression(v.get())});
-                return AstFactory::make_node_with_span<FunctionCall>(e->span, clone_expression(e->target.get()),
-                                                                     std::move(args));
-            }
-            if (auto* e = dynamic_cast<const DictLiteral*>(expr))
-            {
-                std::vector<DictItem> items;
-                for (const auto& item : e->elements)
-                {
-                    std::vector<Modifier> mods;
-                    for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
-                    items.push_back({std::move(mods), item.key, clone_expression(item.value.get())});
+                case AstKind::NumberLiteral: {
+                    auto* e = static_cast<const NumberLiteral*>(expr);
+                    return AstFactory::make_node_with_span<NumberLiteral>(e->span, e->value);
                 }
-                return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
-            }
-            if (auto* e = dynamic_cast<const SwitchExpression*>(expr))
-            {
-                std::vector<SwitchCase> cases;
-                for (const auto& sc : e->cases)
-                {
-                    std::vector<Modifier> c_mods;
-                    for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
-                    cases.push_back({std::move(c_mods), sc.identifiers, clone_expression(sc.result.get())});
+                case AstKind::PercentageLiteral: {
+                    auto* e = static_cast<const PercentageLiteral*>(expr);
+                    return AstFactory::make_node_with_span<PercentageLiteral>(e->span, e->value);
                 }
-                std::vector<Modifier> d_mods;
-                for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
-
-                return AstFactory::make_node_with_span<SwitchExpression>(
-                    e->span, clone_expression(e->target.get()), std::move(cases), std::move(d_mods),
-                    clone_expression(e->default_case.get()));
+                case AstKind::StringLiteral: {
+                    auto* e = static_cast<const StringLiteral*>(expr);
+                    return AstFactory::make_node_with_span<StringLiteral>(e->span, e->value);
+                }
+                case AstKind::BooleanLiteral: {
+                    auto* e = static_cast<const BooleanLiteral*>(expr);
+                    return AstFactory::make_node_with_span<BooleanLiteral>(e->span, e->value);
+                }
+                case AstKind::IdentifierAccess: {
+                    auto* e = static_cast<const IdentifierAccess*>(expr);
+                    return AstFactory::make_node_with_span<IdentifierAccess>(e->span, e->name);
+                }
+                case AstKind::SelfExpression: {
+                    auto* e = static_cast<const SelfExpression*>(expr);
+                    return AstFactory::make_node_with_span<SelfExpression>(e->span);
+                }
+                case AstKind::UnaryExpression: {
+                    auto* e = static_cast<const UnaryExpression*>(expr);
+                    return AstFactory::make_node_with_span<UnaryExpression>(
+                        e->span, e->op, clone_expression(e->right.get()));
+                }
+                case AstKind::BinaryExpression: {
+                    auto* e = static_cast<const BinaryExpression*>(expr);
+                    return AstFactory::make_node_with_span<BinaryExpression>(
+                        e->span, clone_expression(e->left.get()), e->op, clone_expression(e->right.get()));
+                }
+                case AstKind::GroupingExpression: {
+                    auto* e = static_cast<const GroupingExpression*>(expr);
+                    return AstFactory::make_node_with_span<GroupingExpression>(
+                        e->span, clone_expression(e->expression.get()));
+                }
+                case AstKind::ConditionalExpression: {
+                    auto* e = static_cast<const ConditionalExpression*>(expr);
+                    return AstFactory::make_node_with_span<ConditionalExpression>(
+                        e->span, clone_expression(e->condition.get()), clone_expression(e->then_branch.get()),
+                        clone_expression(e->else_branch.get()));
+                }
+                case AstKind::BracketAccess: {
+                    auto* e = static_cast<const BracketAccess*>(expr);
+                    return AstFactory::make_node_with_span<BracketAccess>(e->span, clone_expression(e->target.get()),
+                                                                          clone_expression(e->index.get()));
+                }
+                case AstKind::DotAccess: {
+                    auto* e = static_cast<const DotAccess*>(expr);
+                    return AstFactory::make_node_with_span<DotAccess>(e->span, clone_expression(e->target.get()),
+                                                                      e->property_name);
+                }
+                case AstKind::TupleLiteral: {
+                    auto* e = static_cast<const TupleLiteral*>(expr);
+                    std::vector<ExprPtr> elems;
+                    for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
+                    return AstFactory::make_node_with_span<TupleLiteral>(e->span, std::move(elems));
+                }
+                case AstKind::TensorLiteral: {
+                    auto* e = static_cast<const TensorLiteral*>(expr);
+                    std::vector<ExprPtr> elems;
+                    for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
+                    return AstFactory::make_node_with_span<TensorLiteral>(e->span, std::move(elems));
+                }
+                case AstKind::FunctionCall: {
+                    auto* e = static_cast<const FunctionCall*>(expr);
+                    std::vector<std::pair<std::string, ExprPtr>> args;
+                    for (const auto& [n, v] : e->arguments) args.push_back({n, clone_expression(v.get())});
+                    return AstFactory::make_node_with_span<FunctionCall>(e->span, clone_expression(e->target.get()),
+                                                                         std::move(args));
+                }
+                case AstKind::DictLiteral: {
+                    auto* e = static_cast<const DictLiteral*>(expr);
+                    std::vector<DictItem> items;
+                    for (const auto& item : e->elements)
+                    {
+                        std::vector<Modifier> mods;
+                        for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
+                        items.push_back({std::move(mods), item.key, clone_expression(item.value.get())});
+                    }
+                    return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
+                }
+                case AstKind::SwitchExpression: {
+                    auto* e = static_cast<const SwitchExpression*>(expr);
+                    std::vector<SwitchCase> cases;
+                    for (const auto& sc : e->cases)
+                    {
+                        std::vector<Modifier> c_mods;
+                        for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
+                        cases.push_back({std::move(c_mods), sc.identifiers, clone_expression(sc.result.get())});
+                    }
+                    std::vector<Modifier> d_mods;
+                    for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
+                    return AstFactory::make_node_with_span<SwitchExpression>(
+                        e->span, clone_expression(e->target.get()), std::move(cases), std::move(d_mods),
+                        clone_expression(e->default_case.get()));
+                }
+                default:
+                    return nullptr;
             }
-
-            return nullptr;
         }
     }
 

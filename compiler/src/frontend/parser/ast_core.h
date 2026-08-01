@@ -145,4 +145,39 @@ namespace valuascript::compiler
         std::vector<std::pair<std::string, ExprPtr>> arguments;
         SourceSpan span;
     };
+
+    template <typename T>
+    concept AstNodeSubclass = std::derived_from<std::decay_t<T>, AstNode>;
+
+    template <typename T>
+        requires AstNodeSubclass<T>
+    [[nodiscard]] inline T* ast_cast(AstNode* node) noexcept
+    {
+        if (!node) return nullptr;
+        if constexpr (requires { T::KIND; })
+        {
+            if (node->kind == T::KIND) return static_cast<T*>(node);
+            return nullptr;
+        }
+        else
+        {
+            return dynamic_cast<T*>(node);
+        }
+    }
+
+    template <typename T>
+        requires AstNodeSubclass<T>
+    [[nodiscard]] inline const T* ast_cast(const AstNode* node) noexcept
+    {
+        if (!node) return nullptr;
+        if constexpr (requires { T::KIND; })
+        {
+            if (node->kind == T::KIND) return static_cast<const T*>(node);
+            return nullptr;
+        }
+        else
+        {
+            return dynamic_cast<const T*>(node);
+        }
+    }
 }

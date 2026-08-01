@@ -309,7 +309,7 @@ namespace valuascript::compiler
 
     inline Expression* unwrap_grouping(Expression* expr)
     {
-        while (auto* grouping = dynamic_cast<GroupingExpression*>(expr))
+        while (auto* grouping = ast_cast<GroupingExpression>(expr))
         {
             expr = grouping->expression.get();
         }
