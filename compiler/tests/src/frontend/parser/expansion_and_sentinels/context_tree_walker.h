@@ -26,8 +26,8 @@ namespace valuascript::compiler::test
 
             std::function<void(State)> on_terminal;
             std::function<void(const State&)> on_promotion;
-            std::function<State(const State&, const Context&, int next_rec_depth)> on_normal_branch;
-            std::function<State(const State&, const Context&, int next_rec_depth)> on_block_branch;
+            std::function<std::vector<State>(const State&, const Context&, int next_rec_depth)> on_normal_branch;
+            std::function<std::vector<State>(const State&, const Context&, int next_rec_depth)> on_block_branch;
 
             std::function<std::vector<NextStep>(const std::vector<NextStep>&, int, int)> strategy = [](
                 const std::vector<NextStep>& steps, int, int)
@@ -111,17 +111,24 @@ namespace valuascript::compiler::test
 
                     int next_rec_depth = is_recursive ? rec_depth + 1 : rec_depth;
 
-                    State next_state;
                     if (ctx.block_context != BlockContext::None)
                     {
-                        next_state = cb.on_block_branch(current, ctx, next_rec_depth);
+                        auto next_states = cb.on_block_branch(current, ctx, next_rec_depth);
+                        for (auto& next_state : next_states)
+                        {
+                            if (cb.should_abort()) return;
+                            walk_impl(std::move(next_state), depth + 1, next_rec_depth, max_depth, max_rec, cb);
+                        }
                     }
                     else
                     {
-                        next_state = cb.on_normal_branch(current, ctx, next_rec_depth);
+                        auto next_states = cb.on_normal_branch(current, ctx, next_rec_depth);
+                        for (auto& next_state : next_states)
+                        {
+                            if (cb.should_abort()) return;
+                            walk_impl(std::move(next_state), depth + 1, next_rec_depth, max_depth, max_rec, cb);
+                        }
                     }
-
-                    walk_impl(std::move(next_state), depth + 1, next_rec_depth, max_depth, max_rec, cb);
                 }
             }
         }

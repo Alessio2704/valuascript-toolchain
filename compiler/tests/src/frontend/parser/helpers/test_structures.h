@@ -30,19 +30,26 @@ namespace valuascript::compiler::test
         std::string_view context_name;
         std::optional<std::vector<ParserExpectedError>> errors = std::nullopt;
         std::optional<UniversalVerifier> verifier = std::nullopt;
+        std::vector<SentinelKind> excluded_sentinels = {};
+        std::vector<SentinelKind> accepted_sentinels = {};
 
         template <typename T>
         ContextOverrideAny(const ContextOverride<T>& typed)
             : context_name(typed.context_name),
               errors(typed.errors),
-              verifier(typed.verifier.has_value() ? std::make_optional(typed.verifier->value) : std::nullopt)
+              verifier(typed.verifier.has_value() ? std::make_optional(typed.verifier->value) : std::nullopt),
+              excluded_sentinels(typed.excluded_sentinels),
+              accepted_sentinels(typed.accepted_sentinels)
         {
         }
 
         ContextOverrideAny(std::string_view name,
                            std::optional<std::vector<ParserExpectedError>> errs = std::nullopt,
-                           std::optional<UniversalVerifier> ver = std::nullopt)
-            : context_name(name), errors(std::move(errs)), verifier(std::move(ver))
+                           std::optional<UniversalVerifier> ver = std::nullopt,
+                           std::vector<SentinelKind> excluded = {},
+                           std::vector<SentinelKind> accepted = {})
+            : context_name(name), errors(std::move(errs)), verifier(std::move(ver)),
+              excluded_sentinels(std::move(excluded)), accepted_sentinels(std::move(accepted))
         {
         }
     };
@@ -72,6 +79,8 @@ namespace valuascript::compiler::test
         bool is_skipped;
         std::vector<ContextOverrideAny> context_overrides = {};
         std::optional<std::vector<ParserExpectedError>> custom_errors = std::nullopt;
+        std::vector<SentinelKind> excluded_sentinels = {};
+        std::vector<SentinelKind> accepted_sentinels = {};
     };
 
     struct RecoveryScenario

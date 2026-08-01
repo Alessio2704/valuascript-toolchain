@@ -42,10 +42,12 @@ namespace valuascript::compiler::test
                                                const ExpansionCallback& callback,
                                                bool inject_sentinels = false,
                                                const std::vector<std::string_view>& skip_contexts = {},
-                                               const std::vector<ContextOverride<Verifier>>& context_overrides = {},
-                                               std::optional<ExpansionPolicy> policy_override = std::nullopt)
+                                               const std::vector<ContextOverrideAny>& context_overrides = {},
+                                               std::optional<ExpansionPolicy> policy_override = std::nullopt,
+                                               const std::vector<SentinelKind>& excluded_sentinels = {},
+                                               const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, to_any_overrides(context_overrides));
+            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
             expand_to_top_level_stream(std::move(items), callback, inject_sentinels, policy_override);
         }
 
@@ -67,14 +69,37 @@ namespace valuascript::compiler::test
                                                                        const std::vector<std::string_view>&
                                                                            skip_contexts = {},
                                                                        const std::vector<ContextOverrideAny>&
-                                                                           context_overrides = {});
+                                                                           context_overrides = {},
+                                                                       const std::vector<SentinelKind>&
+                                                                           excluded_sentinels = {},
+                                                                       const std::vector<SentinelKind>&
+                                                                           accepted_sentinels = {});
 
     protected:
 
         static ConstructedRecoveryProgram BuildRecoveryProgram(std::string inner_code,
                                                                ProgramSpec inner_spec,
                                                                const std::string& inner_prefix,
-                                                               size_t seed);
+                                                               size_t seed,
+                                                               const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                               const std::vector<SentinelKind>& accepted_sentinels = {});
+
+        static ConstructedRecoveryProgram BuildRecoveryProgram(const ProcessingItem& item,
+                                                               ProgramSpec inner_spec,
+                                                               size_t seed)
+        {
+            bool is_top_level_promotion = (item.path_name.rfind("TopLevelPromotion") != std::string::npos);
+            const std::vector<SentinelKind>& top_level_accepted = is_top_level_promotion ? item.accepted_sentinels : std::vector<SentinelKind>{};
+            return BuildRecoveryProgram(item.code, std::move(inner_spec), item.cumulative_prefix, seed, item.excluded_sentinels, top_level_accepted);
+        }
+
+        static ConstructedRecoveryProgram BuildRecoveryProgram(const ProcessingItem& item,
+                                                               size_t seed)
+        {
+            ProgramSpec spec;
+            std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
+            return BuildRecoveryProgram(item, std::move(spec), seed);
+        }
 
         static void RunRecoveryScenario(ProcessingItem&& item, const std::vector<ParserExpectedError>& errors,
                                         size_t seed);
@@ -99,7 +124,7 @@ namespace valuascript::compiler::test
         static void ExpectValidFunctionDefinition(const std::string& snippet, const FuncVerifier& verifier,
                                                   const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidExtensionDefinition(const std::string& snippet, const ExtVerifier& verifier,
-                                                   const std::vector<std::string_view>& skip_contexts = {});
+                                                  const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidStructDefinition(const std::string& snippet, const StructVerifier& verifier,
                                                 const std::vector<std::string_view>& skip_contexts = {});
         static void ExpectValidEnumDefinition(const std::string& snippet, const EnumVerifier& verifier,
@@ -118,76 +143,104 @@ namespace valuascript::compiler::test
         static void ExpectAssignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                            const OneOf<AssignmentVerifier>& v,
                                            const std::vector<std::string_view>& skip_contexts = {},
-                                           const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides = {});
+                                           const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides = {},
+                                           const std::vector<SentinelKind>& excluded_sentinels = {},
+                                           const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectReassignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                              const OneOf<ReassignmentVerifier>& v,
                                              const std::vector<std::string_view>& skip_contexts = {},
-                                             const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides = {});
+                                             const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides = {},
+                                             const std::vector<SentinelKind>& excluded_sentinels = {},
+                                             const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectExpressionStatementErrors(const std::string& snippet,
                                                     const std::vector<ParserExpectedError>& errs,
                                                     const OneOf<ExprStmtVerifier>& v,
                                                     const std::vector<std::string_view>& skip_contexts = {},
-                                                    const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides = {});
+                                                    const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides = {},
+                                                    const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                    const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectImportErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                        const OneOf<ImportVerifier>& v,
                                        const std::vector<std::string_view>& skip_contexts = {},
-                                       const std::vector<ContextOverride<ImportVerifier>>& context_overrides = {});
+                                       const std::vector<ContextOverride<ImportVerifier>>& context_overrides = {},
+                                       const std::vector<SentinelKind>& excluded_sentinels = {},
+                                       const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectDirectiveErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                           const OneOf<DirectiveVerifier>& v,
                                           const std::vector<std::string_view>& skip_contexts = {},
-                                          const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides = {});
+                                          const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides = {},
+                                          const std::vector<SentinelKind>& excluded_sentinels = {},
+                                          const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectFunctionDefinitionErrors(const std::string& snippet,
                                                    const std::vector<ParserExpectedError>& errs,
                                                    const OneOf<FuncVerifier>& v,
                                                    const std::vector<std::string_view>& skip_contexts = {},
-                                                   const std::vector<ContextOverride<FuncVerifier>>& context_overrides = {});
+                                                   const std::vector<ContextOverride<FuncVerifier>>& context_overrides = {},
+                                                   const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                   const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectExtensionDefinitionErrors(const std::string& snippet,
                                                     const std::vector<ParserExpectedError>& errs,
                                                     const OneOf<ExtVerifier>& v,
                                                     const std::vector<std::string_view>& skip_contexts = {},
-                                                    const std::vector<ContextOverride<ExtVerifier>>& context_overrides = {});
+                                                    const std::vector<ContextOverride<ExtVerifier>>& context_overrides = {},
+                                                    const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                    const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectStructDefinitionErrors(const std::string& snippet,
                                                  const std::vector<ParserExpectedError>& errs,
                                                  const OneOf<StructVerifier>& v,
                                                  const std::vector<std::string_view>& skip_contexts = {},
-                                                 const std::vector<ContextOverride<StructVerifier>>& context_overrides = {});
+                                                 const std::vector<ContextOverride<StructVerifier>>& context_overrides = {},
+                                                 const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                 const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectEnumDefinitionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                                const OneOf<EnumVerifier>& v,
                                                const std::vector<std::string_view>& skip_contexts = {},
-                                               const std::vector<ContextOverride<EnumVerifier>>& context_overrides = {});
+                                               const std::vector<ContextOverride<EnumVerifier>>& context_overrides = {},
+                                               const std::vector<SentinelKind>& excluded_sentinels = {},
+                                               const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectTypeAliasErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                           const OneOf<AliasVerifier>& v,
                                           const std::vector<std::string_view>& skip_contexts = {},
-                                          const std::vector<ContextOverride<AliasVerifier>>& context_overrides = {});
+                                          const std::vector<ContextOverride<AliasVerifier>>& context_overrides = {},
+                                          const std::vector<SentinelKind>& excluded_sentinels = {},
+                                          const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectExpressionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                            const OneOf<ExprVerifier>& v,
                                            const std::vector<std::string_view>& skip_contexts = {},
-                                           const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {});
+                                           const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {},
+                                           const std::vector<SentinelKind>& excluded_sentinels = {},
+                                           const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectTypeAnnotationErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                                const OneOf<TypeVerifier>& v,
                                                const std::vector<std::string_view>& skip_contexts = {},
-                                               const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {});
+                                               const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {},
+                                               const std::vector<SentinelKind>& excluded_sentinels = {},
+                                               const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectModifierErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                          const OneOf<ModifierVerifier>& v,
                                          const std::vector<std::string_view>& skip_contexts = {},
-                                         const std::vector<ContextOverride<ModifierVerifier>>& context_overrides = {});
+                                         const std::vector<ContextOverride<ModifierVerifier>>& context_overrides = {},
+                                         const std::vector<SentinelKind>& excluded_sentinels = {},
+                                         const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectReturnErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                        const OneOf<ReturnVerifier>& v,
                                        const std::vector<std::string_view>& skip_contexts = {},
-                                       const std::vector<ContextOverride<ReturnVerifier>>& context_overrides = {});
+                                       const std::vector<ContextOverride<ReturnVerifier>>& context_overrides = {},
+                                       const std::vector<SentinelKind>& excluded_sentinels = {},
+                                       const std::vector<SentinelKind>& accepted_sentinels = {});
 
         static void ExpectValidUnified(InjectableType type, std::vector<ProcessingItem> items,
                                        const std::string& group_name);
@@ -210,9 +263,11 @@ namespace valuascript::compiler::test
                                              const std::vector<ParserExpectedError>& errors,
                                              const Verifier& verifier, const std::string& group_name,
                                              const std::vector<std::string_view>& skip_contexts = {},
-                                             const std::vector<ContextOverrideAny>& context_overrides = {})
+                                             const std::vector<ContextOverrideAny>& context_overrides = {},
+                                             const std::vector<SentinelKind>& excluded_sentinels = {},
+                                             const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, context_overrides);
+            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
             ExpectParseErrorsUnified(type, std::move(items), errors, group_name);
         }
     };

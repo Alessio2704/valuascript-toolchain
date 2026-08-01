@@ -23,18 +23,18 @@ namespace valuascript::compiler::test
 
         cb.on_promotion = [&](const WalkState& s) { if (!s.is_skipped) count++; };
 
-        cb.on_normal_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int)
+        cb.on_normal_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
             bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
                 .end();
-            return WalkState{ctx.output_type, skip};
+            return { WalkState{ctx.output_type, skip} };
         };
 
-        cb.on_block_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int)
+        cb.on_block_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
             bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
                 .end();
-            return WalkState{ctx.output_type, skip};
+            return { WalkState{ctx.output_type, skip} };
         };
 
         ContextTreeWalker<WalkState>::walk({start_type, false}, 0, 0, cb);

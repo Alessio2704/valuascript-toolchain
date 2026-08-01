@@ -10,7 +10,11 @@ namespace valuascript::compiler::test
     class ReservedKeywordDebugger : public ParserTestBase
     {
     public:
-        static void DumpKeywordTest(const std::string& keyword)
+        static void DumpKeywordTest(const std::string& keyword,
+                                    const std::vector<std::string_view>& skip_contexts = {},
+                                    const std::vector<ContextOverrideAny>& context_overrides = {},
+                                    const std::vector<SentinelKind>& excluded_sentinels = {},
+                                    const std::vector<SentinelKind>& accepted_sentinels = {})
         {
             DumpWriter writer("reserved_keyword_debug_" + keyword + ".txt", "reserved_keyword_dumps");
             if (!writer.is_open()) return;
@@ -38,10 +42,7 @@ namespace valuascript::compiler::test
                     count++;
                     size_t seed = base_seed + (scenario_index++ * 2);
 
-                    ProgramSpec item_spec;
-                    std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
-
-                    auto prog = BuildRecoveryProgram(std::move(item.code), std::move(item_spec), item.cumulative_prefix, seed);
+                    auto prog = BuildRecoveryProgram(item, seed);
                     auto shifted_errors = ErrorShifter::shift_errors(prog.prefix_for_shifting, {base_error});
 
                     out << "--- VARIATION " << count << " ---\n";
@@ -56,7 +57,12 @@ namespace valuascript::compiler::test
                     }
                     out << "------------------------------------------------------------\n\n";
                 },
-                true
+                true,
+                skip_contexts,
+                context_overrides,
+                std::nullopt,
+                excluded_sentinels,
+                accepted_sentinels
             );
 
             out << "[DEBUG] Reserved keyword dump finished (" << count << " variations)\n";

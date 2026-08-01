@@ -9,7 +9,14 @@ namespace valuascript::compiler::test
     class MissingOperatorDumpBase : public ParserTestBase
     {
     protected:
-        static void run_dump_for_snippet(const std::string& name, const std::string& snippet)
+        template <typename Verifier = NullVerifier>
+        static void run_dump_for_snippet(const std::string& name,
+                                        const std::string& snippet,
+                                        const Verifier& verifier = NullVerifier{},
+                                        const std::vector<std::string_view>& skip_contexts = {},
+                                        const std::vector<ContextOverrideAny>& context_overrides = {},
+                                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
             size_t file_index = 0;
             size_t base_seed = 0;
@@ -26,13 +33,11 @@ namespace valuascript::compiler::test
             out << "Snippet: " << snippet << "\n";
             out << "============================================================\n\n";
 
-            expand_to_top_level_stream(InjectableType::Expression, snippet, NullVerifier{}, name, [&](ProcessingItem&& out_item)
+            expand_to_top_level_stream(InjectableType::Expression, snippet, verifier, name, [&](ProcessingItem&& out_item)
             {
                 if (out_item.is_skipped) return;
 
-                auto prog = BuildRecoveryProgram(std::move(out_item.code), ProgramSpec{},
-                                                 out_item.cumulative_prefix,
-                                                 base_seed + (file_index * 2));
+                auto prog = BuildRecoveryProgram(out_item, ProgramSpec{}, base_seed + (file_index * 2));
 
                 out << "--- VARIATION " << (file_index + 1) << " ---\n";
                 out << "PATH:  " << out_item.path_name << "\n";
@@ -42,7 +47,7 @@ namespace valuascript::compiler::test
                 out << "------------------------------------------------------------\n\n";
 
                 file_index++;
-            }, true);
+            }, true, skip_contexts, context_overrides, std::nullopt, excluded_sentinels, accepted_sentinels);
 
             out << "[DEBUG] Recovery expansion dump finished (" << file_index << " variations)\n";
         }

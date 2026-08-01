@@ -14,7 +14,9 @@ namespace valuascript::compiler::test
                                   const std::string& label,
                                   const Verifier& verifier = NullVerifier{},
                                   const std::vector<std::string_view>& skip_contexts = {},
-                                  const std::vector<ContextOverride<Verifier>>& context_overrides = {})
+                                  const std::vector<ContextOverrideAny>& context_overrides = {},
+                                  const std::vector<SentinelKind>& excluded_sentinels = {},
+                                  const std::vector<SentinelKind>& accepted_sentinels = {})
         {
             DumpWriter writer("expansion_features_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
@@ -34,7 +36,7 @@ namespace valuascript::compiler::test
                 out << "DEPTH: " << item.depth << "\n";
                 out << "CODE:\n" << item.code << "\n";
                 out << "------------------------------------------------------------\n\n";
-            }, false, skip_contexts, context_overrides);
+            }, false, skip_contexts, context_overrides, std::nullopt, excluded_sentinels, accepted_sentinels);
 
             out << "[DEBUG] Recovery expansion dump finished (" << count << " variations)";
         }

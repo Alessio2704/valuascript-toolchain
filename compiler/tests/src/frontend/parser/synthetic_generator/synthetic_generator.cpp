@@ -99,23 +99,23 @@ namespace valuascript::compiler::test
                 cb.on_terminal(promoted);
             };
 
-            cb.on_normal_branch = [](const FuzzState& s, const Context& ctx, int)
+            cb.on_normal_branch = [](const FuzzState& s, const Context& ctx, int) -> std::vector<FuzzState>
             {
-                return FuzzState{
+                return { FuzzState{
                     ctx.output_type,
                     ctx.prefix + s.code + ctx.suffix,
                     ctx.transform_verifier(s.verifier)
-                };
+                } };
             };
 
-            cb.on_block_branch = [](const FuzzState& s, const Context& ctx, int)
+            cb.on_block_branch = [](const FuzzState& s, const Context& ctx, int) -> std::vector<FuzzState>
             {
                 std::vector<RecoveryBlock> empty_blocks;
-                return FuzzState{
+                return { FuzzState{
                     ctx.output_type,
                     ctx.prefix + s.code + ctx.suffix,
                     ctx.transform_verifier_block(s.verifier, empty_blocks, empty_blocks)
-                };
+                } };
             };
 
             cb.strategy = [this](const std::vector<NextStep>& steps, int, int) -> std::vector<NextStep>

@@ -22,12 +22,11 @@ namespace valuascript::compiler
     {
         int depth = 0;
         size_t offset = 0;
-        size_t start_line = cursor.peek().line;
 
         while (true)
         {
             const Token& tok = cursor.peek(offset);
-            if (tok.type == TokenType::EndOfFile || tok.line > start_line) break;
+            if (tok.type == TokenType::EndOfFile) break;
 
             if (TokenTraits::is_grouping_opener(tok.type)) depth++;
             else if (TokenTraits::is_grouping_closer(tok.type))
@@ -35,7 +34,12 @@ namespace valuascript::compiler
                 depth--;
                 if (depth < 0) depth = 0;
             }
-            else if (depth == 0 && tok.type == TokenType::Assign) return true;
+            else if (depth == 0)
+            {
+                if (tok.type == TokenType::Assign) return true;
+                if (tok.type == TokenType::RightBrace ||
+                    TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type)) break;
+            }
 
             offset++;
         }
@@ -45,6 +49,41 @@ namespace valuascript::compiler
     const Token& ParserContext::consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords,
                                                    bool check_statement_boundary)
     {
+        if (cursor.previous().type == TokenType::Dot)
+        {
+            const Token& peek_tok = cursor.peek();
+            TokenType next = cursor.peek(1).type;
+
+            bool is_newline = peek_tok.line > cursor.previous().line;
+            bool is_same_line_clause_boundary = false;
+
+            if (!is_newline && is_reserved_keyword(peek_tok))
+            {
+                if (peek_tok.type == TokenType::Default || peek_tok.type == TokenType::Case)
+                {
+                    if (next == TokenType::Arrow || next == TokenType::Colon) is_same_line_clause_boundary = true;
+                }
+                else if (peek_tok.type == TokenType::Then)
+                {
+                    if (cursor.peek(1).line == peek_tok.line && TokenTraits::is_expression_start(next))
+                    {
+                        is_same_line_clause_boundary = true;
+                    }
+                }
+                else if (peek_tok.type == TokenType::Else)
+                {
+                    if (cursor.peek(1).line == peek_tok.line && (TokenTraits::is_expression_start(next) || next == TokenType::If))
+                    {
+                        is_same_line_clause_boundary = true;
+                    }
+                }
+            }
+
+            if (is_same_line_clause_boundary || (is_newline && (is_reserved_keyword(peek_tok) || looks_like_reassignment())))
+            {
+                cursor.report_error(cursor.peek(), fallback_err);
+            }
+        }
         if (check_statement_boundary && cursor.peek().line > cursor.previous().line &&
             TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type))
         {
@@ -67,11 +106,7 @@ namespace valuascript::compiler
 
             if (cursor.previous().type == TokenType::Dot)
             {
-                if (cursor.peek().line == cursor.previous().line)
-                {
-                    acts_like_id = true;
-                }
-                else if (next != TokenType::Identifier)
+                if (cursor.peek().line == cursor.previous().line && !TokenTraits::is_statement_start(cursor.peek(), next))
                 {
                     acts_like_id = true;
                 }
@@ -81,7 +116,7 @@ namespace valuascript::compiler
                 cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
                     cursor.peek(), next));
 
-            if (acts_like_id || !allow_top_level_keywords || !forms_statement)
+            if (cursor.previous().type == TokenType::Dot || acts_like_id || !allow_top_level_keywords || !forms_statement)
             {
                 cursor.report_error_no_panic(cursor.peek(), ParserErrorCode::ReservedKeywordAsIdentifier, true);
                 return cursor.advance();

@@ -15,7 +15,9 @@ namespace valuascript::compiler::test
                                           const std::string& label,
                                           const Verifier& verifier = NullVerifier{},
                                           const std::vector<std::string_view>& skip_contexts = {},
-                                          const std::vector<ContextOverride<Verifier>>& context_overrides = {})
+                                          const std::vector<ContextOverrideAny>& context_overrides = {},
+                                          const std::vector<SentinelKind>& excluded_sentinels = {},
+                                          const std::vector<SentinelKind>& accepted_sentinels = {})
         {
             DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
@@ -34,13 +36,7 @@ namespace valuascript::compiler::test
             {
                 if (item.is_skipped) return;
 
-                ProgramSpec item_spec;
-                auto prog = BuildRecoveryProgram(
-                    std::move(item.code),
-                    std::move(item_spec),
-                    std::move(item.cumulative_prefix),
-                    base_seed + (scenario_index * 2)
-                );
+                auto prog = BuildRecoveryProgram(item, base_seed + (scenario_index * 2));
 
                 scenario_index++;
 
@@ -60,7 +56,7 @@ namespace valuascript::compiler::test
                 out << "FULL CODE:\n";
                 out << prog.full_code;
                 out << "------------------------------------------------------------\n\n";
-            }, true, skip_contexts, context_overrides);
+            }, true, skip_contexts, context_overrides, std::nullopt, excluded_sentinels, accepted_sentinels);
 
             out << "[DEBUG] Recovery expansion dump finished (" << scenario_index << " variations)";
         }
@@ -69,6 +65,21 @@ namespace valuascript::compiler::test
 #if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
     TEST_F(ExpansionRecoveryDebugger, GenerateRecoveryReport)
     {
+        DumpRecoveryExpansion(
+            InjectableType::Expression,
+            "obj.",
+            {ParserExpectedError(ParserErrorCode::ExpectedPropertyName, 1, 5, 1, 6)},
+            "MissingDotAccessProperty",
+            IsDot(IsIdentifier("obj"), "<error>"),
+            {},
+            {
+                ContextOverride<>{
+                    .context_name = ContextNames::ExprSingleAssignment,
+                    .accepted_sentinels = SentinelKinds::all()
+                }
+            },
+            {SentinelKind::ExprStmt}
+        );
         DumpRecoveryExpansion(
             InjectableType::StrongStatement,
             "let x = ",

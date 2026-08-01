@@ -49,10 +49,12 @@ namespace valuascript::compiler::test
         const UniversalVerifier& verifier,
         const std::string& group_name,
         const std::vector<std::string_view>& skip_contexts,
-        const std::vector<ContextOverrideAny>& context_overrides
+        const std::vector<ContextOverrideAny>& context_overrides,
+        const std::vector<SentinelKind>& excluded_sentinels,
+        const std::vector<SentinelKind>& accepted_sentinels
     )
     {
-        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0, skip_contexts, false, context_overrides, std::nullopt};
+        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0, skip_contexts, false, context_overrides, std::nullopt, excluded_sentinels, accepted_sentinels};
 
         switch (type)
         {
@@ -100,11 +102,13 @@ namespace valuascript::compiler::test
                         item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
                         item.depth + 1, item.recursion_depth,
                         item.skip_contexts, item.is_skipped,
-                        item.context_overrides, item.custom_errors
+                        item.context_overrides, item.custom_errors,
+                        item.excluded_sentinels, item.accepted_sentinels
                     });
                 }
             };
             cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
+            -> std::vector<ProcessingItem>
             {
                 bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
                     != item.skip_contexts.end();
@@ -124,6 +128,37 @@ namespace valuascript::compiler::test
 
                 UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
                 std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
+
+                std::vector<SentinelKind> combined_excluded = item.excluded_sentinels;
+                if (match && !match->excluded_sentinels.empty())
+                {
+                    for (auto k : match->excluded_sentinels)
+                    {
+                        if (std::find(combined_excluded.begin(), combined_excluded.end(), k) == combined_excluded.end())
+                        {
+                            combined_excluded.push_back(k);
+                        }
+                    }
+                }
+
+                std::vector<SentinelKind> combined_accepted = item.accepted_sentinels;
+                if (match && !match->accepted_sentinels.empty())
+                {
+                    combined_accepted = match->accepted_sentinels;
+                }
+
+                if (!combined_accepted.empty() && !combined_excluded.empty())
+                {
+                    std::vector<SentinelKind> filtered;
+                    for (auto k : combined_accepted)
+                    {
+                        if (std::find(combined_excluded.begin(), combined_excluded.end(), k) == combined_excluded.end())
+                        {
+                            filtered.push_back(k);
+                        }
+                    }
+                    combined_accepted = std::move(filtered);
+                }
 
                 UniversalVerifier final_verifier = inner_verifier;
                 bool needs_transform = true;
@@ -148,17 +183,35 @@ namespace valuascript::compiler::test
                     }
                 }
 
-                return ProcessingItem{
-                    ctx.output_type, ctx.prefix + item.code + ctx.suffix,
-                    needs_transform ? ctx.transform_verifier(final_verifier) : final_verifier,
-                    item.path_name + " -> " + (next_rec_depth > item.recursion_depth
-                                                   ? std::string(ctx.name) + "(Recurse)"
-                                                   : std::string(ctx.name)),
-                    ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth,
-                    item.skip_contexts, skip, item.context_overrides, branch_errors
+                auto make_item = [&](const std::vector<SentinelKind>& accepted_for_item) -> ProcessingItem
+                {
+                    std::string sentinel_tag = (accepted_for_item.size() == 1) ? (" [" + to_string(accepted_for_item[0]) + "]") : "";
+                    return ProcessingItem{
+                        ctx.output_type, ctx.prefix + item.code + ctx.suffix,
+                        needs_transform ? ctx.transform_verifier(final_verifier) : final_verifier,
+                        item.path_name + " -> " + (next_rec_depth > item.recursion_depth
+                                                       ? std::string(ctx.name) + "(Recurse)"
+                                                       : std::string(ctx.name)) + sentinel_tag,
+                        ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth,
+                        item.skip_contexts, skip, item.context_overrides, branch_errors,
+                        combined_excluded, accepted_for_item
+                    };
                 };
+
+                if (combined_accepted.size() <= 1)
+                {
+                    return { make_item(combined_accepted) };
+                }
+
+                std::vector<ProcessingItem> results;
+                for (size_t i = 0; i < combined_accepted.size(); ++i)
+                {
+                    results.push_back(make_item({ combined_accepted[i] }));
+                }
+                return results;
             };
             cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
+            -> std::vector<ProcessingItem>
             {
                 bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
                     != item.skip_contexts.end();
@@ -179,28 +232,82 @@ namespace valuascript::compiler::test
                 UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
                 std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
 
-                std::vector<RecoveryBlock> pre, post;
-                std::string inner_code = item.code;
-                std::string inner_prefix = item.cumulative_prefix;
-
-                if (inject_sentinels)
+                std::vector<SentinelKind> combined_excluded = item.excluded_sentinels;
+                if (match && !match->excluded_sentinels.empty())
                 {
-                    size_t seed = std::hash<std::string>{}(item.path_name + std::string(ctx.name) + item.code);
-                    pre.push_back(RecoverySentinel::generate_block_sentinel(seed, ctx.block_context));
-                    post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1, ctx.block_context));
-                    inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
-                    inner_prefix = pre[0].source + "\n  " + inner_prefix;
+                    for (auto k : match->excluded_sentinels)
+                    {
+                        if (std::find(combined_excluded.begin(), combined_excluded.end(), k) == combined_excluded.end())
+                        {
+                            combined_excluded.push_back(k);
+                        }
+                    }
                 }
 
-                return ProcessingItem{
-                    ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
-                    (match && match->verifier.has_value()) ? inner_verifier : ctx.transform_verifier_block(inner_verifier, pre, post),
-                    item.path_name + " -> " + (next_rec_depth > item.recursion_depth
-                                                   ? std::string(ctx.name) + "(Recurse)"
-                                                   : std::string(ctx.name)),
-                    ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth,
-                    item.skip_contexts, skip, item.context_overrides, branch_errors
+                std::vector<SentinelKind> combined_accepted = item.accepted_sentinels;
+                if (match && !match->accepted_sentinels.empty())
+                {
+                    combined_accepted = match->accepted_sentinels;
+                }
+
+                if (!combined_accepted.empty() && !combined_excluded.empty())
+                {
+                    std::vector<SentinelKind> filtered;
+                    for (auto k : combined_accepted)
+                    {
+                        if (std::find(combined_excluded.begin(), combined_excluded.end(), k) == combined_excluded.end())
+                        {
+                            filtered.push_back(k);
+                        }
+                    }
+                    combined_accepted = std::move(filtered);
+                }
+
+                auto make_item = [&](const std::vector<SentinelKind>& excluded_for_gen,
+                                     const std::vector<SentinelKind>& accepted_for_gen,
+                                     size_t seed_offset) -> ProcessingItem
+                {
+                    std::vector<RecoveryBlock> pre, post;
+                    std::string inner_code = item.code;
+                    std::string inner_prefix = item.cumulative_prefix;
+
+                    if (inject_sentinels)
+                    {
+                        size_t seed = std::hash<std::string>{}(item.path_name + std::string(ctx.name) + item.code) + seed_offset;
+                        pre.push_back(RecoverySentinel::generate_block_sentinel(seed, ctx.block_context, excluded_for_gen, {}));
+                        post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1, ctx.block_context, excluded_for_gen, accepted_for_gen));
+                        inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
+                        inner_prefix = pre[0].source + "\n  " + inner_prefix;
+                    }
+
+                    return ProcessingItem{
+                        ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
+                        (match && match->verifier.has_value()) ? inner_verifier : ctx.transform_verifier_block(inner_verifier, pre, post),
+                        item.path_name + " -> " + (next_rec_depth > item.recursion_depth
+                                                       ? std::string(ctx.name) + "(Recurse)"
+                                                       : std::string(ctx.name)),
+                        ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth,
+                        item.skip_contexts, skip, item.context_overrides, branch_errors,
+                        excluded_for_gen, accepted_for_gen
+                    };
                 };
+
+                if (combined_accepted.empty())
+                {
+                    return { make_item(combined_excluded, {}, 0) };
+                }
+
+                std::vector<ProcessingItem> results;
+                for (size_t i = 0; i < combined_accepted.size(); ++i)
+                {
+                    SentinelKind k = combined_accepted[i];
+                    if (RecoverySentinel::is_sentinel_supported_in_block(ctx.block_context, k))
+                    {
+                        results.push_back(make_item(combined_excluded, { k }, i * 31));
+                    }
+                }
+
+                return results;
             };
             cb.should_abort = [] { return HasFailure(); };
 
@@ -261,10 +368,12 @@ namespace valuascript::compiler::test
     ConstructedRecoveryProgram ParserTestBase::BuildRecoveryProgram(std::string inner_code,
                                                                     ProgramSpec inner_spec,
                                                                     const std::string& inner_prefix,
-                                                                    size_t seed)
+                                                                    size_t seed,
+                                                                    const std::vector<SentinelKind>& excluded_sentinels,
+                                                                    const std::vector<SentinelKind>& accepted_sentinels)
     {
-        RecoveryBlock pre = RecoverySentinel::generate_top_level_sentinel(seed);
-        RecoveryBlock post = RecoverySentinel::generate_top_level_sentinel(seed + 1);
+        RecoveryBlock pre = RecoverySentinel::generate_top_level_sentinel(seed, excluded_sentinels, {});
+        RecoveryBlock post = RecoverySentinel::generate_top_level_sentinel(seed + 1, excluded_sentinels, accepted_sentinels);
 
         while (!inner_code.empty() && (inner_code.back() == '\n' || inner_code.back() == '\r'))
         {
@@ -287,13 +396,7 @@ namespace valuascript::compiler::test
                                              const std::vector<ParserExpectedError>& errors,
                                              size_t seed)
     {
-        ProgramSpec item_spec;
-        std::visit([&](auto&& ver) { SpecAdder::add(item_spec, ver); }, item.verifier);
-
-        auto prog = BuildRecoveryProgram(std::move(item.code),
-                                         std::move(item_spec),
-                                         item.cumulative_prefix,
-                                         seed);
+        auto prog = BuildRecoveryProgram(item, seed);
 
         const auto& errors_to_use = item.custom_errors.has_value() ? item.custom_errors.value() : errors;
         auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors_to_use);

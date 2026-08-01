@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -8,9 +9,19 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs, const OneOf<ExprVerifier>& v)
+            auto reg = [](
+                auto n,
+                auto c,
+                const std::vector<ParserExpectedError>& errs,
+                const OneOf<ExprVerifier>& v,
+                const std::vector<std::string_view>& skip_contexts = {},
+                const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {},
+                const std::vector<SentinelKind>& excluded_sentinels = {},
+                const std::vector<SentinelKind>& accepted_sentinels = {}
+            )
             {
-                ErrorRegistry::add(n, c, errs, v);
+                ErrorRegistry::add(n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels,
+                                   accepted_sentinels);
             };
 
             reg("EmptyBracket", "arr[]",
@@ -63,6 +74,23 @@ namespace valuascript::compiler::test
                     {E::ExpectedPropertyName, 1, 5, 1, 6}
                 },
                 IsDot(IsIdentifier("obj"), "<error>")
+            );
+
+            reg("MissingDotAccessProperty", "obj.",
+                {
+                    {E::ExpectedPropertyName, 1, 5, 1, 6}
+                },
+                IsDot(IsIdentifier("obj"), "<error>"),
+                {},
+                {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSingleAssignment,
+                        .accepted_sentinels = SentinelKinds::all()
+                    }
+                },
+                {
+                    SentinelKind::ExprStmt
+                }
             );
 
             reg("ConsecutiveInvalidBracketAccess1", "arr[*][*]",

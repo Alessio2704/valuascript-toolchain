@@ -530,10 +530,10 @@ namespace valuascript::compiler::test
 
     TEST_P(TypeAnnotationErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectTypeAnnotationErrors(code, errors, verifier, skip_contexts, context_overrides);
+        ExpectTypeAnnotationErrors(code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
     }
 
     INSTANTIATE_TEST_SUITE_P(

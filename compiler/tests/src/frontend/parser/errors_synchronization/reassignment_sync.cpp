@@ -57,7 +57,7 @@ namespace valuascript::compiler::test
             "self. = 42\n"
             "let c = 2\n",
             {
-            {Err::ExpectedPropertyName, 1, 7}
+            {Err::ExpectedPropertyName, 1, 6}
             },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);

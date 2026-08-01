@@ -252,7 +252,7 @@ namespace valuascript::compiler::test
             "dict_self_in_nested_dict_error",
             "let a = { x: { inner: self. }, y: 2 }\n"
             "let recovery = 1\n",
-            { {Err::ExpectedPropertyName, 1, 29} },
+            { {Err::ExpectedPropertyName, 1, 28} },
             [](const Program& ast) {
             ASSERT_EQ(ast.execution_steps.size(), 2);
             auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());

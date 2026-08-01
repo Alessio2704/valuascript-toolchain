@@ -144,14 +144,14 @@ namespace valuascript::compiler::test
             cb.on_terminal({InjectableType::TopLevel, s.depth + 1});
         };
 
-        cb.on_normal_branch = [](const WalkState& s, const Context& ctx, int)
+        cb.on_normal_branch = [](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
-            return WalkState{ctx.output_type, s.depth + 1};
+            return { WalkState{ctx.output_type, s.depth + 1} };
         };
 
-        cb.on_block_branch = [](const WalkState& s, const Context& ctx, int)
+        cb.on_block_branch = [](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
-            return WalkState{ctx.output_type, s.depth + 1};
+            return { WalkState{ctx.output_type, s.depth + 1} };
         };
 
         std::mt19937 rng(42);
@@ -205,7 +205,9 @@ namespace valuascript::compiler::test
                 std::move(item.code),
                 std::move(item_spec),
                 std::move(item.cumulative_prefix),
-                base_seed + (scenario_index++ * 2)
+                base_seed + (scenario_index++ * 2),
+                item.excluded_sentinels,
+                item.accepted_sentinels
             );
 
             CompilerContext context;

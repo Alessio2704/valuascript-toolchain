@@ -85,6 +85,7 @@ namespace valuascript::compiler
             bool should_shift = token.type == TokenType::EndOfFile;
 
             if (!should_shift && (code == E::MissingThenToken || code == E::MissingElseToken ||
+                                  code == E::ExpectedPropertyName ||
                                   TokenTraits::is_missing_closing_delimiter_error(code)))
             {
                 should_shift = true;
@@ -121,6 +122,10 @@ namespace valuascript::compiler
                 if (last_char != std::string_view::npos)
                 {
                     view = view.substr(0, last_char + 1);
+                }
+                else
+                {
+                    view = "";
                 }
 
                 for (char c : view)

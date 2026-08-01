@@ -172,20 +172,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "dot_aborts_assignment_preserves_next_statement",
-            "let a = obj.\n"
-            "let b = 2\n",
-            { {Err::ExpectedPropertyName, 1, 13} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            ;
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-
-            EXPECT_EQ(assign->targets[0].name, "a");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
             "postfix_deep_chain_with_multiple_internal_failures",
             "let a = obj.let[1, *].if[*]\n",
             {

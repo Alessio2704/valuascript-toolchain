@@ -164,6 +164,11 @@ namespace valuascript::compiler
                     bool physical_newline = op_tok.line > cursor.previous().line;
                     bool crossed_newline = physical_newline && !inside_expr_grouping;
 
+                    if (crossed_newline)
+                    {
+                        break;
+                    }
+
                     if (is_reassignment_start_lookahead())
                     {
                         break;

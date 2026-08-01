@@ -43,6 +43,8 @@ namespace valuascript::compiler::test
         std::string_view context_name;
         std::optional<std::vector<ParserExpectedError>> errors = std::nullopt;
         std::optional<OneOf<T>> verifier = std::nullopt;
+        std::vector<SentinelKind> excluded_sentinels = {};
+        std::vector<SentinelKind> accepted_sentinels = {};
     };
 
     template <typename T>
@@ -54,6 +56,8 @@ namespace valuascript::compiler::test
         OneOf<T> verifier;
         std::vector<std::string_view> skip_contexts;
         std::vector<ContextOverride<T>> context_overrides = {};
+        std::vector<SentinelKind> excluded_sentinels = {};
+        std::vector<SentinelKind> accepted_sentinels = {};
     };
 
     class ErrorRegistry
@@ -76,100 +80,128 @@ namespace valuascript::compiler::test
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ImportVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ImportVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ImportVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            imports().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            imports().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<DirectiveVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            directives().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            directives().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<FuncVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<FuncVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<FuncVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            functions().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            functions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ExtVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ExtVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ExtVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            extensions().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            extensions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<StructVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<StructVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<StructVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            structs().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            structs().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<EnumVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<EnumVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<EnumVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            enums().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            enums().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<AliasVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<AliasVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<AliasVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            aliases().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            aliases().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<AssignmentVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            assignments().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            assignments().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ReassignmentVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            reassignments().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            reassignments().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ReturnVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ReturnVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ReturnVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            returns().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            returns().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ExprStmtVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            expr_stmts().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            expr_stmts().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ExprVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            expressions().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            expressions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<ModifierVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<ModifierVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<ModifierVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            modifiers().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            modifiers().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
                         const OneOf<TypeVerifier>& v, const std::vector<std::string_view>& skip_contexts = {},
-                        const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {})
+                        const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {},
+                        const std::vector<SentinelKind>& excluded_sentinels = {},
+                        const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            type_annotations().push_back({n, c, errs, v, skip_contexts, context_overrides});
+            type_annotations().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
         }
     };
 }
