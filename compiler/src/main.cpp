@@ -21,7 +21,7 @@ int main() {
         orchestrator.run(*context, initial_artifacts);
 
         if (context->diagnostics.has_errors()) {
-            DiagnosticFormatter::print_errors(context->diagnostics.get_errors(), context->source_registry);
+            DiagnosticFormatter::print_errors(context->diagnostics.get_errors(), context->source_manager);
             return 1;
         }
 
@@ -30,7 +30,7 @@ int main() {
 
     } catch (const ValuaScriptException& ex) {
         std::vector<ValuaScriptException> single_error = { ex };
-        DiagnosticFormatter::print_errors(single_error, context->source_registry);
+        DiagnosticFormatter::print_errors(single_error, context->source_manager);
         return 1;
 
     } catch (const std::exception& ex) {

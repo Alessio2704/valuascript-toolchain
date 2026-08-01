@@ -2,10 +2,10 @@
 
 namespace valuascript::compiler
 {
-    Lexer::Lexer(std::string source, std::string file_path, CompilerContext& context)
-        : source_(std::move(source)), file_path_(std::move(file_path)), context_(context)
+    Lexer::Lexer(std::string_view source, std::string file_path, CompilerContext& context)
+        : file_path_(std::move(file_path)), context_(context)
     {
-        std::erase(source_, '\r');
+        source_ = context_.source_manager.register_source(file_path_, std::string(source));
     }
 
     std::vector<Token> Lexer::tokenize()
@@ -53,12 +53,12 @@ namespace valuascript::compiler
     void Lexer::add_token(TokenType type)
     {
         size_t length = (current_ > start_) ? (current_ - start_) : 0;
-        std::string text = source_.substr(start_, length);
-        tokens_.emplace_back(type, std::move(text), line_start_, column_start_);
+        std::string_view text = source_.substr(start_, length);
+        tokens_.emplace_back(type, text, line_start_, column_start_);
     }
 
-    void Lexer::add_token(TokenType type, std::string text)
+    void Lexer::add_token(TokenType type, std::string_view text)
     {
-        tokens_.emplace_back(type, std::move(text), line_, column_start_);
+        tokens_.emplace_back(type, text, line_, column_start_);
     }
 }

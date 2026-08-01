@@ -41,7 +41,7 @@ namespace valuascript::compiler
                                                                RecoveryConfig::StopAtNewline());
         }
 
-        std::string directive_name = std::move(name_token.lexeme);
+        std::string directive_name = std::string(name_token.lexeme);
         ExprPtr value = nullptr;
 
         if (directive_name != "<error>")
@@ -120,14 +120,14 @@ namespace valuascript::compiler
                                     })
                                     .parse_elements([&]() { return parse_generic_parameter(arg_spec); });
 
-                    for (auto& g : args_gen) arguments.emplace_back(g.name.lexeme, std::move(g.value));
+                    for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
 
                     try { cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisAfterModifierArgs); }
                     catch (const ParseSyncException&)
                     {
                         ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
                         Modifier mod;
-                        mod.name = name_token.lexeme;
+                        mod.name = std::string(name_token.lexeme);
                         mod.arguments = std::move(arguments);
                         mod.span = cursor.make_span(start_token, cursor.previous());
                         modifiers.push_back(std::move(mod));
@@ -138,7 +138,7 @@ namespace valuascript::compiler
                 }
 
                 Modifier mod;
-                mod.name = name_token.lexeme;
+                mod.name = std::string(name_token.lexeme);
                 mod.arguments = std::move(arguments);
                 mod.span = cursor.make_span(start_token, cursor.previous());
                 modifiers.push_back(std::move(mod));
@@ -201,7 +201,7 @@ namespace valuascript::compiler
 
         std::vector<StructField> fields;
         fields.reserve(fields_gen.size());
-        for (auto& g : fields_gen) fields.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.type), g.span});
+        for (auto& g : fields_gen) fields.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.type), g.span});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
@@ -268,7 +268,7 @@ namespace valuascript::compiler
 
         std::vector<EnumCase> cases;
         cases.reserve(cases_gen.size());
-        for (auto& g : cases_gen) cases.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.value)});
+        for (auto& g : cases_gen) cases.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.value)});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
@@ -333,7 +333,7 @@ namespace valuascript::compiler
             {
                 if (g.has_value_separator || g.value) seen_default_param = true;
                 else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
-                params.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.type), std::move(g.value)});
+                params.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.type), std::move(g.value)});
             }
         }
 

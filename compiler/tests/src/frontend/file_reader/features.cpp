@@ -41,9 +41,9 @@ namespace valuascript::compiler::test
         ExpectFileReadSuccess(file_path.string(), expected_content, context);
 
         std::string canonical_path = std::filesystem::weakly_canonical(file_path).string();
-        auto it = context->source_registry.find(canonical_path);
-        ASSERT_NE(it, context->source_registry.end());
-        EXPECT_EQ(it->second, expected_content);
+        auto source_opt = context->source_manager.get_source(canonical_path);
+        ASSERT_TRUE(source_opt.has_value());
+        EXPECT_EQ(source_opt.value(), expected_content);
     }
 
     TEST_F(FileReaderHappyPathTest, HandlesUnicodeUTF8Content)

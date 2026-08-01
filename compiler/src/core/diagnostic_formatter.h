@@ -14,7 +14,7 @@ namespace valuascript::compiler {
         static constexpr const char *BOLD = "\033[1m";
 
         static void print_errors(const std::vector<ValuaScriptException> &errors,
-                                 const SourceRegistry &source_registry);
+                                 const SourceManager &source_manager);
 
         static std::string format_error(const ValuaScriptException &err, const std::string &source_code);
 

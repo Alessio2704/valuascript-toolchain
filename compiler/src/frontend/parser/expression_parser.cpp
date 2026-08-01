@@ -416,7 +416,7 @@ namespace valuascript::compiler
                             })
                             .parse_elements([&]() { return parser.parse_generic_parameter(arg_spec); });
 
-            for (auto& g : args_gen) arguments.emplace_back(g.name.lexeme, std::move(g.value));
+            for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
 
             const Token& end_token = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterArguments);
             return AstFactory::make_node_with_span<FunctionCall>(
@@ -613,7 +613,7 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({std::move(g.modifiers), std::move(g.name.lexeme), std::move(g.value)});
+        for (auto& g : items_gen) elements.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.value)});
 
         try
         {
@@ -736,7 +736,7 @@ namespace valuascript::compiler
                 conf.options = RecoveryOptions::SkipNestedGroupings |
                     RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 Token id = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedEnumCaseNameAfterCase, conf);
-                identifiers.emplace_back(id.lexeme);
+                identifiers.emplace_back(std::string(id.lexeme));
             }
             else
             {

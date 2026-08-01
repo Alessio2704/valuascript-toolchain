@@ -116,15 +116,15 @@ namespace valuascript::compiler
     {
         while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
 
-        std::string text = source_.substr(start_, current_ - start_);
+        std::string_view text_sv = std::string_view(source_).substr(start_, current_ - start_);
 
-        if (const auto keyword_opt = get_keyword_type(text); keyword_opt.has_value())
+        if (const auto keyword_opt = get_keyword_type(text_sv); keyword_opt.has_value())
         {
-            add_token(keyword_opt.value(), std::move(text));
+            add_token(keyword_opt.value(), text_sv);
         }
         else
         {
-            add_token(TokenType::Identifier, std::move(text));
+            add_token(TokenType::Identifier, text_sv);
         }
     }
 

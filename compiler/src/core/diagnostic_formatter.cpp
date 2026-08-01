@@ -7,17 +7,16 @@
 namespace valuascript::compiler
 {
     void DiagnosticFormatter::print_errors(const std::vector<ValuaScriptException>& errors,
-                                           const SourceRegistry& source_registry)
+                                           const SourceManager& source_manager)
     {
         for (const auto& err : errors)
         {
             const auto& loc = err.get_span();
             std::string source_code;
 
-            auto it = source_registry.find(loc.path());
-            if (it != source_registry.end())
+            if (auto source_opt = source_manager.get_source(loc.path()); source_opt.has_value())
             {
-                source_code = it->second;
+                source_code = std::string(source_opt.value());
             }
 
             std::cout << format_error(err, source_code) << "\n\n";

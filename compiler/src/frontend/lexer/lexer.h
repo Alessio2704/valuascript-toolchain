@@ -13,7 +13,7 @@ namespace valuascript::compiler
     class Lexer
     {
     private:
-        std::string source_;
+        std::string_view source_;
         std::string file_path_;
         std::vector<Token> tokens_;
         CompilerContext& context_;
@@ -25,7 +25,7 @@ namespace valuascript::compiler
         size_t column_current_ = 1;
 
     public:
-        Lexer(std::string source, std::string file_path, CompilerContext& context);
+        Lexer(std::string_view source, std::string file_path, CompilerContext& context);
 
         std::vector<Token> tokenize();
 
@@ -37,7 +37,7 @@ namespace valuascript::compiler
         bool match(char expected);
 
         void add_token(TokenType type);
-        void add_token(TokenType type, std::string text);
+        void add_token(TokenType type, std::string_view text);
 
         void scan_string();
 

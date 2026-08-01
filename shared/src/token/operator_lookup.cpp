@@ -2,9 +2,9 @@
 
 namespace valuascript::shared
 {
-    const std::unordered_map<std::string, TokenType>& get_binary_operators_map()
+    const OperatorMap& get_binary_operators_map()
     {
-        static const std::unordered_map<std::string, TokenType> map = {
+        static const OperatorMap map = {
             {"+", TokenType::Plus}, {"-", TokenType::Minus},
             {"*", TokenType::Star}, {"/", TokenType::Slash},
             {"^", TokenType::Caret}, {"mod", TokenType::Mod},
@@ -16,9 +16,9 @@ namespace valuascript::shared
         return map;
     }
 
-    const std::unordered_map<std::string, TokenType>& get_unary_operators_map()
+    const OperatorMap& get_unary_operators_map()
     {
-        static const std::unordered_map<std::string, TokenType> map = {
+        static const OperatorMap map = {
             {"+", TokenType::Plus},
             {"-", TokenType::Minus},
             {"not", TokenType::Not}

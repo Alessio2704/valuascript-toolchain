@@ -188,7 +188,7 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({std::move(target_mods), std::move(target.lexeme), std::move(type_annotation)});
+            targets.push_back({std::move(target_mods), std::string(target.lexeme), std::move(type_annotation)});
 
             if (!cursor.match(TokenType::Comma))
             {

@@ -45,7 +45,8 @@ namespace valuascript::compiler::test
         {
             if (!context)
             {
-                context = std::make_shared<CompilerContext>();
+                thread_local static auto default_test_context = std::make_shared<CompilerContext>();
+                context = default_test_context;
             }
             context->settings.fail_fast = fail_fast;
 

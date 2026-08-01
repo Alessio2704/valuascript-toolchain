@@ -45,7 +45,7 @@ namespace valuascript::compiler
 
         std::erase(source_content, '\r');
 
-        context.update_source_registry(canonical_path, source_content);
+        context.source_manager.update_source(canonical_path, source_content);
 
         return {CompilerStageArtifactCode::SourceCode, source_content};
     }
