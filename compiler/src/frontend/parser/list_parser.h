@@ -77,17 +77,18 @@ namespace valuascript::compiler
             std::vector<ElementType> elements;
             elements.reserve(8);
 
+            constexpr bool is_greater_container_closer = std::is_same_v<ElementType, TypeAnnPtr>;
             auto is_hard_stop = [&](const Token& token, TokenType next)
             {
                 if (is_element_start_())
                 {
-                    if (TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), token, next))
+                    if (TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), token, next, is_greater_container_closer))
                     {
                         if (token.type != TokenType::At || ctx_.is_at_any_declaration()) return true;
                     }
                     return false;
                 }
-                if (TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), token, next)) return true;
+                if (TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), token, next, is_greater_container_closer)) return true;
                 for (TokenType stop : recovery_boundaries_) if (token.type == stop) return true;
                 return false;
             };
@@ -101,6 +102,26 @@ namespace valuascript::compiler
                 {
                     const Token& tok = ctx_.cursor.peek();
                     TokenType next = ctx_.cursor.peek(1).type;
+
+                    if constexpr (is_greater_container_closer)
+                    {
+                        if (tok.type == TokenType::Assign || tok.type == TokenType::LeftBrace ||
+                            tok.type == TokenType::RightParen || tok.type == TokenType::RightBrace ||
+                            tok.type == TokenType::RightBracket ||
+                            (ctx_.cursor.previous().type == TokenType::Less && elements.empty() && tok.type == TokenType::Comma))
+                        {
+                            break;
+                        }
+                    }
+
+                    if (tok.line > ctx_.cursor.previous().line &&
+                        TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), tok, next, is_greater_container_closer))
+                    {
+                        if (tok.type != TokenType::At || !is_element_start_() || ctx_.is_at_any_declaration())
+                        {
+                            break;
+                        }
+                    }
 
                     if ((TokenTraits::is_statement_start(tok, next) ||
                         TokenTraits::is_top_level_only_declaration(tok.type)) && !is_element_start_())
@@ -130,7 +151,7 @@ namespace valuascript::compiler
                     else if (!ctx_.cursor.check(closing_token_))
                     {
                         bool is_boundary = TokenTraits::is_newline_statement_boundary(
-                            ctx_.cursor.previous(), ctx_.cursor.peek(), ctx_.cursor.peek(1).type);
+                            ctx_.cursor.previous(), ctx_.cursor.peek(), ctx_.cursor.peek(1).type, is_greater_container_closer);
                         if (is_boundary && ctx_.cursor.peek().type == TokenType::At)
                         {
                             if (!ctx_.is_at_any_declaration()) is_boundary = false;

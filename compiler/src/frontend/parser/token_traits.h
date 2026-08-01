@@ -34,7 +34,7 @@ namespace valuascript::compiler
 
         static bool is_expression_statement_start(const Token& token, TokenType lookahead_type);
 
-        static bool is_newline_statement_boundary(const Token& prev, const Token& current, TokenType next);
+        static bool is_newline_statement_boundary(const Token& prev, const Token& current, TokenType next, bool is_greater_container_closer = false);
 
         static bool is_identifier_start(const Token& token);
 

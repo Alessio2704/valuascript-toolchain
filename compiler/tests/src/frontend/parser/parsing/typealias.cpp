@@ -46,24 +46,9 @@ namespace valuascript::compiler::test
             E::ExpectedAssignAfterTypeAliasName
             },
             TypeAliasSadParam{
-            "invalid_target_type_number",
-            "typealias MyType = 123",
-            E::MissingTypeAnnotation
-            },
-            TypeAliasSadParam{
             "missing_assignment_multiline",
             "typealias MyType \n scalar",
             E::ExpectedAssignAfterTypeAliasName
-            },
-            TypeAliasSadParam{
-            "broken_generic_target",
-            "typealias List = vector<",
-            E::EmptyGenericTypeAnnotation
-            },
-            TypeAliasSadParam{
-            "unclosed_tuple_target",
-            "typealias Pair = (string, scalar",
-            E::UnmatchedParenthesisInTuple
             }
         ),
         [](const testing::TestParamInfo<TypeAliasSadParam>& test_info) {

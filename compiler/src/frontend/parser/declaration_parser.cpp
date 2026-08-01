@@ -337,7 +337,18 @@ namespace valuascript::compiler
             }
         }
 
-        cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterParameters);
+        try
+        {
+            cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterParameters);
+        }
+        catch (const ParseSyncException&)
+        {
+            TokenType peek = cursor.peek().type;
+            if (peek != TokenType::Arrow && peek != TokenType::LeftBrace && peek != TokenType::EndOfFile)
+            {
+                throw;
+            }
+        }
 
         std::vector<TypeAnnPtr> return_types;
         if (cursor.check(TokenType::Arrow))

@@ -33,13 +33,14 @@ namespace valuascript::compiler
         return false;
     }
 
-    bool TokenTraits::is_newline_statement_boundary(const Token& prev, const Token& current, TokenType next)
+    bool TokenTraits::is_newline_statement_boundary(const Token& prev, const Token& current, TokenType next, bool is_greater_container_closer)
     {
         if (current.line <= prev.line) return false;
         if (is_statement_start(current, next)) return true;
         if (current.type == TokenType::Return) return true;
         if (is_expression_statement_start(current, next))
         {
+            if (is_greater_container_closer && (prev.type == TokenType::Greater || prev.type == TokenType::Less)) return true;
             if (is_dangling_operator(prev.type) || is_grouping_opener(prev.type)) return false;
             return true;
         }

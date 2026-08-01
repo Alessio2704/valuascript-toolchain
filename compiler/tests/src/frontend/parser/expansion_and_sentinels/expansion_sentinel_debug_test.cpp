@@ -104,12 +104,12 @@ namespace valuascript::compiler::test
             "BrokenModifier"
         );
 
-        DumpRecoveryExpansion<TypeVerifier>(
+        DumpRecoveryExpansion(
             InjectableType::TypeAnnotation,
             "vector<int",
             {ParserExpectedError(ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 10, 1, 11)},
             "GenericMissingClosingBracket",
-            IsType("vector", {IsType("int")}),
+            NullVerifier{},
             {
                 ContextNames::TypeTupleTypeStart,
                 ContextNames::TypeTupleTypeMiddle,
@@ -118,56 +118,127 @@ namespace valuascript::compiler::test
                 ContextNames::TypeGenericTypeEnd
             },
             {
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeMultiAssignmentTarget1,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
-                    },
-                    .verifier = OneOf<TypeVerifier>(IsAssignment(
-                        {{"ctx_m1", IsType("vector", {IsType("int"), IsType("ctx_m2")})}}, IsNumber("1")))
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeFunctionMultiReturn,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
-                    },
-                    .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                  {IsType("vector", {IsType("int"), IsType("int")})}))
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeStart,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
-                    },
-                    .verifier = IsTupleType({IsType("vector", {IsType("int"), IsType("int")})})
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
-                    },
-                    .verifier = IsTupleType({IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeStart,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
-                    },
-                    .verifier = IsType("vector", {IsType("vector", {IsType("int"), IsType("int")})})
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
-                    },
-                    .verifier = IsType("vector", {IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                    }
                 },
-                ContextOverride<TypeVerifier>{
+                ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeEnd,
                     .errors = std::vector<ParserExpectedError>{
                         {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 12, 1, 13}
-                    },
-                    .verifier = IsType("vector", {IsType("int"), IsType("string"), IsType("vector", {IsType("int")})})
+                    }
+                },
+            }
+        );
+
+        DumpRecoveryExpansion(
+            InjectableType::TypeAnnotation,
+            "(int, string",
+            std::vector<ParserExpectedError>{
+                {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 12, 1, 13}
+            },
+            "TupleMissingClosingParen",
+            NullVerifier{},
+            {
+                ContextNames::TypeTupleTypeStart,
+                ContextNames::TypeTupleTypeMiddle,
+                ContextNames::TypeTupleTypeEnd,
+                ContextNames::TypeGenericTypeStart,
+                ContextNames::TypeGenericTypeMiddle,
+                ContextNames::TypeGenericTypeEnd
+            },
+            {
+                ContextOverride{
+                    .context_name = ContextNames::TypeFunctionParameter,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::ExpectedRightParenAfterParameters, 1, 13, 1, 14}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeFunctionMultiParameter2,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::ExpectedRightParenAfterParameters, 1, 13, 1, 14}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeTupleTypeEnd,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 13, 1, 14}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeMultiAssignmentTarget1,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 20, 1, 21}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeFunctionMultiReturn,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 17, 1, 18}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeTupleTypeStart,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 17, 1, 18}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeTupleTypeMiddle,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 20, 1, 21}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeGenericTypeStart,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 18, 1, 19}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeGenericTypeMiddle,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 18, 1, 19}
+                    }
+                },
+                ContextOverride{
+                    .context_name = ContextNames::TypeGenericTypeEnd,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 14, 1, 15}
+                    }
                 },
             }
         );

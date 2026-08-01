@@ -37,7 +37,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename T>
+    template <typename T = NullVerifier>
     struct ContextOverride
     {
         std::string_view context_name;

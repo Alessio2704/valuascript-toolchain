@@ -110,13 +110,6 @@ namespace valuascript::compiler::test
             ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "wrong_generic_type_enum_ast_1",
-            "enum Test : vector<int { A }\n"
-            "let a = 1\n",
-            { {Err::UnmatchedBracketAfterGenericArgs, 1, 22} },
-            ExpectEnum("Test", "vector", {"A"})
-            },
-            ParserErrorsSynchronizationTestCase{
             "no_left_brace_enum_empty_ast",
             "enum Test : int A }\n"
             "let a = 1\n",

@@ -329,6 +329,11 @@ namespace valuascript::compiler::test
         std::shared_ptr<Program> ast = run_parser(code, context);
 
         const auto& actual_errors = context.diagnostics.get_errors();
+        if (actual_errors.size() != expected_errors.size()) {
+            for (const auto& err : actual_errors) {
+                std::cout << "ACTUAL ERR: code=" << err.get_code().index() << " msg=" << err.what() << " span=" << err.get_span().line_start << ":" << err.get_span().column_start << "-" << err.get_span().line_end << ":" << err.get_span().column_end << std::endl;
+            }
+        }
         ASSERT_EQ(actual_errors.size(), expected_errors.size()) << "Error count mismatch.";
 
         for (size_t i = 0; i < actual_errors.size(); ++i)

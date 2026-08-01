@@ -62,9 +62,13 @@ namespace valuascript::compiler::test::ContextNames
     inline constexpr const char* TypeTypealiasTarget = "typealias_target";
     inline constexpr const char* TypeExtensionTarget = "extension_target";
     inline constexpr const char* TypeFunctionParameter = "function_parameter";
+    inline constexpr const char* TypeFunctionMultiParameter1 = "function_multi_parameter_1";
+    inline constexpr const char* TypeFunctionMultiParameter2 = "function_multi_parameter_2";
     inline constexpr const char* TypeFunctionReturn = "function_return";
     inline constexpr const char* TypeFunctionMultiReturn = "function_multi_return";
+    inline constexpr const char* TypeFunctionMultiReturnEnd = "function_multi_return_end";
     inline constexpr const char* TypeStructField = "struct_field";
+    inline constexpr const char* TypeStructMultipleFields = "struct_multiple_fields";
     inline constexpr const char* TypeEnumUnderlyingType = "enum_underlying_type";
     inline constexpr const char* TypeTupleTypeStart = "tuple_type_start";
     inline constexpr const char* TypeTupleTypeMiddle = "tuple_type_middle";

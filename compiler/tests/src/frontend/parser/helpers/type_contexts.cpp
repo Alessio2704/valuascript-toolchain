@@ -79,6 +79,34 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                .name = ContextNames::TypeFunctionMultiParameter1,
+                .input_types = {InjectableType::TypeAnnotation},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_func_param(p1: ",
+                .suffix = ", p2: int) -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
+                                                           {ParamSpec{"p1", {}, SpecAdder::get_v<TypeVerifier>(v)},
+                                                            ParamSpec{"p2", {}, IsType("int")}},
+                                                           {IsType("void")}));
+                }
+            },
+            {
+                .name = ContextNames::TypeFunctionMultiParameter2,
+                .input_types = {InjectableType::TypeAnnotation},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_func_param(p1: int, p2: ",
+                .suffix = ") -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
+                                                           {ParamSpec{"p1", {}, IsType("int")},
+                                                            ParamSpec{"p2", {}, SpecAdder::get_v<TypeVerifier>(v)}},
+                                                           {IsType("void")}));
+                }
+            },
+            {
                 .name = ContextNames::TypeFunctionReturn,
                 .input_types = {InjectableType::TypeAnnotation},
                 .output_type = InjectableType::TopLevel,
@@ -104,6 +132,18 @@ namespace valuascript::compiler::test
                 }
             },
             {
+                .name = ContextNames::TypeFunctionMultiReturnEnd,
+                .input_types = {InjectableType::TypeAnnotation},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_func_multi_ret() -> int, ",
+                .suffix = " {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_func_multi_ret", {}, {},
+                                                           {IsType("int"), SpecAdder::get_v<TypeVerifier>(v)}));
+                }
+            },
+            {
                 .name = ContextNames::TypeStructField,
                 .input_types = {InjectableType::TypeAnnotation},
                 .output_type = InjectableType::TopLevel,
@@ -113,6 +153,20 @@ namespace valuascript::compiler::test
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct", {}, {
                                                              FieldSpec{"f", {}, SpecAdder::get_v<TypeVerifier>(v)}
+                                                         }));
+                }
+            },
+            {
+                .name = ContextNames::TypeStructMultipleFields,
+                .input_types = {InjectableType::TypeAnnotation},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "struct ctx_struct { f1: ",
+                .suffix = ", \nf2: int }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsStructDef("ctx_struct", {}, {
+                                                             FieldSpec{"f1", {}, SpecAdder::get_v<TypeVerifier>(v)},
+                                                             FieldSpec{"f2", {}, IsType("int")}
                                                          }));
                 }
             },

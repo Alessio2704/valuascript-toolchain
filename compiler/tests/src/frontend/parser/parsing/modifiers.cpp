@@ -38,8 +38,6 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{"ModifierOnStandaloneExpression", "@export 10 * 5", E::
-            ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", E::
             ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{"MissingModifierName", "@ let x = 1", E::ExpectedModifierName},

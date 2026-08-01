@@ -28,12 +28,15 @@ namespace valuascript::compiler
                             .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             Token end_token = cursor.previous();
-            try { end_token = cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisInTuple); }
-            catch (const ParseSyncException&)
+            if (cursor.check(TokenType::RightParen))
             {
+                end_token = cursor.advance();
+            }
+            else
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisInTuple);
                 TokenType peek_type = cursor.peek().type;
-                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.
-                    is_active_closer(peek_type))
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.is_active_closer(peek_type))
                     end_token = cursor.advance();
                 else end_token = cursor.previous();
             }
@@ -54,12 +57,15 @@ namespace valuascript::compiler
                            .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             if (generic_args.empty()) cursor.report_error_no_panic(cursor.peek(), E::EmptyGenericTypeAnnotation);
-            try { cursor.consume(TokenType::Greater, E::UnmatchedBracketAfterGenericArgs); }
-            catch (const ParseSyncException&)
+            if (cursor.check(TokenType::Greater))
             {
+                cursor.advance();
+            }
+            else
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterGenericArgs);
                 TokenType peek_type = cursor.peek().type;
-                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.
-                    is_active_closer(peek_type))
+                if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.is_active_closer(peek_type))
                     cursor.advance();
             }
         }
