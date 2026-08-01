@@ -6,11 +6,13 @@
 #include <vector>
 #include <memory>
 #include "token/token.h"
+#include "ast_arena.h"
 
 using namespace valuascript::shared;
 
 namespace valuascript::compiler
 {
+
     class Expression;
     class Statement;
     class TypeAnnotation;
@@ -124,6 +126,10 @@ namespace valuascript::compiler
 
         explicit AstNode(AstKind k = AstKind::Unknown) : kind(k) {}
         virtual ~AstNode() = default;
+
+        static void* operator new(size_t size);
+        static void operator delete(void* ptr, size_t size) noexcept;
+        static void operator delete(void* ptr) noexcept;
     };
 
     class Expression : public AstNode

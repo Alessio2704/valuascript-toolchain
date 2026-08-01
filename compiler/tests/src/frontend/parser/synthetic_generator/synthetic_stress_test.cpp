@@ -12,9 +12,11 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticStressTest, CombinatorialFuzzing)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
+        AstArenaScope arena_scope(512 * 1024);
 
         for (size_t seed = 0; seed < iterations; ++seed)
         {
+            arena_scope.reset();
             SCOPED_TRACE("Combinatorial Fuzzing Iteration Seed: " + std::to_string(seed));
             SyntheticGenerator gen(seed);
             auto [code, spec] = gen.generate_program(100);

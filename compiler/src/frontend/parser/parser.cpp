@@ -24,6 +24,10 @@ namespace valuascript::compiler
     std::unique_ptr<Program> Parser::parse_program()
     {
         auto program = std::make_unique<Program>();
+        program->arena = std::make_unique<AstArena>(256 * 1024);
+        std::pmr::memory_resource* prev_resource = AstArenaManager::get_current_resource();
+        AstArenaManager::set_current_resource(program->arena->resource());
+
         const Token& start_token = ctx.cursor.peek();
         std::vector<StmtPtr> dummy_block;
 
@@ -40,6 +44,7 @@ namespace valuascript::compiler
         }
 
         program->span = ctx.cursor.make_span(start_token, ctx.cursor.previous());
+        AstArenaManager::set_current_resource(prev_resource);
         return program;
     }
 
