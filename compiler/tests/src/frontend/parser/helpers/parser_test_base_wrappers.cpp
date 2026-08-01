@@ -89,100 +89,114 @@ namespace valuascript::compiler::test
 
     void ParserTestBase::ExpectAssignmentErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                 const OneOf<AssignmentVerifier>& v,
-                                                const std::vector<std::string_view>& skip_contexts)
+                                                const std::vector<std::string_view>& skip_contexts,
+                                                const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Assignment", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Assignment", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectReassignmentErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                   const OneOf<ReassignmentVerifier>& v,
-                                                  const std::vector<std::string_view>& skip_contexts)
+                                                  const std::vector<std::string_view>& skip_contexts,
+                                                  const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Reassignment", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Reassignment", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectExpressionStatementErrors(const std::string& s,
                                                          const std::vector<ParserExpectedError>& e,
                                                          const OneOf<ExprStmtVerifier>& v,
-                                                         const std::vector<std::string_view>& skip_contexts)
+                                                         const std::vector<std::string_view>& skip_contexts,
+                                                         const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Expression Statement", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::StrongStatement, s, e, v.value, "Expression Statement", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectImportErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                             const OneOf<ImportVerifier>& v,
-                                            const std::vector<std::string_view>& skip_contexts)
+                                            const std::vector<std::string_view>& skip_contexts,
+                                            const std::vector<ContextOverride<ImportVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Import, s, e, v.value, "Import", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Import, s, e, v.value, "Import", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectDirectiveErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                const OneOf<DirectiveVerifier>& v,
-                                               const std::vector<std::string_view>& skip_contexts)
+                                               const std::vector<std::string_view>& skip_contexts,
+                                               const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Directive, s, e, v.value, "Directive", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Directive, s, e, v.value, "Directive", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectFunctionDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                         const OneOf<FuncVerifier>& v,
-                                                        const std::vector<std::string_view>& skip_contexts)
+                                                        const std::vector<std::string_view>& skip_contexts,
+                                                        const std::vector<ContextOverride<FuncVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Function, s, e, v.value, "Function Definition", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Function, s, e, v.value, "Function Definition", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectExtensionDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                          const OneOf<ExtVerifier>& v,
-                                                         const std::vector<std::string_view>& skip_contexts)
+                                                         const std::vector<std::string_view>& skip_contexts,
+                                                         const std::vector<ContextOverride<ExtVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Extension, s, e, v.value, "Extension Definition", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Extension, s, e, v.value, "Extension Definition", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectStructDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                       const OneOf<StructVerifier>& v,
-                                                      const std::vector<std::string_view>& skip_contexts)
+                                                      const std::vector<std::string_view>& skip_contexts,
+                                                      const std::vector<ContextOverride<StructVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Struct, s, e, v.value, "Struct Definition", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Struct, s, e, v.value, "Struct Definition", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectEnumDefinitionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                     const OneOf<EnumVerifier>& v,
-                                                    const std::vector<std::string_view>& skip_contexts)
+                                                    const std::vector<std::string_view>& skip_contexts,
+                                                    const std::vector<ContextOverride<EnumVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Enum, s, e, v.value, "Enum Definition", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Enum, s, e, v.value, "Enum Definition", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectTypeAliasErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                const OneOf<AliasVerifier>& v,
-                                               const std::vector<std::string_view>& skip_contexts)
+                                               const std::vector<std::string_view>& skip_contexts,
+                                               const std::vector<ContextOverride<AliasVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::TypeAlias, s, e, v.value, "Type Alias", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::TypeAlias, s, e, v.value, "Type Alias", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectExpressionErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                 const OneOf<ExprVerifier>& v,
-                                                const std::vector<std::string_view>& skip_contexts)
+                                                const std::vector<std::string_view>& skip_contexts,
+                                                const std::vector<ContextOverride<ExprVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Expression, s, e, v.value, "Expression", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Expression, s, e, v.value, "Expression", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectTypeAnnotationErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                                     const OneOf<TypeVerifier>& v,
-                                                    const std::vector<std::string_view>& skip_contexts)
+                                                    const std::vector<std::string_view>& skip_contexts,
+                                                    const std::vector<ContextOverride<TypeVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::TypeAnnotation, s, e, v.value, "Type Annotation", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::TypeAnnotation, s, e, v.value, "Type Annotation", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectModifierErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                               const OneOf<ModifierVerifier>& v,
-                                              const std::vector<std::string_view>& skip_contexts)
+                                              const std::vector<std::string_view>& skip_contexts,
+                                              const std::vector<ContextOverride<ModifierVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::Modifier, s, e, v.value, "Modifier", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::Modifier, s, e, v.value, "Modifier", skip_contexts, to_any_overrides(context_overrides));
     }
 
     void ParserTestBase::ExpectReturnErrors(const std::string& s, const std::vector<ParserExpectedError>& e,
                                             const OneOf<ReturnVerifier>& v,
-                                            const std::vector<std::string_view>& skip_contexts)
+                                            const std::vector<std::string_view>& skip_contexts,
+                                            const std::vector<ContextOverride<ReturnVerifier>>& context_overrides)
     {
-        ExpectParseErrorsUnified(InjectableType::WeakStatement, s, e, v.value, "Return", skip_contexts);
+        ExpectParseErrorsUnified(InjectableType::WeakStatement, s, e, v.value, "Return", skip_contexts, to_any_overrides(context_overrides));
     }
 }

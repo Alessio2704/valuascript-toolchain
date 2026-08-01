@@ -54,10 +54,10 @@ namespace valuascript::compiler::test
 
     TEST_P(TypeAliasErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectTypeAliasErrors(code, errors, verifier, skip_contexts);
+        ExpectTypeAliasErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(

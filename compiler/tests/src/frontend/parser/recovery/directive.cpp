@@ -55,10 +55,10 @@ namespace valuascript::compiler::test
 
     TEST_P(DirectiveErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectDirectiveErrors(code, errors, verifier, skip_contexts);
+        ExpectDirectiveErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(

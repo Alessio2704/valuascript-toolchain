@@ -208,10 +208,10 @@ namespace valuascript::compiler::test
 
     TEST_P(EnumErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectEnumDefinitionErrors(code, errors, verifier, skip_contexts);
+        ExpectEnumDefinitionErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(

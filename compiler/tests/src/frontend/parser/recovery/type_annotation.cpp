@@ -16,9 +16,10 @@ namespace valuascript::compiler::test
         {
             auto reg = [](auto n, auto c, const std::vector<ParserExpectedError>& errs,
                           const OneOf<TypeVerifier>& v,
-                          const std::vector<std::string_view>& skip_contexts = {})
+                          const std::vector<std::string_view>& skip_contexts = {},
+                          const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {})
             {
-                ErrorRegistry::add(n, c, errs, v, skip_contexts);
+                ErrorRegistry::add(n, c, errs, v, skip_contexts, context_overrides);
             };
 
             reg("GarbageType", "123",
@@ -127,14 +128,68 @@ namespace valuascript::compiler::test
                        }
                 ),
                 {
-                    ContextNames::TypeMultiAssignmentTarget1,
-                    ContextNames::TypeFunctionMultiReturn,
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeEnd
+                },
+                {
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                        },
+                        .verifier = OneOf<TypeVerifier>(IsAssignment(
+                            {{"ctx_m1", IsType("vector", {IsType("int"), IsType("ctx_m2")})}}, IsNumber("1")))
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                        },
+                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
+                                                                      {
+                                                                          IsType("vector", {
+                                                                              IsType("int"), IsType("int")
+                                                                          })
+                                                                      }))
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeTupleTypeStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                        },
+                        .verifier = IsTupleType({IsType("vector", {IsType("int"), IsType("int")})})
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeTupleTypeMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                        },
+                        .verifier = IsTupleType({IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeGenericTypeStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                        },
+                        .verifier = IsType("vector", {IsType("vector", {IsType("int"), IsType("int")})})
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeGenericTypeMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                        },
+                        .verifier = IsType("vector", {IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeGenericTypeEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            {E::UnmatchedBracketAfterGenericArgs, 1, 12, 1, 13}
+                        },
+                        .verifier = IsType("vector", {IsType("int"), IsType("string"), IsType("vector", {IsType("int")})})
+                    },
                 }
             );
 
@@ -144,10 +199,10 @@ namespace valuascript::compiler::test
 
     TEST_P(TypeAnnotationErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectTypeAnnotationErrors(code, errors, verifier, skip_contexts);
+        ExpectTypeAnnotationErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(

@@ -71,10 +71,14 @@ namespace valuascript::compiler::test
         {
         }
 
+        template <typename Dummy = NullVerifier>
+            requires (!std::is_same_v<TargetVerifier, NullVerifier>)
         OneOf(NullVerifier v) : value(v)
         {
         }
 
+        template <typename Dummy = UniversalVerifier>
+            requires (!std::is_same_v<TargetVerifier, UniversalVerifier>)
         OneOf(UniversalVerifier v) : value(std::move(v))
         {
         }
@@ -82,7 +86,7 @@ namespace valuascript::compiler::test
 
     struct Context
     {
-        std::string name;
+        std::string_view name;
         std::vector<InjectableType> input_types;
         InjectableType output_type;
         std::string prefix;

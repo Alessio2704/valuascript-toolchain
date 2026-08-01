@@ -129,10 +129,10 @@ namespace valuascript::compiler::test
 
     TEST_P(FuncDefErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Error Registry Test Case: " + name);
 
-        ExpectFunctionDefinitionErrors(code, errors, verifier, skip_contexts);
+        ExpectFunctionDefinitionErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(

@@ -1,5 +1,6 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
+#include "frontend/parser/helpers/context_names.h"
 #include <fstream>
 
 namespace valuascript::compiler::test
@@ -7,7 +8,13 @@ namespace valuascript::compiler::test
     class ExpansionDebugger : public ParserTestBase
     {
     public:
-        static void DumpExpansion(InjectableType type, const std::string& snippet, const std::string& label)
+        template <typename Verifier = NullVerifier>
+        static void DumpExpansion(InjectableType type,
+                                  const std::string& snippet,
+                                  const std::string& label,
+                                  const Verifier& verifier = NullVerifier{},
+                                  const std::vector<std::string_view>& skip_contexts = {},
+                                  const std::vector<ContextOverride<Verifier>>& context_overrides = {})
         {
             DumpWriter writer("expansion_features_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
@@ -19,7 +26,7 @@ namespace valuascript::compiler::test
             out << "============================================================\n\n";
 
             size_t count = 0;
-            expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
+            expand_to_top_level_stream(type, snippet, verifier, label, [&](ProcessingItem&& item)
             {
                 count++;
                 out << "--- VARIATION " << count << " ---\n";
@@ -27,7 +34,7 @@ namespace valuascript::compiler::test
                 out << "DEPTH: " << item.depth << "\n";
                 out << "CODE:\n" << item.code << "\n";
                 out << "------------------------------------------------------------\n\n";
-            }, false);
+            }, false, skip_contexts, context_overrides);
 
             out << "[DEBUG] Recovery expansion dump finished (" << count << " variations)";
         }

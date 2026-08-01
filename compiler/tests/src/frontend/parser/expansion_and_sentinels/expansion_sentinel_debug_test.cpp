@@ -1,16 +1,21 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "frontend/parser/helpers/error_shifter.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
     class ExpansionRecoveryDebugger : public ParserTestBase
     {
     public:
+        template <typename Verifier = NullVerifier>
         static void DumpRecoveryExpansion(InjectableType type,
                                           const std::string& snippet,
                                           const std::vector<ParserExpectedError>& errors,
-                                          const std::string& label)
+                                          const std::string& label,
+                                          const Verifier& verifier = NullVerifier{},
+                                          const std::vector<std::string_view>& skip_contexts = {},
+                                          const std::vector<ContextOverride<Verifier>>& context_overrides = {})
         {
             DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
@@ -25,8 +30,10 @@ namespace valuascript::compiler::test
             size_t scenario_index = 0;
             size_t base_seed = std::hash<std::string>{}(label);
 
-            expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
+            expand_to_top_level_stream(type, snippet, verifier, label, [&](ProcessingItem&& item)
             {
+                if (item.is_skipped) return;
+
                 ProgramSpec item_spec;
                 auto prog = BuildRecoveryProgram(
                     std::move(item.code),
@@ -42,7 +49,8 @@ namespace valuascript::compiler::test
                 out << "DEPTH: " << item.depth << "\n";
                 out << "EXPECTED SHIFTED ERRORS (Sample calculation):\n";
 
-                auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors);
+                const auto& active_errors = item.custom_errors.value_or(errors);
+                auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, active_errors);
                 for (const auto& err : shifted)
                 {
                     out << "  - Code: " << err.code
@@ -52,7 +60,7 @@ namespace valuascript::compiler::test
                 out << "FULL CODE:\n";
                 out << prog.full_code;
                 out << "------------------------------------------------------------\n\n";
-            }, true);
+            }, true, skip_contexts, context_overrides);
 
             out << "[DEBUG] Recovery expansion dump finished (" << scenario_index << " variations)";
         }
@@ -94,6 +102,74 @@ namespace valuascript::compiler::test
             "@test(a 1, b: 2)",
             {ParserExpectedError(ParserErrorCode::MissingColonAfterArgument, 1, 9)},
             "BrokenModifier"
+        );
+
+        DumpRecoveryExpansion<TypeVerifier>(
+            InjectableType::TypeAnnotation,
+            "vector<int",
+            {ParserExpectedError(ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 10, 1, 11)},
+            "GenericMissingClosingBracket",
+            IsType("vector", {IsType("int")}),
+            {
+                ContextNames::TypeTupleTypeStart,
+                ContextNames::TypeTupleTypeMiddle,
+                ContextNames::TypeGenericTypeStart,
+                ContextNames::TypeGenericTypeMiddle,
+                ContextNames::TypeGenericTypeEnd
+            },
+            {
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeMultiAssignmentTarget1,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                    },
+                    .verifier = OneOf<TypeVerifier>(IsAssignment(
+                        {{"ctx_m1", IsType("vector", {IsType("int"), IsType("ctx_m2")})}}, IsNumber("1")))
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeFunctionMultiReturn,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                    },
+                    .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
+                                                                  {IsType("vector", {IsType("int"), IsType("int")})}))
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeTupleTypeStart,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                    },
+                    .verifier = IsTupleType({IsType("vector", {IsType("int"), IsType("int")})})
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeTupleTypeMiddle,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                    },
+                    .verifier = IsTupleType({IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeGenericTypeStart,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                    },
+                    .verifier = IsType("vector", {IsType("vector", {IsType("int"), IsType("int")})})
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeGenericTypeMiddle,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                    },
+                    .verifier = IsType("vector", {IsType("int"), IsType("vector", {IsType("int"), IsType("string")})})
+                },
+                ContextOverride<TypeVerifier>{
+                    .context_name = ContextNames::TypeGenericTypeEnd,
+                    .errors = std::vector<ParserExpectedError>{
+                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 12, 1, 13}
+                    },
+                    .verifier = IsType("vector", {IsType("int"), IsType("string"), IsType("vector", {IsType("int")})})
+                },
+            }
         );
     }
 #endif

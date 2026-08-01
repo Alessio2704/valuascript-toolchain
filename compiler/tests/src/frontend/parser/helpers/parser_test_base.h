@@ -42,9 +42,10 @@ namespace valuascript::compiler::test
                                                const ExpansionCallback& callback,
                                                bool inject_sentinels = false,
                                                const std::vector<std::string_view>& skip_contexts = {},
+                                               const std::vector<ContextOverride<Verifier>>& context_overrides = {},
                                                std::optional<ExpansionPolicy> policy_override = std::nullopt)
         {
-            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts);
+            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, to_any_overrides(context_overrides));
             expand_to_top_level_stream(std::move(items), callback, inject_sentinels, policy_override);
         }
 
@@ -64,7 +65,9 @@ namespace valuascript::compiler::test
                                                                        const UniversalVerifier& verifier,
                                                                        const std::string& group_name,
                                                                        const std::vector<std::string_view>&
-                                                                           skip_contexts = {});
+                                                                           skip_contexts = {},
+                                                                       const std::vector<ContextOverrideAny>&
+                                                                           context_overrides = {});
 
     protected:
 
@@ -114,63 +117,77 @@ namespace valuascript::compiler::test
 
         static void ExpectAssignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                            const OneOf<AssignmentVerifier>& v,
-                                           const std::vector<std::string_view>& skip_contexts = {});
+                                           const std::vector<std::string_view>& skip_contexts = {},
+                                           const std::vector<ContextOverride<AssignmentVerifier>>& context_overrides = {});
 
         static void ExpectReassignmentErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                              const OneOf<ReassignmentVerifier>& v,
-                                             const std::vector<std::string_view>& skip_contexts = {});
+                                             const std::vector<std::string_view>& skip_contexts = {},
+                                             const std::vector<ContextOverride<ReassignmentVerifier>>& context_overrides = {});
 
         static void ExpectExpressionStatementErrors(const std::string& snippet,
                                                     const std::vector<ParserExpectedError>& errs,
                                                     const OneOf<ExprStmtVerifier>& v,
-                                                    const std::vector<std::string_view>& skip_contexts = {});
+                                                    const std::vector<std::string_view>& skip_contexts = {},
+                                                    const std::vector<ContextOverride<ExprStmtVerifier>>& context_overrides = {});
 
         static void ExpectImportErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                        const OneOf<ImportVerifier>& v,
-                                       const std::vector<std::string_view>& skip_contexts = {});
+                                       const std::vector<std::string_view>& skip_contexts = {},
+                                       const std::vector<ContextOverride<ImportVerifier>>& context_overrides = {});
 
         static void ExpectDirectiveErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                           const OneOf<DirectiveVerifier>& v,
-                                          const std::vector<std::string_view>& skip_contexts = {});
+                                          const std::vector<std::string_view>& skip_contexts = {},
+                                          const std::vector<ContextOverride<DirectiveVerifier>>& context_overrides = {});
 
         static void ExpectFunctionDefinitionErrors(const std::string& snippet,
                                                    const std::vector<ParserExpectedError>& errs,
                                                    const OneOf<FuncVerifier>& v,
-                                                   const std::vector<std::string_view>& skip_contexts = {});
+                                                   const std::vector<std::string_view>& skip_contexts = {},
+                                                   const std::vector<ContextOverride<FuncVerifier>>& context_overrides = {});
 
         static void ExpectExtensionDefinitionErrors(const std::string& snippet,
                                                     const std::vector<ParserExpectedError>& errs,
                                                     const OneOf<ExtVerifier>& v,
-                                                    const std::vector<std::string_view>& skip_contexts = {});
+                                                    const std::vector<std::string_view>& skip_contexts = {},
+                                                    const std::vector<ContextOverride<ExtVerifier>>& context_overrides = {});
 
         static void ExpectStructDefinitionErrors(const std::string& snippet,
                                                  const std::vector<ParserExpectedError>& errs,
                                                  const OneOf<StructVerifier>& v,
-                                                 const std::vector<std::string_view>& skip_contexts = {});
+                                                 const std::vector<std::string_view>& skip_contexts = {},
+                                                 const std::vector<ContextOverride<StructVerifier>>& context_overrides = {});
 
         static void ExpectEnumDefinitionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                                const OneOf<EnumVerifier>& v,
-                                               const std::vector<std::string_view>& skip_contexts = {});
+                                               const std::vector<std::string_view>& skip_contexts = {},
+                                               const std::vector<ContextOverride<EnumVerifier>>& context_overrides = {});
 
         static void ExpectTypeAliasErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                           const OneOf<AliasVerifier>& v,
-                                          const std::vector<std::string_view>& skip_contexts = {});
+                                          const std::vector<std::string_view>& skip_contexts = {},
+                                          const std::vector<ContextOverride<AliasVerifier>>& context_overrides = {});
 
         static void ExpectExpressionErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                            const OneOf<ExprVerifier>& v,
-                                           const std::vector<std::string_view>& skip_contexts = {});
+                                           const std::vector<std::string_view>& skip_contexts = {},
+                                           const std::vector<ContextOverride<ExprVerifier>>& context_overrides = {});
 
         static void ExpectTypeAnnotationErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                                const OneOf<TypeVerifier>& v,
-                                               const std::vector<std::string_view>& skip_contexts = {});
+                                               const std::vector<std::string_view>& skip_contexts = {},
+                                               const std::vector<ContextOverride<TypeVerifier>>& context_overrides = {});
 
         static void ExpectModifierErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                          const OneOf<ModifierVerifier>& v,
-                                         const std::vector<std::string_view>& skip_contexts = {});
+                                         const std::vector<std::string_view>& skip_contexts = {},
+                                         const std::vector<ContextOverride<ModifierVerifier>>& context_overrides = {});
 
         static void ExpectReturnErrors(const std::string& snippet, const std::vector<ParserExpectedError>& errs,
                                        const OneOf<ReturnVerifier>& v,
-                                       const std::vector<std::string_view>& skip_contexts = {});
+                                       const std::vector<std::string_view>& skip_contexts = {},
+                                       const std::vector<ContextOverride<ReturnVerifier>>& context_overrides = {});
 
         static void ExpectValidUnified(InjectableType type, std::vector<ProcessingItem> items,
                                        const std::string& group_name);
@@ -192,9 +209,10 @@ namespace valuascript::compiler::test
         static void ExpectParseErrorsUnified(InjectableType type, const std::string& snippet,
                                              const std::vector<ParserExpectedError>& errors,
                                              const Verifier& verifier, const std::string& group_name,
-                                             const std::vector<std::string_view>& skip_contexts = {})
+                                             const std::vector<std::string_view>& skip_contexts = {},
+                                             const std::vector<ContextOverrideAny>& context_overrides = {})
         {
-            auto items = apply_context_augmentations(type, snippet, verifier, group_name, skip_contexts);
+            auto items = apply_context_augmentations(type, snippet, UniversalVerifier(verifier), group_name, skip_contexts, context_overrides);
             ExpectParseErrorsUnified(type, std::move(items), errors, group_name);
         }
     };

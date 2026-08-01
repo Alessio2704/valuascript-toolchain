@@ -48,10 +48,11 @@ namespace valuascript::compiler::test
         const std::string& snippet,
         const UniversalVerifier& verifier,
         const std::string& group_name,
-        const std::vector<std::string_view>& skip_contexts
+        const std::vector<std::string_view>& skip_contexts,
+        const std::vector<ContextOverrideAny>& context_overrides
     )
     {
-        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0, skip_contexts, false};
+        ProcessingItem base_item{type, snippet, verifier, group_name, "", 0, 0, skip_contexts, false, context_overrides, std::nullopt};
 
         switch (type)
         {
@@ -83,25 +84,55 @@ namespace valuascript::compiler::test
         {
             ContextTreeWalker<ProcessingItem>::Callbacks cb;
             cb.get_type = [](const ProcessingItem& item) { return item.type; };
-            cb.on_terminal = [&](ProcessingItem item) { callback(std::move(item)); };
+            cb.on_terminal = [&](ProcessingItem item)
+            {
+                if (!item.is_skipped)
+                {
+                    callback(std::move(item));
+                }
+            };
             cb.on_promotion = [&](const ProcessingItem& item)
             {
-                callback({
-                    InjectableType::TopLevel, item.code, item.verifier,
-                    item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
-                    item.depth + 1, item.recursion_depth,
-                    item.skip_contexts, item.is_skipped
-                });
+                if (!item.is_skipped)
+                {
+                    callback({
+                        InjectableType::TopLevel, item.code, item.verifier,
+                        item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
+                        item.depth + 1, item.recursion_depth,
+                        item.skip_contexts, item.is_skipped,
+                        item.context_overrides, item.custom_errors
+                    });
+                }
             };
             cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
             {
                 bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
                     != item.skip_contexts.end();
 
-                UniversalVerifier final_verifier = item.verifier;
+                const ContextOverrideAny* match = nullptr;
+                if (item.depth == 0)
+                {
+                    for (const auto& ov : item.context_overrides)
+                    {
+                        if (ov.context_name == ctx.name)
+                        {
+                            match = &ov;
+                            break;
+                        }
+                    }
+                }
+
+                UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
+                std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
+
+                UniversalVerifier final_verifier = inner_verifier;
                 bool needs_transform = true;
 
-                if (auto* m_v_ptr = std::get_if<std::shared_ptr<MultiInjectVerifier>>(&item.verifier))
+                if (match && match->verifier.has_value())
+                {
+                    needs_transform = false;
+                }
+                else if (auto* m_v_ptr = std::get_if<std::shared_ptr<MultiInjectVerifier>>(&inner_verifier))
                 {
                     if (auto m_v = *m_v_ptr)
                     {
@@ -121,23 +152,40 @@ namespace valuascript::compiler::test
                     ctx.output_type, ctx.prefix + item.code + ctx.suffix,
                     needs_transform ? ctx.transform_verifier(final_verifier) : final_verifier,
                     item.path_name + " -> " + (next_rec_depth > item.recursion_depth
-                                                   ? ctx.name + "(Recurse)"
-                                                   : ctx.name),
+                                                   ? std::string(ctx.name) + "(Recurse)"
+                                                   : std::string(ctx.name)),
                     ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth,
-                    item.skip_contexts, skip
+                    item.skip_contexts, skip, item.context_overrides, branch_errors
                 };
             };
             cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
             {
                 bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(), ctx.name)
                     != item.skip_contexts.end();
+
+                const ContextOverrideAny* match = nullptr;
+                if (item.depth == 0)
+                {
+                    for (const auto& ov : item.context_overrides)
+                    {
+                        if (ov.context_name == ctx.name)
+                        {
+                            match = &ov;
+                            break;
+                        }
+                    }
+                }
+
+                UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
+                std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
+
                 std::vector<RecoveryBlock> pre, post;
                 std::string inner_code = item.code;
                 std::string inner_prefix = item.cumulative_prefix;
 
                 if (inject_sentinels)
                 {
-                    size_t seed = std::hash<std::string>{}(item.path_name + ctx.name + item.code);
+                    size_t seed = std::hash<std::string>{}(item.path_name + std::string(ctx.name) + item.code);
                     pre.push_back(RecoverySentinel::generate_block_sentinel(seed, ctx.block_context));
                     post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1, ctx.block_context));
                     inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
@@ -146,12 +194,12 @@ namespace valuascript::compiler::test
 
                 return ProcessingItem{
                     ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
-                    ctx.transform_verifier_block(item.verifier, pre, post),
+                    (match && match->verifier.has_value()) ? inner_verifier : ctx.transform_verifier_block(inner_verifier, pre, post),
                     item.path_name + " -> " + (next_rec_depth > item.recursion_depth
-                                                   ? ctx.name + "(Recurse)"
-                                                   : ctx.name),
+                                                   ? std::string(ctx.name) + "(Recurse)"
+                                                   : std::string(ctx.name)),
                     ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth,
-                    item.skip_contexts, skip
+                    item.skip_contexts, skip, item.context_overrides, branch_errors
                 };
             };
             cb.should_abort = [] { return HasFailure(); };
@@ -166,18 +214,10 @@ namespace valuascript::compiler::test
     void ParserTestBase::ExpectValidUnified(InjectableType type, std::vector<ProcessingItem> items,
                                             const std::string& group_name)
     {
-        size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
-        size_t expected_total = expected_expansions * items.size();
         size_t actual_expansions = 0;
-        size_t skipped_expansions = 0;
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
         {
-            if (item.is_skipped)
-            {
-                skipped_expansions++;
-                return;
-            }
             actual_expansions++;
             ProgramSpec spec;
             std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
@@ -185,10 +225,11 @@ namespace valuascript::compiler::test
             ExpectValidParse(item.code, spec);
         }, false);
 
-        if (!HasFailure())
+        if (!HasFailure() && !items.empty())
         {
-            EXPECT_EQ(actual_expansions + skipped_expansions, expected_total) << "Expansion count mismatch for " <<
- group_name << " (Valid Parse).";
+            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type, items[0].skip_contexts);
+            EXPECT_EQ(actual_expansions, expected_expansions * items.size()) << "Expansion count mismatch for " <<
+                group_name << " (Valid Parse).";
         }
     }
 
@@ -199,27 +240,20 @@ namespace valuascript::compiler::test
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
         size_t base_seed = std::hash<std::string>{}(test_info ? test_info->name() : "fallback");
 
-        size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type);
-        size_t expected_total = expected_expansions * items.size();
         size_t actual_expansions = 0;
-        size_t skipped_expansions = 0;
         size_t scenario_index = 0;
 
         expand_to_top_level_stream(std::move(items), [&](ProcessingItem&& item)
         {
-            if (item.is_skipped)
-            {
-                skipped_expansions++;
-                return;
-            }
             actual_expansions++;
             RunRecoveryScenario(std::move(item), errors, base_seed + (scenario_index++ * 2));
         }, true);
 
-        if (!HasFailure())
+        if (!HasFailure() && !items.empty())
         {
-            EXPECT_EQ(actual_expansions + skipped_expansions, expected_total) << "Expansion count mismatch for " <<
- group_name << " (Error Recovery).";
+            size_t expected_expansions = ExpansionCalculator::compute_expected_expansions(type, items[0].skip_contexts);
+            EXPECT_EQ(actual_expansions, expected_expansions * items.size()) << "Expansion count mismatch for " <<
+                group_name << " (Error Recovery).";
         }
     }
 
@@ -261,7 +295,8 @@ namespace valuascript::compiler::test
                                          item.cumulative_prefix,
                                          seed);
 
-        auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors);
+        const auto& errors_to_use = item.custom_errors.has_value() ? item.custom_errors.value() : errors;
+        auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors_to_use);
 
         SCOPED_TRACE("Recovery Path: " + item.path_name);
         ExpectParseErrors(prog.full_code, shifted, prog.full_spec);

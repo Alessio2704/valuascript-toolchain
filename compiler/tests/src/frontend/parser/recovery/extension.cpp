@@ -64,9 +64,9 @@ namespace valuascript::compiler::test
 
     TEST_P(ExtensionErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts] = GetParam();
+        const auto& [name, code, errors, verifier, skip_contexts, context_overrides] = GetParam();
         SCOPED_TRACE("Running Recovery Test Case: " + name);
-        ExpectExtensionDefinitionErrors(code, errors, verifier, skip_contexts);
+        ExpectExtensionDefinitionErrors(code, errors, verifier, skip_contexts, context_overrides);
     }
 
     INSTANTIATE_TEST_SUITE_P(
