@@ -55,6 +55,8 @@ namespace valuascript::compiler::test
         [[nodiscard]] friend std::strong_ordering operator<=>(const StringStorage& lhs, std::string_view rhs) { return lhs.get() <=> rhs; }
     };
 
+    struct AnyMatcher;
+
     template <typename F, typename NodeT>
     concept HasNodeType = requires
     {
@@ -65,6 +67,23 @@ namespace valuascript::compiler::test
     concept IsCompatibleNodeVerifier =
         (HasNodeType<F, NodeT> && std::derived_from<typename std::decay_t<F>::node_type, NodeT>) ||
         (!HasNodeType<F, NodeT> && std::invocable<F, NodeT*>);
+
+    template <typename T>
+    concept ASTNodeConcept = std::derived_from<std::decay_t<T>, AstNode>;
+
+    template <typename M, typename NodeT>
+    concept ASTMatcher = requires(const std::decay_t<M>& m, NodeT* node) {
+        { m(node) };
+    };
+
+    template <typename M>
+    concept ExprMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, Expression>;
+
+    template <typename M>
+    concept TypeNodeMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, TypeAnnotation>;
+
+    template <typename M>
+    concept StmtMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, Statement>;
 
     template <typename NodeT, size_t BufferSize = 64>
     class InlineVerifier
@@ -603,7 +622,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename L, typename R>
+    template <ExprMatcher L, ExprMatcher R>
     inline void ExpectBinary(AstNode* node, TokenType op, const L& l_v, const R& r_v)
     {
         if (auto b = ExpectNode<BinaryExpression>(node))
@@ -614,7 +633,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename R>
+    template <ExprMatcher R>
     inline void ExpectUnary(AstNode* node, TokenType op, const R& r_v)
     {
         if (auto u = ExpectNode<UnaryExpression>(node))
@@ -624,7 +643,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename I>
+    template <ExprMatcher I>
     inline void ExpectGrouping(AstNode* node, const I& inner_v)
     {
         if (auto g = ExpectNode<GroupingExpression>(node))
@@ -633,7 +652,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename C, typename T, typename E>
+    template <ExprMatcher C, ExprMatcher T, ExprMatcher E>
     inline void ExpectConditional(AstNode* node, const C& c_v, const T& t_v, const E& e_v)
     {
         if (auto cond = ExpectNode<ConditionalExpression>(node))
@@ -644,7 +663,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename T>
+    template <ExprMatcher T>
     inline void ExpectCall(AstNode* node, const T& target_v, std::span<const ArgSpec> args)
     {
         if (auto c = ExpectNode<FunctionCall>(node))
@@ -654,7 +673,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename T, typename I>
+    template <ExprMatcher T, ExprMatcher I>
     inline void ExpectBracketAccess(AstNode* node, const T& target_v, const I& index_v)
     {
         if (auto b = ExpectNode<BracketAccess>(node))
@@ -664,7 +683,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename T>
+    template <ExprMatcher T>
     inline void ExpectDotAccess(AstNode* node, const T& target_v, std::string_view prop)
     {
         if (auto d = ExpectNode<DotAccess>(node))
@@ -674,7 +693,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename T, typename D>
+    template <ExprMatcher T, ExprMatcher D>
     inline void ExpectSwitch(AstNode* node, const T& target_v, std::span<const SwitchCaseSpec> cases,
                              std::span<const ModifierSpec> default_mods,
                              const D& def_v)
@@ -760,7 +779,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename V>
+    template <ExprMatcher V>
     inline void ExpectAssignment(Statement* stmt, std::span<const AssignmentTargetSpec> targets,
                                  const V& val_v)
     {
@@ -777,7 +796,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename T, typename V>
+    template <ExprMatcher T, ExprMatcher V>
     inline void ExpectReassignment(Statement* stmt, const T& target_v, const V& val_v)
     {
         if (auto r = ExpectNode<Reassignment>(stmt))
@@ -802,7 +821,7 @@ namespace valuascript::compiler::test
         }
     }
 
-    template <typename E>
+    template <ExprMatcher E>
     inline void ExpectExprStmt(Statement* stmt, const E& expr_v)
     {
         if (auto es = ExpectNode<ExpressionStatement>(stmt))
@@ -938,7 +957,7 @@ namespace valuascript::compiler::test
         EXPECT_EQ(imp->path, path) << "ImportStatement path mismatch.";
     }
 
-    template <typename V>
+    template <ExprMatcher V>
     inline void ExpectDirective(Directive* dir, std::string_view name, const V& val_v)
     {
         ASSERT_NE(dir, nullptr) << "Expected Directive node, but got nullptr.";
@@ -1046,7 +1065,7 @@ namespace valuascript::compiler::test
 
     inline ExprVerifier IsSelf() { return ExprVerifier(SelfMatcher{}); }
 
-    template <typename L = AnyMatcher, typename R = AnyMatcher>
+    template <ExprMatcher L = AnyMatcher, ExprMatcher R = AnyMatcher>
     struct BinaryMatcher
     {
         using node_type = Expression;
@@ -1065,7 +1084,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename L = AnyMatcher, typename R = AnyMatcher>
+    template <ExprMatcher L = AnyMatcher, ExprMatcher R = AnyMatcher>
     inline ExprVerifier IsBinary(TokenType op, L&& l = {}, R&& r = {})
     {
         return ExprVerifier(BinaryMatcher<std::decay_t<L>, std::decay_t<R>>{
@@ -1073,7 +1092,7 @@ namespace valuascript::compiler::test
         });
     }
 
-    template <typename R = AnyMatcher>
+    template <ExprMatcher R = AnyMatcher>
     struct UnaryMatcher
     {
         using node_type = Expression;
@@ -1090,13 +1109,13 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename R = AnyMatcher>
+    template <ExprMatcher R = AnyMatcher>
     inline ExprVerifier IsUnary(TokenType op, R&& r = {})
     {
         return ExprVerifier(UnaryMatcher<std::decay_t<R>>{op, std::forward<R>(r)});
     }
 
-    template <typename I = AnyMatcher>
+    template <ExprMatcher I = AnyMatcher>
     struct GroupingMatcher
     {
         using node_type = Expression;
@@ -1111,13 +1130,13 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename I = AnyMatcher>
+    template <ExprMatcher I = AnyMatcher>
     inline ExprVerifier IsGrouping(I&& inner = {})
     {
         return ExprVerifier(GroupingMatcher<std::decay_t<I>>{std::forward<I>(inner)});
     }
 
-    template <typename C = AnyMatcher, typename T = AnyMatcher, typename E = AnyMatcher>
+    template <ExprMatcher C = AnyMatcher, ExprMatcher T = AnyMatcher, ExprMatcher E = AnyMatcher>
     struct ConditionalMatcher
     {
         using node_type = Expression;
@@ -1136,7 +1155,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename C = AnyMatcher, typename T = AnyMatcher, typename E = AnyMatcher>
+    template <ExprMatcher C = AnyMatcher, ExprMatcher T = AnyMatcher, ExprMatcher E = AnyMatcher>
     inline ExprVerifier IsConditional(C&& condition = {}, T&& then_expr = {}, E&& else_expr = {})
     {
         return ExprVerifier(ConditionalMatcher<std::decay_t<C>, std::decay_t<T>, std::decay_t<E>>{
@@ -1144,7 +1163,7 @@ namespace valuascript::compiler::test
         });
     }
 
-    template <typename T = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher>
     struct CallMatcher
     {
         using node_type = Expression;
@@ -1161,13 +1180,13 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename T = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher>
     inline ExprVerifier IsCall(T&& target, std::vector<ArgSpec> args = {})
     {
         return ExprVerifier(CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(args)});
     }
 
-    template <typename T = AnyMatcher, typename I = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher, ExprMatcher I = AnyMatcher>
     struct BracketMatcher
     {
         using node_type = Expression;
@@ -1184,7 +1203,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename T = AnyMatcher, typename I = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher, ExprMatcher I = AnyMatcher>
     inline ExprVerifier IsBracket(T&& target, I&& index)
     {
         return ExprVerifier(BracketMatcher<std::decay_t<T>, std::decay_t<I>>{
@@ -1192,7 +1211,7 @@ namespace valuascript::compiler::test
         });
     }
 
-    template <typename T = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher>
     struct DotMatcher
     {
         using node_type = Expression;
@@ -1209,13 +1228,13 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename T = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher>
     inline ExprVerifier IsDot(T&& target, StringStorage property)
     {
         return ExprVerifier(DotMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(property)});
     }
 
-    template <typename T = AnyMatcher, typename D = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
     struct SwitchMatcher
     {
         using node_type = Expression;
@@ -1230,7 +1249,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    template <typename T = AnyMatcher, typename D = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
     inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, std::vector<ModifierSpec> default_mods,
                                  D&& default_expr = {})
     {
@@ -1239,7 +1258,7 @@ namespace valuascript::compiler::test
         });
     }
 
-    template <typename T = AnyMatcher, typename D = AnyMatcher>
+    template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
     inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, D&& default_expr = {})
     {
         return IsSwitch(std::forward<T>(t), std::move(cases), {}, std::forward<D>(default_expr));
