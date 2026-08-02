@@ -159,10 +159,10 @@ namespace valuascript::compiler
         requires AstNodeSubclass<T>
     [[nodiscard]] inline T* ast_cast(AstNode* node) noexcept
     {
-        if (!node) return nullptr;
+        if (!node) [[unlikely]] return nullptr;
         if constexpr (requires { T::KIND; })
         {
-            if (node->kind == T::KIND) return static_cast<T*>(node);
+            if (node->kind == T::KIND) [[likely]] return static_cast<T*>(node);
             return nullptr;
         }
         else
@@ -175,10 +175,10 @@ namespace valuascript::compiler
         requires AstNodeSubclass<T>
     [[nodiscard]] inline const T* ast_cast(const AstNode* node) noexcept
     {
-        if (!node) return nullptr;
+        if (!node) [[unlikely]] return nullptr;
         if constexpr (requires { T::KIND; })
         {
-            if (node->kind == T::KIND) return static_cast<const T*>(node);
+            if (node->kind == T::KIND) [[likely]] return static_cast<const T*>(node);
             return nullptr;
         }
         else

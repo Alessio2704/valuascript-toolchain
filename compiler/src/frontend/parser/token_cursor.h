@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <vector>
 #include <string>
 #include <string_view>
@@ -25,15 +26,21 @@ namespace valuascript::compiler
     class TokenCursor
     {
     private:
-        const std::vector<Token>& tokens_;
+        std::span<const Token> tokens_;
         std::shared_ptr<const std::string> file_path_;
         size_t current_ = 0;
         CompilerContext& context_;
         bool suppress_errors_ = false;
 
     public:
-        TokenCursor(const std::vector<Token>& tokens, std::shared_ptr<const std::string> file_path, CompilerContext& context);
-        TokenCursor(const std::vector<Token>& tokens, std::string file_path, CompilerContext& context);
+        TokenCursor(std::span<const Token> tokens, std::shared_ptr<const std::string> file_path, CompilerContext& context);
+        TokenCursor(std::span<const Token> tokens, std::string file_path, CompilerContext& context);
+
+        [[nodiscard]] std::span<const Token> tokens() const noexcept { return tokens_; }
+        [[nodiscard]] size_t current() const noexcept { return current_; }
+        [[nodiscard]] size_t size() const noexcept { return tokens_.size(); }
+        [[nodiscard]] bool empty() const noexcept { return tokens_.empty(); }
+        [[nodiscard]] std::span<const Token> remaining() const noexcept { return tokens_.subspan(current_); }
 
         void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
         [[nodiscard]] bool get_suppress_errors() const { return suppress_errors_; }
@@ -82,7 +89,7 @@ namespace valuascript::compiler
         {
             const Token& tok = peek();
             if (tok.type == TokenType::EndOfFile) [[unlikely]] return false;
-            if (((tok.type == types) || ...))
+            if (((tok.type == types) || ...)) [[likely]]
             {
                 advance();
                 return true;
