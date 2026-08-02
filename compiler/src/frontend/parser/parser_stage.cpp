@@ -23,6 +23,6 @@ namespace valuascript::compiler
 
         std::shared_ptr<Program> ast = parser.parse_program();
 
-        return {CompilerStageArtifactCode::Ast, ast};
+        return {.code = CompilerStageArtifactCode::Ast, .data = ast};
     }
 }

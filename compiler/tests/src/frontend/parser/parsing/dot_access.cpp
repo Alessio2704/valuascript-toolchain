@@ -38,7 +38,7 @@ namespace valuascript::compiler::test
         ParserStageTest,
         DotAccessSadPathTest,
         testing::Values(
-            DotAccessSadParam{"number_as_property", "let a = model.123", E::MissingOperator}
+            DotAccessSadParam{.test_name = "number_as_property", .source_code = "let a = model.123", .expected_error = E::MissingOperator}
         ),
         [](const testing::TestParamInfo<DotAccessSadParam>& test_info) {
         return test_info.param.test_name;

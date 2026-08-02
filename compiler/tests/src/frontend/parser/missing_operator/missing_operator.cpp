@@ -22,7 +22,7 @@ namespace valuascript::compiler::test
         size_t start_col = a.code.length() + 2;
         size_t end_col = start_col + b.first_token_len;
 
-        std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, start_col, 1, end_col}};
+        std::vector<ParserExpectedError> errs = {PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}};
         auto req = IsBinary(TokenType::Error, a.verifier, b.verifier);
         std::vector<UniversalVerifier> multi = {a.verifier, b.verifier};
 
@@ -62,7 +62,7 @@ namespace valuascript::compiler::test
                 size_t start_col = a.code.length() + 2;
                 size_t end_col = start_col + b.first_token_len;
 
-                std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, start_col, 1, end_col}};
+                std::vector<ParserExpectedError> errs = {PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}};
                 auto req = IsBinary(TokenType::Plus, IsBinary(TokenType::Error, a.verifier, b.verifier),
                                     c.verifier);
                 std::vector<UniversalVerifier> multi = {
@@ -79,7 +79,7 @@ namespace valuascript::compiler::test
                 size_t start_col = a.code.length() + 3 + b.code.length() + 2;
                 size_t end_col = start_col + c.first_token_len;
 
-                std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, start_col, 1, end_col}};
+                std::vector<ParserExpectedError> errs = {PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}};
                 auto req = IsBinary(TokenType::Plus, a.verifier,
                                     IsBinary(TokenType::Error, b.verifier, c.verifier));
                 std::vector<UniversalVerifier> multi = {
@@ -105,7 +105,7 @@ namespace valuascript::compiler::test
                 size_t end_col = start_col + b.first_token_len;
 
                 std::vector<ParserExpectedError> errs = {
-                    {E::MissingOperator, 1, start_col, 1, end_col}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}
                 };
                 auto req = IsBinary(TokenType::Plus,
                                     IsBinary(TokenType::Plus,
@@ -128,7 +128,7 @@ namespace valuascript::compiler::test
                 size_t end_col = start_col + c.first_token_len;
 
                 std::vector<ParserExpectedError> errs = {
-                    {E::MissingOperator, 1, start_col, 1, end_col}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}
                 };
                 auto req = IsBinary(TokenType::Plus,
                                     IsBinary(TokenType::Plus, a.verifier,
@@ -150,7 +150,7 @@ namespace valuascript::compiler::test
                 size_t end_col = start_col + d.first_token_len;
 
                 std::vector<ParserExpectedError> errs = {
-                    {E::MissingOperator, 1, start_col, 1, end_col}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = start_col, .line_end = 1, .column_end = end_col}
                 };
                 auto req = IsBinary(TokenType::Plus, IsBinary(TokenType::Plus, a.verifier, b.verifier),
                                     IsBinary(TokenType::Error, c.verifier, d.verifier));
@@ -184,7 +184,7 @@ namespace valuascript::compiler::test
     TEST_P(MissingOperatorSpecialCasesRunner, ValidatesInAllContexts)
     {
         const auto& special_case = GetParam();
-        std::vector<ParserExpectedError> errs = {{E::MissingOperator, 1, special_case.start_col, 1, special_case.end_col}};
+        std::vector<ParserExpectedError> errs = {PErr{.code = E::MissingOperator, .line_start = 1, .column_start = special_case.start_col, .line_end = 1, .column_end = special_case.end_col}};
         auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{special_case.verifier, special_case.multi});
         ExpectParseErrorsUnified(InjectableType::Expression, special_case.snippet, errs, m_v,
                                  "SpecialCases_" + special_case.test_name);

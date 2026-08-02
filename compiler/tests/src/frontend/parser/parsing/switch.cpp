@@ -40,18 +40,15 @@ namespace valuascript::compiler::test
         ParserStageTest,
         SwitchSadPathTest,
         testing::Values(
-            SwitchSadParam{"missing_left_paren", "let a = switch res) { case UP -> 1 }", E::
+            SwitchSadParam{.test_name = "missing_left_paren", .source_code = "let a = switch res) { case UP -> 1 }", .expected_error = E::
             ExpectedLeftParenAfterSwitch},
-            SwitchSadParam{"missing_right_paren", "let a = switch (res { case UP -> 1 }",
-            E::ExpectedRightParenAfterSwitchTarget},
-            SwitchSadParam{"missing_left_brace", "let a = switch (res) case UP -> 1 }", E::
+            SwitchSadParam{.test_name = "missing_right_paren", .source_code = "let a = switch (res { case UP -> 1 }", .expected_error = E::ExpectedRightParenAfterSwitchTarget},
+            SwitchSadParam{.test_name = "missing_left_brace", .source_code = "let a = switch (res) case UP -> 1 }", .expected_error = E::
             ExpectedLeftBraceBeforeSwitchBody},
-            SwitchSadParam{"missing_right_brace", "let a = switch (res) { case UP -> 1", E::
+            SwitchSadParam{.test_name = "missing_right_brace", .source_code = "let a = switch (res) { case UP -> 1", .expected_error = E::
             ExpectedRightBraceAfterSwitchBody},
-            SwitchSadParam{"expression_as_case", "let a = switch (res) { case a + b -> 10 }",
-            E::ExpectedRightArrowAfterSwitchCaseIdentifier},
-            SwitchSadParam{"assignment_in_body", "let a = switch (res) { let b = 2 }",
-            E::TopLevelDeclarationNotAllowedHere}
+            SwitchSadParam{.test_name = "expression_as_case", .source_code = "let a = switch (res) { case a + b -> 10 }", .expected_error = E::ExpectedRightArrowAfterSwitchCaseIdentifier},
+            SwitchSadParam{.test_name = "assignment_in_body", .source_code = "let a = switch (res) { let b = 2 }", .expected_error = E::TopLevelDeclarationNotAllowedHere}
 
         ),
         [](const testing::TestParamInfo<SwitchSadParam>& test_info) {

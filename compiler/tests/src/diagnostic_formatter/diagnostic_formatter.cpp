@@ -36,12 +36,13 @@ namespace valuascript::compiler::test
         static ValuaScriptException create_dummy_error(E code, size_t line, size_t col_start,
                                                        size_t col_end)
         {
-            SourceSpan span;
-            span.file_path = std::make_shared<const std::string>("test.vs");
-            span.line_start = line;
-            span.line_end = line;
-            span.column_start = col_start;
-            span.column_end = col_end;
+            SourceSpan span{
+                .line_start = line,
+                .column_start = col_start,
+                .line_end = line,
+                .column_end = col_end,
+                .file_path = std::make_shared<const std::string>("test.vs")
+            };
 
             return {ValuascriptErrorCategory::Syntax, code, span, "Test error message"};
         }

@@ -8,19 +8,7 @@ namespace valuascript::compiler::test
         struct ExpectedDictPair
         {
             std::string key;
-            std::optional<std::string> expected_number_value;
-
-            ExpectedDictPair(const char* k) : key(k), expected_number_value(std::nullopt)
-            {
-            }
-
-            ExpectedDictPair(const char* k, const char* v) : key(k), expected_number_value(std::string(v))
-            {
-            }
-
-            ExpectedDictPair(const char* k, const std::optional<std::string>& v) : key(k), expected_number_value(v)
-            {
-            }
+            std::optional<std::string> expected_number_value = std::nullopt;
         };
 
         void ExpectDictLiteral(const Program& ast, const std::vector<ExpectedDictPair>& expected)
@@ -77,141 +65,131 @@ namespace valuascript::compiler::test
         DictLiteralParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "dict_missing_closing_brace",
-            "let a = { x: 1 \n"
-            "let recovery = 1\n",
-            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 14} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            }
+                .test_name = "dict_missing_closing_brace",
+                .source_code = "let a = { x: 1 \nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14} },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 2);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_missing_multiple_closing_brace",
-            "let a = { x: 1 \n"
-            "let b = { x: 1 \n"
-            "let c = { x: 1 \n"
-            "let recovery = 1\n",
-            {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 14},
-            {Err::UnmatchedBraceInDictionaryLiteral, 2, 14},
-            {Err::UnmatchedBraceInDictionaryLiteral, 3, 14}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 4);
-            }
+                .test_name = "dict_missing_multiple_closing_brace",
+                .source_code = "let a = { x: 1 \nlet b = { x: 1 \nlet c = { x: 1 \nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14},
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 2, .column = 14},
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 3, .column = 14}
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 4);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "array_inside_dict_with_error",
-            "let a = {a: [1, 2}\n"
-            "let recovery = 1\n",
-            { {Err::UnmatchedBracketAfterTensorElements, 1, 17} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 1);
-            auto tensor = dynamic_cast<TensorLiteral*>(dict->elements[0].value.get());
-            ASSERT_NE(tensor, nullptr);
-            }
+                .test_name = "array_inside_dict_with_error",
+                .source_code = "let a = {a: [1, 2}\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 17} },
+                .verify_ast = [](const Program& ast) {
+                    ASSERT_EQ(ast.execution_steps.size(), 2);
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+                    ASSERT_NE(dict, nullptr);
+                    ASSERT_EQ(dict->elements.size(), 1);
+                    auto tensor = dynamic_cast<TensorLiteral*>(dict->elements[0].value.get());
+                    ASSERT_NE(tensor, nullptr);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_total_mangle",
-            "let a = { x: 1, let y = 2\n"
-            "let recovery = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 1, 17},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 25}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_total_mangle_new_line",
-            "let a = { x: 1,\n"
-            "let y = 2\n"
-            "let recovery = 1\n",
-            { {Err::UnmatchedBraceInDictionaryLiteral, 1, 15} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 3);
-            }
+                .test_name = "dict_total_mangle",
+                .source_code = "let a = { x: 1, let y = 2\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 17},
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 25}
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 2);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_eof_after_key",
-            "let a = { x\n",
-            {
-            {Err::ExpectedColonAfterDictionaryKey, 1, 12},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 11}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            EXPECT_EQ(dict->elements.size(), 1);
-            }
+                .test_name = "dict_total_mangle_new_line",
+                .source_code = "let a = { x: 1,\nlet y = 2\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 15} },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 3);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_eof_after_colon",
-            "let a = { x: \n",
-            {
-            {Err::InvalidExpression, 1, 13},
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 12}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            ExpectDictLiteral(ast, {{"x", std::nullopt}});
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "dict_eof_after_comma",
-            "let a = { x: 1, \n",
-            {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 15}
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            EXPECT_EQ(dict->elements.size(), 1);
-            }
+                .test_name = "dict_eof_after_key",
+                .source_code = "let a = { x\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedColonAfterDictionaryKey, .line = 1, .column = 12},
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 11}
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+                    ASSERT_NE(dict, nullptr);
+                    EXPECT_EQ(dict->elements.size(), 1);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_closed_with_wrong_bracket",
-            "let a = { x: 1 ]\n"
-            "let recovery = 1\n",
-            {
-            {Err::UnmatchedBraceInDictionaryLiteral, 1, 14}
-            },
-            ExpectDict({{"x", "1"}})
+                .test_name = "dict_eof_after_colon",
+                .source_code = "let a = { x: \n",
+                .expected_errors = {
+                    {.code = Err::InvalidExpression, .line = 1, .column = 13},
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 12}
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                    ExpectDictLiteral(ast, {{.key = "x", .expected_number_value = std::nullopt}});
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "dict_self_bracket_unexpected_comma",
-            "let a = { x: self[1, ], y: 2 }\n"
-            "let recovery = 1\n",
-            { {Err::UnexpectedCommaInBracketAccess, 1, 20} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr);
-            ASSERT_EQ(dict->elements.size(), 2) << "Both dictionary items should be preserved";
+                .test_name = "dict_eof_after_comma",
+                .source_code = "let a = { x: 1, \n",
+                .expected_errors = {
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 15}
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+                    ASSERT_NE(dict, nullptr);
+                    EXPECT_EQ(dict->elements.size(), 1);
+                }
+            },
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "dict_closed_with_wrong_bracket",
+                .source_code = "let a = { x: 1 ]\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14}
+                },
+                .verify_ast = ExpectDict({{.key = "x", .expected_number_value = "1"}})
+            },
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "dict_self_bracket_unexpected_comma",
+                .source_code = "let a = { x: self[1, ], y: 2 }\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::UnexpectedCommaInBracketAccess, .line = 1, .column = 20} },
+                .verify_ast = [](const Program& ast) {
+                    ASSERT_EQ(ast.execution_steps.size(), 2);
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
+                    ASSERT_NE(dict, nullptr);
+                    ASSERT_EQ(dict->elements.size(), 2) << "Both dictionary items should be preserved";
 
-            EXPECT_EQ(dict->elements[0].key, "x");
-            auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
-            ASSERT_NE(bracket, nullptr) << "BracketAccess should be recovered gracefully";
+                    EXPECT_EQ(dict->elements[0].key, "x");
+                    auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
+                    ASSERT_NE(bracket, nullptr) << "BracketAccess should be recovered gracefully";
 
-            ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr) << "Target must be self";
-            EXPECT_NE(bracket->index.get(), nullptr) <<
-            "Index should be recovered because comma aborts parsing after yielding the bound";
+                    ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr) << "Target must be self";
+                    EXPECT_NE(bracket->index.get(), nullptr) <<
+                        "Index should be recovered because comma aborts parsing after yielding the bound";
 
-            EXPECT_EQ(dict->elements[1].key, "y");
-            auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
-            ASSERT_NE(y_val, nullptr);
-            EXPECT_EQ(y_val->value, "2");
-            }
+                    EXPECT_EQ(dict->elements[1].key, "y");
+                    auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
+                    ASSERT_NE(y_val, nullptr);
+                    EXPECT_EQ(y_val->value, "2");
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

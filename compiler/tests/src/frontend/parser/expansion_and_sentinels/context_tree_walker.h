@@ -62,7 +62,7 @@ namespace valuascript::compiler::test
 
             if (type == InjectableType::StrongStatement)
             {
-                possible_steps.push_back({StepKind::Promotion, nullptr});
+                possible_steps.push_back({.kind = StepKind::Promotion, .context = nullptr});
             }
 
             if (depth < max_depth)
@@ -82,7 +82,7 @@ namespace valuascript::compiler::test
 
                     if (is_recursive && rec_depth >= max_rec) continue;
 
-                    possible_steps.push_back({StepKind::Context, &ctx});
+                    possible_steps.push_back({.kind = StepKind::Context, .context = &ctx});
                 }
             }
 

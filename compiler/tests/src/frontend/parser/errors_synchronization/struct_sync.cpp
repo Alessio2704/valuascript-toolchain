@@ -63,80 +63,74 @@ namespace valuascript::compiler::test {
         StructParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "name_reserved_keyword_full_ast",
-            "struct true { host: string, port: int, speed: int }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 8}
-            },
-            ExpectStruct("true", {
-                {"host", "string"},
-                {"port", "int"},
-                {"speed", "int"},
+                .test_name = "name_reserved_keyword_full_ast",
+                .source_code = "struct true { host: string, port: int, speed: int }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 8}
+                },
+                .verify_ast = ExpectStruct("true", {
+                    {"host", "string"},
+                    {"port", "int"},
+                    {"speed", "int"},
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "no_left_brace_struct_empty_ast",
-            "struct Test id: int }\n"
-            "let a = 1\n",
-            { {Err::ExpectedBraceInStructDefinition, 1, 13} },
-            ExpectNoStructs()
+                .test_name = "no_left_brace_struct_empty_ast",
+                .source_code = "struct Test id: int }\nlet a = 1\n",
+                .expected_errors = { {.code = Err::ExpectedBraceInStructDefinition, .line = 1, .column = 13} },
+                .verify_ast = ExpectNoStructs()
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_1",
-            "struct Test { host: string, port: int, let: int }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 40}
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"let", "int"},
+                .test_name = "reserved_keyword_1",
+                .source_code = "struct Test { host: string, port: int, let: int }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 40}
+                },
+                .verify_ast = ExpectStruct("Test", {
+                    {"host", "string"},
+                    {"port", "int"},
+                    {"let", "int"},
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_2",
-            "struct Test { host: string port: int let: int }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedCommaSeparatorInStruct, 1, 28},
-            {Err::ExpectedCommaSeparatorInStruct, 1, 38},
-            {Err::ReservedKeywordAsIdentifier, 1, 38}
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"let", "int"},
+                .test_name = "reserved_keyword_2",
+                .source_code = "struct Test { host: string port: int let: int }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedCommaSeparatorInStruct, .line = 1, .column = 28},
+                    {.code = Err::ExpectedCommaSeparatorInStruct, .line = 1, .column = 38},
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 38}
+                },
+                .verify_ast = ExpectStruct("Test", {
+                    {"host", "string"},
+                    {"port", "int"},
+                    {"let", "int"},
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_3",
-            "struct Test { case: string, if: int, let: int }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 15},
-            {Err::ReservedKeywordAsIdentifier, 1, 29},
-            {Err::ReservedKeywordAsIdentifier, 1, 38}
-            },
-            ExpectStruct("Test", {
-                {"case", "string"},
-                {"if", "int"},
-                {"let", "int"},
+                .test_name = "reserved_keyword_3",
+                .source_code = "struct Test { case: string, if: int, let: int }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 15},
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 29},
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 38}
+                },
+                .verify_ast = ExpectStruct("Test", {
+                    {"case", "string"},
+                    {"if", "int"},
+                    {"let", "int"},
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_4",
-            "struct Test { host: string, port: int, true int }\n"
-            "let a = 1\n",
-            {
-            {Err::ReservedKeywordAsIdentifier, 1, 40},
-            {Err::ExpectedColonAfterStructFieldName, 1, 45},
-            },
-            ExpectStruct("Test", {
-                {"host", "string"},
-                {"port", "int"},
-                {"<error>", std::nullopt},
+                .test_name = "reserved_keyword_4",
+                .source_code = "struct Test { host: string, port: int, true int }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 40},
+                    {.code = Err::ExpectedColonAfterStructFieldName, .line = 1, .column = 45},
+                },
+                .verify_ast = ExpectStruct("Test", {
+                    {"host", "string"},
+                    {"port", "int"},
+                    {"<error>", std::nullopt},
                 })
             }
         ),

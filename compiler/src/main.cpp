@@ -13,7 +13,7 @@ int main() {
     context->settings.fail_fast = false;
 
     std::vector<CompilerStageArtifact> initial_artifacts = {
-        {CompilerStageArtifactCode::FilePath, file_path}
+        {.code = CompilerStageArtifactCode::FilePath, .data = file_path}
     };
 
     try {

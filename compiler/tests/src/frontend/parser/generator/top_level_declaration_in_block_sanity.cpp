@@ -22,16 +22,12 @@ namespace valuascript::compiler::test
         ExpectParseErrors(
             source,
             {
-                {
-                    E::TopLevelDeclarationNotAllowedHere,
-                    2, 5,
-                    5, 6
-                }
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 2, .column_start = 5, .line_end = 5, .column_end = 6}
             },
             ProgramSpec{
                 .functions = {
                     IsFunctionDef("main", {}, {}, {IsType("void")}, {
-                                      IsAssignment({{"a"}}, IsNumber("1"))
+                                      IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
                                   })
                 }
             }
@@ -94,25 +90,25 @@ namespace valuascript::compiler::test
         ExpectParseErrors(
             source,
             {
-                {E::TopLevelDeclarationNotAllowedHere, 2, 5, 4, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 6, 5, 9, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 11, 5, 13, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 15, 5, 18, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 20, 5, 23, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 25, 5, 29, 6},
-                {E::TopLevelDeclarationNotAllowedHere, 31, 5, 31, 20},
-                {E::TopLevelDeclarationNotAllowedHere, 33, 5, 34, 20},
-                {E::TopLevelDeclarationNotAllowedHere, 36, 5, 36, 7},
-                {E::TopLevelDeclarationNotAllowedHere, 38, 5, 38, 13},
-                {E::TopLevelDeclarationNotAllowedHere, 40, 5, 40, 13},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 2, .column_start = 5, .line_end = 4, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 6, .column_start = 5, .line_end = 9, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 11, .column_start = 5, .line_end = 13, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 15, .column_start = 5, .line_end = 18, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 20, .column_start = 5, .line_end = 23, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 25, .column_start = 5, .line_end = 29, .column_end = 6},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 31, .column_start = 5, .line_end = 31, .column_end = 20},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 33, .column_start = 5, .line_end = 34, .column_end = 20},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 36, .column_start = 5, .line_end = 36, .column_end = 7},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 38, .column_start = 5, .line_end = 38, .column_end = 13},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 40, .column_start = 5, .line_end = 40, .column_end = 13},
 
-                {E::TopLevelDeclarationNotAllowedHere, 43, 10, 45, 11},
-                {E::TopLevelDeclarationNotAllowedHere, 47, 9, 49, 11}
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 43, .column_start = 10, .line_end = 45, .column_end = 11},
+                PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 47, .column_start = 9, .line_end = 49, .column_end = 11}
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({{"a"}}),
-                    IsAssignment({{"a"}})
+                    IsAssignment({AssignmentTargetSpec{.name = "a"}}),
+                    IsAssignment({AssignmentTargetSpec{.name = "a"}})
                 },
                 .functions = {
                     IsFunctionDef("a", {}, {}, {IsType("void")})

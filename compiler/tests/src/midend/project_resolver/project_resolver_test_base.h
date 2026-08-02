@@ -26,14 +26,6 @@ namespace valuascript::compiler::test
         std::optional<size_t> column = std::nullopt;
         std::optional<size_t> line_end = std::nullopt;
         std::optional<size_t> column_end = std::nullopt;
-
-        ExpectedResolverError(ProjectResolverErrorCode c) : code(c) {}
-        ExpectedResolverError(ProjectResolverErrorCode c, std::string f)
-            : code(c), file_path(std::move(f)) {}
-        ExpectedResolverError(ProjectResolverErrorCode c, std::string f, size_t l, size_t col)
-            : code(c), file_path(std::move(f)), line(l), column(col) {}
-        ExpectedResolverError(ProjectResolverErrorCode c, std::string f, size_t l, size_t col, size_t le, size_t cole)
-            : code(c), file_path(std::move(f)), line(l), column(col), line_end(le), column_end(cole) {}
     };
 
     class ProjectResolverTestBase : public testing::Test
@@ -75,7 +67,7 @@ namespace valuascript::compiler::test
 
             ProjectResolverStage resolver;
             std::vector<CompilerStageArtifact> input_artifacts = {
-                {CompilerStageArtifactCode::FilePath, entry_file}
+                {.code = CompilerStageArtifactCode::FilePath, .data = entry_file}
             };
 
             auto result_artifact = resolver.run(*context, input_artifacts);

@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
                 .name = "BinaryMissingRight",
                 .code = "1 + ",
                 .errors = {
-                    {E::InvalidExpression, 0, 0, 0, 0, true}
+                    PErr{.code = E::InvalidExpression, .line_start = 0, .column_start = 0, .line_end = 0, .column_end = 0, .skip_span_check = true}
                 },
                 .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
             });
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 .name = "BinaryInvalidRight1",
                 .code = "1 + * 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
             });
@@ -33,7 +33,7 @@ namespace valuascript::compiler::test
                 .name = "BinaryInvalidRight2",
                 .code = "1 + *",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
             });
@@ -42,7 +42,7 @@ namespace valuascript::compiler::test
                 .name = "BinaryInvalidRight3",
                 .code = "1 + - * 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 7, 1, 8}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBinary(TokenType::Plus,
                          IsNumber("1"),
@@ -55,7 +55,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryInvalidRight1",
                 .code = "+ *",
                 .errors = {
-                    {E::InvalidExpression, 1, 3, 1, 4}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsUnary(TokenType::Plus, IsNull())
             });
@@ -64,7 +64,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryInvalidRight2",
                 .code = "+ * 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 3, 1, 4}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsUnary(TokenType::Plus, IsNull())
             });
@@ -73,7 +73,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryInvalidRight3",
                 .code = "- + * 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsUnary(TokenType::Minus,
                         IsUnary(TokenType::Plus,
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryInvalidRight4",
                 .code = "+ .",
                 .errors = {
-                    {E::InvalidExpression, 1, 3, 1, 4}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsUnary(TokenType::Plus, IsNull())
             });
@@ -95,7 +95,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryMissingRight1",
                 .code = "- ",
                 .errors = {
-                    {E::InvalidExpression, 0, 0, 0, 0, true}
+                    PErr{.code = E::InvalidExpression, .line_start = 0, .column_start = 0, .line_end = 0, .column_end = 0, .skip_span_check = true}
                 },
                 .verifier = IsUnary(TokenType::Minus, IsNull())
             });
@@ -104,7 +104,7 @@ namespace valuascript::compiler::test
                 .name = "UnaryMissingRight2",
                 .code = "not ",
                 .errors = {
-                    {E::InvalidExpression, 0, 0, 0, 0, true}
+                    PErr{.code = E::InvalidExpression, .line_start = 0, .column_start = 0, .line_end = 0, .column_end = 0, .skip_span_check = true}
                 },
                 .verifier = IsUnary(TokenType::Not, IsNull())
             });
@@ -113,7 +113,7 @@ namespace valuascript::compiler::test
                 .name = "RightAssociativeMissingOperand",
                 .code = "2 ^ ^ 3 ",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsBinary(TokenType::Caret, IsNumber("2"), IsNull())
             });
@@ -122,8 +122,8 @@ namespace valuascript::compiler::test
                 .name = "ModifierInsideExpressionContext",
                 .code = "1 + @test 2",
                 .errors = {
-                    {E::TopLevelDeclarationNotAllowedHere, 1, 5, 1, 10},
-                    {E::ModifiersAttachedToInvalidDeclaration, 1, 5, 1, 10}
+                    PErr{.code = E::TopLevelDeclarationNotAllowedHere, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 10},
+                    PErr{.code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
             });

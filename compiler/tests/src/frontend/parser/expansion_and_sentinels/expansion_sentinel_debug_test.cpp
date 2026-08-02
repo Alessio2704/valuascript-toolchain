@@ -132,43 +132,43 @@ namespace valuascript::compiler::test
                 ContextOverride{
                     .context_name = ContextNames::TypeMultiAssignmentTarget1,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeFunctionMultiReturn,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeStart,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 15, 1, 16}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 18, 1, 19}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeStart,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 16, .line_end = 1, .column_end = 17}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 16, 1, 17}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 16, .line_end = 1, .column_end = 17}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeEnd,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedBracketAfterGenericArgs, 1, 12, 1, 13}
+                        PErr{.code = ParserErrorCode::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                     }
                 },
             }
@@ -178,7 +178,7 @@ namespace valuascript::compiler::test
             InjectableType::TypeAnnotation,
             "(int, string",
             std::vector<ParserExpectedError>{
-                {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 12, 1, 13}
+                PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
             },
             "TupleMissingClosingParen",
             NullVerifier{},
@@ -194,61 +194,61 @@ namespace valuascript::compiler::test
                 ContextOverride{
                     .context_name = ContextNames::TypeFunctionParameter,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::ExpectedRightParenAfterParameters, 1, 13, 1, 14}
+                        PErr{.code = ParserErrorCode::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeFunctionMultiParameter2,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::ExpectedRightParenAfterParameters, 1, 13, 1, 14}
+                        PErr{.code = ParserErrorCode::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeEnd,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 13, 1, 14}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeMultiAssignmentTarget1,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 20, 1, 21}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeFunctionMultiReturn,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 17, 1, 18}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeStart,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 17, 1, 18}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeTupleTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 20, 1, 21}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeStart,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 18, 1, 19}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeMiddle,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 18, 1, 19}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                     }
                 },
                 ContextOverride{
                     .context_name = ContextNames::TypeGenericTypeEnd,
                     .errors = std::vector<ParserExpectedError>{
-                        {ParserErrorCode::UnmatchedParenthesisInTuple, 1, 14, 1, 15}
+                        PErr{.code = ParserErrorCode::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
                     }
                 },
             }

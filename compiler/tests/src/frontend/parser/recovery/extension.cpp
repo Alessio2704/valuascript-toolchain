@@ -18,56 +18,56 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingTypeName",
                 .code = "extension {}",
-                .errors = {{E::MissingTypeAnnotation, 1, 11, 1, 12}},
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}},
                 .verifier = IsExtensionDef({}, IsNullType(), {})
             });
 
             reg({
                 .name = "MissingTypeNameWithTrailingCharacters",
                 .code = "extension 123 {}",
-                .errors = {{E::MissingTypeAnnotation, 1, 11, 1, 14}},
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 14}},
                 .verifier = IsExtensionDef({}, IsNullType(), {})
             });
 
             reg({
                 .name = "MissingBrace",
                 .code = "extension Target",
-                .errors = {{E::ExpectedLeftBraceBeforeExtensionBody, 1, 17, 1, 18}},
+                .errors = {PErr{.code = E::ExpectedLeftBraceBeforeExtensionBody, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 
             reg({
                 .name = "ModifierMissingTarget",
                 .code = "@* extension Target {}",
-                .errors = {{E::ExpectedModifierName, 1, 2, 1, 3}},
+                .errors = {PErr{.code = E::ExpectedModifierName, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 
             reg({
                 .name = "ForbiddenImport",
                 .code = "extension Target { import \"abc\" }",
-                .errors = {{E::ImportNotAllowedInExtension, 1, 20, 1, 26}},
+                .errors = {PErr{.code = E::ImportNotAllowedInExtension, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 26}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 
             reg({
                 .name = "ForbiddenDirective1",
                 .code = "extension Target { #no_value }",
-                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                .errors = {PErr{.code = E::DirectiveNotAllowedInExtension, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 29}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 
             reg({
                 .name = "ForbiddenDirective2",
                 .code = "extension Target { #value = 10 }",
-                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 31}},
+                .errors = {PErr{.code = E::DirectiveNotAllowedInExtension, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 31}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 
             reg({
                 .name = "ForbiddenDirective3",
                 .code = "extension Target { #value 10 }",
-                .errors = {{E::DirectiveNotAllowedInExtension, 1, 20, 1, 29}},
+                .errors = {PErr{.code = E::DirectiveNotAllowedInExtension, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 29}},
                 .verifier = IsExtensionDef({}, IsType("Target"), {})
             });
 

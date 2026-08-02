@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
         std::string a_path = CreateFile("a.vs", "import \"b.vs\"");
 
         ExpectResolverRecovery(a_path, {
-            {E::CircularImportDetected, b_path, 1, 1, 1, 14}
+            {.code = E::CircularImportDetected, .file_path = b_path, .line = 1, .column = 1, .line_end = 1, .column_end = 14}
         });
     }
 
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
         std::string a_path = CreateFile("a.vs", "import \"a.vs\"");
 
         ExpectResolverRecovery(a_path, {
-            {E::CircularImportDetected, a_path, 1, 1, 1, 14}
+            {.code = E::CircularImportDetected, .file_path = a_path, .line = 1, .column = 1, .line_end = 1, .column_end = 14}
         });
     }
 
@@ -39,7 +39,7 @@ namespace valuascript::compiler::test
         std::string canonical_d = std::filesystem::weakly_canonical(d_path).string();
 
         ExpectResolverRecovery(a_path, {
-            {E::CircularImportDetected, canonical_d, 1, 1, 1, 14}
+            {.code = E::CircularImportDetected, .file_path = canonical_d, .line = 1, .column = 1, .line_end = 1, .column_end = 14}
         });
     }
 
@@ -48,7 +48,7 @@ namespace valuascript::compiler::test
         std::string a_path = CreateFile("a.vs", "import \"ghost.vs\"");
 
         ExpectResolverRecovery(a_path, {
-            {E::ImportFileNotFound, a_path, 1, 1, 1, 18}
+            {.code = E::ImportFileNotFound, .file_path = a_path, .line = 1, .column = 1, .line_end = 1, .column_end = 18}
         });
     }
 
@@ -61,8 +61,8 @@ namespace valuascript::compiler::test
         );
 
         ExpectResolverRecovery(main_path, {
-            {E::CircularImportDetected, module_a_path, 1, 1, 1, 22},
-            {E::ImportFileNotFound, main_path, 2, 1, 2, 32}
+            {.code = E::CircularImportDetected, .file_path = module_a_path, .line = 1, .column = 1, .line_end = 1, .column_end = 22},
+            {.code = E::ImportFileNotFound, .file_path = main_path, .line = 2, .column = 1, .line_end = 2, .column_end = 32}
         });
     }
 }

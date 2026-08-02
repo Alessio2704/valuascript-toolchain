@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 .name = "SingleField",
                 .code = "struct S { f: int }",
                 .verifier = IsStructDef("S",
-                    FieldSpec{"f", IsType("int")}
+                    FieldSpec{.name = "f", .type_v = IsType("int")}
                 )
             });
 
@@ -32,9 +32,9 @@ namespace valuascript::compiler::test
                 .name = "MultipleFields",
                 .code = "struct Point { x: float, y: float, z: float }",
                 .verifier = IsStructDef("Point",
-                    FieldSpec{"x", IsType("float")},
-                    FieldSpec{"y", IsType("float")},
-                    FieldSpec{"z", IsType("float")}
+                    FieldSpec{.name = "x", .type_v = IsType("float")},
+                    FieldSpec{.name = "y", .type_v = IsType("float")},
+                    FieldSpec{.name = "z", .type_v = IsType("float")}
                 )
             });
 
@@ -42,8 +42,8 @@ namespace valuascript::compiler::test
                 .name = "TrailingComma",
                 .code = "struct S { f1: int, f2: bool, }",
                 .verifier = IsStructDef("S",
-                    FieldSpec{"f1", IsType("int")},
-                    FieldSpec{"f2", IsType("bool")}
+                    FieldSpec{.name = "f1", .type_v = IsType("int")},
+                    FieldSpec{.name = "f2", .type_v = IsType("bool")}
                 )
             });
 
@@ -51,9 +51,9 @@ namespace valuascript::compiler::test
                 .name = "InterleavingModifiedFields",
                 .code = "struct User { @id id: int, username: string, @optional bio: string }",
                 .verifier = IsStructDef("User",
-                    FieldSpec{"id", std::vector<ModifierSpec>{{"id"}}, IsType("int")},
-                    FieldSpec{"username", IsType("string")},
-                    FieldSpec{"bio", std::vector<ModifierSpec>{{"optional"}}, IsType("string")}
+                    FieldSpec{.name = "id", .modifiers = {{"id"}}, .type_v = IsType("int")},
+                    FieldSpec{.name = "username", .type_v = IsType("string")},
+                    FieldSpec{.name = "bio", .modifiers = {{"optional"}}, .type_v = IsType("string")}
                 )
             });
 
@@ -68,8 +68,8 @@ namespace valuascript::compiler::test
                 "  version: int \n"
                 "}",
                 .verifier = IsStructDef("Config",
-                    FieldSpec{"secret", std::vector<ModifierSpec>{{"internal"}}, IsType("string")},
-                    FieldSpec{"version", IsType("int")}
+                    FieldSpec{.name = "secret", .modifiers = {{"internal"}}, .type_v = IsType("string")},
+                    FieldSpec{.name = "version", .type_v = IsType("int")}
                 )
             });
 

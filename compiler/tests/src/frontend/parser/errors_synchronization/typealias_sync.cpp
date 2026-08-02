@@ -35,14 +35,13 @@ namespace valuascript::compiler::test
         TypeAliasParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "missing_assignment_operator",
-            "typealias MyType int\n"
-            "let a = 1\n",
-            { {Err::ExpectedAssignAfterTypeAliasName, 1, 18} },
-            [](const Program& ast) {
-            EXPECT_TRUE(ast.type_aliases.empty());
-            ExpectRecoveredAssignment("a")(ast);
-            }
+                .test_name = "missing_assignment_operator",
+                .source_code = "typealias MyType int\nlet a = 1\n",
+                .expected_errors = { {.code = Err::ExpectedAssignAfterTypeAliasName, .line = 1, .column = 18} },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_TRUE(ast.type_aliases.empty());
+                    ExpectRecoveredAssignment("a")(ast);
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

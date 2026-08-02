@@ -19,6 +19,6 @@ namespace valuascript::compiler {
         Lexer lexer(source, file_path, context);
         std::vector<Token> tokens = lexer.tokenize();
 
-        return {CompilerStageArtifactCode::TokenStream, tokens};
+        return {.code = CompilerStageArtifactCode::TokenStream, .data = tokens};
     }
 }

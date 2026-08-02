@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 .name = "MinimalEnum",
                 .code = "enum E: int { A }",
                 .verifier = IsEnumDef("E", {}, IsType("int"),
-                    EnumCaseSpec{"A"}
+                    EnumCaseSpec{.name = "A"}
                 )
             });
 
@@ -32,9 +32,9 @@ namespace valuascript::compiler::test
                 .name = "MultipleCases",
                 .code = "enum Color: int { Red, Green, Blue }",
                 .verifier = IsEnumDef("Color", {}, IsType("int"),
-                    EnumCaseSpec{"Red"},
-                    EnumCaseSpec{"Green"},
-                    EnumCaseSpec{"Blue"}
+                    EnumCaseSpec{.name = "Red"},
+                    EnumCaseSpec{.name = "Green"},
+                    EnumCaseSpec{.name = "Blue"}
                 )
             });
 
@@ -42,9 +42,9 @@ namespace valuascript::compiler::test
                 .name = "CasesWithExplicitValues",
                 .code = "enum Status: int { Active = 1, Inactive = 0, Pending = 2 }",
                 .verifier = IsEnumDef("Status", {}, IsType("int"),
-                    EnumCaseSpec{"Active", IsNumber("1")},
-                    EnumCaseSpec{"Inactive", IsNumber("0")},
-                    EnumCaseSpec{"Pending", IsNumber("2")}
+                    EnumCaseSpec{.name = "Active", .value_v = IsNumber("1")},
+                    EnumCaseSpec{.name = "Inactive", .value_v = IsNumber("0")},
+                    EnumCaseSpec{.name = "Pending", .value_v = IsNumber("2")}
                 )
             });
 
@@ -52,10 +52,10 @@ namespace valuascript::compiler::test
                 .name = "MixedValuedAndUnvaluedCases",
                 .code = "enum Flag: int { None = 0, First, Second, Last = 10 }",
                 .verifier = IsEnumDef("Flag", {}, IsType("int"),
-                    EnumCaseSpec{"None", IsNumber("0")},
-                    EnumCaseSpec{"First"},
-                    EnumCaseSpec{"Second"},
-                    EnumCaseSpec{"Last", IsNumber("10")}
+                    EnumCaseSpec{.name = "None", .value_v = IsNumber("0")},
+                    EnumCaseSpec{.name = "First"},
+                    EnumCaseSpec{.name = "Second"},
+                    EnumCaseSpec{.name = "Last", .value_v = IsNumber("10")}
                 )
             });
 
@@ -63,8 +63,8 @@ namespace valuascript::compiler::test
                 .name = "TrailingComma",
                 .code = "enum E: int { A, B, }",
                 .verifier = IsEnumDef("E", {}, IsType("int"),
-                    EnumCaseSpec{"A"},
-                    EnumCaseSpec{"B"}
+                    EnumCaseSpec{.name = "A"},
+                    EnumCaseSpec{.name = "B"}
                 )
             });
 
@@ -72,9 +72,9 @@ namespace valuascript::compiler::test
                 .name = "InterleavingModifiedCases",
                 .code = "enum E: int { @primary A, B, @deprecated C = 99 }",
                 .verifier = IsEnumDef("E", {}, IsType("int"),
-                    EnumCaseSpec{"A", std::vector<ModifierSpec>{{"primary"}}},
-                    EnumCaseSpec{"B"},
-                    EnumCaseSpec{"C", std::vector<ModifierSpec>{{"deprecated"}}, IsNumber("99")}
+                    EnumCaseSpec{.name = "A", .modifiers = {{"primary"}}},
+                    EnumCaseSpec{.name = "B"},
+                    EnumCaseSpec{.name = "C", .modifiers = {{"deprecated"}}, .value_v = IsNumber("99")}
                 )
             });
 
@@ -89,8 +89,8 @@ namespace valuascript::compiler::test
                 "  Closed = \"closed\"\n"
                 "}",
                 .verifier = IsEnumDef("State", {}, IsType("string"),
-                    EnumCaseSpec{"Open", std::vector<ModifierSpec>{{"init"}}, IsString("\"open\"")},
-                    EnumCaseSpec{"Closed", IsString("\"closed\"")}
+                    EnumCaseSpec{.name = "Open", .modifiers = {{"init"}}, .value_v = IsString("\"open\"")},
+                    EnumCaseSpec{.name = "Closed", .value_v = IsString("\"closed\"")}
                 )
             });
 

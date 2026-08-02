@@ -20,11 +20,11 @@ namespace valuascript::compiler::test
     static std::vector<IntegritySample> GetIntegritySamples()
     {
         return {
-            {InjectableType::Expression, "1", "Expression"},
-            {InjectableType::TypeAnnotation, "int", "TypeAnnotation"},
-            {InjectableType::Modifier, "@meta", "Modifier"},
-            {InjectableType::StrongStatement, "let x = 1", "StrongStatement"},
-            {InjectableType::WeakStatement, "return 1", "WeakStatement"}
+            {.start_type = InjectableType::Expression, .snippet = "1", .test_name = "Expression"},
+            {.start_type = InjectableType::TypeAnnotation, .snippet = "int", .test_name = "TypeAnnotation"},
+            {.start_type = InjectableType::Modifier, .snippet = "@meta", .test_name = "Modifier"},
+            {.start_type = InjectableType::StrongStatement, .snippet = "let x = 1", .test_name = "StrongStatement"},
+            {.start_type = InjectableType::WeakStatement, .snippet = "return 1", .test_name = "WeakStatement"}
         };
     }
 
@@ -141,17 +141,17 @@ namespace valuascript::compiler::test
 
         cb.on_promotion = [&](const WalkState& s)
         {
-            cb.on_terminal({InjectableType::TopLevel, s.depth + 1});
+            cb.on_terminal(WalkState{.type = InjectableType::TopLevel, .depth = s.depth + 1});
         };
 
         cb.on_normal_branch = [](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
-            return { WalkState{ctx.output_type, s.depth + 1} };
+            return { WalkState{.type = ctx.output_type, .depth = s.depth + 1} };
         };
 
         cb.on_block_branch = [](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
-            return { WalkState{ctx.output_type, s.depth + 1} };
+            return { WalkState{.type = ctx.output_type, .depth = s.depth + 1} };
         };
 
         std::mt19937 rng(42);
@@ -166,7 +166,7 @@ namespace valuascript::compiler::test
         for (int i = 0; i < 50; ++i)
         {
             reached_terminal = false;
-            ContextTreeWalker<WalkState>::walk({start_type, 0}, 0, 0, cb, ExpansionPolicy{20, 5});
+            ContextTreeWalker<WalkState>::walk(WalkState{.type = start_type, .depth = 0}, 0, 0, cb, ExpansionPolicy{20, 5});
             if (reached_terminal)
             {
                 ever_reached = true;

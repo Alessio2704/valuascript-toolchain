@@ -288,19 +288,6 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         ExprVerifier default_v = nullptr;
-
-        ParamSpec() = default;
-
-        template <typename T = TypeVerifier>
-            requires (!std::same_as<std::decay_t<T>, std::vector<ModifierSpec>>)
-        ParamSpec(StringStorage n, T&& t, ExprVerifier d = nullptr)
-            : name(std::move(n)), type_v(std::forward<T>(t)), default_v(std::move(d)) {}
-
-        ParamSpec(StringStorage n, std::vector<ModifierSpec> m, TypeVerifier t = nullptr, ExprVerifier d = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)), default_v(std::move(d)) {}
-
-        ParamSpec(std::vector<ModifierSpec> m, StringStorage n, TypeVerifier t = nullptr, ExprVerifier d = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)), default_v(std::move(d)) {}
     };
 
     struct FieldSpec
@@ -308,19 +295,6 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
-
-        FieldSpec() = default;
-
-        template <typename T = TypeVerifier>
-            requires (!std::same_as<std::decay_t<T>, std::vector<ModifierSpec>>)
-        FieldSpec(StringStorage n, T&& t)
-            : name(std::move(n)), type_v(std::forward<T>(t)) {}
-
-        FieldSpec(StringStorage n, std::vector<ModifierSpec> m, TypeVerifier t = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)) {}
-
-        FieldSpec(std::vector<ModifierSpec> m, StringStorage n, TypeVerifier t = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)) {}
     };
 
     struct EnumCaseSpec
@@ -328,19 +302,6 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
-
-        EnumCaseSpec() = default;
-
-        template <typename V = ExprVerifier>
-            requires (!std::same_as<std::decay_t<V>, std::vector<ModifierSpec>>)
-        EnumCaseSpec(StringStorage n, V&& v = nullptr)
-            : name(std::move(n)), value_v(std::forward<V>(v)) {}
-
-        EnumCaseSpec(StringStorage n, std::vector<ModifierSpec> m, ExprVerifier v = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), value_v(std::move(v)) {}
-
-        EnumCaseSpec(std::vector<ModifierSpec> m, StringStorage n, ExprVerifier v = nullptr)
-            : name(std::move(n)), modifiers(std::move(m)), value_v(std::move(v)) {}
     };
 
     struct DictItemSpec
@@ -353,66 +314,8 @@ namespace valuascript::compiler::test
     struct SwitchCaseSpec
     {
         std::vector<ModifierSpec> modifiers = {};
-        std::vector<StringStorage> labels;
+        std::vector<StringStorage> labels = {};
         ExprVerifier result_v = nullptr;
-
-        SwitchCaseSpec() = default;
-
-        SwitchCaseSpec(std::vector<StringStorage> l, ExprVerifier r = nullptr)
-            : labels(std::move(l)), result_v(std::move(r))
-        {
-        }
-
-        SwitchCaseSpec(std::initializer_list<StringStorage> l, ExprVerifier r = nullptr) = delete;
-
-        SwitchCaseSpec(std::vector<std::string> l, ExprVerifier r = nullptr)
-            : labels(l.begin(), l.end()), result_v(std::move(r))
-        {
-        }
-
-        SwitchCaseSpec(std::vector<ModifierSpec> m, std::vector<StringStorage> l, ExprVerifier r = nullptr)
-            : modifiers(std::move(m)), labels(std::move(l)), result_v(std::move(r))
-        {
-        }
-
-        SwitchCaseSpec(std::vector<ModifierSpec> m, std::initializer_list<StringStorage> l, ExprVerifier r = nullptr) = delete;
-
-        SwitchCaseSpec(std::vector<ModifierSpec> m, std::vector<std::string> l, ExprVerifier r = nullptr)
-            : modifiers(std::move(m)), labels(l.begin(), l.end()), result_v(std::move(r))
-        {
-        }
-
-        template <typename... Args>
-            requires (sizeof...(Args) >= 2 &&
-                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<ModifierSpec>> &&
-                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<StringStorage>> &&
-                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<std::string>>)
-        SwitchCaseSpec(Args&&... args)
-        {
-            auto tuple_args = std::forward_as_tuple(std::forward<Args>(args)...);
-            constexpr size_t N = sizeof...(Args);
-            result_v = std::get<N - 1>(tuple_args);
-            labels.reserve(N - 1);
-            [&]<size_t... Is>(std::index_sequence<Is...>) {
-                (labels.push_back(StringStorage(std::get<Is>(tuple_args))), ...);
-            }(std::make_index_sequence<N - 1>{});
-        }
-
-        template <typename... Args>
-            requires (sizeof...(Args) >= 2 &&
-                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<StringStorage>> &&
-                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<std::string>>)
-        SwitchCaseSpec(std::vector<ModifierSpec> m, Args&&... args)
-            : modifiers(std::move(m))
-        {
-            auto tuple_args = std::forward_as_tuple(std::forward<Args>(args)...);
-            constexpr size_t N = sizeof...(Args);
-            result_v = std::get<N - 1>(tuple_args);
-            labels.reserve(N - 1);
-            [&]<size_t... Is>(std::index_sequence<Is...>) {
-                (labels.push_back(StringStorage(std::get<Is>(tuple_args))), ...);
-            }(std::make_index_sequence<N - 1>{});
-        }
     };
 
     struct AssignmentTargetSpec
@@ -420,16 +323,6 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         StringStorage name;
         TypeVerifier type_v = nullptr;
-
-        AssignmentTargetSpec(StringStorage n, TypeVerifier t = nullptr)
-            : name(std::move(n)), type_v(std::move(t))
-        {
-        }
-
-        AssignmentTargetSpec(std::vector<ModifierSpec> m, StringStorage n, TypeVerifier t = nullptr)
-            : modifiers(std::move(m)), name(std::move(n)), type_v(std::move(t))
-        {
-        }
     };
 
     template <typename T>

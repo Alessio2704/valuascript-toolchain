@@ -59,7 +59,13 @@ namespace valuascript::compiler
             ValuaScriptException ex(
                 ValuascriptErrorCategory::Lexical,
                 code,
-                {line_start_, column_start_, line_, column_current_, file_path_},
+                SourceSpan{
+                    .line_start = line_start_,
+                    .column_start = column_start_,
+                    .line_end = line_,
+                    .column_end = column_current_,
+                    .file_path = std::make_shared<const std::string>(file_path_)
+                },
                 std::move(message)
             );
 

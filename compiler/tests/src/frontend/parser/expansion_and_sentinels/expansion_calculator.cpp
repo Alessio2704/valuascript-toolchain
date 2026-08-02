@@ -27,17 +27,17 @@ namespace valuascript::compiler::test
         {
             bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
                 .end();
-            return { WalkState{ctx.output_type, skip} };
+            return { WalkState{.type = ctx.output_type, .is_skipped = skip} };
         };
 
         cb.on_block_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
             bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts
                 .end();
-            return { WalkState{ctx.output_type, skip} };
+            return { WalkState{.type = ctx.output_type, .is_skipped = skip} };
         };
 
-        ContextTreeWalker<WalkState>::walk({start_type, false}, 0, 0, cb);
+        ContextTreeWalker<WalkState>::walk(WalkState{.type = start_type, .is_skipped = false}, 0, 0, cb);
 
         return count;
     }

@@ -24,8 +24,8 @@ namespace valuascript::compiler::test
                 .name = "MultipleParameters",
                 .code = "func add(a: int, b: int) -> int {}",
                 .verifier = IsFunctionDef("add", {}, {
-                    ParamSpec{"a", {}, IsType("int")},
-                    ParamSpec{"b", {}, IsType("int")}
+                    ParamSpec{.name = "a", .type_v = IsType("int")},
+                    ParamSpec{.name = "b", .type_v = IsType("int")}
                 }, {IsType("int")}, {})
             });
 
@@ -33,8 +33,8 @@ namespace valuascript::compiler::test
                 .name = "SingleDefaultParameterValue",
                 .code = "func f(a: int, b: bool = true) -> void {}",
                 .verifier = IsFunctionDef("f", {}, {
-                    ParamSpec{"a", {}, IsType("int")},
-                    ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
+                    ParamSpec{.name = "a", .type_v = IsType("int")},
+                    ParamSpec{.name = "b", .type_v = IsType("bool"), .default_v = IsBoolean(true)}
                 }, {IsType("void")}, {})
             });
 
@@ -42,8 +42,8 @@ namespace valuascript::compiler::test
                 .name = "DefaultParameterValues",
                 .code = "func f(a: int = 1, b: bool = true) -> void {}",
                 .verifier = IsFunctionDef("f", {}, {
-                    ParamSpec{"a", {}, IsType("int"), IsNumber("1")},
-                    ParamSpec{"b", {}, IsType("bool"), IsBoolean(true)}
+                    ParamSpec{.name = "a", .type_v = IsType("int"), .default_v = IsNumber("1")},
+                    ParamSpec{.name = "b", .type_v = IsType("bool"), .default_v = IsBoolean(true)}
                 }, {IsType("void")}, {})
             });
 
@@ -87,8 +87,8 @@ namespace valuascript::compiler::test
                 "{\n"
                 "}",
                 .verifier = IsFunctionDef("long_function_name", {}, {
-                    ParamSpec{"param_one", {}, IsType("int")},
-                    ParamSpec{"param_two", {}, IsType("string")}
+                    ParamSpec{.name = "param_one", .type_v = IsType("int")},
+                    ParamSpec{.name = "param_two", .type_v = IsType("string")}
                 }, {
                     IsType("bool"),
                     IsType("decimal")

@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
                 .name = "MissingCommaRecoversBothArgs",
                 .code = "f(a: 1 b: 2)",
                 .errors = {
-                    {E::MissingCommaSeparatorForArgumentsInFunctionCall, 1, 8, 1, 9}
+                    PErr{.code = E::MissingCommaSeparatorForArgumentsInFunctionCall, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -28,7 +28,7 @@ namespace valuascript::compiler::test
                 .name = "TrailingComma",
                 .code = "f(a: 1,)",
                 .errors = {
-                    {E::TrailingCommaInFunctionCall, 1, 7, 1, 8}
+                    PErr{.code = E::TrailingCommaInFunctionCall, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -41,7 +41,7 @@ namespace valuascript::compiler::test
                 .name = "MissingArgName",
                 .code = "f(: 1, b: 2)",
                 .errors = {
-                    {E::MissingArgumentNameInFunctionCall, 1, 3, 1, 4}
+                    PErr{.code = E::MissingArgumentNameInFunctionCall, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -55,7 +55,7 @@ namespace valuascript::compiler::test
                 .name = "MissingColon1",
                 .code = "f(a 1, b: 2)",
                 .errors = {
-                    {E::MissingColonAfterArgument, 1, 5, 1, 6}
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -69,9 +69,9 @@ namespace valuascript::compiler::test
                 .name = "MissingColon2",
                 .code = "f(a, b, c)",
                 .errors = {
-                    {E::MissingColonAfterArgument, 1, 4, 1, 5},
-                    {E::MissingColonAfterArgument, 1, 7, 1, 8},
-                    {E::MissingColonAfterArgument, 1, 10, 1, 11}
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 5},
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8},
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -86,8 +86,8 @@ namespace valuascript::compiler::test
                 .name = "MissingColon3",
                 .code = "f(a: 1, b, c)",
                 .errors = {
-                    {E::MissingColonAfterArgument, 1, 10, 1, 11},
-                    {E::MissingColonAfterArgument, 1, 13, 1, 14}
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11},
+                    PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -102,7 +102,7 @@ namespace valuascript::compiler::test
                 .name = "MissingArgValue",
                 .code = "f(a: , b: 2)",
                 .errors = {
-                    {E::InvalidExpression, 1, 6, 1, 7}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -116,7 +116,7 @@ namespace valuascript::compiler::test
                 .name = "GarbageTokensRecoversGracefully",
                 .code = "f(a: 1, +-*/, b: 2)",
                 .errors = {
-                    {E::MissingArgumentNameInFunctionCall, 1, 9, 1, 10}
+                    PErr{.code = E::MissingArgumentNameInFunctionCall, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -131,8 +131,8 @@ namespace valuascript::compiler::test
                 .name = "MissingCommaAndColonBreaksList",
                 .code = "f(a: 1 b 2)",
                 .errors = {
-                    {E::MissingOperator, 1, 8, 1, 9},
-                    {E::MissingOperator, 1, 10, 1, 11}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -150,7 +150,7 @@ namespace valuascript::compiler::test
                 .name = "MissingValueAtEnd",
                 .code = "f(a: 1, b: )",
                 .errors = {
-                    {E::InvalidExpression, 1, 12, 1, 13}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -164,7 +164,7 @@ namespace valuascript::compiler::test
                 .name = "MultipleConsecutiveCommas",
                 .code = "f(a: 1,, b: 2)",
                 .errors = {
-                    {E::MissingArgumentNameInFunctionCall, 1, 8, 1, 9}
+                    PErr{.code = E::MissingArgumentNameInFunctionCall, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
@@ -179,7 +179,7 @@ namespace valuascript::compiler::test
                 .name = "InvalidTokenAsArgName",
                 .code = "f(a: 1, *: 2, b: 3)",
                 .errors = {
-                    {E::MissingArgumentNameInFunctionCall, 1, 9, 1, 10}
+                    PErr{.code = E::MissingArgumentNameInFunctionCall, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {

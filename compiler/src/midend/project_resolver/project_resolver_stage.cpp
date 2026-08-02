@@ -97,14 +97,17 @@ namespace valuascript::compiler
 
         std::string absolute_file_path = std::filesystem::weakly_canonical(raw_file_path).string();
 
-        ResolvedProjectArtifact project;
-        project.entry_file_path = absolute_file_path;
+        ResolvedProjectArtifact project{
+            .entry_file_path = absolute_file_path,
+            .modules = {},
+            .topological_order = {}
+        };
 
         resolving_.clear();
         resolved_.clear();
 
         resolve_recursive(context, absolute_file_path, project);
 
-        return {CompilerStageArtifactCode::ResolvedProject, project};
+        return {.code = CompilerStageArtifactCode::ResolvedProject, .data = project};
     }
 }

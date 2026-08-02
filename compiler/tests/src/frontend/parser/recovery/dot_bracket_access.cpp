@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
                 .name = "EmptyBracket",
                 .code = "arr[]",
                 .errors = {
-                    {E::EmptyBracketAccess, 1, 4, 1, 5}
+                    PErr{.code = E::EmptyBracketAccess, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 5}
                 },
                 .verifier = IsBracket(IsIdentifier("arr"), IsNull())
             });
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 .name = "InvalidExpressionInBracket",
                 .code = "arr[*]",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsBracket(IsIdentifier("arr"), IsNull())
             });
@@ -33,7 +33,7 @@ namespace valuascript::compiler::test
                 .name = "MultipleColumnsInBracketSlice",
                 .code = "arr[1:2:3]",
                 .errors = {
-                    {E::UnmatchedBracketAfterTensorIndex, 1, 7, 1, 8}
+                    PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBracket(
                     IsIdentifier("arr"),
@@ -45,7 +45,7 @@ namespace valuascript::compiler::test
                 .name = "UnexpectedCommaInBracket",
                 .code = "arr[1, 2]",
                 .errors = {
-                    {E::UnexpectedCommaInBracketAccess, 1, 6, 1, 7}
+                    PErr{.code = E::UnexpectedCommaInBracketAccess, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsBracket(IsIdentifier("arr"), IsNumber("1"))
             });
@@ -54,7 +54,7 @@ namespace valuascript::compiler::test
                 .name = "GarbageDotAccessProperty",
                 .code = "obj.*",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDot(IsIdentifier("obj"), "<error>")
             });
@@ -63,7 +63,7 @@ namespace valuascript::compiler::test
                 .name = "MissingDotAccessProperty",
                 .code = "obj.",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDot(IsIdentifier("obj"), "<error>"),
                 .context_overrides = {
@@ -81,8 +81,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidBracketAccess1",
                 .code = "arr[*][*]",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 8, 1, 9}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsBracket(
                     IsBracket(
@@ -97,8 +97,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidBracketAccess2",
                 .code = "arr[*][1][*]",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 11, 1, 12}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                 },
                 .verifier = IsBracket(
                     IsBracket(
@@ -116,8 +116,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidDotAccess1",
                 .code = "arr.*.*",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 7, 1, 8}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsDot(
                     IsDot(
@@ -132,8 +132,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidDotAccess2",
                 .code = "arr.*.a.*",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 9, 1, 10}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsDot(
                     IsDot(
@@ -151,8 +151,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidInterleaved1",
                 .code = "obj.*[*]",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 7, 1, 8}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBracket(
                     IsDot(
@@ -167,8 +167,8 @@ namespace valuascript::compiler::test
                 .name = "ConsecutiveInvalidInterleaved2",
                 .code = "arr[*].*",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::ExpectedPropertyName, 1, 8, 1, 9}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsDot(
                     IsBracket(
@@ -183,7 +183,7 @@ namespace valuascript::compiler::test
                 .name = "DoubleDotAccess",
                 .code = "obj..a",
                 .errors = {
-                    {E::ExpectedPropertyName, 1, 5, 1, 6}
+                    PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDot(
                     IsDot(

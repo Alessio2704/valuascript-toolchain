@@ -38,15 +38,15 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{"ModifierOnReassignment", "let x = 1\n@export x = 2", E::
+            ModifierSadParam{.test_name = "ModifierOnReassignment", .source_code = "let x = 1\n@export x = 2", .expected_error = E::
             ModifiersAttachedToInvalidDeclaration},
-            ModifierSadParam{"MissingModifierName", "@ let x = 1", E::ExpectedModifierName},
-            ModifierSadParam{"UnclosedParenthesis", "@bind(ui: \"slider\" let x = 1", E::
+            ModifierSadParam{.test_name = "MissingModifierName", .source_code = "@ let x = 1", .expected_error = E::ExpectedModifierName},
+            ModifierSadParam{.test_name = "UnclosedParenthesis", .source_code = "@bind(ui: \"slider\" let x = 1", .expected_error = E::
             UnmatchedParenthesisAfterModifierArgs},
-            ModifierSadParam{"DoubleAtSign", "@@export let x = 1", E::ExpectedModifierName},
-            ModifierSadParam{"missing_comma_in_param", "@export(a: 1 b: 2) let x = 1", E::
+            ModifierSadParam{.test_name = "DoubleAtSign", .source_code = "@@export let x = 1", .expected_error = E::ExpectedModifierName},
+            ModifierSadParam{.test_name = "missing_comma_in_param", .source_code = "@export(a: 1 b: 2) let x = 1", .expected_error = E::
             MissingCommaSeparatorForArgumentsInModifier},
-            ModifierSadParam{"StructFieldModifierOnClosingBrace", "struct S { @ }", E::
+            ModifierSadParam{.test_name = "StructFieldModifierOnClosingBrace", .source_code = "struct S { @ }", .expected_error = E::
             ExpectedModifierName}
         ),
         [](const testing::TestParamInfo<ModifierSadParam>& test_info) {

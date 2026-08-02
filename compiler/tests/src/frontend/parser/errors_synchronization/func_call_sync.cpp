@@ -31,25 +31,8 @@ namespace valuascript::compiler::test
         struct ExpectedArgument
         {
             std::string name;
-            std::optional<std::string> expected_number_value;
-            std::function<void(const Expression*)> verifier;
-
-            ExpectedArgument(const char* n) : name(n), expected_number_value(std::nullopt)
-            {
-            }
-
-            ExpectedArgument(const char* n, const char* v) : name(n), expected_number_value(std::string(v))
-            {
-            }
-
-            ExpectedArgument(const char* n, const std::optional<std::string>& v) : name(n), expected_number_value(v)
-            {
-            }
-
-            ExpectedArgument(const char* n,
-                             std::function<void(const Expression*)> v) : name(n), verifier(std::move(v))
-            {
-            }
+            std::optional<std::string> expected_number_value = std::nullopt;
+            std::function<void(const Expression*)> verifier = nullptr;
         };
 
         void ExpectFunctionCallArgs(const FunctionCall* func_call,
@@ -110,42 +93,43 @@ namespace valuascript::compiler::test
         FunctionCallParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "function_call_in_assignment_missing_closing_paren",
-            "let a = f(a: 1\n"
-            "let recovery = 1\n",
-            {
-            {Err::ExpectedRightParenAfterArguments, 1, 14},
-            },
-            [](const Program &ast) {
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            auto func_call = dynamic_cast<FunctionCall*>(assign->value.get());
-            ASSERT_NE(func_call, nullptr);
-            EXPECT_EQ(func_call->arguments.size(), 1);
-            auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
-            ASSERT_NE(func_call_id, nullptr);
-            EXPECT_EQ(func_call_id->name, "f");
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "missing_closing_parenthesis",
-            "f(a: 1 \n"
-            "let recovery = 1\n",
-            {
-            {Err::ExpectedRightParenAfterArguments, 1, 6}
-            },
-            ExpectFunctionCall("f", {{"a", "1"}})
+                .test_name = "function_call_in_assignment_missing_closing_paren",
+                .source_code = "let a = f(a: 1\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedRightParenAfterArguments, .line = 1, .column = 14},
+                },
+                .verify_ast = [](const Program &ast) {
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    ASSERT_NE(assign, nullptr);
+                    auto func_call = dynamic_cast<FunctionCall*>(assign->value.get());
+                    ASSERT_NE(func_call, nullptr);
+                    EXPECT_EQ(func_call->arguments.size(), 1);
+                    auto func_call_id = dynamic_cast<IdentifierAccess*>(func_call->target.get());
+                    ASSERT_NE(func_call_id, nullptr);
+                    EXPECT_EQ(func_call_id->name, "f");
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_keyword_as_value",
-            "f(a: 1, b: struct, c: 3)\n"
-            "let recovery = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 12} },
-            ExpectFunctionCall("f", {{"a", "1"}, {"b", [](const Expression* e) {
-                auto const identifier = dynamic_cast<const IdentifierAccess*>(e);
-                ASSERT_NE(identifier, nullptr);
-                ASSERT_EQ(identifier->name, "struct");
-                }}, {"c", "3"}})
+                .test_name = "missing_closing_parenthesis",
+                .source_code = "f(a: 1 \nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedRightParenAfterArguments, .line = 1, .column = 6}
+                },
+                .verify_ast = ExpectFunctionCall("f", {{.name = "a", .expected_number_value = "1"}})
+            },
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "reserved_keyword_as_value",
+                .source_code = "f(a: 1, b: struct, c: 3)\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 12} },
+                .verify_ast = ExpectFunctionCall("f", {
+                    {.name = "a", .expected_number_value = "1"},
+                    {.name = "b", .verifier = [](const Expression* e) {
+                        auto const identifier = dynamic_cast<const IdentifierAccess*>(e);
+                        ASSERT_NE(identifier, nullptr);
+                        ASSERT_EQ(identifier->name, "struct");
+                    }},
+                    {.name = "c", .expected_number_value = "3"}
+                })
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

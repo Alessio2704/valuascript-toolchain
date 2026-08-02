@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
                 .suffix = "\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({{"ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
+                    return UniversalVerifier(IsAssignment({AssignmentTargetSpec{.name = "ctx_single"}}, SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
             {
@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
                 .suffix = "\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({{"ctx_m1"}, {"ctx_m2"}},
+                    return UniversalVerifier(IsAssignment({AssignmentTargetSpec{.name = "ctx_m1"}, AssignmentTargetSpec{.name = "ctx_m2"}},
                                                           SpecAdder::get_v<ExprVerifier>(v)));
                 }
             },
@@ -180,7 +180,7 @@ namespace valuascript::compiler::test
                 .suffix = " }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict(DictItemSpec{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}));
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
             {
@@ -191,7 +191,7 @@ namespace valuascript::compiler::test
                 .suffix = ", x: 1 }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict(DictItemSpec{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}, DictItemSpec{"x", {}, IsNumber("1")}));
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}, DictItemSpec{.key = "x", .value_v = IsNumber("1")}));
                 }
             },
             {
@@ -202,7 +202,7 @@ namespace valuascript::compiler::test
                 .suffix = ", }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict(DictItemSpec{"k", {}, SpecAdder::get_v<ExprVerifier>(v)}));
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
             {
@@ -338,7 +338,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsSwitch(IsNumber("1"),
-                                                      std::vector<SwitchCaseSpec>{SwitchCaseSpec("A", SpecAdder::get_v<ExprVerifier>(v))},
+                                                      std::vector<SwitchCaseSpec>{SwitchCaseSpec{.labels = {"A"}, .result_v = SpecAdder::get_v<ExprVerifier>(v)}},
                                                       IsNumber("1")));
                 }
             },

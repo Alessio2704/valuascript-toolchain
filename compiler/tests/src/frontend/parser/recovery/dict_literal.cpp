@@ -14,11 +14,11 @@ namespace valuascript::compiler::test
                 .name = "DictMissingKey",
                 .code = "{ : 1, y: 2 }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNumber("1")},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 
@@ -26,11 +26,11 @@ namespace valuascript::compiler::test
                 .name = "DictMissingComma",
                 .code = "{ x: 1 y: 2 }",
                 .errors = {
-                    {E::ExpectedCommaSeparatorInDictionaryLiteral, 1, 8, 1, 9}
+                    PErr{.code = E::ExpectedCommaSeparatorInDictionaryLiteral, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"x", {}, IsNumber("1")},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 
@@ -38,11 +38,11 @@ namespace valuascript::compiler::test
                 .name = "DictMissingExpressionValue",
                 .code = "{ x: , y: 2 }",
                 .errors = {
-                    {E::InvalidExpression, 1, 6, 1, 7}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"x", {}, IsNull()},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "x", .value_v = IsNull()},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 
@@ -50,13 +50,13 @@ namespace valuascript::compiler::test
                 .name = "DictBrokenExpressionValues",
                 .code = "{ x: *, y: *, z: 3 }",
                 .errors = {
-                    {E::InvalidExpression, 1, 6, 1, 7},
-                    {E::InvalidExpression, 1, 12, 1, 13}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"x", {}, IsNull()},
-                    DictItemSpec{"y", {}, IsNull()},
-                    DictItemSpec{"z", {}, IsNumber("3")}
+                    DictItemSpec{.key = "x", .value_v = IsNull()},
+                    DictItemSpec{.key = "y", .value_v = IsNull()},
+                    DictItemSpec{.key = "z", .value_v = IsNumber("3")}
                 )
             });
 
@@ -64,12 +64,12 @@ namespace valuascript::compiler::test
                 .name = "GarbageBetweenPairs",
                 .code = "{ x: 1, +, y: 2 }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 9, 1, 10}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"x", {}, IsNumber("1")},
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 
@@ -77,10 +77,10 @@ namespace valuascript::compiler::test
                 .name = "DictEmptyComma",
                 .code = "{ , }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNull()}
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()}
                 )
             });
 
@@ -88,10 +88,10 @@ namespace valuascript::compiler::test
                 .name = "DictEmptyGarbage",
                 .code = "{ * }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNull()}
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()}
                 )
             });
 
@@ -99,15 +99,15 @@ namespace valuascript::compiler::test
                 .name = "MissingBothKeyAndValue",
                 .code = "{ :, :, z: 3}",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 4},
-                    {E::InvalidExpression, 1, 4, 1, 5},
-                    {E::ExpectedDictionaryKey, 1, 6, 1, 7},
-                    {E::InvalidExpression, 1, 7, 1, 8}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 5},
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"z", {}, IsNumber("3")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "z", .value_v = IsNumber("3")}
                 )
             });
 
@@ -118,15 +118,15 @@ namespace valuascript::compiler::test
                 ":,\n"
                 "z: 3\n}",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 2, 1, 2, 2},
-                    {E::InvalidExpression, 2, 2, 2, 3},
-                    {E::ExpectedDictionaryKey, 3, 1, 3, 2},
-                    {E::InvalidExpression, 3, 2, 3, 3}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2},
+                    PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 2, .line_end = 2, .column_end = 3},
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2},
+                    PErr{.code = E::InvalidExpression, .line_start = 3, .column_start = 2, .line_end = 3, .column_end = 3}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"z", {}, IsNumber("3")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "z", .value_v = IsNumber("3")}
                 )
             });
 
@@ -134,12 +134,12 @@ namespace valuascript::compiler::test
                 .name = "DoubleCommaBetweenPairs",
                 .code = "{ x: 1,, y: 2 }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 8, 1, 9}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"x", {}, IsNumber("1")},
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 
@@ -147,10 +147,10 @@ namespace valuascript::compiler::test
                 .name = "DictKeyIsString",
                 .code = "{ \"x\": 1 }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 6}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNumber("1")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNumber("1")}
                 )
             });
 
@@ -158,10 +158,10 @@ namespace valuascript::compiler::test
                 .name = "DictKeyIsNumber",
                 .code = "{ 1: 1 }",
                 .errors = {
-                    {E::ExpectedDictionaryKey, 1, 3, 1, 4}
+                    PErr{.code = E::ExpectedDictionaryKey, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNumber("1")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNumber("1")}
                 )
             });
 
@@ -169,11 +169,11 @@ namespace valuascript::compiler::test
                 .name = "DictMissingColon",
                 .code = "{ x 1, y: 2 }",
                 .errors = {
-                    {E::ExpectedColonAfterDictionaryKey, 1, 5, 1, 6}
+                    PErr{.code = E::ExpectedColonAfterDictionaryKey, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDict(
-                    DictItemSpec{"<error>", {}, IsNull()},
-                    DictItemSpec{"y", {}, IsNumber("2")}
+                    DictItemSpec{.key = "<error>", .value_v = IsNull()},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                 )
             });
 

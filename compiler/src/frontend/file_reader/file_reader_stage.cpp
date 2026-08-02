@@ -33,7 +33,13 @@ namespace valuascript::compiler
             ValuaScriptException ex(
                 ValuascriptErrorCategory::File,
                 FileReaderErrorCode::FileNotFound,
-                {0, 0, 0, 0, canonical_path},
+                SourceSpan{
+                    .line_start = 0,
+                    .column_start = 0,
+                    .line_end = 0,
+                    .column_end = 0,
+                    .file_path = std::make_shared<const std::string>(canonical_path)
+                },
                 format_error(FileReaderErrorCode::FileNotFound, canonical_path)
             );
             context.handle_error(ex);
@@ -47,6 +53,6 @@ namespace valuascript::compiler
 
         context.source_manager.update_source(canonical_path, source_content);
 
-        return {CompilerStageArtifactCode::SourceCode, source_content};
+        return {.code = CompilerStageArtifactCode::SourceCode, .data = source_content};
     }
 }

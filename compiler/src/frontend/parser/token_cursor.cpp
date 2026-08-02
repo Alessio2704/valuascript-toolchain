@@ -38,7 +38,13 @@ namespace valuascript::compiler
             {
                 end_col += start_token.lexeme.length();
             }
-            return {start_token.line, start_token.column, start_token.line, end_col, file_path_};
+            return SourceSpan{
+                .line_start = start_token.line,
+                .column_start = start_token.column,
+                .line_end = start_token.line,
+                .column_end = end_col,
+                .file_path = file_path_
+            };
         }
 
         size_t end_col = end_token.column;
@@ -46,12 +52,24 @@ namespace valuascript::compiler
         {
             end_col += end_token.lexeme.length();
         }
-        return {start_token.line, start_token.column, end_token.line, end_col, file_path_};
+        return SourceSpan{
+            .line_start = start_token.line,
+            .column_start = start_token.column,
+            .line_end = end_token.line,
+            .column_end = end_col,
+            .file_path = file_path_
+        };
     }
 
     SourceSpan TokenCursor::combine_spans(const SourceSpan& start, const SourceSpan& end) const
     {
-        return {start.line_start, start.column_start, end.line_end, end.column_end, file_path_};
+        return SourceSpan{
+            .line_start = start.line_start,
+            .column_start = start.column_start,
+            .line_end = end.line_end,
+            .column_end = end.column_end,
+            .file_path = file_path_
+        };
     }
 
     void TokenCursor::report_error_no_panic(const SourceSpan& span,
@@ -63,7 +81,13 @@ namespace valuascript::compiler
         ValuaScriptException ex(
             ValuascriptErrorCategory::Syntax,
             code,
-            {span.line_start, span.column_start, span.line_end, span.column_end, file_path_},
+            SourceSpan{
+                .line_start = span.line_start,
+                .column_start = span.column_start,
+                .line_end = span.line_end,
+                .column_end = span.column_end,
+                .file_path = file_path_
+            },
             std::move(message)
         );
         context_.handle_error(ex);
@@ -161,7 +185,13 @@ namespace valuascript::compiler
         ValuaScriptException ex(
             ValuascriptErrorCategory::Syntax,
             code,
-            {err_line, err_column_start, err_line, err_column_end, file_path_},
+            SourceSpan{
+                .line_start = err_line,
+                .column_start = err_column_start,
+                .line_end = err_line,
+                .column_end = err_column_end,
+                .file_path = file_path_
+            },
             std::move(message)
         );
         context_.handle_error(ex);

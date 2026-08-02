@@ -55,19 +55,19 @@ namespace valuascript::compiler::test
         static std::vector<RegistryEntry<ModifierVerifier>>& modifiers();
         static std::vector<RegistryEntry<TypeVerifier>>& type_annotations();
 
-        static void add(const std::string& n, const std::string& c, const ImportVerifier& v) { imports().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v) { directives().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const FuncVerifier& v) { functions().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ExtVerifier& v) { extensions().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const StructVerifier& v) { structs().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const EnumVerifier& v) { enums().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const AliasVerifier& v) { aliases().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const AssignmentVerifier& v) { assignments().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ReassignmentVerifier& v) { reassignments().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ReturnVerifier& v) { returns().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ExprStmtVerifier& v) { expr_stmts().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ExprVerifier& v) { expressions().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const ModifierVerifier& v) { modifiers().emplace_back(n, c, v); }
-        static void add(const std::string& n, const std::string& c, const TypeVerifier& v) { type_annotations().emplace_back(n, c, v); }
+        static void add(const std::string& n, const std::string& c, const ImportVerifier& v) { imports().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v) { directives().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const FuncVerifier& v) { functions().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ExtVerifier& v) { extensions().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const StructVerifier& v) { structs().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const EnumVerifier& v) { enums().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const AliasVerifier& v) { aliases().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const AssignmentVerifier& v) { assignments().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ReassignmentVerifier& v) { reassignments().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ReturnVerifier& v) { returns().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ExprStmtVerifier& v) { expr_stmts().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ExprVerifier& v) { expressions().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ModifierVerifier& v) { modifiers().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const TypeVerifier& v) { type_annotations().push_back({.test_name = n, .code = c, .verifier = v}); }
     };
 }

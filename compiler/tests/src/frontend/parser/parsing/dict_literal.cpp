@@ -40,13 +40,13 @@ namespace valuascript::compiler::test
         ParserStageTest,
         DictLiteralSadPathTest,
         testing::Values(
-            DictLiteralSadParam{"dict_missing_brace", "{a: 1", E::
+            DictLiteralSadParam{.test_name = "dict_missing_brace", .source_code = "{a: 1", .expected_error = E::
             UnmatchedBraceInDictionaryLiteral},
-            DictLiteralSadParam{"dict_missing_key", "{1}", E::
+            DictLiteralSadParam{.test_name = "dict_missing_key", .source_code = "{1}", .expected_error = E::
             ExpectedDictionaryKey},
-            DictLiteralSadParam{"dict_empty", "{a}", E::
+            DictLiteralSadParam{.test_name = "dict_empty", .source_code = "{a}", .expected_error = E::
             ExpectedColonAfterDictionaryKey},
-            DictLiteralSadParam{"dict_key_string_literal", "{ \"key\" 10 }", E::ExpectedDictionaryKey
+            DictLiteralSadParam{.test_name = "dict_key_string_literal", .source_code = "{ \"key\" 10 }", .expected_error = E::ExpectedDictionaryKey
             }
         ),
         [](const testing::TestParamInfo<DictLiteralSadParam>& test_info) {

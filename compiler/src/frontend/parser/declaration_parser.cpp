@@ -84,14 +84,15 @@ namespace valuascript::compiler
             const Token& start_token = cursor.previous();
             try
             {
-                RecoveryConfig config;
-                config.stop_tokens = {TokenType::LeftParen, TokenType::At};
-                config.options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
-                config.custom_stop_predicate = [](const Token& tok, TokenType next)
-                {
-                    return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next) || tok.type
-                        == TokenType::Colon || tok.type == TokenType::Comma || tok.type == TokenType::Assign ||
-                        TokenTraits::is_grouping_closer(tok.type) || TokenTraits::is_grouping_opener(tok.type);
+                RecoveryConfig config{
+                    .stop_tokens = {TokenType::LeftParen, TokenType::At},
+                    .options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp,
+                    .custom_stop_predicate = [](const Token& tok, TokenType next)
+                    {
+                        return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next) || tok.type
+                            == TokenType::Colon || tok.type == TokenType::Comma || tok.type == TokenType::Assign ||
+                            TokenTraits::is_grouping_closer(tok.type) || TokenTraits::is_grouping_opener(tok.type);
+                    }
                 };
 
                 Token name_token = ErrorRecovery::try_consume_identifier(
@@ -126,29 +127,30 @@ namespace valuascript::compiler
                     catch (const ParseSyncException&)
                     {
                         ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
-                        Modifier mod;
-                        mod.name = std::string(name_token.lexeme);
-                        mod.arguments = std::move(arguments);
-                        mod.span = cursor.make_span(start_token, cursor.previous());
-                        modifiers.push_back(std::move(mod));
+                        modifiers.push_back(Modifier{
+                            .name = std::string(name_token.lexeme),
+                            .arguments = std::move(arguments),
+                            .span = cursor.make_span(start_token, cursor.previous())
+                        });
                         if (ctx.is_active_closer(cursor.peek().type) && cursor.peek().type != TokenType::RightParen)
                             throw ParseSyncException();
                         continue;
                     }
                 }
 
-                Modifier mod;
-                mod.name = std::string(name_token.lexeme);
-                mod.arguments = std::move(arguments);
-                mod.span = cursor.make_span(start_token, cursor.previous());
-                modifiers.push_back(std::move(mod));
+                modifiers.push_back(Modifier{
+                    .name = std::string(name_token.lexeme),
+                    .arguments = std::move(arguments),
+                    .span = cursor.make_span(start_token, cursor.previous())
+                });
             }
             catch (const ParseSyncException&)
             {
                 if (ctx.is_active_closer(cursor.peek().type)) throw;
 
-                RecoveryConfig sync_config;
-                sync_config.stop_tokens = {TokenType::At};
+                RecoveryConfig sync_config{
+                    .stop_tokens = {TokenType::At}
+                };
                 sync_config.options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
                 sync_config.custom_stop_predicate = [](const Token& tok, TokenType)
                 {
@@ -201,7 +203,7 @@ namespace valuascript::compiler
 
         std::vector<StructField> fields;
         fields.reserve(fields_gen.size());
-        for (auto& g : fields_gen) fields.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.type), g.span});
+        for (auto& g : fields_gen) fields.push_back({.modifiers = std::move(g.modifiers), .name = std::string(g.name.lexeme), .type = std::move(g.type), .span = g.span});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
@@ -268,7 +270,7 @@ namespace valuascript::compiler
 
         std::vector<EnumCase> cases;
         cases.reserve(cases_gen.size());
-        for (auto& g : cases_gen) cases.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.value)});
+        for (auto& g : cases_gen) cases.push_back({.modifiers = std::move(g.modifiers), .name = std::string(g.name.lexeme), .value = std::move(g.value)});
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
@@ -333,7 +335,7 @@ namespace valuascript::compiler
             {
                 if (g.has_value_separator || g.value) seen_default_param = true;
                 else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
-                params.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.type), std::move(g.value)});
+                params.push_back({.modifiers = std::move(g.modifiers), .name = std::string(g.name.lexeme), .type = std::move(g.type), .default_value = std::move(g.value)});
             }
         }
 

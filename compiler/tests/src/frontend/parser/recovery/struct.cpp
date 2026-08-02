@@ -18,14 +18,14 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingStructClosingBrace",
                 .code = "struct Test {",
-                .errors = {{E::ExpectedRightBraceAfterStructBody, 1, 13, 1, 14}},
+                .errors = {PErr{.code = E::ExpectedRightBraceAfterStructBody, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}},
                 .verifier = IsStructDef("Test", {}, {})
             });
 
             reg({
                 .name = "MissingStructName",
                 .code = "struct { id: int }",
-                .errors = {{E::ExpectedStructName, 1, 8, 1, 9}},
+                .errors = {PErr{.code = E::ExpectedStructName, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
                 .verifier = IsStructDef("<error>", {}, {
                     {"id", {}, IsType("int")}
                 })
@@ -34,7 +34,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingStructColumn",
                 .code = "struct Test { id int }",
-                .errors = {{E::ExpectedColonAfterStructFieldName, 1, 18, 1, 21}},
+                .errors = {PErr{.code = E::ExpectedColonAfterStructFieldName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 21}},
                 .verifier = IsStructDef("Test", {}, {
                     {"<error>", {}, IsNullType()}
                 })
@@ -43,14 +43,14 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingStructFieldType",
                 .code = "struct Test { id: }",
-                .errors = {{E::MissingTypeAnnotation, 1, 19, 1, 20}},
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}},
                 .verifier = IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
             });
 
             reg({
                 .name = "MissingStructComma",
                 .code = "struct Test { id: int name: string }",
-                .errors = {{E::ExpectedCommaSeparatorInStruct, 1, 23, 1, 27}},
+                .errors = {PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 23, .line_end = 1, .column_end = 27}},
                 .verifier = IsStructDef("Test", {}, {
                     {"id", {}, IsType("int")},
                     {"name", {}, IsType("string")}
@@ -60,7 +60,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingStructLeftBrace",
                 .code = "struct Test id: int }",
-                .errors = {{E::ExpectedBraceInStructDefinition, 1, 13, 1, 15}},
+                .errors = {PErr{.code = E::ExpectedBraceInStructDefinition, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 15}},
                 .verifier = IsNull()
             });
 
@@ -68,9 +68,9 @@ namespace valuascript::compiler::test
                 .name = "NoColonRecoversOtherFields",
                 .code = "struct Test { host: string port: int speed int mode: string }",
                 .errors = {
-                    {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
-                    {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
-                    {E::ExpectedColonAfterStructFieldName, 1, 44, 1, 47}
+                    PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 32},
+                    PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 38, .line_end = 1, .column_end = 43},
+                    PErr{.code = E::ExpectedColonAfterStructFieldName, .line_start = 1, .column_start = 44, .line_end = 1, .column_end = 47}
                 },
                 .verifier = IsStructDef("Test", {}, {
                     {"host", {}, IsType("string")},
@@ -82,7 +82,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "NoRightBraceStruct",
                 .code = "struct Test { id: int ",
-                .errors = {{E::ExpectedRightBraceAfterStructBody, 1, 21, 1, 22}},
+                .errors = {PErr{.code = E::ExpectedRightBraceAfterStructBody, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}},
                 .verifier = IsStructDef("Test", {}, {
                     {"id", {}, IsType("int")}
                 })
@@ -91,7 +91,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "NoFieldNameInStruct",
                 .code = "struct Test { : int }",
-                .errors = {{E::ExpectedStructFieldName, 1, 15, 1, 16}},
+                .errors = {PErr{.code = E::ExpectedStructFieldName, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}},
                 .verifier = IsStructDef("Test", {}, {
                     {"<error>", {}, IsType("int")}
                 })
@@ -101,10 +101,10 @@ namespace valuascript::compiler::test
                 .name = "MissingCommasAndTrailingTypeInStruct",
                 .code = "struct Test { host: string port: int speed: int mode: }",
                 .errors = {
-                    {E::ExpectedCommaSeparatorInStruct, 1, 28, 1, 32},
-                    {E::ExpectedCommaSeparatorInStruct, 1, 38, 1, 43},
-                    {E::ExpectedCommaSeparatorInStruct, 1, 49, 1, 53},
-                    {E::MissingTypeAnnotation, 1, 55, 1, 56}
+                    PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 32},
+                    PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 38, .line_end = 1, .column_end = 43},
+                    PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 49, .line_end = 1, .column_end = 53},
+                    PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 55, .line_end = 1, .column_end = 56}
                 },
                 .verifier = IsStructDef("Test", {}, {
                     {"host", {}, IsType("string")},

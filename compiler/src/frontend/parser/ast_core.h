@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <type_traits>
 #include "token/token.h"
 #include "ast_arena.h"
 
@@ -42,20 +43,7 @@ namespace valuascript::compiler
         size_t column_start = 0;
         size_t line_end = 0;
         size_t column_end = 0;
-        std::shared_ptr<const std::string> file_path;
-
-        SourceSpan() = default;
-
-        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, std::shared_ptr<const std::string> fp)
-            : line_start(ls), column_start(cs), line_end(le), column_end(ce), file_path(std::move(fp)) {}
-
-        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, std::string fp)
-            : line_start(ls), column_start(cs), line_end(le), column_end(ce),
-              file_path(std::make_shared<const std::string>(std::move(fp))) {}
-
-        SourceSpan(size_t ls, size_t cs, size_t le, size_t ce, const char* fp)
-            : line_start(ls), column_start(cs), line_end(le), column_end(ce),
-              file_path(std::make_shared<const std::string>(fp ? fp : "")) {}
+        std::shared_ptr<const std::string> file_path = nullptr;
 
         SourceSpan& operator=(std::string fp)
         {
@@ -81,6 +69,8 @@ namespace valuascript::compiler
                    (file_path == other.file_path || (file_path && other.file_path && *file_path == *other.file_path));
         }
     };
+
+    static_assert(std::is_aggregate_v<SourceSpan>, "SourceSpan must be a C++20 aggregate struct");
 
     enum class AstKind : uint8_t
     {

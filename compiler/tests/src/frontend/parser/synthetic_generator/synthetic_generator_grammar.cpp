@@ -22,7 +22,7 @@ namespace valuascript::compiler::test
             auto [m_c, m_v] = this->rule_modifiers(env, depth + 1);
             auto [val_c, val_v] = this->rule_expression(env, depth + 1);
             std::string key = "key_" + env.next_id();
-            return {m_c + key + ": " + val_c, DictItemSpec{key, m_v, val_v}};
+            return {m_c + key + ": " + val_c, DictItemSpec{.key = key, .modifiers = m_v, .value_v = val_v}};
         };
 
         auto dict_elements_list = Repeat<DictItemSpec>(dict_item_rule,
@@ -54,7 +54,7 @@ namespace valuascript::compiler::test
 
             return {
                 "  " + m_c + "case " + labels_code + " -> " + case_expr_c + "\n",
-                SwitchCaseSpec(m_v, labels, case_expr_v)
+                SwitchCaseSpec{.modifiers = m_v, .labels = {labels.begin(), labels.end()}, .result_v = case_expr_v}
             };
         };
 
@@ -197,7 +197,7 @@ namespace valuascript::compiler::test
             {
                 std::string label = "arg_" + env.next_id();
                 auto [e_c, e_v] = this->rule_expression(env, depth + 1);
-                return {label + ": " + e_c, ArgSpec{label, e_v}};
+                return {label + ": " + e_c, ArgSpec{.label = label, .value_v = e_v}};
             },
             [](const auto& c) { return c.sizes.modifier_arguments; },
             ", "
@@ -221,7 +221,7 @@ namespace valuascript::compiler::test
                 code += "(" + args_c + ")";
             }
             code += " ";
-            return {code, ModifierSpec{name, args_v}};
+            return {code, ModifierSpec{.name = name, .args = args_v}};
         };
 
         auto raw_rule_modifiers = WithRegistryFallback<std::vector<ModifierSpec>>(
@@ -308,7 +308,7 @@ namespace valuascript::compiler::test
                 code += ": " + t_c;
                 tv = t_v.value();
             }
-            return {code, AssignmentTargetSpec(mods_v, name, tv)};
+            return {code, AssignmentTargetSpec{.modifiers = std::move(mods_v), .name = std::move(name), .type_v = std::move(tv)}};
         };
 
         rule_assignment_targets = Repeat<AssignmentTargetSpec>(
@@ -517,7 +517,7 @@ namespace valuascript::compiler::test
                 env.stats().modifiers.attached_to_parameters++;
             }
 
-            return {code, {name, mods_v, t_v, nullptr}};
+            return {code, ParamSpec{.name = name, .modifiers = mods_v, .type_v = t_v}};
         };
 
         auto logic_function_rule = [this](SyntheticGenerator& env, int depth) -> std::pair<std::string, FuncVerifier>
@@ -599,7 +599,7 @@ namespace valuascript::compiler::test
 
             return {
                 mods_c + f_name + ": " + t_c,
-                FieldSpec{f_name, mods_v, t_v}
+                FieldSpec{.name = f_name, .modifiers = mods_v, .type_v = t_v}
             };
         };
 
@@ -676,7 +676,7 @@ namespace valuascript::compiler::test
                 code += " = " + val_c;
                 v = val_v.value();
             }
-            return {code, EnumCaseSpec{name, mods_v, v}};
+            return {code, EnumCaseSpec{.name = name, .modifiers = mods_v, .value_v = v}};
         };
 
         auto enum_cases_list = Repeat<EnumCaseSpec>(

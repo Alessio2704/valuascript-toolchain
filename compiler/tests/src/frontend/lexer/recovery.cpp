@@ -15,163 +15,163 @@ namespace valuascript::compiler::test
     TEST_F(LexerRecoveryTest, InvalidCharDollar)
     {
         ExpectLexerRecovery("let a = $",
-            {{E::InvalidCharacter, 1, 9}},
+            {{.code = E::InvalidCharacter, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::EndOfFile, "", 1, 10}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 10}
             });
     }
 
     TEST_F(LexerRecoveryTest, InvalidCharAmpersand)
     {
         ExpectLexerRecovery("let a = &",
-            {{E::InvalidCharacter, 1, 9}},
+            {{.code = E::InvalidCharacter, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::EndOfFile, "", 1, 10}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 10}
             });
     }
 
     TEST_F(LexerRecoveryTest, PercentageBeforeNumber)
     {
         ExpectLexerRecovery("x = %1",
-            {{E::InvalidCharacter, 1, 5}},
+            {{.code = E::InvalidCharacter, .line = 1, .column = 5}},
             {
-                {TokenType::Identifier, "x", 1, 1},
-                {TokenType::Assign, "=", 1, 3},
-                {TokenType::Number, "1", 1, 6},
-                {TokenType::EndOfFile, "", 1, 7}
+                {.type = TokenType::Identifier, .lexeme = "x", .line = 1, .column = 1},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 3},
+                {.type = TokenType::Number, .lexeme = "1", .line = 1, .column = 6},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 7}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnterminatedDecimal1)
     {
         ExpectLexerRecovery("let a = 1.",
-            {{E::UnterminatedDecimal, 1, 9}},
+            {{.code = E::UnterminatedDecimal, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Number, "1.", 1, 9},
-                {TokenType::EndOfFile, "", 1, 11}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Number, .lexeme = "1.", .line = 1, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 11}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnterminatedDecimal2)
     {
         ExpectLexerRecovery("let a = 1_230.",
-            {{E::UnterminatedDecimal, 1, 9}},
+            {{.code = E::UnterminatedDecimal, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Number, "1_230.", 1, 9},
-                {TokenType::EndOfFile, "", 1, 15}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Number, .lexeme = "1_230.", .line = 1, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 15}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnterminatedNumberAfterSeparator)
     {
         ExpectLexerRecovery("let a = 1_",
-            {{E::TrailingSeparatorInNumberLiteral, 1, 9}},
+            {{.code = E::TrailingSeparatorInNumberLiteral, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Number, "1_", 1, 9},
-                {TokenType::EndOfFile, "", 1, 11}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Number, .lexeme = "1_", .line = 1, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 11}
             });
     }
 
     TEST_F(LexerRecoveryTest, AtDoubleUnderscoreInvalid)
     {
         ExpectLexerRecovery("let a = 1__000",
-            {{E::TrailingSeparatorInNumberLiteral, 1, 9}},
+            {{.code = E::TrailingSeparatorInNumberLiteral, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Number, "1_", 1, 9},
-                {TokenType::Identifier, "_000", 1, 11},
-                {TokenType::EndOfFile, "", 1, 15}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Number, .lexeme = "1_", .line = 1, .column = 9},
+                {.type = TokenType::Identifier, .lexeme = "_000", .line = 1, .column = 11},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 15}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedString1)
     {
         ExpectLexerRecovery("let a = \"hello",
-            {{E::UnclosedString, 1, 9}},
+            {{.code = E::UnclosedString, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::String, "\"hello", 1, 9},
-                {TokenType::EndOfFile, "", 1, 15}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::String, .lexeme = "\"hello", .line = 1, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 15}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedString2)
     {
         ExpectLexerRecovery("let a = \"hello \n \n",
-            {{E::UnclosedString, 1, 9}},
+            {{.code = E::UnclosedString, .line = 1, .column = 9}},
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::String, "\"hello ", 1, 9},
-                {TokenType::EndOfFile, "", 3, 1}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::String, .lexeme = "\"hello ", .line = 1, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 1}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedString3)
     {
         ExpectLexerRecovery("\"hello",
-            {{E::UnclosedString, 1, 1}},
+            {{.code = E::UnclosedString, .line = 1, .column = 1}},
             {
-                {TokenType::String, "\"hello", 1, 1},
-                {TokenType::EndOfFile, "", 1, 7}
+                {.type = TokenType::String, .lexeme = "\"hello", .line = 1, .column = 1},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 7}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedStringImport)
     {
         ExpectLexerRecovery("import \"file/path",
-            {{E::UnclosedString, 1, 8}},
+            {{.code = E::UnclosedString, .line = 1, .column = 8}},
             {
-                {TokenType::Import, "import", 1, 1},
-                {TokenType::String, "\"file/path", 1, 8},
-                {TokenType::EndOfFile, "", 1, 18}
+                {.type = TokenType::Import, .lexeme = "import", .line = 1, .column = 1},
+                {.type = TokenType::String, .lexeme = "\"file/path", .line = 1, .column = 8},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 18}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedDocString1)
     {
         ExpectLexerRecovery(R"(func test() -> scalar { """"" return 1 })",
-            {{E::UnclosedString, 1, 25}},
+            {{.code = E::UnclosedString, .line = 1, .column = 25}},
             {
-                {TokenType::Func, "func", 1, 1},
-                {TokenType::Identifier, "test", 1, 6},
-                {TokenType::LeftParen, "(", 1, 10},
-                {TokenType::RightParen, ")", 1, 11},
-                {TokenType::Arrow, "->", 1, 13},
-                {TokenType::Identifier, "scalar", 1, 16},
-                {TokenType::LeftBrace, "{", 1, 23},
-                {TokenType::DocString, R"(""""" return 1 })", 1, 25},
-                {TokenType::EndOfFile, "", 1, 41}
+                {.type = TokenType::Func, .lexeme = "func", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "test", .line = 1, .column = 6},
+                {.type = TokenType::LeftParen, .lexeme = "(", .line = 1, .column = 10},
+                {.type = TokenType::RightParen, .lexeme = ")", .line = 1, .column = 11},
+                {.type = TokenType::Arrow, .lexeme = "->", .line = 1, .column = 13},
+                {.type = TokenType::Identifier, .lexeme = "scalar", .line = 1, .column = 16},
+                {.type = TokenType::LeftBrace, .lexeme = "{", .line = 1, .column = 23},
+                {.type = TokenType::DocString, .lexeme = R"(""""" return 1 })", .line = 1, .column = 25},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 41}
             });
     }
 
     TEST_F(LexerRecoveryTest, UnclosedDocString2)
     {
         ExpectLexerRecovery(R"(""""" return 1 })",
-            {{E::UnclosedString, 1, 1}},
+            {{.code = E::UnclosedString, .line = 1, .column = 1}},
             {
-                {TokenType::DocString, R"(""""" return 1 })", 1, 1},
-                {TokenType::EndOfFile, "", 1, 17}
+                {.type = TokenType::DocString, .lexeme = R"(""""" return 1 })", .line = 1, .column = 1},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 17}
             });
     }
 
@@ -179,21 +179,21 @@ namespace valuascript::compiler::test
     {
         ExpectLexerRecovery("let a = $\nlet b = ~\nlet c = \\",
             {
-                {E::InvalidCharacter, 1, 9},
-                {E::InvalidCharacter, 2, 9},
-                {E::InvalidCharacter, 3, 9}
+                {.code = E::InvalidCharacter, .line = 1, .column = 9},
+                {.code = E::InvalidCharacter, .line = 2, .column = 9},
+                {.code = E::InvalidCharacter, .line = 3, .column = 9}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "a", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Let, "let", 2, 1},
-                {TokenType::Identifier, "b", 2, 5},
-                {TokenType::Assign, "=", 2, 7},
-                {TokenType::Let, "let", 3, 1},
-                {TokenType::Identifier, "c", 3, 5},
-                {TokenType::Assign, "=", 3, 7},
-                {TokenType::EndOfFile, "", 3, 10}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Let, .lexeme = "let", .line = 2, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "b", .line = 2, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 2, .column = 7},
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "c", .line = 3, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 7},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 10}
             });
     }
 
@@ -201,23 +201,23 @@ namespace valuascript::compiler::test
     {
         ExpectLexerRecovery("let w = 12.\nlet x = .5\nlet y = \"unclosed string spanning to EOF",
             {
-                {E::UnterminatedDecimal, 1, 9},
-                {E::UnclosedString, 3, 9}
+                {.code = E::UnterminatedDecimal, .line = 1, .column = 9},
+                {.code = E::UnclosedString, .line = 3, .column = 9}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "w", 1, 5},
-                {TokenType::Assign, "=", 1, 7},
-                {TokenType::Number, "12.", 1, 9},
-                {TokenType::Let, "let", 2, 1},
-                {TokenType::Identifier, "x", 2, 5},
-                {TokenType::Assign, "=", 2, 7},
-                {TokenType::Number, ".5", 2, 9},
-                {TokenType::Let, "let", 3, 1},
-                {TokenType::Identifier, "y", 3, 5},
-                {TokenType::Assign, "=", 3, 7},
-                {TokenType::String, "\"unclosed string spanning to EOF", 3, 9},
-                {TokenType::EndOfFile, "", 3, 41}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "w", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 7},
+                {.type = TokenType::Number, .lexeme = "12.", .line = 1, .column = 9},
+                {.type = TokenType::Let, .lexeme = "let", .line = 2, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "x", .line = 2, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 2, .column = 7},
+                {.type = TokenType::Number, .lexeme = ".5", .line = 2, .column = 9},
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "y", .line = 3, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 7},
+                {.type = TokenType::String, .lexeme = "\"unclosed string spanning to EOF", .line = 3, .column = 9},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 41}
             });
     }
 
@@ -225,15 +225,15 @@ namespace valuascript::compiler::test
     {
         ExpectLexerRecovery("$$$\n~~~",
             {
-                {E::InvalidCharacter, 1, 1},
-                {E::InvalidCharacter, 1, 2},
-                {E::InvalidCharacter, 1, 3},
-                {E::InvalidCharacter, 2, 1},
-                {E::InvalidCharacter, 2, 2},
-                {E::InvalidCharacter, 2, 3}
+                {.code = E::InvalidCharacter, .line = 1, .column = 1},
+                {.code = E::InvalidCharacter, .line = 1, .column = 2},
+                {.code = E::InvalidCharacter, .line = 1, .column = 3},
+                {.code = E::InvalidCharacter, .line = 2, .column = 1},
+                {.code = E::InvalidCharacter, .line = 2, .column = 2},
+                {.code = E::InvalidCharacter, .line = 2, .column = 3}
             },
             {
-                {TokenType::EndOfFile, "", 2, 4}
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 2, .column = 4}
             });
     }
 
@@ -241,26 +241,26 @@ namespace valuascript::compiler::test
     {
         ExpectLexerRecovery("let num1 = 12__3\nlet num2 = 45._\nlet num3 = 100_",
             {
-                {E::TrailingSeparatorInNumberLiteral, 1, 12},
-                {E::UnterminatedDecimal, 2, 12},
-                {E::TrailingSeparatorInNumberLiteral, 3, 12}
+                {.code = E::TrailingSeparatorInNumberLiteral, .line = 1, .column = 12},
+                {.code = E::UnterminatedDecimal, .line = 2, .column = 12},
+                {.code = E::TrailingSeparatorInNumberLiteral, .line = 3, .column = 12}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "num1", 1, 5},
-                {TokenType::Assign, "=", 1, 10},
-                {TokenType::Number, "12_", 1, 12},
-                {TokenType::Identifier, "_3", 1, 15},
-                {TokenType::Let, "let", 2, 1},
-                {TokenType::Identifier, "num2", 2, 5},
-                {TokenType::Assign, "=", 2, 10},
-                {TokenType::Number, "45.", 2, 12},
-                {TokenType::Identifier, "_", 2, 15},
-                {TokenType::Let, "let", 3, 1},
-                {TokenType::Identifier, "num3", 3, 5},
-                {TokenType::Assign, "=", 3, 10},
-                {TokenType::Number, "100_", 3, 12},
-                {TokenType::EndOfFile, "", 3, 16}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "num1", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 10},
+                {.type = TokenType::Number, .lexeme = "12_", .line = 1, .column = 12},
+                {.type = TokenType::Identifier, .lexeme = "_3", .line = 1, .column = 15},
+                {.type = TokenType::Let, .lexeme = "let", .line = 2, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "num2", .line = 2, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 2, .column = 10},
+                {.type = TokenType::Number, .lexeme = "45.", .line = 2, .column = 12},
+                {.type = TokenType::Identifier, .lexeme = "_", .line = 2, .column = 15},
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "num3", .line = 3, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 10},
+                {.type = TokenType::Number, .lexeme = "100_", .line = 3, .column = 12},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 16}
             });
     }
 
@@ -276,31 +276,31 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::InvalidCharacter, 4, 16},
-                {E::UnterminatedDecimal, 5, 15},
-                {E::InvalidCharacter, 6, 16},
-                {E::UnclosedString, 8, 16}
+                {.code = E::InvalidCharacter, .line = 4, .column = 16},
+                {.code = E::UnterminatedDecimal, .line = 5, .column = 15},
+                {.code = E::InvalidCharacter, .line = 6, .column = 16},
+                {.code = E::UnclosedString, .line = 8, .column = 16}
             },
             {
-                {TokenType::Let, "let", 3, 1},
-                {TokenType::Identifier, "value", 3, 5},
-                {TokenType::Assign, "=", 3, 11},
-                {TokenType::Number, "100", 3, 13},
-                {TokenType::Let, "let", 4, 1},
-                {TokenType::Identifier, "invalid1", 4, 5},
-                {TokenType::Assign, "=", 4, 14},
-                {TokenType::Let, "let", 5, 1},
-                {TokenType::Identifier, "partial", 5, 5},
-                {TokenType::Assign, "=", 5, 13},
-                {TokenType::Number, "0.", 5, 15},
-                {TokenType::Let, "let", 6, 1},
-                {TokenType::Identifier, "invalid2", 6, 5},
-                {TokenType::Assign, "=", 6, 14},
-                {TokenType::Let, "let", 8, 1},
-                {TokenType::Identifier, "unclosed", 8, 5},
-                {TokenType::Assign, "=", 8, 14},
-                {TokenType::String, "\"started", 8, 16},
-                {TokenType::EndOfFile, "", 9, 1}
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "value", .line = 3, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 11},
+                {.type = TokenType::Number, .lexeme = "100", .line = 3, .column = 13},
+                {.type = TokenType::Let, .lexeme = "let", .line = 4, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "invalid1", .line = 4, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 4, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 5, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "partial", .line = 5, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 5, .column = 13},
+                {.type = TokenType::Number, .lexeme = "0.", .line = 5, .column = 15},
+                {.type = TokenType::Let, .lexeme = "let", .line = 6, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "invalid2", .line = 6, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 6, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 8, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "unclosed", .line = 8, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 8, .column = 14},
+                {.type = TokenType::String, .lexeme = "\"started", .line = 8, .column = 16},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 9, .column = 1}
             });
     }
 
@@ -313,14 +313,14 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::UnclosedString, 1, 11}
+                {.code = E::UnclosedString, .line = 1, .column = 11}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "doc", 1, 5},
-                {TokenType::Assign, "=", 1, 9},
-                {TokenType::DocString, "\"\"\"This is a docstring\nthat spans multiple lines\nbut never closes properly...", 1, 11},
-                {TokenType::EndOfFile, "", 3, 30}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "doc", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 9},
+                {.type = TokenType::DocString, .lexeme = "\"\"\"This is a docstring\nthat spans multiple lines\nbut never closes properly...", .line = 1, .column = 11},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 30}
             });
     }
 
@@ -328,21 +328,21 @@ namespace valuascript::compiler::test
     {
         ExpectLexerRecovery("let result = 10 + .5 * 100_ - \"unclosed",
             {
-                {E::TrailingSeparatorInNumberLiteral, 1, 24},
-                {E::UnclosedString, 1, 31}
+                {.code = E::TrailingSeparatorInNumberLiteral, .line = 1, .column = 24},
+                {.code = E::UnclosedString, .line = 1, .column = 31}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "result", 1, 5},
-                {TokenType::Assign, "=", 1, 12},
-                {TokenType::Number, "10", 1, 14},
-                {TokenType::Plus, "+", 1, 17},
-                {TokenType::Number, ".5", 1, 19},
-                {TokenType::Star, "*", 1, 22},
-                {TokenType::Number, "100_", 1, 24},
-                {TokenType::Minus, "-", 1, 29},
-                {TokenType::String, "\"unclosed", 1, 31},
-                {TokenType::EndOfFile, "", 1, 40}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "result", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 12},
+                {.type = TokenType::Number, .lexeme = "10", .line = 1, .column = 14},
+                {.type = TokenType::Plus, .lexeme = "+", .line = 1, .column = 17},
+                {.type = TokenType::Number, .lexeme = ".5", .line = 1, .column = 19},
+                {.type = TokenType::Star, .lexeme = "*", .line = 1, .column = 22},
+                {.type = TokenType::Number, .lexeme = "100_", .line = 1, .column = 24},
+                {.type = TokenType::Minus, .lexeme = "-", .line = 1, .column = 29},
+                {.type = TokenType::String, .lexeme = "\"unclosed", .line = 1, .column = 31},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 40}
             });
     }
 
@@ -358,33 +358,33 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::InvalidCharacter, 2, 12},
-                {E::InvalidCharacter, 4, 12}
+                {.code = E::InvalidCharacter, .line = 2, .column = 12},
+                {.code = E::InvalidCharacter, .line = 4, .column = 12}
             },
             {
-                {TokenType::Let, "let", 1, 1},
-                {TokenType::Identifier, "valid1", 1, 5},
-                {TokenType::Assign, "=", 1, 12},
-                {TokenType::Number, "100", 1, 14},
-                {TokenType::Let, "let", 2, 1},
-                {TokenType::Identifier, "bad1", 2, 5},
-                {TokenType::Assign, "=", 2, 10},
-                {TokenType::Let, "let", 3, 1},
-                {TokenType::Identifier, "valid2", 3, 5},
-                {TokenType::Assign, "=", 3, 12},
-                {TokenType::String, "\"test\"", 3, 14},
-                {TokenType::Let, "let", 4, 1},
-                {TokenType::Identifier, "bad2", 4, 5},
-                {TokenType::Assign, "=", 4, 10},
-                {TokenType::Let, "let", 5, 1},
-                {TokenType::Identifier, "valid3", 5, 5},
-                {TokenType::Assign, "=", 5, 12},
-                {TokenType::Number, ".99", 5, 14},
-                {TokenType::Let, "let", 6, 1},
-                {TokenType::Identifier, "valid4", 6, 5},
-                {TokenType::Assign, "=", 6, 12},
-                {TokenType::Number, "0.99", 6, 14},
-                {TokenType::EndOfFile, "", 6, 18}
+                {.type = TokenType::Let, .lexeme = "let", .line = 1, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "valid1", .line = 1, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 1, .column = 12},
+                {.type = TokenType::Number, .lexeme = "100", .line = 1, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 2, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "bad1", .line = 2, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 2, .column = 10},
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "valid2", .line = 3, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 12},
+                {.type = TokenType::String, .lexeme = "\"test\"", .line = 3, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 4, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "bad2", .line = 4, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 4, .column = 10},
+                {.type = TokenType::Let, .lexeme = "let", .line = 5, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "valid3", .line = 5, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 5, .column = 12},
+                {.type = TokenType::Number, .lexeme = ".99", .line = 5, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 6, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "valid4", .line = 6, .column = 5},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 6, .column = 12},
+                {.type = TokenType::Number, .lexeme = "0.99", .line = 6, .column = 14},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 6, .column = 18}
             });
     }
 
@@ -394,19 +394,19 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::UnclosedString, 1, 1},
-                {E::UnterminatedDecimal, 2, 1},
-                {E::UnclosedString, 3, 1},
-                {E::TrailingSeparatorInNumberLiteral, 5, 1}
+                {.code = E::UnclosedString, .line = 1, .column = 1},
+                {.code = E::UnterminatedDecimal, .line = 2, .column = 1},
+                {.code = E::UnclosedString, .line = 3, .column = 1},
+                {.code = E::TrailingSeparatorInNumberLiteral, .line = 5, .column = 1}
             },
             {
-                {TokenType::String, "\"unclosed 1", 1, 1},
-                {TokenType::Number, "12.", 2, 1},
-                {TokenType::String, "\"unclosed 2", 3, 1},
-                {TokenType::Number, ".9", 4, 1},
-                {TokenType::Number, "1_", 5, 1},
-                {TokenType::Identifier, "a", 5, 3},
-                {TokenType::EndOfFile, "", 5, 4}
+                {.type = TokenType::String, .lexeme = "\"unclosed 1", .line = 1, .column = 1},
+                {.type = TokenType::Number, .lexeme = "12.", .line = 2, .column = 1},
+                {.type = TokenType::String, .lexeme = "\"unclosed 2", .line = 3, .column = 1},
+                {.type = TokenType::Number, .lexeme = ".9", .line = 4, .column = 1},
+                {.type = TokenType::Number, .lexeme = "1_", .line = 5, .column = 1},
+                {.type = TokenType::Identifier, .lexeme = "a", .line = 5, .column = 3},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 5, .column = 4}
             });
     }
 
@@ -416,22 +416,22 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::InvalidCharacter, 3, 18},
-                {E::UnterminatedDecimal, 5, 20}
+                {.code = E::InvalidCharacter, .line = 3, .column = 18},
+                {.code = E::UnterminatedDecimal, .line = 5, .column = 20}
             },
             {
-                {TokenType::Let, "let", 3, 3},
-                {TokenType::Identifier, "spaced", 3, 7},
-                {TokenType::Assign, "=", 3, 14},
-                {TokenType::Let, "let", 4, 5},
-                {TokenType::Identifier, "padded", 4, 9},
-                {TokenType::Assign, "=", 4, 16},
-                {TokenType::Number, ".123", 4, 18},
-                {TokenType::Let, "let", 5, 5},
-                {TokenType::Identifier, "carriage", 5, 9},
-                {TokenType::Assign, "=", 5, 18},
-                {TokenType::Number, "12.", 5, 20},
-                {TokenType::EndOfFile, "", 6, 1}
+                {.type = TokenType::Let, .lexeme = "let", .line = 3, .column = 3},
+                {.type = TokenType::Identifier, .lexeme = "spaced", .line = 3, .column = 7},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 3, .column = 14},
+                {.type = TokenType::Let, .lexeme = "let", .line = 4, .column = 5},
+                {.type = TokenType::Identifier, .lexeme = "padded", .line = 4, .column = 9},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 4, .column = 16},
+                {.type = TokenType::Number, .lexeme = ".123", .line = 4, .column = 18},
+                {.type = TokenType::Let, .lexeme = "let", .line = 5, .column = 5},
+                {.type = TokenType::Identifier, .lexeme = "carriage", .line = 5, .column = 9},
+                {.type = TokenType::Assign, .lexeme = "=", .line = 5, .column = 18},
+                {.type = TokenType::Number, .lexeme = "12.", .line = 5, .column = 20},
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 6, .column = 1}
             });
     }
 
@@ -441,17 +441,17 @@ namespace valuascript::compiler::test
 
         ExpectLexerRecovery(source,
             {
-                {E::InvalidCharacter, 1, 1},
-                {E::InvalidCharacter, 1, 2},
-                {E::InvalidCharacter, 1, 3},
-                {E::InvalidCharacter, 2, 1},
-                {E::InvalidCharacter, 2, 2},
-                {E::InvalidCharacter, 3, 1},
-                {E::InvalidCharacter, 3, 2},
-                {E::InvalidCharacter, 3, 3}
+                {.code = E::InvalidCharacter, .line = 1, .column = 1},
+                {.code = E::InvalidCharacter, .line = 1, .column = 2},
+                {.code = E::InvalidCharacter, .line = 1, .column = 3},
+                {.code = E::InvalidCharacter, .line = 2, .column = 1},
+                {.code = E::InvalidCharacter, .line = 2, .column = 2},
+                {.code = E::InvalidCharacter, .line = 3, .column = 1},
+                {.code = E::InvalidCharacter, .line = 3, .column = 2},
+                {.code = E::InvalidCharacter, .line = 3, .column = 3}
             },
             {
-                {TokenType::EndOfFile, "", 3, 4}
+                {.type = TokenType::EndOfFile, .lexeme = "", .line = 3, .column = 4}
             });
     }
 }

@@ -18,140 +18,140 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MultiReassignmentNotSupported",
                 .code = "x, y = 1",
-                .errors = {{E::MultiReassignmentNotSupported, 1, 2, 1, 3}},
+                .errors = {PErr{.code = E::MultiReassignmentNotSupported, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement1",
                 .code = "x + y",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 6}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement2",
                 .code = "a[0] + y",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 9}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 9}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement3",
                 .code = "a[0].a + y",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 11}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 11}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement4",
                 .code = "a",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 2}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement5",
                 .code = "a[0]",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement6",
                 .code = "{} + a",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 7}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 7}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement7",
                 .code = "-1",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 3}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 3}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement8",
                 .code = "1 + 2",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 6}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 6}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidStandaloneStatement9",
                 .code = "true",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 5}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide1",
                 .code = "a() = 1",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 4}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 4}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide2",
                 .code = "(a, b) = 1",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 7}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide3",
                 .code = "[1, 2] = 3",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 7}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 7}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide4",
                 .code = "true = false",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide5",
                 .code = "self = 42",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 5}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide6",
                 .code = "self.calc() = 42",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 12}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 12}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide7",
                 .code = "{} = 42",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 3}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 3}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidLeftSide8",
                 .code = "a + b = 3",
-                .errors = {{E::InvalidLeftSideExpressionInReassignment, 1, 1, 1, 6}},
+                .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 6}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "ChainedReassignmentNotSupported",
                 .code = "a = b = c = 0",
-                .errors = {{E::ChainedAssignmentNotSupported, 1, 5, 1, 14}},
+                .errors = {PErr{.code = E::ChainedAssignmentNotSupported, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 14}},
                 .verifier = IsReassignment(IsIdentifier("a"), IsNumber("0"))
             });
 
             reg({
                 .name = "ModifiersOnReassignment",
                 .code = "@modifier a = 1",
-                .errors = {{E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10}},
+                .errors = {PErr{.code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 10}},
                 .verifier = IsReassignment(IsIdentifier("a"), IsNumber("1"))
             });
 
@@ -159,8 +159,8 @@ namespace valuascript::compiler::test
                 .name = "ModifiersOnInvalidStandaloneStatement",
                 .code = "@modifier 1 + 2",
                 .errors = {
-                    {E::ModifiersAttachedToInvalidDeclaration, 1, 1, 1, 10},
-                    {E::InvalidStandaloneStatement, 1, 11, 1, 16}
+                    PErr{.code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 10},
+                    PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 16}
                 },
                 .verifier = IsNull()
             });
@@ -168,7 +168,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingValueAfterEqualsReassignment",
                 .code = "a = ",
-                .errors = {{E::MissingValueAfterEquals, 1, 3, 1, 4}},
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}},
                 .verifier = IsReassignment(IsIdentifier("a"), IsNull())
             });
 

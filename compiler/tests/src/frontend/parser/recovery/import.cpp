@@ -18,49 +18,49 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingImportKeyword",
                 .code = "file_path.vs",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 13}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 13}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "MissingImportStringPath",
                 .code = "import ",
-                .errors = {{E::MissingImportPathString, 1, 7, 1, 8}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
                 .verifier = IsImport("<error>")
             });
 
             reg({
                 .name = "ImportWithDocStringPath",
                 .code = R"(import """file_path.vs""")",
-                .errors = {{E::MissingImportPathString, 1, 8, 1, 26}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 26}},
                 .verifier = IsImport("<error>")
             });
 
             reg({
                 .name = "ImportInvalidStringPath1",
                 .code = "import 1",
-                .errors = {{E::MissingImportPathString, 1, 8, 1, 9}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
                 .verifier = IsImport("<error>")
             });
 
             reg({
                 .name = "ImportInvalidStringPath2",
                 .code = "import identifier",
-                .errors = {{E::MissingImportPathString, 1, 8, 1, 18}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 18}},
                 .verifier = IsImport("<error>")
             });
 
             reg({
                 .name = "ImportInvalidStringPath3",
                 .code = "import if a then b else c",
-                .errors = {{E::MissingImportPathString, 1, 8, 1, 10}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}},
                 .verifier = IsImport("<error>")
             });
 
             reg({
                 .name = "ImportInvalidStringPath4",
                 .code = "import a()",
-                .errors = {{E::MissingImportPathString, 1, 8, 1, 9}},
+                .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
                 .verifier = IsImport("<error>")
             });
 

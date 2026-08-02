@@ -9,7 +9,7 @@ namespace valuascript::compiler::test {
     TEST(ArtifactUtilityTest, SuccessfulExtraction) {
         std::vector<CompilerStageArtifact> history;
 
-        history.push_back({CompilerStageArtifactCode::FilePath, std::string("test_file.vs")});
+        history.push_back({.code = CompilerStageArtifactCode::FilePath, .data = std::string("test_file.vs")});
 
         auto result = extract_artifact(history, CompilerStageArtifactCode::FilePath);
         EXPECT_EQ(result.code, CompilerStageArtifactCode::FilePath);

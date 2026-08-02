@@ -47,8 +47,8 @@ namespace valuascript::compiler::test
             context->settings.fail_fast = false;
 
             std::vector<CompilerStageArtifact> initial_artifacts = {
-                {CompilerStageArtifactCode::SourceCode, param.source_code},
-                {CompilerStageArtifactCode::FilePath, std::string("test_script.vs")}
+                {.code = CompilerStageArtifactCode::SourceCode, .data = param.source_code},
+                {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test_script.vs")}
             };
 
             LexerStage lexer;

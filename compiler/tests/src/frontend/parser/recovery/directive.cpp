@@ -18,42 +18,42 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingName",
                 .code = "#",
-                .errors = {{E::MissingDirectiveName, 1, 2, 1, 3}},
+                .errors = {PErr{.code = E::MissingDirectiveName, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}},
                 .verifier = IsDirective("<error>")
             });
 
             reg({
                 .name = "MissingValueAfterEquals",
                 .code = "#dir = ",
-                .errors = {{E::MissingValueAfterEquals, 1, 7, 1, 8}},
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
                 .verifier = IsDirective("dir", IsNull())
             });
 
             reg({
                 .name = "MissingHashValuelessDirective",
                 .code = "dir",
-                .errors = {{E::InvalidStandaloneStatement, 1, 1, 1, 4}},
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 4}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "MissingNamePlusValueWithoutEquals",
                 .code = "# \"string\"",
-                .errors = {{E::MissingDirectiveName, 1, 3, 1, 11}},
+                .errors = {PErr{.code = E::MissingDirectiveName, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 11}},
                 .verifier = IsDirective("<error>", IsNull())
             });
 
             reg({
                 .name = "InvalidMarkerAsteriskWithValue",
                 .code = "*iterations = 1000",
-                .errors = {{E::InvalidExpression, 1, 1, 1, 2}},
+                .errors = {PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
                 .verifier = IsNull()
             });
 
             reg({
                 .name = "InvalidMarkerAsteriskNoValue",
                 .code = "*module",
-                .errors = {{E::InvalidExpression, 1, 1, 1, 2}},
+                .errors = {PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
                 .verifier = IsNull()
             });
 

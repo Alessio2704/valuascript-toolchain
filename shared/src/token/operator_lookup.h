@@ -29,26 +29,26 @@ namespace valuascript::shared
     };
 
     inline constexpr std::array<BinaryOperatorEntry, 14> BINARY_OPERATORS = {{
-        {"+",   TokenType::Plus,         Precedence::Term,       false},
-        {"-",   TokenType::Minus,        Precedence::Term,       false},
-        {"*",   TokenType::Star,         Precedence::Factor,     false},
-        {"/",   TokenType::Slash,        Precedence::Factor,     false},
-        {"^",   TokenType::Caret,        Precedence::Power,      true },
-        {"mod", TokenType::Mod,          Precedence::Factor,     false},
-        {"==",  TokenType::Equals,       Precedence::Comparison, false},
-        {"!=",  TokenType::NotEquals,    Precedence::Comparison, false},
-        {">",   TokenType::Greater,      Precedence::Comparison, false},
-        {">=",  TokenType::GreaterEqual, Precedence::Comparison, false},
-        {"<",   TokenType::Less,         Precedence::Comparison, false},
-        {"<=",  TokenType::LessEqual,    Precedence::Comparison, false},
-        {"and", TokenType::And,          Precedence::And,        false},
-        {"or",  TokenType::Or,           Precedence::Or,         false}
+        {.text = "+",   .type = TokenType::Plus,         .precedence = Precedence::Term,       .is_right_associative = false},
+        {.text = "-",   .type = TokenType::Minus,        .precedence = Precedence::Term,       .is_right_associative = false},
+        {.text = "*",   .type = TokenType::Star,         .precedence = Precedence::Factor,     .is_right_associative = false},
+        {.text = "/",   .type = TokenType::Slash,        .precedence = Precedence::Factor,     .is_right_associative = false},
+        {.text = "^",   .type = TokenType::Caret,        .precedence = Precedence::Power,      .is_right_associative = true },
+        {.text = "mod", .type = TokenType::Mod,          .precedence = Precedence::Factor,     .is_right_associative = false},
+        {.text = "==",  .type = TokenType::Equals,       .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = "!=",  .type = TokenType::NotEquals,    .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = ">",   .type = TokenType::Greater,      .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = ">=",  .type = TokenType::GreaterEqual, .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = "<",   .type = TokenType::Less,         .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = "<=",  .type = TokenType::LessEqual,    .precedence = Precedence::Comparison, .is_right_associative = false},
+        {.text = "and", .type = TokenType::And,          .precedence = Precedence::And,        .is_right_associative = false},
+        {.text = "or",  .type = TokenType::Or,           .precedence = Precedence::Or,         .is_right_associative = false}
     }};
 
     inline constexpr std::array<UnaryOperatorEntry, 3> UNARY_OPERATORS = {{
-        {"+", TokenType::Plus},
-        {"-", TokenType::Minus},
-        {"not", TokenType::Not}
+        {.text = "+",   .type = TokenType::Plus},
+        {.text = "-",   .type = TokenType::Minus},
+        {.text = "not", .type = TokenType::Not}
     }};
 
     [[nodiscard]] constexpr std::optional<TokenType> lookup_binary_operator(std::string_view text) noexcept

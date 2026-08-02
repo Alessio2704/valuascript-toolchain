@@ -515,9 +515,10 @@ namespace valuascript::compiler
                 cursor, start, std::vector<ExprPtr>{});
 
         bool failed = false;
-        RecoveryConfig conf;
-        conf.stop_tokens = {TokenType::Comma, TokenType::RightParen};
-        conf.options = RecoveryOptions::SkipNestedGroupings;
+        RecoveryConfig conf{
+            .stop_tokens = {TokenType::Comma, TokenType::RightParen},
+            .options = RecoveryOptions::SkipNestedGroupings
+        };
 
         auto first_expr = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf, &failed);
 
@@ -613,7 +614,7 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({std::move(g.modifiers), std::string(g.name.lexeme), std::move(g.value)});
+        for (auto& g : items_gen) elements.push_back({.modifiers = std::move(g.modifiers), .key = std::string(g.name.lexeme), .value = std::move(g.value)});
 
         try
         {
@@ -631,14 +632,15 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.advance();
         SyncSetTracker tracker(ctx, {TokenType::Then, TokenType::Else});
-        RecoveryConfig conf;
-        conf.stop_tokens = {
-            TokenType::Then, TokenType::Else,
-            TokenType::RightParen, TokenType::RightBracket,
-            TokenType::RightBrace, TokenType::Comma
+        RecoveryConfig conf{
+            .stop_tokens = {
+                TokenType::Then, TokenType::Else,
+                TokenType::RightParen, TokenType::RightBracket,
+                TokenType::RightBrace, TokenType::Comma
+            },
+            .options = DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp |
+                RecoveryOptions::StopEarlyIfUnbalancedBlocks
         };
-        conf.options = DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp |
-            RecoveryOptions::StopEarlyIfUnbalancedBlocks;
 
         auto condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
 
@@ -731,10 +733,11 @@ namespace valuascript::compiler
             const Token& tok = cursor.peek();
             if (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, cursor.peek(1).type))
             {
-                RecoveryConfig conf;
-                conf.stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace};
-                conf.options = RecoveryOptions::SkipNestedGroupings |
-                    RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
+                RecoveryConfig conf{
+                    .stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace},
+                    .options = RecoveryOptions::SkipNestedGroupings |
+                        RecoveryOptions::StopAtBoundaryRespectingDanglingOp
+                };
                 Token id = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedEnumCaseNameAfterCase, conf);
                 identifiers.emplace_back(std::string(id.lexeme));
             }
@@ -746,10 +749,11 @@ namespace valuascript::compiler
                 if (!cursor.check(TokenType::Comma) && !cursor.check(TokenType::Arrow) && !cursor.check(
                     TokenType::RightBrace))
                 {
-                    RecoveryConfig conf;
-                    conf.stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace};
-                    conf.options = RecoveryOptions::SkipNestedGroupings |
-                        RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
+                    RecoveryConfig conf{
+                        .stop_tokens = {TokenType::Comma, TokenType::Arrow, TokenType::RightBrace},
+                        .options = RecoveryOptions::SkipNestedGroupings |
+                            RecoveryOptions::StopAtBoundaryRespectingDanglingOp
+                    };
                     ErrorRecovery::synchronize_with(ctx, conf);
                 }
             }
@@ -763,18 +767,20 @@ namespace valuascript::compiler
             break;
         }
 
-        RecoveryConfig conf;
-        conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
+        RecoveryConfig conf{
+            .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+            .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
+        };
         auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
-        return {std::move(modifiers), std::move(identifiers), std::move(result)};
+        return {.modifiers = std::move(modifiers), .identifiers = std::move(identifiers), .result = std::move(result)};
     }
 
     ExprPtr ExpressionParser::parse_switch_default()
     {
-        RecoveryConfig conf;
-        conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-        conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
+        RecoveryConfig conf{
+            .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+            .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
+        };
         return ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
     }
 
@@ -806,9 +812,10 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_switch_target()
     {
         bool failed = false;
-        RecoveryConfig conf;
-        conf.stop_tokens = {TokenType::RightParen, TokenType::LeftBrace};
-        conf.options = RecoveryOptions::SkipNestedGroupings;
+        RecoveryConfig conf{
+            .stop_tokens = {TokenType::RightParen, TokenType::LeftBrace},
+            .options = RecoveryOptions::SkipNestedGroupings
+        };
 
         auto target = ErrorRecovery::try_parse<ExprPtr>(
             ctx, [&]()
@@ -846,9 +853,10 @@ namespace valuascript::compiler
                     TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)));
             if (should_break_out) break;
 
-            RecoveryConfig conf;
-            conf.stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace};
-            conf.options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks;
+            RecoveryConfig conf{
+                .stop_tokens = {TokenType::Case, TokenType::Default, TokenType::RightBrace},
+                .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
+            };
             ErrorRecovery::attempt_parse_void(ctx, [&]()
             {
                 auto modifiers = parser.parse_modifiers();

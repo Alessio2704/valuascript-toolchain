@@ -55,10 +55,11 @@ namespace valuascript::compiler::test
         {
             return {
                 {
-                    "in_function",
-                    "func wrapper() -> void {\n    let valid_stmt_1 = 1\n    ",
-                    "    let valid_stmt_2 = 2\n}\n",
-                    true, [](const Program& p)
+                    .name = "in_function",
+                    .pre_code = "func wrapper() -> void {\n    let valid_stmt_1 = 1\n    ",
+                    .post_code = "    let valid_stmt_2 = 2\n}\n",
+                    .supports_modifiers = true,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -69,10 +70,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_struct",
-                    "struct WrapperStruct { valid_field_1: int, ",
-                    ", valid_field_2: int }\n",
-                    true, [](const Program& p)
+                    .name = "in_struct",
+                    .pre_code = "struct WrapperStruct { valid_field_1: int, ",
+                    .post_code = ", valid_field_2: int }\n",
+                    .supports_modifiers = true,
+                    .verify = [](const Program& p)
                     {
                         auto it = std::find_if(p.struct_definitions.begin(), p.struct_definitions.end(),
                                                [](auto& s) { return s->name == "WrapperStruct"; });
@@ -86,10 +88,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_enum",
-                    "enum WrapperEnum: int { ValidCase1, ",
-                    ", ValidCase2 }\n",
-                    true, [](const Program& p)
+                    .name = "in_enum",
+                    .pre_code = "enum WrapperEnum: int { ValidCase1, ",
+                    .post_code = ", ValidCase2 }\n",
+                    .supports_modifiers = true,
+                    .verify = [](const Program& p)
                     {
                         auto it = std::find_if(p.enum_definitions.begin(), p.enum_definitions.end(),
                                                [](auto& e) { return e->name == "WrapperEnum"; });
@@ -103,10 +106,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_grouping",
-                    "func wrapper() -> void {\n    let a = ( 1, ",
-                    ", 2 )\n}\n",
-                    false, [](const Program& p)
+                    .name = "in_grouping",
+                    .pre_code = "func wrapper() -> void {\n    let a = ( 1, ",
+                    .post_code = ", 2 )\n}\n",
+                    .supports_modifiers = false,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -122,11 +126,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_tensor_literal",
-                    "func wrapper() -> void {\n    let a = [ 1, ",
-                    ", 2 ]\n}\n",
-                    false,
-                    [](const Program& p)
+                    .name = "in_tensor_literal",
+                    .pre_code = "func wrapper() -> void {\n    let a = [ 1, ",
+                    .post_code = ", 2 ]\n}\n",
+                    .supports_modifiers = false,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -142,10 +146,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_switch_condition",
-                    "func wrapper() -> void {\n    let a = switch ( ",
-                    " ) { default -> 1 }\n}\n",
-                    false, [](const Program& p)
+                    .name = "in_switch_condition",
+                    .pre_code = "func wrapper() -> void {\n    let a = switch ( ",
+                    .post_code = " ) { default -> 1 }\n}\n",
+                    .supports_modifiers = false,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -161,10 +166,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_switch_body",
-                    "func wrapper() -> void {\n    let a = switch (1) { ",
-                    " default -> 2 }\n}\n",
-                    false, [](const Program& p)
+                    .name = "in_switch_body",
+                    .pre_code = "func wrapper() -> void {\n    let a = switch (1) { ",
+                    .post_code = " default -> 2 }\n}\n",
+                    .supports_modifiers = false,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -180,10 +186,11 @@ namespace valuascript::compiler::test
                     }
                 },
                 {
-                    "in_assignment_rhs",
-                    "func wrapper() -> void {\n    let a = ",
-                    "\n    let valid_stmt_2 = 2\n}\n",
-                    false, [](const Program& p)
+                    .name = "in_assignment_rhs",
+                    .pre_code = "func wrapper() -> void {\n    let a = ",
+                    .post_code = "\n    let valid_stmt_2 = 2\n}\n",
+                    .supports_modifiers = false,
+                    .verify = [](const Program& p)
                     {
                         auto s = find_statement(p, [](const Statement* st)
                         {
@@ -192,7 +199,7 @@ namespace valuascript::compiler::test
                         });
                         EXPECT_NE(s, nullptr) << "Recovered next statement 'valid_stmt_2' not found.";
                     },
-                    true
+                    .expects_missing_value_error = true
                 }
             };
         }

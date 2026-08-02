@@ -9,7 +9,7 @@ namespace valuascript::compiler::test {
     TEST(ArtifactDataUtilityTest, SuccessfulExtraction) {
         std::vector<CompilerStageArtifact> history;
 
-        history.push_back({CompilerStageArtifactCode::FilePath, std::string("test_file.vs")});
+        history.push_back({.code = CompilerStageArtifactCode::FilePath, .data = std::string("test_file.vs")});
 
         auto result = extract_artifact_data<std::string>(history, CompilerStageArtifactCode::FilePath);
         EXPECT_EQ(result, "test_file.vs");
@@ -30,7 +30,7 @@ namespace valuascript::compiler::test {
 
     TEST(ArtifactDataUtilityTest, ThrowsOnTypeMismatch) {
         std::vector<CompilerStageArtifact> history;
-        history.push_back({CompilerStageArtifactCode::FilePath, std::string("test_file.vs")});
+        history.push_back({.code = CompilerStageArtifactCode::FilePath, .data = std::string("test_file.vs")});
 
         try {
             extract_artifact_data<int>(history, CompilerStageArtifactCode::FilePath);

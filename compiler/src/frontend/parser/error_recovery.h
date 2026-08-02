@@ -50,22 +50,28 @@ namespace valuascript::compiler
         static RecoveryConfig StopAtBoundary(std::vector<TokenType> extra_stops = {})
         {
             return {
-                std::move(extra_stops), DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp,
-                nullptr
+                .stop_tokens = std::move(extra_stops),
+                .options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp,
+                .custom_stop_predicate = nullptr
             };
         }
 
         static RecoveryConfig ForceStopAtBoundary(std::vector<TokenType> extra_stops = {})
         {
             return {
-                std::move(extra_stops), DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp,
-                nullptr
+                .stop_tokens = std::move(extra_stops),
+                .options = DefaultRecoveryOptions | RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp,
+                .custom_stop_predicate = nullptr
             };
         }
 
         static RecoveryConfig StopAtNewline()
         {
-            return {{}, DefaultRecoveryOptions | RecoveryOptions::StopAtNewline, nullptr};
+            return {
+                .stop_tokens = {},
+                .options = DefaultRecoveryOptions | RecoveryOptions::StopAtNewline,
+                .custom_stop_predicate = nullptr
+            };
         }
     };
 

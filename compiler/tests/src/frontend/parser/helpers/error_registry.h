@@ -15,27 +15,14 @@ namespace valuascript::compiler::test
     struct ParserExpectedError
     {
         ValuascriptErrorCode code;
-        size_t line_start;
-        size_t column_start;
-        size_t line_end;
-        size_t column_end;
-        bool skip_span_check;
-
-        ParserExpectedError(ValuascriptErrorCode c,
-                            size_t ls = 0,
-                            size_t cs = 0,
-                            size_t le = 0,
-                            size_t ce = 0,
-                            bool skip_check = false)
-            : code(c),
-              line_start(ls),
-              column_start(cs),
-              line_end(le),
-              column_end(ce),
-              skip_span_check(skip_check)
-        {
-        }
+        size_t line_start = 0;
+        size_t column_start = 0;
+        size_t line_end = 0;
+        size_t column_end = 0;
+        bool skip_span_check = false;
     };
+
+    using PErr = ParserExpectedError;
 
     template <typename T = NullVerifier>
     struct ContextOverride
@@ -119,7 +106,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            imports().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            imports().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -128,7 +115,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            directives().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            directives().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -137,7 +124,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            functions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            functions().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -146,7 +133,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            extensions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            extensions().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -155,7 +142,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            structs().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            structs().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -164,7 +151,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            enums().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            enums().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -173,7 +160,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            aliases().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            aliases().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -182,7 +169,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            assignments().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            assignments().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -191,7 +178,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            reassignments().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            reassignments().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -200,7 +187,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            returns().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            returns().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -209,7 +196,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            expr_stmts().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            expr_stmts().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -218,7 +205,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            expressions().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            expressions().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -227,7 +214,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            modifiers().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            modifiers().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
 
         static void add(const std::string& n, const std::string& c, const std::vector<ParserExpectedError>& errs,
@@ -236,7 +223,7 @@ namespace valuascript::compiler::test
                         const std::vector<SentinelKind>& excluded_sentinels = {},
                         const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            type_annotations().push_back({n, c, errs, v, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels});
+            type_annotations().push_back({.test_name = n, .code = c, .errors = errs, .verifier = v, .skip_contexts = skip_contexts, .context_overrides = context_overrides, .excluded_sentinels = excluded_sentinels, .accepted_sentinels = accepted_sentinels});
         }
     };
 

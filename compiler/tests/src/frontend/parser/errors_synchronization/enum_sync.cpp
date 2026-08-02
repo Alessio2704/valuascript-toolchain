@@ -17,15 +17,7 @@ namespace valuascript::compiler::test
         struct ExpectedEnumCase
         {
             std::string name;
-            std::optional<std::string> expected_number_value;
-
-            ExpectedEnumCase(const char* n) : name(n), expected_number_value(std::nullopt)
-            {
-            }
-
-            ExpectedEnumCase(const char* n, const char* v) : name(n), expected_number_value(std::string(v))
-            {
-            }
+            std::optional<std::string> expected_number_value = std::nullopt;
         };
 
         void ExpectEnumCases(const EnumDefinition* enum_def,
@@ -103,55 +95,53 @@ namespace valuascript::compiler::test
         EnumParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "no_colon_enum_empty_ast",
-            "enum Test int { A }\n"
-            "let a = 1\n",
-            { {Err::ExpectedColonAfterEnumName, 1, 11} },
-            ExpectNoEnums()
+                .test_name = "no_colon_enum_empty_ast",
+                .source_code = "enum Test int { A }\nlet a = 1\n",
+                .expected_errors = { {.code = Err::ExpectedColonAfterEnumName, .line = 1, .column = 11} },
+                .verify_ast = ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "no_left_brace_enum_empty_ast",
-            "enum Test : int A }\n"
-            "let a = 1\n",
-            { {Err::ExpectedLeftBraceBeforeEnumBody, 1, 17} },
-            ExpectNoEnums()
+                .test_name = "no_left_brace_enum_empty_ast",
+                .source_code = "enum Test : int A }\nlet a = 1\n",
+                .expected_errors = { {.code = Err::ExpectedLeftBraceBeforeEnumBody, .line = 1, .column = 17} },
+                .verify_ast = ExpectNoEnums()
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_expression_and_brace",
-            "enum Test : int { A = 1, B = \n"
-            "let a = 1\n",
-            {
-            {Err::InvalidExpression, 1, 28},
-            {Err::ExpectedRightBraceAfterEnumBody, 1, 28}
-            },
-            ExpectEnum("Test", "int", {{"A", "1"}, "B"})
-            },
-            ParserErrorsSynchronizationTestCase{
-            "reserved_char_1",
-            "enum Test : int { # }\n"
-            "let a = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 1, 19},
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
+                .test_name = "missing_expression_and_brace",
+                .source_code = "enum Test : int { A = 1, B = \nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::InvalidExpression, .line = 1, .column = 28},
+                    {.code = Err::ExpectedRightBraceAfterEnumBody, .line = 1, .column = 28}
+                },
+                .verify_ast = ExpectEnum("Test", "int", {
+                    {.name = "A", .expected_number_value = "1"},
+                    {.name = "B"}
+                })
             },
             ParserErrorsSynchronizationTestCase{
-            "reserved_char_2",
-            "enum Test : int { / }\n"
-            "let a = 1\n",
-            {
-            {Err::ExpectedEnumCaseName, 1, 19},
+                .test_name = "reserved_char_1",
+                .source_code = "enum Test : int { # }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 19},
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.enum_definitions.size(), 1);
+                    EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                }
             },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.enum_definitions.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
-            EXPECT_EQ(ast.enum_definitions[0]->cases[0].name, "<error>");
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "reserved_char_2",
+                .source_code = "enum Test : int { / }\nlet a = 1\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedEnumCaseName, .line = 1, .column = 19},
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.enum_definitions.size(), 1);
+                    EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
+                    EXPECT_EQ(ast.enum_definitions[0]->cases[0].name, "<error>");
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

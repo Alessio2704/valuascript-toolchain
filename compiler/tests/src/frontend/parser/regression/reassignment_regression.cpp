@@ -26,10 +26,10 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "func f() -> void {}\n",
-            {{E::InvalidLeftSideExpressionInReassignment, 8, 3, 8, 9}},
+            {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 8, .column_start = 3, .line_end = 8, .column_end = 9}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({AssignmentTargetSpec("ifthenelse")}, IsNumber("1"))
+                    IsAssignment({AssignmentTargetSpec{.name = "ifthenelse"}}, IsNumber("1"))
                 },
                 .functions = {
                     IsFunctionDef("f", {}, {}, {IsType("void")}, {})
@@ -62,10 +62,10 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "struct Point { x: float, y: float, z: float }\n",
-            {{E::MissingValueAfterEquals, 6, 5, 6, 6}},
+            {PErr{.code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6, .column_end = 6}},
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({AssignmentTargetSpec("a"), AssignmentTargetSpec("b")}, IsNumber("1"))
+                    IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
                 },
                 .functions = {
                     IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {
@@ -76,9 +76,9 @@ namespace valuascript::compiler::test
                 },
                 .structs = {
                     IsStructDef("Point",
-                        FieldSpec("x", IsType("float")),
-                        FieldSpec("y", IsType("float")),
-                        FieldSpec("z", IsType("float"))
+                        FieldSpec{.name = "x", .type_v = IsType("float")},
+                        FieldSpec{.name = "y", .type_v = IsType("float")},
+                        FieldSpec{.name = "z", .type_v = IsType("float")}
                     )
                 }
             }
@@ -98,13 +98,13 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "let a: int = 1\n",
-            {{E::MissingValueAfterEquals, 6, 5, 6, 6}},
+            {PErr{.code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6, .column_end = 6}},
             ProgramSpec{
                 .imports = {
                     IsImport("\"lib\"", {{"mod2", {}}})
                 },
                 .execution_steps = {
-                    IsAssignment({AssignmentTargetSpec("a", IsType("int"))}, IsNumber("1"))
+                    IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNumber("1"))
                 },
                 .extensions = {
                     IsExtensionDef({}, IsType("ctx_target"), ProgramSpec{

@@ -17,7 +17,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::SourceCode, {}};
+            return {.code = CompilerStageArtifactCode::SourceCode, .data = {}};
         }
     };
 
@@ -32,7 +32,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::TokenStream, {}};
+            return {.code = CompilerStageArtifactCode::TokenStream, .data = {}};
         }
     };
 
@@ -47,7 +47,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::Ast, {}};
+            return {.code = CompilerStageArtifactCode::Ast, .data = {}};
         }
     };
 
@@ -61,7 +61,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::Ast, {}};
+            return {.code = CompilerStageArtifactCode::Ast, .data = {}};
         }
     };
 
@@ -75,7 +75,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::ResolvedProject, {}};
+            return {.code = CompilerStageArtifactCode::ResolvedProject, .data = {}};
         }
     };
 
@@ -89,7 +89,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::SymbolTable, {}};
+            return {.code = CompilerStageArtifactCode::SymbolTable, .data = {}};
         }
     };
 
@@ -103,7 +103,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::Bytecode, {}};
+            return {.code = CompilerStageArtifactCode::Bytecode, .data = {}};
         }
     };
 
@@ -117,7 +117,7 @@ namespace valuascript::compiler::test {
 
         CompilerStageArtifact run([[maybe_unused]] CompilerContext &context,
                                   const std::vector<CompilerStageArtifact> &) override {
-            return {CompilerStageArtifactCode::LinterReport, {}};
+            return {.code = CompilerStageArtifactCode::LinterReport, .data = {}};
         }
     };
 }

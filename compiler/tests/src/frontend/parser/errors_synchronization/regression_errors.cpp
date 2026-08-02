@@ -17,60 +17,58 @@ namespace valuascript::compiler::test
         GeneralParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "Regression_1",
-            "let b = { \"key\" 10 }\n"
-            "let a = func_call(\n\n"
-            "let b = some_other()",
-            {
-            {Err::ExpectedDictionaryKey, 1, 11},
-            {Err::ExpectedArgumentNameOrClosingParen, 2, 19}
-            }
+                .test_name = "Regression_1",
+                .source_code = "let b = { \"key\" 10 }\nlet a = func_call(\n\nlet b = some_other()",
+                .expected_errors = {
+                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 11},
+                    {.code = Err::ExpectedArgumentNameOrClosingParen, .line = 2, .column = 19}
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "Regression_2",
-            "func test() -> scalar { return 1\n"
-            "// -- R&D Capitalization --\n"
-            "let value_of_research_assets, current_year_amortization = get_rd()\n"
-            "// -- WACC --\n"
-            "let wacc = get_wacc()\n"
-            "enum Scenario: scalar { LOW, BASE, HIGH}\n"
-            "}\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 6, 1}
-            }
+                .test_name = "Regression_2",
+                .source_code = "func test() -> scalar { return 1\n"
+                               "// -- R&D Capitalization --\n"
+                               "let value_of_research_assets, current_year_amortization = get_rd()\n"
+                               "// -- WACC --\n"
+                               "let wacc = get_wacc()\n"
+                               "enum Scenario: scalar { LOW, BASE, HIGH}\n"
+                               "}\n",
+                .expected_errors = {
+                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 6, .column = 1}
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "Regression_2_a",
-            "func test() -> scalar { return 1\n"
-            "// -- R&D Capitalization --\n"
-            "let value_of_research_assets, current_year_amortization = get_rd()\n"
-            "// -- WACC --\n"
-            "let wacc = get_wacc()\n"
-            "enum Scenario: scalar { LOW, BASE, HIGH }\n",
-            {
-            {Err::ExpectedRightBraceAfterFunctionBody, 5, 21}
-            }
+                .test_name = "Regression_2_a",
+                .source_code = "func test() -> scalar { return 1\n"
+                               "// -- R&D Capitalization --\n"
+                               "let value_of_research_assets, current_year_amortization = get_rd()\n"
+                               "// -- WACC --\n"
+                               "let wacc = get_wacc()\n"
+                               "enum Scenario: scalar { LOW, BASE, HIGH }\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedRightBraceAfterFunctionBody, .line = 5, .column = 21}
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "Regression_3",
-            "#iterations = 10_000_\n"
-            "\n"
-            "// -- R&D Capitalization --\n"
-            "let value_of_research_assets, current_year_amortization = get_rd(\n"
-            "let a = 10\n",
-            {
-            {LexerErrorCode::TrailingSeparatorInNumberLiteral, 1, 15},
-            {Err::ExpectedArgumentNameOrClosingParen, 4, 66}
-            }
+                .test_name = "Regression_3",
+                .source_code = "#iterations = 10_000_\n"
+                               "\n"
+                               "// -- R&D Capitalization --\n"
+                               "let value_of_research_assets, current_year_amortization = get_rd(\n"
+                               "let a = 10\n",
+                .expected_errors = {
+                    {.code = LexerErrorCode::TrailingSeparatorInNumberLiteral, .line = 1, .column = 15},
+                    {.code = Err::ExpectedArgumentNameOrClosingParen, .line = 4, .column = 66}
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "Regression_4",
-            "let a = {1, 2, 3}\n",
-            {
-            {Err::ExpectedDictionaryKey, 1, 10},
-            {Err::ExpectedDictionaryKey, 1, 13},
-            {Err::ExpectedDictionaryKey, 1, 16}
-            }
+                .test_name = "Regression_4",
+                .source_code = "let a = {1, 2, 3}\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 10},
+                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 13},
+                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 16}
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

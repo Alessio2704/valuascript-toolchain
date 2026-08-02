@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 .name = "EnumMissingName",
                 .code = "enum : int { A }",
                 .errors = {
-                    {E::ExpectedEnumName, 1, 6, 1, 7}
+                    PErr{.code = E::ExpectedEnumName, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsEnumDef("<error>", {}, IsType("int"), {
                     {"A"}
@@ -30,7 +30,7 @@ namespace valuascript::compiler::test
                 .name = "EnumMissingTypeAnnotation",
                 .code = "enum Test: { A }",
                 .errors = {
-                    {E::MissingTypeAnnotation, 1, 12, 1, 13}
+                    PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                 },
                 .verifier = IsEnumDef("Test", {}, IsNullType(), {
                     {"A"}
@@ -41,8 +41,8 @@ namespace valuascript::compiler::test
                 .name = "NoCommasASTAllCases",
                 .code = "enum Test: int { A B C }",
                 .errors = {
-                    {E::ExpectedCommaSeparatorInEnum, 1, 20, 1, 21},
-                    {E::ExpectedCommaSeparatorInEnum, 1, 22, 1, 23}
+                    PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21},
+                    PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
                 .name = "NoCommasASTAllCasesWithDefault",
                 .code = "enum Test: int { A = 1 B = a() C = 2 }",
                 .errors = {
-                    {E::ExpectedCommaSeparatorInEnum, 1, 24, 1, 25},
-                    {E::ExpectedCommaSeparatorInEnum, 1, 32, 1, 33}
+                    PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25},
+                    PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 32, .line_end = 1, .column_end = 33}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A", {}, IsNumber("1")},
@@ -69,7 +69,7 @@ namespace valuascript::compiler::test
                 .name = "NumberCaseName",
                 .code = "enum Test: int { 1 }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 18, 1, 19}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"<error>"}
@@ -80,7 +80,7 @@ namespace valuascript::compiler::test
                 .name = "StringCaseName",
                 .code = "enum Test: int { \"A\" }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 18, 1, 21}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 21}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"<error>"}
@@ -91,7 +91,7 @@ namespace valuascript::compiler::test
                 .name = "CasesGarbageStart",
                 .code = "enum Test: int { +-*/, B, C }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 18, 1, 19}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"<error>"},
@@ -104,7 +104,7 @@ namespace valuascript::compiler::test
                 .name = "CasesGarbageMiddle",
                 .code = "enum Test: int { A, +-*/, C }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 21, 1, 22}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -117,7 +117,7 @@ namespace valuascript::compiler::test
                 .name = "CasesGarbageEnd",
                 .code = "enum Test: int { A, B, +-*/ }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 24, 1, 25}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -130,7 +130,7 @@ namespace valuascript::compiler::test
                 .name = "CasesSkip",
                 .code = "enum Test: int { A, , C }",
                 .errors = {
-                    {E::ExpectedEnumCaseName, 1, 21, 1, 22}
+                    PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -143,7 +143,7 @@ namespace valuascript::compiler::test
                 .name = "MissingDefault",
                 .code = "enum Test: int { A =, B }",
                 .errors = {
-                    {E::InvalidExpression, 1, 21, 1, 22}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -155,7 +155,7 @@ namespace valuascript::compiler::test
                 .name = "MissingDefaultLast",
                 .code = "enum Test: int { A, B = }",
                 .errors = {
-                    {E::InvalidExpression, 1, 25, 1, 26}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 26}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},
@@ -167,9 +167,9 @@ namespace valuascript::compiler::test
                 .name = "MissingDefaultMultiple",
                 .code = "enum Test: int { A =, B = 1, C =, D = 1, E =, F = 1}",
                 .errors = {
-                    {E::InvalidExpression, 1, 21, 1, 22},
-                    {E::InvalidExpression, 1, 33, 1, 34},
-                    {E::InvalidExpression, 1, 45, 1, 46}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 33, .line_end = 1, .column_end = 34},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 45, .line_end = 1, .column_end = 46}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
                     {"A"},

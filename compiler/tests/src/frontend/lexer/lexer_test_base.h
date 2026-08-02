@@ -25,15 +25,10 @@ namespace valuascript::compiler::test
 
     struct ExpectedToken
     {
-        TokenType type;
+        TokenType type = TokenType::Error;
         std::optional<std::string> lexeme = std::nullopt;
         std::optional<size_t> line = std::nullopt;
         std::optional<size_t> column = std::nullopt;
-
-        ExpectedToken(TokenType t) : type(t) {}
-        ExpectedToken(TokenType t, std::string l) : type(t), lexeme(std::move(l)) {}
-        ExpectedToken(TokenType t, std::string l, size_t li, size_t c)
-            : type(t), lexeme(std::move(l)), line(li), column(c) {}
     };
 
     class LexerTestBase : public testing::Test
@@ -51,8 +46,8 @@ namespace valuascript::compiler::test
             context->settings.fail_fast = fail_fast;
 
             const std::vector<CompilerStageArtifact> history = {
-                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-                {CompilerStageArtifactCode::SourceCode, source_code}
+                {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
+                {.code = CompilerStageArtifactCode::SourceCode, .data = source_code}
             };
 
             LexerStage lexer_stage;

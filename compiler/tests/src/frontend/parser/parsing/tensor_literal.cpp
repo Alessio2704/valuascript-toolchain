@@ -40,10 +40,10 @@ namespace valuascript::compiler::test
         ParserStageTest,
         TensorLiteralSadPathTest,
         testing::Values(
-            TensorLiteralSadParam{"vector_literal_unclosed", "[1,2,3", E::UnmatchedBracketAfterTensorElements},
-            TensorLiteralSadParam{"matrix_literal_unclosed", "[[1,2], [3, 4]", E::UnmatchedBracketAfterTensorElements},
-            TensorLiteralSadParam{"mising_operator_1", "[1,2,4] [1,2,3]", E::UnexpectedCommaInBracketAccess},
-            TensorLiteralSadParam{"mising_operator_2", "[1, [2,4]] [[1,2,3], [1,2]]", E::UnexpectedCommaInBracketAccess}
+            TensorLiteralSadParam{.test_name = "vector_literal_unclosed", .source_code = "[1,2,3", .expected_error = E::UnmatchedBracketAfterTensorElements},
+            TensorLiteralSadParam{.test_name = "matrix_literal_unclosed", .source_code = "[[1,2], [3, 4]", .expected_error = E::UnmatchedBracketAfterTensorElements},
+            TensorLiteralSadParam{.test_name = "mising_operator_1", .source_code = "[1,2,4] [1,2,3]", .expected_error = E::UnexpectedCommaInBracketAccess},
+            TensorLiteralSadParam{.test_name = "mising_operator_2", .source_code = "[1, [2,4]] [[1,2,3], [1,2]]", .expected_error = E::UnexpectedCommaInBracketAccess}
         ),
         [](const testing::TestParamInfo<TensorLiteralSadParam>& test_info) {
         return test_info.param.test_name;

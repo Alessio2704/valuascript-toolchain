@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
                 .name = "SingleElementTupleNotAllowed",
                 .code = "(1,)",
                 .errors = {
-                    {E::SingleElementTuplesNotAllowed, 1, 3, 1, 4}
+                    PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}
                 },
                 .verifier = IsTuple(
                     IsNumber("1")
@@ -25,7 +25,7 @@ namespace valuascript::compiler::test
                 .name = "TrailingCommaInTuple",
                 .code = "(1, 2,)",
                 .errors = {
-                    {E::TrailingCommaInTuple, 1, 6, 1, 7}
+                    PErr{.code = E::TrailingCommaInTuple, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsTuple(
                     IsNumber("1"),
@@ -37,8 +37,8 @@ namespace valuascript::compiler::test
                 .name = "TupleMissingExpression",
                 .code = "(1, , , 3)",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 7, 1, 8}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
@@ -49,8 +49,8 @@ namespace valuascript::compiler::test
                 .name = "TupleGarbageBetweenElements",
                 .code = "(1, *, *, 3)",
                 .errors = {
-                    {E::InvalidExpression, 1, 5, 1, 6},
-                    {E::InvalidExpression, 1, 8, 1, 9}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
                 },
                 .verifier = IsTuple(
                     IsNumber("1"), IsNull(), IsNull(), IsNumber("3")
@@ -61,7 +61,7 @@ namespace valuascript::compiler::test
                 .name = "EmptyTupleWithGarbage",
                 .code = "(*)",
                 .errors = {
-                    {E::InvalidExpression, 1, 2, 1, 3}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                 },
                 .verifier = IsGrouping(IsNull())
             });
@@ -70,7 +70,7 @@ namespace valuascript::compiler::test
                 .name = "TupleWithColonInsteadOfComma",
                 .code = "(1, x: 2)",
                 .errors = {
-                    {E::ExpectedRightParenAfterTupleElements, 1, 5, 1, 6}
+                    PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsTuple(
                     IsNumber("1"),
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
                 "  3\n"
                 ")",
                 .errors = {
-                    {E::InvalidExpression, 3, 3, 3, 4}
+                    PErr{.code = E::InvalidExpression, .line_start = 3, .column_start = 3, .line_end = 3, .column_end = 4}
                 },
                 .verifier = IsTuple(
                     IsNumber("1"),
@@ -99,8 +99,8 @@ namespace valuascript::compiler::test
                 .name = "EmptyTupleWithCommaIsInvalid",
                 .code = "(,)",
                 .errors = {
-                    {E::InvalidExpression, 1, 2, 1, 3},
-                    {E::SingleElementTuplesNotAllowed, 1, 2, 1, 3}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3},
+                    PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                 },
                 .verifier = IsTuple()
             });

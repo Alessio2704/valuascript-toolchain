@@ -7,8 +7,8 @@
 
 namespace valuascript::compiler {
     struct ResolvedProjectArtifact {
-        std::string entry_file_path;
-        std::unordered_map<std::string, std::shared_ptr<Program>> modules;
-        std::vector<std::string> topological_order;
+        std::string entry_file_path = {};
+        std::unordered_map<std::string, std::shared_ptr<Program>> modules = {};
+        std::vector<std::string> topological_order = {};
     };
 }

@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 .name = "MissingAliasName",
                 .code = "typealias = int",
                 .errors = {
-                    {E::ExpectedTypeAliasName, 1, 11, 1, 12}
+                    PErr{.code = E::ExpectedTypeAliasName, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                 },
                 .verifier = IsTypeAlias("<error>", {}, IsType("int"))
             });
@@ -28,7 +28,7 @@ namespace valuascript::compiler::test
                 .name = "MissingTargetTypeAnnotation",
                 .code = "typealias MyType =",
                 .errors = {
-                    {E::MissingTypeAnnotation, 1, 19, 1, 20}
+                    PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}
                 },
                 .verifier = IsTypeAlias("MyType", {}, IsNullType())
             });
@@ -37,7 +37,7 @@ namespace valuascript::compiler::test
                 .name = "GarbageTargetTypeAnnotation",
                 .code = "typealias MyType = *",
                 .errors = {
-                    {E::MissingTypeAnnotation, 1, 20, 1, 21}
+                    PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21}
                 },
                 .verifier = IsTypeAlias("MyType", {}, IsNullType())
             });
@@ -46,7 +46,7 @@ namespace valuascript::compiler::test
                 .name = "GarbageAtEndOfOtherwiseValidAlias",
                 .code = "typealias User = string ^^",
                 .errors = {
-                    {E::InvalidExpression, 1, 25, 1, 26}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 26}
                 },
                 .verifier = IsTypeAlias("User", {}, IsType("string"))
             });

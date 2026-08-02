@@ -37,109 +37,100 @@ namespace valuascript::compiler::test {
         GroupingParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "grouping_unclosed",
-            "let a = ( 1 + 2 \n"
-            "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
-            [](const Program& ast) {
-            ExpectGroupingLiteral(ast);
-            }
+                .test_name = "grouping_unclosed",
+                .source_code = "let a = ( 1 + 2 \nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
+                .verify_ast = [](const Program& ast) {
+                    ExpectGroupingLiteral(ast);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_closed_with_wrong_bracket",
-            "let a = ( 1 + 2 ]\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
-            ExpectGrouping()
+                .test_name = "grouping_closed_with_wrong_bracket",
+                .source_code = "let a = ( 1 + 2 ]\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
+                .verify_ast = ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_mismatched_bracket_in_nested_list",
-            "let a = [ ( 1 + 2 ], 3 ]\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 17} },
-            [](const Program& ast) {
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            auto *tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-            ASSERT_NE(tensor, nullptr);
-            EXPECT_EQ(tensor->elements.size(), 2);
-            EXPECT_NE(dynamic_cast<GroupingExpression*>(tensor->elements[0].get()), nullptr);
-            }
+                .test_name = "grouping_mismatched_bracket_in_nested_list",
+                .source_code = "let a = [ ( 1 + 2 ], 3 ]\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 17} },
+                .verify_ast = [](const Program& ast) {
+                    auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
+                    auto *tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
+                    ASSERT_NE(tensor, nullptr);
+                    EXPECT_EQ(tensor->elements.size(), 2);
+                    EXPECT_NE(dynamic_cast<GroupingExpression*>(tensor->elements[0].get()), nullptr);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_with_top_level_declaration",
-            "let a = ( let x = 1 )\n"
-            "let recovery = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 1, 11},
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_eof_mid_expression",
-            "let a = ( 1 + ",
-            { {Err::InvalidExpression, 1, 14}, {Err::ExpectedRightParenAfterExpression, 1, 13} },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 1);
-            }
+                .test_name = "grouping_with_top_level_declaration",
+                .source_code = "let a = ( let x = 1 )\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 11},
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 2);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_leading_comma_error",
-            "let a = ( , 1 )\n"
-            "let recovery = 1\n",
-            { {Err::InvalidExpression, 1, 11} },
-            [](const Program& ast) {
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            ASSERT_NE(dynamic_cast<TupleLiteral*>(assign->value.get()), nullptr);
-            }
+                .test_name = "grouping_eof_mid_expression",
+                .source_code = "let a = ( 1 + ",
+                .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 14}, {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 13} },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 1);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_recursive_unclosed",
-            "let a = (((1 + 2\n"
-            "let recovery = 1\n",
-            {
-            {Err::ExpectedRightParenAfterExpression, 1, 16},
-            {Err::ExpectedRightParenAfterExpression, 1, 16},
-            {Err::ExpectedRightParenAfterExpression, 1, 16}
-            },
-            [](const Program& ast) {
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto* g1 = dynamic_cast<GroupingExpression*>(assign->value.get());
-            auto* g2 = dynamic_cast<GroupingExpression*>(g1->expression.get());
-            auto* g3 = dynamic_cast<GroupingExpression*>(g2->expression.get());
-            ASSERT_NE(g3, nullptr);
-            }
+                .test_name = "grouping_leading_comma_error",
+                .source_code = "let a = ( , 1 )\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 11} },
+                .verify_ast = [](const Program& ast) {
+                    auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
+                    ASSERT_NE(dynamic_cast<TupleLiteral*>(assign->value.get()), nullptr);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_interrupted_by_directive",
-            "let a = ( 1 + #hidden )\n"
-            "let recovery = 1\n",
-            {
-            {Err::TopLevelDeclarationNotAllowedHere, 1, 15},
-            },
-            [](const Program& ast) {
-            EXPECT_EQ(ast.execution_steps.size(), 2);
-            EXPECT_EQ(ast.directives.size(), 0);
-            }
-            },
-            ParserErrorsSynchronizationTestCase{
-            "grouping_mismatched_closer_no_comma_heuristic",
-            "let a = ( 1 + 2 }\n"
-            "let recovery = 1\n",
-            { {Err::ExpectedRightParenAfterExpression, 1, 15} },
-            ExpectGrouping()
+                .test_name = "grouping_recursive_unclosed",
+                .source_code = "let a = (((1 + 2\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 16},
+                    {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 16},
+                    {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 16}
+                },
+                .verify_ast = [](const Program& ast) {
+                    auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto* g1 = dynamic_cast<GroupingExpression*>(assign->value.get());
+                    auto* g2 = dynamic_cast<GroupingExpression*>(g1->expression.get());
+                    auto* g3 = dynamic_cast<GroupingExpression*>(g2->expression.get());
+                    ASSERT_NE(g3, nullptr);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "grouping_with_reserved_keyword_as_identifier",
-            "let a = ( let )\n"
-            "let recovery = 1\n",
-            { {Err::ReservedKeywordAsIdentifier, 1, 11} },
-            [](const Program& ast) {
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            auto* group = dynamic_cast<GroupingExpression*>(assign->value.get());
-            ASSERT_NE(dynamic_cast<IdentifierAccess*>(group->expression.get()), nullptr);
-            }
+                .test_name = "grouping_interrupted_by_directive",
+                .source_code = "let a = ( 1 + #hidden )\nlet recovery = 1\n",
+                .expected_errors = {
+                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 15},
+                },
+                .verify_ast = [](const Program& ast) {
+                    EXPECT_EQ(ast.execution_steps.size(), 2);
+                    EXPECT_EQ(ast.directives.size(), 0);
+                }
+            },
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "grouping_mismatched_closer_no_comma_heuristic",
+                .source_code = "let a = ( 1 + 2 }\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
+                .verify_ast = ExpectGrouping()
+            },
+            ParserErrorsSynchronizationTestCase{
+                .test_name = "grouping_with_reserved_keyword_as_identifier",
+                .source_code = "let a = ( let )\nlet recovery = 1\n",
+                .expected_errors = { {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 11} },
+                .verify_ast = [](const Program& ast) {
+                    auto* assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    auto* group = dynamic_cast<GroupingExpression*>(assign->value.get());
+                    ASSERT_NE(dynamic_cast<IdentifierAccess*>(group->expression.get()), nullptr);
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

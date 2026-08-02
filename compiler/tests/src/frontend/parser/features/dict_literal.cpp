@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 .name = "SingleItem",
                 .code = "{ key: 1 }",
                 .verifier = IsDict(
-                    DictItemSpec{"key", {}, IsNumber("1")}
+                    DictItemSpec{.key = "key", .value_v = IsNumber("1")}
                 )
             });
 
@@ -27,9 +27,9 @@ namespace valuascript::compiler::test
                 .name = "MultipleItems",
                 .code = "{ a: 1, b: \"val\", c: true }",
                 .verifier = IsDict(
-                    DictItemSpec{"a", {}, IsNumber("1")},
-                    DictItemSpec{"b", {}, IsString("\"val\"")},
-                    DictItemSpec{"c", {}, IsBoolean(true)}
+                    DictItemSpec{.key = "a", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsString("\"val\"")},
+                    DictItemSpec{.key = "c", .value_v = IsBoolean(true)}
                 )
             });
 
@@ -38,8 +38,8 @@ namespace valuascript::compiler::test
                 .code = "{ outer: { inner: 1 } }",
                 .verifier = IsDict(
                     DictItemSpec{
-                        "outer", {}, IsDict(
-                            DictItemSpec{"inner", {}, IsNumber("1")}
+                        .key = "outer", .value_v = IsDict(
+                            DictItemSpec{.key = "inner", .value_v = IsNumber("1")}
                         )
                     }
                 )
@@ -49,8 +49,8 @@ namespace valuascript::compiler::test
                 .name = "DictTrailingComma",
                 .code = "{ a: 1, b: 2, }",
                 .verifier = IsDict(
-                    DictItemSpec{"a", {}, IsNumber("1")},
-                    DictItemSpec{"b", {}, IsNumber("2")}
+                    DictItemSpec{.key = "a", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsNumber("2")}
                 )
             });
 
@@ -58,9 +58,9 @@ namespace valuascript::compiler::test
                 .name = "MixedModifiedAndUnmodifiedKeys",
                 .code = "{ @sealed a: 1, b: 2, @hidden c: 3 }",
                 .verifier = IsDict(
-                    DictItemSpec{"a", {{"sealed"}}, IsNumber("1")},
-                    DictItemSpec{"b", {}, IsNumber("2")},
-                    DictItemSpec{"c", {{"hidden"}}, IsNumber("3")}
+                    DictItemSpec{.key = "a", .modifiers = {{"sealed"}}, .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsNumber("2")},
+                    DictItemSpec{.key = "c", .modifiers = {{"hidden"}}, .value_v = IsNumber("3")}
                 )
             });
 
@@ -72,9 +72,9 @@ namespace valuascript::compiler::test
                 "  age: 30\n"
                 "}",
                 .verifier = IsDict(
-                    DictItemSpec{"first_name", {}, IsString("\"John\"")},
-                    DictItemSpec{"last_name", {}, IsString("\"Doe\"")},
-                    DictItemSpec{"age", {}, IsNumber("30")}
+                    DictItemSpec{.key = "first_name", .value_v = IsString("\"John\"")},
+                    DictItemSpec{.key = "last_name", .value_v = IsString("\"Doe\"")},
+                    DictItemSpec{.key = "age", .value_v = IsNumber("30")}
                 )
             });
 
@@ -83,10 +83,10 @@ namespace valuascript::compiler::test
                 .code = "{ x: { y: { z: 1 } } }",
                 .verifier = IsDict(
                     DictItemSpec{
-                        "x", {}, IsDict(
+                        .key = "x", .value_v = IsDict(
                             DictItemSpec{
-                                "y", {}, IsDict(
-                                    DictItemSpec{"z", {}, IsNumber("1")}
+                                .key = "y", .value_v = IsDict(
+                                    DictItemSpec{.key = "z", .value_v = IsNumber("1")}
                                 )
                             }
                         )

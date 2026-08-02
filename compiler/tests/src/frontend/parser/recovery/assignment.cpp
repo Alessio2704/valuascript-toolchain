@@ -18,127 +18,127 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MissingVariableName",
                 .code = "let = 1",
-                .errors = {{E::ExpectedIdentifier, 1, 5, 1, 6}},
-                .verifier = IsAssignment({{"<error>"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "InvalidCharacter1",
                 .code = "let a! = 1",
-                .errors = {{LexerErrorCode::InvalidCharacter, 1, 6, 1, 7}},
-                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+                .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "InvalidCharacter2",
                 .code = "let a ! = 1",
-                .errors = {{LexerErrorCode::InvalidCharacter, 1, 7, 1, 8}},
-                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+                .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "InvalidVariableNameStart",
                 .code = "let 123 = 1",
-                .errors = {{E::ExpectedIdentifier, 1, 5, 1, 8}},
-                .verifier = IsAssignment({{"<error>"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "IncompleteAssignmentMissingEquals",
                 .code = "let a 1",
-                .errors = {{E::IncompleteAssignment, 1, 7, 1, 8}},
-                .verifier = IsAssignment({{"a"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "IncompleteMultipleAssignmentMissingEquals",
                 .code = "let a, b 1",
-                .errors = {{E::IncompleteAssignment, 1, 10, 1, 11}},
-                .verifier = IsAssignment({{"a"}, {"b"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MissingValueAfterEquals",
                 .code = "let a = ",
-                .errors = {{E::MissingValueAfterEquals, 1, 8, 1, 9}},
-                .verifier = IsAssignment({{"a"}}, IsNull())
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull())
             });
 
             reg({
                 .name = "MissingValueAfterEqualsWithTypeAnnotation",
                 .code = "let a: int =",
-                .errors = {{E::MissingValueAfterEquals, 1, 13, 1, 14}},
-                .verifier = IsAssignment({{"a", IsType("int")}}, IsNull())
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNull())
             });
 
             reg({
                 .name = "IncompleteAssignmentAtEOF",
                 .code = "let a",
-                .errors = {{E::IncompleteAssignment, 1, 5, 1, 6}},
-                .verifier = IsAssignment({{"a"}}, IsNull())
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull())
             });
 
             reg({
                 .name = "MultiAssignmentTrailingComma",
                 .code = "let a, = 1",
-                .errors = {{E::ExpectedIdentifier, 1, 8, 1, 9}},
-                .verifier = IsAssignment({{"a"}, {"<error>"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MultiAssignmentMissingComma",
                 .code = "let a b = 1",
-                .errors = {{E::ExpectedCommaInMultiAssignment, 1, 7, 1, 8}},
-                .verifier = IsAssignment({{"a"}, {"b"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ExpectedCommaInMultiAssignment, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MultiAssignmentDoubleComma",
                 .code = "let a,, b = 1",
-                .errors = {{E::ExpectedIdentifier, 1, 7, 1, 8}},
-                .verifier = IsAssignment({{"a"}, {"<error>"}, {"b"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "<error>"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MissingTypeAfterColon",
                 .code = "let a: = 1",
-                .errors = {{E::MissingTypeAnnotation, 1, 8, 1, 9}},
-                .verifier = IsAssignment({{"a", IsNullType()}}, IsNumber("1"))
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsNullType()}}, IsNumber("1"))
             });
 
             reg({
                 .name = "BrokenNestedTypeAnnotation",
                 .code = "let a: vector<int = 1",
-                .errors = {{E::UnmatchedBracketAfterGenericArgs, 1, 17, 1, 18}},
-                .verifier = IsAssignment({{"a", IsType("vector", IsType("int"))}}, IsNumber("1"))
+                .errors = {PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("vector", IsType("int"))}}, IsNumber("1"))
             });
 
             reg({
                 .name = "ReservedKeywordAsTarget",
                 .code = "let func = 1",
-                .errors = {{E::ReservedKeywordAsIdentifier, 1, 5, 1, 9}},
-                .verifier = IsAssignment({{"func"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ReservedKeywordAsIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "func"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "ReservedKeywordInMultiAssignment",
                 .code = "let a, if = 1",
-                .errors = {{E::ReservedKeywordAsIdentifier, 1, 8, 1, 10}},
-                .verifier = IsAssignment({{"a"}, {"if"}}, IsNumber("1"))
+                .errors = {PErr{.code = E::ReservedKeywordAsIdentifier, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "if"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MissingTypeAfterColonInMultiAssignment",
                 .code = "let a: integer, b: = 1",
-                .errors = {{E::MissingTypeAnnotation, 1, 20, 1, 21}},
-                .verifier = IsAssignment({{"a", IsType("integer")}, {"b", IsNullType()}}, IsNumber("1"))
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("integer")}, AssignmentTargetSpec{.name = "b", .type_v = IsNullType()}}, IsNumber("1"))
             });
 
             reg({
                 .name = "MissingValueAfterEqualsMultiAssignment",
                 .code = "let x, y = ",
-                .errors = {{E::MissingValueAfterEquals, 1, 11, 1, 12}},
-                .verifier = IsAssignment({{"x"}, {"y"}}, IsNull())
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "x"}, AssignmentTargetSpec{.name = "y"}}, IsNull())
             });
 
             return true;

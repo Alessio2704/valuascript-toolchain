@@ -18,8 +18,8 @@ namespace valuascript::compiler {
     };
 
     struct CompilerStageArtifact {
-        CompilerStageArtifactCode code;
-        std::any data;
+        CompilerStageArtifactCode code = CompilerStageArtifactCode::FilePath;
+        std::any data = {};
     };
 
     template<typename ExpectedType>

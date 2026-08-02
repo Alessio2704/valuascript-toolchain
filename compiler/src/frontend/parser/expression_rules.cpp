@@ -69,6 +69,6 @@ namespace valuascript::compiler
             return rules[idx];
         }
 
-        return {nullptr, nullptr, Precedence::None, false};
+        return {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::None, .is_right_associative = false};
     }
 }

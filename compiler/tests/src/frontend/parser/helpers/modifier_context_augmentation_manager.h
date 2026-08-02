@@ -29,10 +29,10 @@ namespace valuascript::compiler::test
             };
 
             std::vector<ModifierAtom> atoms = {
-                {initial_item.code, base_v, true},
-                {"@mod1", {{"mod1", {}}}, false},
-                {"@mod2()", {{"mod2", {}}}, false},
-                {"@mod3(p: 1)", {{"mod3", {{"p", IsNumber("1")}}}}, false}
+                {.code = initial_item.code, .specs = base_v, .is_target = true},
+                {.code = "@mod1", .specs = {ModifierSpec{.name = "mod1", .args = {}}}, .is_target = false},
+                {.code = "@mod2()", .specs = {ModifierSpec{.name = "mod2", .args = {}}}, .is_target = false},
+                {.code = "@mod3(p: 1)", .specs = {ModifierSpec{.name = "mod3", .args = {ArgSpec{.label = "p", .value_v = IsNumber("1")}}}}, .is_target = false}
             };
 
             std::vector<std::vector<int>> permutation_list = {

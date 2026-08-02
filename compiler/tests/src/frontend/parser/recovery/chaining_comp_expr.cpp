@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperations1",
                 .code = "1 < 2 < 3",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBinary(
                     TokenType::Less,
@@ -27,7 +27,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperations2",
                 .code = "1 > 2 > 3",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBinary(
                     TokenType::Greater,
@@ -40,7 +40,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperations3",
                 .code = "1 != 2 != 3 ",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsBinary(
                     TokenType::NotEquals,
@@ -53,7 +53,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperations4",
                 .code = "x == y == z",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsBinary(
                     TokenType::Equals,
@@ -66,7 +66,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperationsMixedOperators1",
                 .code = "1 < 2 > 3",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 7, 1, 8}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsBinary(
                     TokenType::Greater,
@@ -79,7 +79,7 @@ namespace valuascript::compiler::test
                 .name = "ChainingNotAllowedForComparisonOperationsMixedOperators2",
                 .code = "1 == 2 != 3",
                 .errors = {
-                    {E::ChainingNotAllowedForComparisonOperations, 1, 8, 1, 10}
+                    PErr{.code = E::ChainingNotAllowedForComparisonOperations, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsBinary(
                     TokenType::NotEquals,

@@ -15,8 +15,8 @@ namespace valuascript::compiler::test {
 
         std::vector<MissingClosingScenario> scenarios = {
             {
-                "grouping", "let a = (1 + 2\n", Err::ExpectedRightParenAfterExpression,
-                [](const Program &program) {
+                .name = "grouping", .source = "let a = (1 + 2\n", .expected_err = Err::ExpectedRightParenAfterExpression,
+                .verify = [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
                         return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
@@ -26,8 +26,8 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                "tuple", "let a = (1, 2\n", Err::ExpectedRightParenAfterTupleElements,
-                [](const Program &program) {
+                .name = "tuple", .source = "let a = (1, 2\n", .expected_err = Err::ExpectedRightParenAfterTupleElements,
+                .verify = [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
                         return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
@@ -37,8 +37,8 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                "tensor", "let a = [1, 2\n", Err::UnmatchedBracketAfterTensorElements,
-                [](const Program &program) {
+                .name = "tensor", .source = "let a = [1, 2\n", .expected_err = Err::UnmatchedBracketAfterTensorElements,
+                .verify = [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
                         return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
@@ -48,8 +48,8 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                "dict", "let a = { b: 1\n", Err::UnmatchedBraceInDictionaryLiteral,
-                [](const Program &program) {
+                .name = "dict", .source = "let a = { b: 1\n", .expected_err = Err::UnmatchedBraceInDictionaryLiteral,
+                .verify = [](const Program &program) {
                     auto target_stmt = find_statement(program, [](const Statement *stmt) {
                         auto assignment = dynamic_cast<const Assignment *>(stmt);
                         return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
@@ -59,24 +59,24 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                "func", "func f() -> int { let x = 1\n", Err::ExpectedRightBraceAfterFunctionBody,
-                [](const Program &program) {
+                .name = "func", .source = "func f() -> int { let x = 1\n", .expected_err = Err::ExpectedRightBraceAfterFunctionBody,
+                .verify = [](const Program &program) {
                     bool found = std::any_of(program.function_definitions.begin(), program.function_definitions.end(),
                                              [](const auto &func_def) { return func_def->name == "f"; });
                     EXPECT_TRUE(found) << "Failed to recover unclosed func 'f'";
                 }
             },
             {
-                "struct", "struct S { x: int\n", Err::ExpectedRightBraceAfterStructBody,
-                [](const Program &program) {
+                .name = "struct", .source = "struct S { x: int\n", .expected_err = Err::ExpectedRightBraceAfterStructBody,
+                .verify = [](const Program &program) {
                     bool found = std::any_of(program.struct_definitions.begin(), program.struct_definitions.end(),
                                              [](const auto &struct_def) { return struct_def->name == "S"; });
                     EXPECT_TRUE(found) << "Failed to recover unclosed struct 'S'";
                 }
             },
             {
-                "enum", "enum E: int { A\n", Err::ExpectedRightBraceAfterEnumBody,
-                [](const Program &program) {
+                .name = "enum", .source = "enum E: int { A\n", .expected_err = Err::ExpectedRightBraceAfterEnumBody,
+                .verify = [](const Program &program) {
                     bool found = std::any_of(program.enum_definitions.begin(), program.enum_definitions.end(),
                                              [](const auto &enum_def) { return enum_def->name == "E"; });
                     EXPECT_TRUE(found) << "Failed to recover unclosed enum 'E'";
@@ -103,10 +103,11 @@ namespace valuascript::compiler::test {
                         exp_col = stripped.find_last_not_of(" \t\n\r") + 1;
                     }
 
-                    test_cases.push_back({
-                        test_name, combined_source,
-                        {{scenario.expected_err, exp_line, exp_col}},
-                        [v_scene = scenario.verify, v_follow = follow.verify](const Program &p) {
+                    test_cases.push_back(ParserErrorsSynchronizationTestCase{
+                        .test_name = test_name,
+                        .source_code = combined_source,
+                        .expected_errors = {{.code = scenario.expected_err, .line = exp_line, .column = exp_col}},
+                        .verify_ast = [v_scene = scenario.verify, v_follow = follow.verify](const Program &p) {
                             v_scene(p);
                             v_follow(p);
                         }

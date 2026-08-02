@@ -12,7 +12,7 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "import \"/path/to/module",
-            {{LexerErrorCode::UnclosedString, 1, 8, 1, 24}},
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 24}},
             ProgramSpec{
                 .imports = {
                     IsImport("\"/path/to/module")
@@ -25,7 +25,7 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "#config \"unclosed_val",
-            {{LexerErrorCode::UnclosedString, 1, 9, 1, 22}},
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 22}},
             ProgramSpec{
                 .directives = {
                     IsDirective("config", IsString("\"unclosed_val"))
@@ -38,7 +38,7 @@ namespace valuascript::compiler::test
     {
         ExpectParseErrorsWithRecovery(
             "#mode = \"debug_mode",
-            {{LexerErrorCode::UnclosedString, 1, 9, 1, 20}},
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 20}},
             ProgramSpec{
                 .directives = {
                     IsDirective("mode", IsString("\"debug_mode"))
@@ -55,8 +55,8 @@ namespace valuascript::compiler::test
             "let x = 1\n"
             "}",
             {
-                {LexerErrorCode::UnclosedString, 2, 1, 4, 3},
-                {E::ExpectedRightBraceAfterFunctionBody, 4, 1, 4, 2}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 2, .column_start = 1, .line_end = 4, .column_end = 3},
+                PErr{.code = E::ExpectedRightBraceAfterFunctionBody, .line_start = 4, .column_start = 1, .line_end = 4, .column_end = 2}
             },
             ProgramSpec{
                 .functions = {
@@ -78,14 +78,14 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             R"(let t = ("first", "unclosed))",
             {
-                {LexerErrorCode::UnclosedString, 1, 19, 1, 29},
-                {E::ExpectedRightParenAfterTupleElements, 1, 28, 1, 29}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 29},
+                PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 29}
             },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(
                         {
-                            {"t"}
+                            AssignmentTargetSpec{.name = "t"}
                         },
                         IsTuple(
                             IsString("\"first\""),
@@ -102,17 +102,17 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             "let d = { key: \"unclosed_val }",
             {
-                {LexerErrorCode::UnclosedString, 1, 16, 1, 31},
-                {E::UnmatchedBraceInDictionaryLiteral, 1, 30, 1, 31}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 16, .line_end = 1, .column_end = 31},
+                PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 30, .line_end = 1, .column_end = 31}
             },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(
                         {
-                            {"d"}
+                            AssignmentTargetSpec{.name = "d"}
                         },
                         IsDict(
-                            DictItemSpec{"key", {}, IsString("\"unclosed_val }")}
+                            DictItemSpec{.key = "key", .value_v = IsString("\"unclosed_val }")}
                         )
                     )
                 }
@@ -125,14 +125,14 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             R"(let v =["val1", "val2])",
             {
-                {LexerErrorCode::UnclosedString, 1, 17, 1, 23},
-                {E::UnmatchedBracketAfterTensorElements, 1, 22, 1, 23}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 23},
+                PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
             },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment(
                         {
-                            {"v"}
+                            AssignmentTargetSpec{.name = "v"}
                         },
                         IsTensor(
                             IsString("\"val1\""),
@@ -149,8 +149,8 @@ namespace valuascript::compiler::test
         ExpectParseErrorsWithRecovery(
             "enum Status: string { Error = \"failure }",
             {
-                {LexerErrorCode::UnclosedString, 1, 31, 1, 41},
-                {E::ExpectedRightBraceAfterEnumBody, 1, 40, 1, 41}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 31, .line_end = 1, .column_end = 41},
+                PErr{.code = E::ExpectedRightBraceAfterEnumBody, .line_start = 1, .column_start = 40, .line_end = 1, .column_end = 41}
             },
             ProgramSpec{
                 .enums = {
@@ -171,8 +171,8 @@ namespace valuascript::compiler::test
             "let @deprecated(reason: \"not_safe)\n"
             "x = 1",
             {
-                {LexerErrorCode::UnclosedString, 1, 25, 1, 35},
-                {E::UnmatchedParenthesisAfterModifierArgs, 1, 34, 1, 35}
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 35},
+                PErr{.code = E::UnmatchedParenthesisAfterModifierArgs, .line_start = 1, .column_start = 34, .line_end = 1, .column_end = 35}
             },
             ProgramSpec{
                 .execution_steps = {

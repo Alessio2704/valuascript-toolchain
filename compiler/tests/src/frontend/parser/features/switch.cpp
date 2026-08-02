@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> 1 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    SwitchCaseSpec("A", IsNumber("1"))
+                    SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}
                 )
             });
 
@@ -29,7 +29,7 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A, B, C -> 1 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    SwitchCaseSpec("A", "B", "C", IsNumber("1"))
+                    SwitchCaseSpec{.labels = {"A", "B", "C"}, .result_v = IsNumber("1")}
                 )
             });
 
@@ -38,8 +38,8 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> 1 case B -> 2 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    SwitchCaseSpec("A", IsNumber("1")),
-                    SwitchCaseSpec("B", IsNumber("2"))
+                    SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")},
+                    SwitchCaseSpec{.labels = {"B"}, .result_v = IsNumber("2")}
                 )
             });
 
@@ -59,8 +59,8 @@ namespace valuascript::compiler::test
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
                     std::vector<SwitchCaseSpec>{
-                        SwitchCaseSpec("A", IsNumber("1")),
-                        SwitchCaseSpec("B", IsNumber("2"))
+                        SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")},
+                        SwitchCaseSpec{.labels = {"B"}, .result_v = IsNumber("2")}
                     },
                     {},
                     IsNumber("0")
@@ -73,17 +73,17 @@ namespace valuascript::compiler::test
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
                     std::vector<SwitchCaseSpec>{
-                        SwitchCaseSpec(
-                            "A",
-                            IsSwitch(
+                        SwitchCaseSpec{
+                            .labels = {"A"},
+                            .result_v = IsSwitch(
                                 IsIdentifier("y"),
                                 std::vector<SwitchCaseSpec>{
-                                    SwitchCaseSpec("B", IsNumber("1"))
+                                    SwitchCaseSpec{.labels = {"B"}, .result_v = IsNumber("1")}
                                 },
                                 {},
                                 IsNumber("2")
                             )
-                        )
+                        }
                     },
                     {},
                     IsNumber("3")
@@ -100,8 +100,8 @@ namespace valuascript::compiler::test
                 .verifier = IsSwitch(
                     IsIdentifier("state"),
                     std::vector<SwitchCaseSpec>{
-                        SwitchCaseSpec("Active", "Pending", IsString("\"ok\"")),
-                        SwitchCaseSpec("Error", IsString("\"fail\""))
+                        SwitchCaseSpec{.labels = {"Active", "Pending"}, .result_v = IsString("\"ok\"")},
+                        SwitchCaseSpec{.labels = {"Error"}, .result_v = IsString("\"fail\"")}
                     },
                     IsString("\"unknown\"")
                 )

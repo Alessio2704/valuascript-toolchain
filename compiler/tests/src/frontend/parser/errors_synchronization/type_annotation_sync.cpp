@@ -49,55 +49,51 @@ namespace valuascript::compiler::test
         TypeAnnotationParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-            "generic_closed_with_wrong_bracket",
-            "let a: vector<int} = 1\n",
-            {
-            {Err::UnmatchedBracketAfterGenericArgs, 1, 17}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectBaseType(type, "vector", 1);
-                ExpectBaseType(type->generic_args[0].get(), "int", 0);
+                .test_name = "generic_closed_with_wrong_bracket",
+                .source_code = "let a: vector<int} = 1\n",
+                .expected_errors = {
+                    {.code = Err::UnmatchedBracketAfterGenericArgs, .line = 1, .column = 17}
+                },
+                .verify_ast = ExpectAssignmentType([](const TypeAnnotation* type) {
+                    ExpectBaseType(type, "vector", 1);
+                    ExpectBaseType(type->generic_args[0].get(), "int", 0);
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "tuple_type_closed_with_wrong_bracket",
-            "let a: (int, string] = 1\n",
-            {
-            {Err::UnmatchedParenthesisInTuple, 1, 19}
-            },
-            ExpectAssignmentType([](const TypeAnnotation* type) {
-                ExpectTupleType(type, 2);
-                auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
-                ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
-                ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
+                .test_name = "tuple_type_closed_with_wrong_bracket",
+                .source_code = "let a: (int, string] = 1\n",
+                .expected_errors = {
+                    {.code = Err::UnmatchedParenthesisInTuple, .line = 1, .column = 19}
+                },
+                .verify_ast = ExpectAssignmentType([](const TypeAnnotation* type) {
+                    ExpectTupleType(type, 2);
+                    auto tuple_type = dynamic_cast<const TupleTypeAnnotation*>(type);
+                    ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
+                    ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
                 })
             },
             ParserErrorsSynchronizationTestCase{
-            "missing_base_type_before_generic_discards_assignment",
-            "let a: <int> = 1\n"
-            "let b = 2\n",
-            {
-            {Err::MissingTypeAnnotation, 1, 8}
-            },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.execution_steps.size(), 2);
-            auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-            ASSERT_NE(assign, nullptr);
-            EXPECT_EQ(assign->targets[0].name, "a");
-            EXPECT_EQ(assign->targets[0].type.get(), nullptr);
-            }
+                .test_name = "missing_base_type_before_generic_discards_assignment",
+                .source_code = "let a: <int> = 1\nlet b = 2\n",
+                .expected_errors = {
+                    {.code = Err::MissingTypeAnnotation, .line = 1, .column = 8}
+                },
+                .verify_ast = [](const Program& ast) {
+                    ASSERT_EQ(ast.execution_steps.size(), 2);
+                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
+                    ASSERT_NE(assign, nullptr);
+                    EXPECT_EQ(assign->targets[0].name, "a");
+                    EXPECT_EQ(assign->targets[0].type.get(), nullptr);
+                }
             },
             ParserErrorsSynchronizationTestCase{
-            "multiple_return_types_trailing_comma_error",
-            "func f() -> int, string, {\n"
-            "  return 1\n"
-            "}\n"
-            "let a = 1\n",
-            { {Err::TrailingComma, 1, 24} },
-            [](const Program& ast) {
-            ASSERT_EQ(ast.function_definitions.size(), 1);
-            EXPECT_EQ(ast.function_definitions[0]->return_types.size(), 2);
-            }
+                .test_name = "multiple_return_types_trailing_comma_error",
+                .source_code = "func f() -> int, string, {\n  return 1\n}\nlet a = 1\n",
+                .expected_errors = { {.code = Err::TrailingComma, .line = 1, .column = 24} },
+                .verify_ast = [](const Program& ast) {
+                    ASSERT_EQ(ast.function_definitions.size(), 1);
+                    EXPECT_EQ(ast.function_definitions[0]->return_types.size(), 2);
+                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {

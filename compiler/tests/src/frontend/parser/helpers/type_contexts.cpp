@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
                 .suffix = " = 1\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsAssignment({{"ctx_assign", SpecAdder::get_v<TypeVerifier>(v)}},
+                    return UniversalVerifier(IsAssignment({AssignmentTargetSpec{.name = "ctx_assign", .type_v = SpecAdder::get_v<TypeVerifier>(v)}},
                                                           IsNumber("1")));
                 }
             },
@@ -28,7 +28,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
-                        IsAssignment({{"ctx_m1", SpecAdder::get_v<TypeVerifier>(v)}, {"ctx_m2"}}, IsNumber("1")));
+                        IsAssignment({AssignmentTargetSpec{.name = "ctx_m1", .type_v = SpecAdder::get_v<TypeVerifier>(v)}, AssignmentTargetSpec{.name = "ctx_m2"}}, IsNumber("1")));
                 }
             },
             {
@@ -40,7 +40,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(
-                        IsAssignment({{"ctx_m1"}, {"ctx_m2", SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
+                        IsAssignment({AssignmentTargetSpec{.name = "ctx_m1"}, AssignmentTargetSpec{.name = "ctx_m2", .type_v = SpecAdder::get_v<TypeVerifier>(v)}}, IsNumber("1")));
                 }
             },
             {
@@ -74,7 +74,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
-                                                           {ParamSpec{"p", {}, SpecAdder::get_v<TypeVerifier>(v)}},
+                                                           {ParamSpec{.name = "p", .type_v = SpecAdder::get_v<TypeVerifier>(v)}},
                                                            {IsType("void")}));
                 }
             },
@@ -87,8 +87,8 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
-                                                           {ParamSpec{"p1", {}, SpecAdder::get_v<TypeVerifier>(v)},
-                                                            ParamSpec{"p2", {}, IsType("int")}},
+                                                           {ParamSpec{.name = "p1", .type_v = SpecAdder::get_v<TypeVerifier>(v)},
+                                                            ParamSpec{.name = "p2", .type_v = IsType("int")}},
                                                            {IsType("void")}));
                 }
             },
@@ -101,8 +101,8 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsFunctionDef("ctx_func_param", {},
-                                                           {ParamSpec{"p1", {}, IsType("int")},
-                                                            ParamSpec{"p2", {}, SpecAdder::get_v<TypeVerifier>(v)}},
+                                                           {ParamSpec{.name = "p1", .type_v = IsType("int")},
+                                                            ParamSpec{.name = "p2", .type_v = SpecAdder::get_v<TypeVerifier>(v)}},
                                                            {IsType("void")}));
                 }
             },
@@ -152,7 +152,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct",
-                                                             FieldSpec{"f", SpecAdder::get_v<TypeVerifier>(v)}
+                                                             FieldSpec{.name = "f", .type_v = SpecAdder::get_v<TypeVerifier>(v)}
                                                          ));
                 }
             },
@@ -165,8 +165,8 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsStructDef("ctx_struct",
-                                                             FieldSpec{"f1", SpecAdder::get_v<TypeVerifier>(v)},
-                                                             FieldSpec{"f2", IsType("int")}
+                                                             FieldSpec{.name = "f1", .type_v = SpecAdder::get_v<TypeVerifier>(v)},
+                                                             FieldSpec{.name = "f2", .type_v = IsType("int")}
                                                          ));
                 }
             },
@@ -178,7 +178,7 @@ namespace valuascript::compiler::test
                 .suffix = " { A }\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), EnumCaseSpec{"A"}));
+                    return UniversalVerifier(IsEnumDef("ctx_enum", {}, SpecAdder::get_v<TypeVerifier>(v), EnumCaseSpec{.name = "A"}));
                 }
             },
             {

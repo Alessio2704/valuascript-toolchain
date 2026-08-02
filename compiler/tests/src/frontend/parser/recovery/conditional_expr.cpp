@@ -15,7 +15,7 @@ namespace valuascript::compiler::test
                 .name = "InvalidConditionExpression",
                 .code = "if * then 1 else 1",
                 .errors = {
-                    {E::InvalidExpression, 1, 4, 1, 5}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 5}
                 },
                 .verifier = IsConditional(IsNull(), IsNumber("1"), IsNumber("1"))
             });
@@ -24,7 +24,7 @@ namespace valuascript::compiler::test
                 .name = "InvalidThenBranchExpression",
                 .code = "if 1 then * else 1",
                 .errors = {
-                    {E::InvalidExpression, 1, 11, 1, 12}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                 },
                 .verifier = IsConditional(IsNumber("1"), IsNull(), IsNumber("1"))
             });
@@ -33,7 +33,7 @@ namespace valuascript::compiler::test
                 .name = "InvalidElseBranchExpression",
                 .code = "if 1 then 1 else *",
                 .errors = {
-                    {E::InvalidExpression, 1, 18, 1, 19}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
                 .verifier = IsConditional(IsNumber("1"), IsNumber("1"), IsNull())
             });
@@ -42,8 +42,8 @@ namespace valuascript::compiler::test
                 .name = "MissingThenTokenRecoversBranches",
                 .code = "if x 1 else 2",
                 .errors = {
-                    {E::MissingOperator, 1, 6, 1, 7},
-                    {E::MissingThenToken, 1, 7, 1, 8}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7},
+                    PErr{.code = E::MissingThenToken, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsConditional(IsBinary(TokenType::Error, IsIdentifier("x"), IsNumber("1")), IsNull(), IsNumber("2")),
                 .skip_contexts = {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
@@ -53,7 +53,7 @@ namespace valuascript::compiler::test
                 .name = "MissingElseEntirelyNoExpression",
                 .code = "if x then 1",
                 .errors = {
-                    {E::MissingElseToken, 1, 12, 1, 13}
+                    PErr{.code = E::MissingElseToken, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                 },
                 .verifier = IsConditional(IsIdentifier("x"), IsNumber("1"), IsNull()),
                 .skip_contexts = {ContextNames::ExprIfThen}
@@ -63,7 +63,7 @@ namespace valuascript::compiler::test
                 .name = "DanglingElseStealsFromOuterIf",
                 .code = "if 1 then if x then 1 else 2",
                 .errors = {
-                    {E::MissingElseToken, 1, 29, 1, 30}
+                    PErr{.code = E::MissingElseToken, .line_start = 1, .column_start = 29, .line_end = 1, .column_end = 30}
                 },
                 .verifier = IsConditional(
                     IsNumber("1"),
@@ -77,8 +77,8 @@ namespace valuascript::compiler::test
                 .name = "MissingElseTokenRecoversBranches",
                 .code = "if x then 1 2",
                 .errors = {
-                    {E::MissingOperator, 1, 13, 1, 14},
-                    {E::MissingElseToken, 1, 14, 1, 15}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14},
+                    PErr{.code = E::MissingElseToken, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
                 },
                 .verifier = IsConditional(IsIdentifier("x"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2")), IsNull()),
                 .skip_contexts = {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
@@ -88,10 +88,10 @@ namespace valuascript::compiler::test
                 .name = "MissingBothThenAndElseTokens",
                 .code = "if x 1 2",
                 .errors = {
-                    {E::MissingOperator, 1, 6, 1, 7},
-                    {E::MissingOperator, 1, 8, 1, 9},
-                    {E::MissingThenToken, 1, 9, 1, 10},
-                    {E::MissingElseToken, 1, 9, 1, 10}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7},
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
+                    PErr{.code = E::MissingThenToken, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
+                    PErr{.code = E::MissingElseToken, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
                 },
                 .verifier = IsConditional(IsBinary(TokenType::Error, IsIdentifier("x"), IsBinary(TokenType::Error, IsNumber("1"), IsNumber("2"))), IsNull(), IsNull()),
                 .skip_contexts = {ContextNames::ExprIfCond, ContextNames::ExprIfThen}
@@ -101,7 +101,7 @@ namespace valuascript::compiler::test
                 .name = "EmptyConditionRecoversThenAndElse",
                 .code = "if then 1 else 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 4, 1, 8}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 8}
                 },
                 .verifier = IsConditional(IsNull(), IsNumber("1"), IsNumber("2"))
             });
@@ -110,7 +110,7 @@ namespace valuascript::compiler::test
                 .name = "EmptyThenBranchRecoversElse",
                 .code = "if x then else 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 11, 1, 15}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 15}
                 },
                 .verifier = IsConditional(IsIdentifier("x"), IsNull(), IsNumber("2"))
             });
@@ -119,10 +119,10 @@ namespace valuascript::compiler::test
                 .name = "MissingThenAndElseTokensButValidExpressionsMaintainsAstIntegrity",
                 .code = "if x > 5 y * 2 z - 3",
                 .errors = {
-                    {E::MissingOperator, 1, 10, 1, 11},
-                    {E::MissingOperator, 1, 16, 1, 17},
-                    {E::MissingThenToken, 1, 21, 1, 22},
-                    {E::MissingElseToken, 1, 21, 1, 22}
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11},
+                    PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 16, .line_end = 1, .column_end = 17},
+                    PErr{.code = E::MissingThenToken, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22},
+                    PErr{.code = E::MissingElseToken, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsConditional(
                     IsBinary(TokenType::Greater,
@@ -145,8 +145,8 @@ namespace valuascript::compiler::test
                 .name = "GarbageInConditionAndThenBranchRecoversElse",
                 .code = "if * then * else 2",
                 .errors = {
-                    {E::InvalidExpression, 1, 4, 1, 5},
-                    {E::InvalidExpression, 1, 11, 1, 12}
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 4, .line_end = 1, .column_end = 5},
+                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                 },
                 .verifier = IsConditional(IsNull(), IsNull(), IsNumber("2"))
             });

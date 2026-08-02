@@ -40,11 +40,11 @@ namespace valuascript::compiler::test
         ParserStageTest,
         TupleSadPathTest,
         testing::Values(
-            TupleSadParam{"tuple_missing_second_value_1", "(1, ", E::
+            TupleSadParam{.test_name = "tuple_missing_second_value_1", .source_code = "(1, ", .expected_error = E::
             ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_missing_second_value_2", "(a, ", E::
+            TupleSadParam{.test_name = "tuple_missing_second_value_2", .source_code = "(a, ", .expected_error = E::
             ExpectedRightParenAfterTupleElements},
-            TupleSadParam{"tuple_parenthesis", "(a, b", E::ExpectedRightParenAfterTupleElements}
+            TupleSadParam{.test_name = "tuple_parenthesis", .source_code = "(a, b", .expected_error = E::ExpectedRightParenAfterTupleElements}
         ),
         [](const testing::TestParamInfo<TupleSadParam>& test_info) {
         return test_info.param.test_name;

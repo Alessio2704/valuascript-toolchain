@@ -110,7 +110,7 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> mods;
                         for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
-                        items.push_back({std::move(mods), item.key, clone_expression(item.value.get())});
+                        items.push_back({.modifiers = std::move(mods), .key = item.key, .value = clone_expression(item.value.get())});
                     }
                     return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
                 }
@@ -121,7 +121,7 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> c_mods;
                         for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
-                        cases.push_back({std::move(c_mods), sc.identifiers, clone_expression(sc.result.get())});
+                        cases.push_back({.modifiers = std::move(c_mods), .identifiers = sc.identifiers, .result = clone_expression(sc.result.get())});
                     }
                     std::vector<Modifier> d_mods;
                     for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
@@ -188,7 +188,7 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({std::move(target_mods), std::string(target.lexeme), std::move(type_annotation)});
+            targets.push_back({.modifiers = std::move(target_mods), .name = std::string(target.lexeme), .type = std::move(type_annotation)});
 
             if (!cursor.match(TokenType::Comma))
             {

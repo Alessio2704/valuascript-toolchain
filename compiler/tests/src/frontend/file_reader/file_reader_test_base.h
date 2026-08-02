@@ -52,7 +52,7 @@ namespace valuascript::compiler::test
 
             FileReaderStage reader;
             std::vector<CompilerStageArtifact> history = {
-                {CompilerStageArtifactCode::FilePath, test_file_path}
+                {.code = CompilerStageArtifactCode::FilePath, .data = test_file_path}
             };
 
             auto result_artifact = reader.run(*context, history);

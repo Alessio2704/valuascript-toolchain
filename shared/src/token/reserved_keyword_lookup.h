@@ -25,27 +25,27 @@ namespace valuascript::shared
     };
 
     inline constexpr std::array<KeywordEntry, 21> RESERVED_KEYWORDS = {{
-        {"and", TokenType::And},
-        {"case", TokenType::Case},
-        {"default", TokenType::Default},
-        {"else", TokenType::Else},
-        {"enum", TokenType::Enum},
-        {"extension", TokenType::Extension},
-        {"false", TokenType::False},
-        {"func", TokenType::Func},
-        {"if", TokenType::If},
-        {"import", TokenType::Import},
-        {"let", TokenType::Let},
-        {"mod", TokenType::Mod},
-        {"not", TokenType::Not},
-        {"or", TokenType::Or},
-        {"return", TokenType::Return},
-        {"self", TokenType::Self},
-        {"struct", TokenType::Struct},
-        {"switch", TokenType::Switch},
-        {"then", TokenType::Then},
-        {"true", TokenType::True},
-        {"typealias", TokenType::Typealias}
+        {.name = "and",       .type = TokenType::And},
+        {.name = "case",      .type = TokenType::Case},
+        {.name = "default",   .type = TokenType::Default},
+        {.name = "else",      .type = TokenType::Else},
+        {.name = "enum",      .type = TokenType::Enum},
+        {.name = "extension", .type = TokenType::Extension},
+        {.name = "false",     .type = TokenType::False},
+        {.name = "func",      .type = TokenType::Func},
+        {.name = "if",        .type = TokenType::If},
+        {.name = "import",    .type = TokenType::Import},
+        {.name = "let",       .type = TokenType::Let},
+        {.name = "mod",       .type = TokenType::Mod},
+        {.name = "not",       .type = TokenType::Not},
+        {.name = "or",        .type = TokenType::Or},
+        {.name = "return",    .type = TokenType::Return},
+        {.name = "self",      .type = TokenType::Self},
+        {.name = "struct",    .type = TokenType::Struct},
+        {.name = "switch",    .type = TokenType::Switch},
+        {.name = "then",      .type = TokenType::Then},
+        {.name = "true",      .type = TokenType::True},
+        {.name = "typealias", .type = TokenType::Typealias}
     }};
 
     constexpr bool is_keywords_sorted() noexcept

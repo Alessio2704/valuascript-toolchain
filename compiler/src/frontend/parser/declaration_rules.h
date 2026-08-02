@@ -25,7 +25,7 @@ namespace valuascript::compiler
     struct GenericParameter
     {
         std::vector<Modifier> modifiers;
-        Token name{TokenType::Identifier, "<error>", 0, 0};
+        Token name{.type = TokenType::Identifier, .lexeme = "<error>", .line = 0, .column = 0};
         TypeAnnPtr type;
         ExprPtr value;
         bool has_value_separator = false;
