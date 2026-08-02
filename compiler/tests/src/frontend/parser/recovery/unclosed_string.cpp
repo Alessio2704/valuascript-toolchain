@@ -88,10 +88,8 @@ namespace valuascript::compiler::test
                             {"t"}
                         },
                         IsTuple(
-                            {
-                                IsString("\"first\""),
-                                IsString("\"unclosed)")
-                            }
+                            IsString("\"first\""),
+                            IsString("\"unclosed)")
                         )
                     )
                 }
@@ -114,9 +112,7 @@ namespace valuascript::compiler::test
                             {"d"}
                         },
                         IsDict(
-                            {
-                                {"key", {}, IsString("\"unclosed_val }")}
-                            }
+                            DictItemSpec{"key", {}, IsString("\"unclosed_val }")}
                         )
                     )
                 }
@@ -139,10 +135,8 @@ namespace valuascript::compiler::test
                             {"v"}
                         },
                         IsTensor(
-                            {
-                                IsString("\"val1\""),
-                                IsString("\"val2]")
-                            }
+                            IsString("\"val1\""),
+                            IsString("\"val2]")
                         )
                     )
                 }

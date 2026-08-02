@@ -110,7 +110,7 @@ namespace valuascript::compiler::test
                 .name = "BrokenNestedTypeAnnotation",
                 .code = "let a: vector<int = 1",
                 .errors = {{E::UnmatchedBracketAfterGenericArgs, 1, 17, 1, 18}},
-                .verifier = IsAssignment({{"a", IsType("vector", {IsType("int")})}}, IsNumber("1"))
+                .verifier = IsAssignment({{"a", IsType("vector", IsType("int"))}}, IsNumber("1"))
             });
 
             reg({

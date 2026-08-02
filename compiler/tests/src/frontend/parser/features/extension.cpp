@@ -35,7 +35,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "ComplexTargetType",
                 .code = "extension map<string, int> {}",
-                .verifier = IsExtensionDef({}, IsType("map", {IsType("string"), IsType("int")}), {})
+                .verifier = IsExtensionDef({}, IsType("map", IsType("string"), IsType("int")), {})
             });
 
             return true;

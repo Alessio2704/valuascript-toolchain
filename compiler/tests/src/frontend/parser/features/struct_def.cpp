@@ -17,44 +17,44 @@ namespace valuascript::compiler::test
             reg({
                 .name = "MinimalStruct",
                 .code = "struct S {}",
-                .verifier = IsStructDef("S", {}, {})
+                .verifier = IsStructDef("S")
             });
 
             reg({
                 .name = "SingleField",
                 .code = "struct S { f: int }",
-                .verifier = IsStructDef("S", {}, {
-                    FieldSpec{"f", {}, IsType("int")}
-                })
+                .verifier = IsStructDef("S",
+                    FieldSpec{"f", IsType("int")}
+                )
             });
 
             reg({
                 .name = "MultipleFields",
                 .code = "struct Point { x: float, y: float, z: float }",
-                .verifier = IsStructDef("Point", {}, {
-                    FieldSpec{"x", {}, IsType("float")},
-                    FieldSpec{"y", {}, IsType("float")},
-                    FieldSpec{"z", {}, IsType("float")}
-                })
+                .verifier = IsStructDef("Point",
+                    FieldSpec{"x", IsType("float")},
+                    FieldSpec{"y", IsType("float")},
+                    FieldSpec{"z", IsType("float")}
+                )
             });
 
             reg({
                 .name = "TrailingComma",
                 .code = "struct S { f1: int, f2: bool, }",
-                .verifier = IsStructDef("S", {}, {
-                    FieldSpec{"f1", {}, IsType("int")},
-                    FieldSpec{"f2", {}, IsType("bool")}
-                })
+                .verifier = IsStructDef("S",
+                    FieldSpec{"f1", IsType("int")},
+                    FieldSpec{"f2", IsType("bool")}
+                )
             });
 
             reg({
                 .name = "InterleavingModifiedFields",
                 .code = "struct User { @id id: int, username: string, @optional bio: string }",
-                .verifier = IsStructDef("User", {}, {
-                    FieldSpec{"id", {{"id"}}, IsType("int")},
-                    FieldSpec{"username", {}, IsType("string")},
-                    FieldSpec{"bio", {{"optional"}}, IsType("string")}
-                })
+                .verifier = IsStructDef("User",
+                    FieldSpec{"id", std::vector<ModifierSpec>{{"id"}}, IsType("int")},
+                    FieldSpec{"username", IsType("string")},
+                    FieldSpec{"bio", std::vector<ModifierSpec>{{"optional"}}, IsType("string")}
+                )
             });
 
             reg({
@@ -67,10 +67,10 @@ namespace valuascript::compiler::test
                 "  \n"
                 "  version: int \n"
                 "}",
-                .verifier = IsStructDef("Config", {}, {
-                    FieldSpec{"secret", {{"internal"}}, IsType("string")},
-                    FieldSpec{"version", {}, IsType("int")}
-                })
+                .verifier = IsStructDef("Config",
+                    FieldSpec{"secret", std::vector<ModifierSpec>{{"internal"}}, IsType("string")},
+                    FieldSpec{"version", IsType("int")}
+                )
             });
 
             return true;

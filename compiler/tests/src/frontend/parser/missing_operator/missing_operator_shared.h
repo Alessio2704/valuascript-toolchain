@@ -60,8 +60,8 @@ namespace valuascript::compiler::test
             {"Dot", "a.b", IsDot(IsIdentifier("a"), "b"), 1},
             {"Call", "a()", IsCall(IsIdentifier("a")), 1},
             {"Bracket", "a[1]", IsBracket(IsIdentifier("a"), IsNumber("1")), 1},
-            {"Dict", "{}", IsDict({}), 1},
-            {"Switch", "switch (x) {}", IsSwitch(IsIdentifier("x"), {}), 6}
+            {"Dict", "{}", IsDict(), 1},
+            {"Switch", "switch (x) {}", IsSwitch(IsIdentifier("x"), std::vector<SwitchCaseSpec>{}), 6}
         };
         return atoms;
     }

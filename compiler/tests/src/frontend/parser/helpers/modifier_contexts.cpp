@@ -151,11 +151,11 @@ namespace valuascript::compiler::test
                 .suffix = " case A -> 1 }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsSwitch(IsNumber("1"), {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
                                                           SwitchCaseSpec(
-                                                              SpecAdder::get_v<ModifierVerifier>(v), {"A"},
+                                                              SpecAdder::get_v<ModifierVerifier>(v), "A",
                                                               IsNumber("1"))
-                                                      }));
+                                                      ));
                 }
             },
             {
@@ -236,12 +236,12 @@ namespace valuascript::compiler::test
                 .suffix = " f: int }\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsStructDef("ctx_s_field", {}, {
+                    return UniversalVerifier(IsStructDef("ctx_s_field",
                                                              FieldSpec{
                                                                  "f", SpecAdder::get_v<ModifierVerifier>(v),
                                                                  IsType("int")
                                                              }
-                                                         }));
+                                                         ));
                 }
             },
             {
@@ -253,7 +253,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("ctx_enum", SpecAdder::get_v<ModifierVerifier>(v), IsType("int"),
-                                                       {{"A", {}, IsNumber("1")}}));
+                                                       EnumCaseSpec{"A", IsNumber("1")}));
                 }
             },
             {
@@ -264,9 +264,9 @@ namespace valuascript::compiler::test
                 .suffix = " A = 1 }\n",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsEnumDef("ctx_e_case", {}, IsType("int"), {
-                                                           {"A", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
-                                                       }));
+                    return UniversalVerifier(IsEnumDef("ctx_e_case", {}, IsType("int"),
+                                                           EnumCaseSpec{"A", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
+                                                       ));
                 }
             },
             {
@@ -300,9 +300,9 @@ namespace valuascript::compiler::test
                 .suffix = " k: 1 }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict({
+                    return UniversalVerifier(IsDict(
                         DictItemSpec{"k", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
-                    }));
+                    ));
                 }
             }
         };

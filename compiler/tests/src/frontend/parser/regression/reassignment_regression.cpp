@@ -75,11 +75,11 @@ namespace valuascript::compiler::test
                     })
                 },
                 .structs = {
-                    IsStructDef("Point", {}, {
-                        FieldSpec("x", {}, IsType("float")),
-                        FieldSpec("y", {}, IsType("float")),
-                        FieldSpec("z", {}, IsType("float"))
-                    })
+                    IsStructDef("Point",
+                        FieldSpec("x", IsType("float")),
+                        FieldSpec("y", IsType("float")),
+                        FieldSpec("z", IsType("float"))
+                    )
                 }
             }
         );

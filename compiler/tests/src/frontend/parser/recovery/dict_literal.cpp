@@ -16,10 +16,10 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNumber("1")},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNumber("1")},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             reg({
@@ -28,10 +28,10 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedCommaSeparatorInDictionaryLiteral, 1, 8, 1, 9}
                 },
-                .verifier = IsDict({
-                    {"x", {}, IsNumber("1")},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"x", {}, IsNumber("1")},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             reg({
@@ -40,10 +40,10 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::InvalidExpression, 1, 6, 1, 7}
                 },
-                .verifier = IsDict({
-                    {"x", {}, IsNull()},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"x", {}, IsNull()},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             reg({
@@ -53,11 +53,11 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 6, 1, 7},
                     {E::InvalidExpression, 1, 12, 1, 13}
                 },
-                .verifier = IsDict({
-                    {"x", {}, IsNull()},
-                    {"y", {}, IsNull()},
-                    {"z", {}, IsNumber("3")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"x", {}, IsNull()},
+                    DictItemSpec{"y", {}, IsNull()},
+                    DictItemSpec{"z", {}, IsNumber("3")}
+                )
             });
 
             reg({
@@ -66,11 +66,11 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 9, 1, 10}
                 },
-                .verifier = IsDict({
-                    {"x", {}, IsNumber("1")},
-                    {"<error>", {}, IsNull()},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"x", {}, IsNumber("1")},
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             reg({
@@ -79,9 +79,9 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNull()}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNull()}
+                )
             });
 
             reg({
@@ -90,9 +90,9 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNull()}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNull()}
+                )
             });
 
             reg({
@@ -104,11 +104,11 @@ namespace valuascript::compiler::test
                     {E::ExpectedDictionaryKey, 1, 6, 1, 7},
                     {E::InvalidExpression, 1, 7, 1, 8}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNull()},
-                    {"<error>", {}, IsNull()},
-                    {"z", {}, IsNumber("3")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"z", {}, IsNumber("3")}
+                )
             });
 
             reg({
@@ -123,11 +123,11 @@ namespace valuascript::compiler::test
                     {E::ExpectedDictionaryKey, 3, 1, 3, 2},
                     {E::InvalidExpression, 3, 2, 3, 3}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNull()},
-                    {"<error>", {}, IsNull()},
-                    {"z", {}, IsNumber("3")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"z", {}, IsNumber("3")}
+                )
             });
 
             reg({
@@ -136,11 +136,11 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 8, 1, 9}
                 },
-                .verifier = IsDict({
-                    {"x", {}, IsNumber("1")},
-                    {"<error>", {}, IsNull()},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"x", {}, IsNumber("1")},
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             reg({
@@ -149,9 +149,9 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 6}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNumber("1")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNumber("1")}
+                )
             });
 
             reg({
@@ -160,9 +160,9 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedDictionaryKey, 1, 3, 1, 4}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNumber("1")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNumber("1")}
+                )
             });
 
             reg({
@@ -171,10 +171,10 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedColonAfterDictionaryKey, 1, 5, 1, 6}
                 },
-                .verifier = IsDict({
-                    {"<error>", {}, IsNull()},
-                    {"y", {}, IsNumber("2")}
-                })
+                .verifier = IsDict(
+                    DictItemSpec{"<error>", {}, IsNull()},
+                    DictItemSpec{"y", {}, IsNumber("2")}
+                )
             });
 
             return true;

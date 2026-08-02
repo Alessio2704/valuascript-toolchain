@@ -29,7 +29,7 @@ namespace valuascript::compiler::test
                 .name = "MissingArrowInFunction",
                 .code = "func test(a: int) { return 1 }",
                 .errors = {{E::MissingArrowInFunction, 1, 19, 1, 20}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}}, {}, {IsReturn({IsNumber("1")})})
+                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}}, {}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -75,7 +75,7 @@ namespace valuascript::compiler::test
                     {E::MissingColonAfterParameter, 1, 15, 1, 16},
                     {E::MissingColonAfterParameter, 1, 18, 1, 19}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn({IsNumber("1")})})
+                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
                     {E::MissingTypeAnnotation, 1, 19, 1, 20},
                     {E::MissingTypeAnnotation, 1, 24, 1, 25}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn({IsNumber("1")})})
+                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -96,7 +96,7 @@ namespace valuascript::compiler::test
                     {E::MissingTypeAnnotation, 1, 22, 1, 23},
                     {E::ExpectedCommaSeparatorInParameterList, 1, 34, 1, 35}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}, {"b", {}, IsNullType()}, {"c", {}, IsType("string")}, {"d", {}, IsType("decimal")}}, {IsType("int")}, {IsReturn({IsNumber("1")})})
+                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}, {"b", {}, IsNullType()}, {"c", {}, IsType("string")}, {"d", {}, IsType("decimal")}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({

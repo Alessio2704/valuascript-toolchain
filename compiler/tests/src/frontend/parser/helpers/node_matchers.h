@@ -288,6 +288,19 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         ExprVerifier default_v = nullptr;
+
+        ParamSpec() = default;
+
+        template <typename T = TypeVerifier>
+            requires (!std::same_as<std::decay_t<T>, std::vector<ModifierSpec>>)
+        ParamSpec(StringStorage n, T&& t, ExprVerifier d = nullptr)
+            : name(std::move(n)), type_v(std::forward<T>(t)), default_v(std::move(d)) {}
+
+        ParamSpec(StringStorage n, std::vector<ModifierSpec> m, TypeVerifier t = nullptr, ExprVerifier d = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)), default_v(std::move(d)) {}
+
+        ParamSpec(std::vector<ModifierSpec> m, StringStorage n, TypeVerifier t = nullptr, ExprVerifier d = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)), default_v(std::move(d)) {}
     };
 
     struct FieldSpec
@@ -295,6 +308,19 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
+
+        FieldSpec() = default;
+
+        template <typename T = TypeVerifier>
+            requires (!std::same_as<std::decay_t<T>, std::vector<ModifierSpec>>)
+        FieldSpec(StringStorage n, T&& t)
+            : name(std::move(n)), type_v(std::forward<T>(t)) {}
+
+        FieldSpec(StringStorage n, std::vector<ModifierSpec> m, TypeVerifier t = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)) {}
+
+        FieldSpec(std::vector<ModifierSpec> m, StringStorage n, TypeVerifier t = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), type_v(std::move(t)) {}
     };
 
     struct EnumCaseSpec
@@ -302,6 +328,19 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
+
+        EnumCaseSpec() = default;
+
+        template <typename V = ExprVerifier>
+            requires (!std::same_as<std::decay_t<V>, std::vector<ModifierSpec>>)
+        EnumCaseSpec(StringStorage n, V&& v = nullptr)
+            : name(std::move(n)), value_v(std::forward<V>(v)) {}
+
+        EnumCaseSpec(StringStorage n, std::vector<ModifierSpec> m, ExprVerifier v = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), value_v(std::move(v)) {}
+
+        EnumCaseSpec(std::vector<ModifierSpec> m, StringStorage n, ExprVerifier v = nullptr)
+            : name(std::move(n)), modifiers(std::move(m)), value_v(std::move(v)) {}
     };
 
     struct DictItemSpec
@@ -324,10 +363,7 @@ namespace valuascript::compiler::test
         {
         }
 
-        SwitchCaseSpec(std::initializer_list<StringStorage> l, ExprVerifier r = nullptr)
-            : labels(l.begin(), l.end()), result_v(std::move(r))
-        {
-        }
+        SwitchCaseSpec(std::initializer_list<StringStorage> l, ExprVerifier r = nullptr) = delete;
 
         SwitchCaseSpec(std::vector<std::string> l, ExprVerifier r = nullptr)
             : labels(l.begin(), l.end()), result_v(std::move(r))
@@ -339,14 +375,43 @@ namespace valuascript::compiler::test
         {
         }
 
-        SwitchCaseSpec(std::vector<ModifierSpec> m, std::initializer_list<StringStorage> l, ExprVerifier r = nullptr)
-            : modifiers(std::move(m)), labels(l.begin(), l.end()), result_v(std::move(r))
-        {
-        }
+        SwitchCaseSpec(std::vector<ModifierSpec> m, std::initializer_list<StringStorage> l, ExprVerifier r = nullptr) = delete;
 
         SwitchCaseSpec(std::vector<ModifierSpec> m, std::vector<std::string> l, ExprVerifier r = nullptr)
             : modifiers(std::move(m)), labels(l.begin(), l.end()), result_v(std::move(r))
         {
+        }
+
+        template <typename... Args>
+            requires (sizeof...(Args) >= 2 &&
+                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<ModifierSpec>> &&
+                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<StringStorage>> &&
+                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<std::string>>)
+        SwitchCaseSpec(Args&&... args)
+        {
+            auto tuple_args = std::forward_as_tuple(std::forward<Args>(args)...);
+            constexpr size_t N = sizeof...(Args);
+            result_v = std::get<N - 1>(tuple_args);
+            labels.reserve(N - 1);
+            [&]<size_t... Is>(std::index_sequence<Is...>) {
+                (labels.push_back(StringStorage(std::get<Is>(tuple_args))), ...);
+            }(std::make_index_sequence<N - 1>{});
+        }
+
+        template <typename... Args>
+            requires (sizeof...(Args) >= 2 &&
+                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<StringStorage>> &&
+                      !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<Args...>>>, std::vector<std::string>>)
+        SwitchCaseSpec(std::vector<ModifierSpec> m, Args&&... args)
+            : modifiers(std::move(m))
+        {
+            auto tuple_args = std::forward_as_tuple(std::forward<Args>(args)...);
+            constexpr size_t N = sizeof...(Args);
+            result_v = std::get<N - 1>(tuple_args);
+            labels.reserve(N - 1);
+            [&]<size_t... Is>(std::index_sequence<Is...>) {
+                (labels.push_back(StringStorage(std::get<Is>(tuple_args))), ...);
+            }(std::make_index_sequence<N - 1>{});
         }
     };
 
@@ -1173,10 +1238,22 @@ namespace valuascript::compiler::test
         }
     };
 
+    template <typename T, typename U>
+    ExprVerifier IsCall(T&&, std::initializer_list<U>) = delete;
+
     template <ExprMatcher T = AnyMatcher>
     inline ExprVerifier IsCall(T&& target, std::vector<ArgSpec> args = {})
     {
         return ExprVerifier(CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(args)});
+    }
+
+    template <ExprMatcher T = AnyMatcher, typename... ArgSpecs>
+        requires (sizeof...(ArgSpecs) > 0 && !(sizeof...(ArgSpecs) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<ArgSpecs...>>>, std::vector<ArgSpec>>))
+    inline ExprVerifier IsCall(T&& target, ArgSpecs&&... args)
+    {
+        std::vector<ArgSpec> arg_list = {std::forward<ArgSpecs>(args)...};
+        return ExprVerifier(CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(arg_list)});
     }
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher I = AnyMatcher>
@@ -1242,6 +1319,9 @@ namespace valuascript::compiler::test
         }
     };
 
+    template <typename T, typename U>
+    ExprVerifier IsSwitch(T&&, std::initializer_list<U>) = delete;
+
     template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
     inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, std::vector<ModifierSpec> default_mods,
                                  D&& default_expr = {})
@@ -1255,6 +1335,17 @@ namespace valuascript::compiler::test
     inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, D&& default_expr = {})
     {
         return IsSwitch(std::forward<T>(t), std::move(cases), {}, std::forward<D>(default_expr));
+    }
+
+    template <ExprMatcher T = AnyMatcher, typename... Cases>
+        requires (sizeof...(Cases) > 0 && !(sizeof...(Cases) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<Cases...>>>, std::vector<SwitchCaseSpec>>))
+    inline ExprVerifier IsSwitch(T&& t, Cases&&... cases)
+    {
+        std::vector<SwitchCaseSpec> case_list = {std::forward<Cases>(cases)...};
+        return ExprVerifier(SwitchMatcher<std::decay_t<T>, AnyMatcher>{
+            std::forward<T>(t), std::move(case_list), {}, AnyMatcher{}
+        });
     }
 
     template <typename ASTNodeT, typename... Matchers>
@@ -1280,6 +1371,9 @@ namespace valuascript::compiler::test
 
     template <typename... Matchers>
     using TensorVariadicMatcher = SequenceVariadicMatcher<TensorLiteral, Matchers...>;
+
+    template <typename T = ExprVerifier>
+    ExprVerifier IsTensor(std::initializer_list<T>) = delete;
 
     struct TensorVectorMatcher
     {
@@ -1315,6 +1409,9 @@ namespace valuascript::compiler::test
     template <typename... Matchers>
     using TupleVariadicMatcher = SequenceVariadicMatcher<TupleLiteral, Matchers...>;
 
+    template <typename T = ExprVerifier>
+    ExprVerifier IsTuple(std::initializer_list<T>) = delete;
+
     struct TupleVectorMatcher
     {
         using node_type = Expression;
@@ -1346,6 +1443,27 @@ namespace valuascript::compiler::test
         return ExprVerifier(TupleVectorMatcher{});
     }
 
+    template <typename T = DictItemSpec>
+    ExprVerifier IsDict(std::initializer_list<T>) = delete;
+
+    template <typename... Matchers>
+    struct DictVariadicMatcher
+    {
+        using node_type = Expression;
+        std::tuple<Matchers...> items;
+
+        void operator()(Expression* node) const
+        {
+            std::vector<DictItemSpec> item_vec;
+            item_vec.reserve(sizeof...(Matchers));
+            std::apply([&](const auto&... m)
+            {
+                (item_vec.push_back(DictItemSpec(m)), ...);
+            }, items);
+            ExpectDict(node, item_vec);
+        }
+    };
+
     struct DictMatcher
     {
         using node_type = Expression;
@@ -1353,10 +1471,47 @@ namespace valuascript::compiler::test
         void operator()(Expression* node) const { ExpectDict(node, items); }
     };
 
-    inline ExprVerifier IsDict(std::vector<DictItemSpec> items = {})
+    inline ExprVerifier IsDict(std::vector<DictItemSpec> items)
     {
         return ExprVerifier(DictMatcher{std::move(items)});
     }
+
+    inline ExprVerifier IsDict()
+    {
+        return ExprVerifier(DictMatcher{});
+    }
+
+    template <typename... Matchers>
+        requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<DictItemSpec>>))
+    inline ExprVerifier IsDict(Matchers&&... matchers)
+    {
+        return ExprVerifier(DictVariadicMatcher<std::decay_t<Matchers>...>{
+            std::make_tuple(std::forward<Matchers>(matchers)...)
+        });
+    }
+
+    template <typename T = TypeVerifier>
+    TypeVerifier IsType(StringStorage name, std::initializer_list<T>) = delete;
+
+    template <typename... Matchers>
+    struct TypeVariadicMatcher
+    {
+        using node_type = TypeAnnotation;
+        StringStorage name;
+        std::tuple<Matchers...> generics;
+
+        void operator()(TypeAnnotation* t) const
+        {
+            std::vector<TypeVerifier> gen_vec;
+            gen_vec.reserve(sizeof...(Matchers));
+            std::apply([&](const auto&... m)
+            {
+                (gen_vec.push_back(TypeVerifier(m)), ...);
+            }, generics);
+            ExpectType(t, name.get(), gen_vec);
+        }
+    };
 
     struct TypeMatcher
     {
@@ -1371,6 +1526,39 @@ namespace valuascript::compiler::test
         return TypeVerifier(TypeMatcher{std::move(name), std::move(generics)});
     }
 
+    template <typename... Matchers>
+        requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<TypeVerifier>>))
+    inline TypeVerifier IsType(StringStorage name, Matchers&&... matchers)
+    {
+        return TypeVerifier(TypeVariadicMatcher<std::decay_t<Matchers>...>{
+            std::move(name), std::make_tuple(std::forward<Matchers>(matchers)...)
+        });
+    }
+
+    template <typename T = TypeVerifier>
+    TypeVerifier IsTupleType(std::initializer_list<T>) = delete;
+
+    template <typename... Matchers>
+    struct TupleTypeVariadicMatcher
+    {
+        using node_type = TypeAnnotation;
+        std::tuple<Matchers...> elements;
+
+        void operator()(TypeAnnotation* node) const
+        {
+            if (auto t = ExpectNode<TupleTypeAnnotation>(node))
+            {
+                ASSERT_EQ(t->element_types.size(), sizeof...(Matchers)) << "TupleTypeAnnotation element count mismatch.";
+                size_t idx = 0;
+                std::apply([&](const auto&... m)
+                {
+                    ((m(t->element_types[idx++].get())), ...);
+                }, elements);
+            }
+        }
+    };
+
     struct TupleTypeMatcher
     {
         using node_type = TypeAnnotation;
@@ -1381,6 +1569,16 @@ namespace valuascript::compiler::test
     inline TypeVerifier IsTupleType(std::vector<TypeVerifier> elements = {})
     {
         return TypeVerifier(TupleTypeMatcher{std::move(elements)});
+    }
+
+    template <typename... Matchers>
+        requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<TypeVerifier>>))
+    inline TypeVerifier IsTupleType(Matchers&&... matchers)
+    {
+        return TypeVerifier(TupleTypeVariadicMatcher<std::decay_t<Matchers>...>{
+            std::make_tuple(std::forward<Matchers>(matchers)...)
+        });
     }
 
     template <typename V = AnyMatcher>
@@ -1438,6 +1636,29 @@ namespace valuascript::compiler::test
         });
     }
 
+    template <typename T = ExprVerifier>
+    ReturnVerifier IsReturn(std::initializer_list<T>) = delete;
+
+    template <typename... Matchers>
+    struct ReturnVariadicMatcher
+    {
+        using node_type = ReturnStatement;
+        std::tuple<Matchers...> values;
+
+        void operator()(Statement* s) const
+        {
+            if (auto r = ExpectNode<ReturnStatement>(s))
+            {
+                ASSERT_EQ(r->values.size(), sizeof...(Matchers)) << "Return values count mismatch.";
+                size_t idx = 0;
+                std::apply([&](const auto&... m)
+                {
+                    ((m(r->values[idx++].get())), ...);
+                }, values);
+            }
+        }
+    };
+
     struct ReturnMatcher
     {
         using node_type = ReturnStatement;
@@ -1461,6 +1682,16 @@ namespace valuascript::compiler::test
     inline ReturnVerifier IsReturn(std::vector<ExprVerifier> values = {})
     {
         return IsReturn({}, std::move(values));
+    }
+
+    template <typename... Matchers>
+        requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<ExprVerifier>>))
+    inline ReturnVerifier IsReturn(Matchers&&... matchers)
+    {
+        return ReturnVerifier(ReturnVariadicMatcher<std::decay_t<Matchers>...>{
+            std::make_tuple(std::forward<Matchers>(matchers)...)
+        });
     }
 
     template <typename E = AnyMatcher>
@@ -1526,10 +1757,33 @@ namespace valuascript::compiler::test
         }
     };
 
+    template <typename T>
+    StructVerifier IsStructDef(StringStorage, std::initializer_list<T>) = delete;
+    template <typename T>
+    StructVerifier IsStructDef(StringStorage, std::vector<ModifierSpec>, std::initializer_list<T>) = delete;
+
     inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
                                       std::vector<FieldSpec> fields = {})
     {
         return StructVerifier(StructDefMatcher{std::move(name), std::move(modifiers), std::move(fields)});
+    }
+
+    template <typename... FieldSpecs>
+        requires (sizeof...(FieldSpecs) > 0 && !(sizeof...(FieldSpecs) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<FieldSpecs...>>>, std::vector<FieldSpec>>))
+    inline StructVerifier IsStructDef(StringStorage name, FieldSpecs&&... fields)
+    {
+        std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
+        return StructVerifier(StructDefMatcher{std::move(name), {}, std::move(field_list)});
+    }
+
+    template <typename... FieldSpecs>
+        requires (sizeof...(FieldSpecs) > 0 && !(sizeof...(FieldSpecs) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<FieldSpecs...>>>, std::vector<FieldSpec>>))
+    inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers, FieldSpecs&&... fields)
+    {
+        std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
+        return StructVerifier(StructDefMatcher{std::move(name), std::move(modifiers), std::move(field_list)});
     }
 
     struct EnumDefMatcher
@@ -1546,11 +1800,34 @@ namespace valuascript::compiler::test
         }
     };
 
+    template <typename T>
+    EnumVerifier IsEnumDef(StringStorage, std::initializer_list<T>) = delete;
+    template <typename T>
+    EnumVerifier IsEnumDef(StringStorage, std::vector<ModifierSpec>, TypeVerifier, std::initializer_list<T>) = delete;
+
     inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
                                   TypeVerifier type = nullptr,
                                   std::vector<EnumCaseSpec> cases = {})
     {
         return EnumVerifier(EnumDefMatcher{std::move(name), std::move(modifiers), std::move(type), std::move(cases)});
+    }
+
+    template <typename... EnumCaseSpecs>
+        requires (sizeof...(EnumCaseSpecs) > 0 && !(sizeof...(EnumCaseSpecs) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>))
+    inline EnumVerifier IsEnumDef(StringStorage name, EnumCaseSpecs&&... cases)
+    {
+        std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
+        return EnumVerifier(EnumDefMatcher{std::move(name), {}, nullptr, std::move(case_list)});
+    }
+
+    template <typename... EnumCaseSpecs>
+        requires (sizeof...(EnumCaseSpecs) > 0 && !(sizeof...(EnumCaseSpecs) == 1 && std::same_as<
+            std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>))
+    inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers, TypeVerifier type, EnumCaseSpecs&&... cases)
+    {
+        std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
+        return EnumVerifier(EnumDefMatcher{std::move(name), std::move(modifiers), std::move(type), std::move(case_list)});
     }
 
     struct TypeAliasMatcher

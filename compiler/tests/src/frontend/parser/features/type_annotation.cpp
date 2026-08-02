@@ -23,80 +23,80 @@ namespace valuascript::compiler::test
             reg({
                 .name = "Generic",
                 .code = "vector<string>",
-                .verifier = IsType("vector", {IsType("string")})
+                .verifier = IsType("vector", IsType("string"))
             });
 
             reg({
                 .name = "NestedGeneric",
                 .code = "map<string, vector<decimal>>",
-                .verifier = IsType("map", {
+                .verifier = IsType("map",
                     IsType("string"),
-                    IsType("vector", {IsType("decimal")})
-                })
+                    IsType("vector", IsType("decimal"))
+                )
             });
 
             reg({
                 .name = "Tuple",
                 .code = "(string, integer, bool)",
-                .verifier = IsTupleType({
+                .verifier = IsTupleType(
                     IsType("string"),
                     IsType("integer"),
                     IsType("bool")
-                })
+                )
             });
 
             reg({
                 .name = "DeeplyNestedGenerics",
                 .code = "Box<Box<Box<scalar>>>",
-                .verifier = IsType("Box", {
-                    IsType("Box", {
-                        IsType("Box", {IsType("scalar")})
-                    })
-                })
+                .verifier = IsType("Box",
+                    IsType("Box",
+                        IsType("Box", IsType("scalar"))
+                    )
+                )
             });
 
             reg({
                 .name = "TuplesContainingGenerics",
                 .code = "(map<string, any>, vector<string>)",
-                .verifier = IsTupleType({
-                    IsType("map", {IsType("string"), IsType("any")}),
-                    IsType("vector", {IsType("string")})
-                })
+                .verifier = IsTupleType(
+                    IsType("map", IsType("string"), IsType("any")),
+                    IsType("vector", IsType("string"))
+                )
             });
 
             reg({
                 .name = "GenericsContainingTuples",
                 .code = "map<string, vector<(integer, integer)>>",
-                .verifier = IsType("map", {
+                .verifier = IsType("map",
                     IsType("string"),
-                    IsType("vector", {
-                        IsTupleType({IsType("integer"), IsType("integer")})
-                    })
-                })
+                    IsType("vector",
+                        IsTupleType(IsType("integer"), IsType("integer"))
+                    )
+                )
             });
 
             reg({
                 .name = "DeeplyNestedTuples",
                 .code = "((int, int), (string, (bool, bool)))",
-                .verifier = IsTupleType({
-                    IsTupleType({IsType("int"), IsType("int")}),
-                    IsTupleType({
+                .verifier = IsTupleType(
+                    IsTupleType(IsType("int"), IsType("int")),
+                    IsTupleType(
                         IsType("string"),
-                        IsTupleType({IsType("bool"), IsType("bool")})
-                    })
-                })
+                        IsTupleType(IsType("bool"), IsType("bool"))
+                    )
+                )
             });
 
             reg({
                 .name = "HighArityGenerics",
                 .code = "multi_map<int, string, bool, float, any>",
-                .verifier = IsType("multi_map", {
+                .verifier = IsType("multi_map",
                     IsType("int"),
                     IsType("string"),
                     IsType("bool"),
                     IsType("float"),
                     IsType("any")
-                })
+                )
             });
 
             reg({
@@ -120,37 +120,37 @@ namespace valuascript::compiler::test
             reg({
                 .name = "WhitespaceInsensitivity",
                 .code = "vector  < \n  map  < \n    int  , \n    string \n  > \n >",
-                .verifier = IsType("vector", {
-                    IsType("map", {
+                .verifier = IsType("vector",
+                    IsType("map",
                         IsType("int"),
                         IsType("string")
-                    })
-                })
+                    )
+                )
             });
 
             reg({
                 .name = "ExtremeHybridNesting",
                 .code = "map<(string, int), Box<vector<(bool, any)>>>",
-                .verifier = IsType("map", {
-                    IsTupleType({IsType("string"), IsType("int")}),
-                    IsType("Box", {
-                        IsType("vector", {
-                            IsTupleType({IsType("bool"), IsType("any")})
-                        })
-                    })
-                })
+                .verifier = IsType("map",
+                    IsTupleType(IsType("string"), IsType("int")),
+                    IsType("Box",
+                        IsType("vector",
+                            IsTupleType(IsType("bool"), IsType("any"))
+                        )
+                    )
+                )
             });
 
             reg({
                 .name = "TripleNestedGenericsWithTuples",
                 .code = "A<B<C<(int, int)>>>",
-                .verifier = IsType("A", {
-                    IsType("B", {
-                        IsType("C", {
-                            IsTupleType({IsType("int"), IsType("int")})
-                        })
-                    })
-                })
+                .verifier = IsType("A",
+                    IsType("B",
+                        IsType("C",
+                            IsTupleType(IsType("int"), IsType("int"))
+                        )
+                    )
+                )
             });
 
             return true;

@@ -54,7 +54,7 @@ namespace valuascript::compiler::test
 
             return {
                 "  " + m_c + "case " + labels_code + " -> " + case_expr_c + "\n",
-                SwitchCaseSpec{m_v, labels, case_expr_v}
+                SwitchCaseSpec(m_v, labels, case_expr_v)
             };
         };
 
@@ -270,11 +270,11 @@ namespace valuascript::compiler::test
                     env.stats().types.tuple_types++;
                     auto [t1_c, t1_v] = this->rule_type(env, depth + 1);
                     auto [t2_c, t2_v] = this->rule_type(env, depth + 1);
-                    return {"(" + t1_c + ", " + t2_c + ")", IsTupleType({t1_v, t2_v})};
+                    return {"(" + t1_c + ", " + t2_c + ")", IsTupleType(t1_v, t2_v)};
                 }
                 env.stats().types.list_types++;
                 auto [inner_c, inner_v] = this->rule_type(env, depth + 1);
-                return {"List<" + inner_c + ">", IsType("List", {inner_v})};
+                return {"List<" + inner_c + ">", IsType("List", inner_v)};
             },
             [](const auto& c) { return c.registry.types; },
             &ConstructRegistry::type_annotations()

@@ -17,65 +17,65 @@ namespace valuascript::compiler::test
             reg({
                 .name = "EmptyEnum",
                 .code = "enum E: int { }",
-                .verifier = IsEnumDef("E", {}, IsType("int"), {})
+                .verifier = IsEnumDef("E", {}, IsType("int"), std::vector<EnumCaseSpec>{})
             });
 
             reg({
                 .name = "MinimalEnum",
                 .code = "enum E: int { A }",
-                .verifier = IsEnumDef("E", {}, IsType("int"), {
-                    {"A"}
-                })
+                .verifier = IsEnumDef("E", {}, IsType("int"),
+                    EnumCaseSpec{"A"}
+                )
             });
 
             reg({
                 .name = "MultipleCases",
                 .code = "enum Color: int { Red, Green, Blue }",
-                .verifier = IsEnumDef("Color", {}, IsType("int"), {
-                    {"Red"},
-                    {"Green"},
-                    {"Blue"}
-                })
+                .verifier = IsEnumDef("Color", {}, IsType("int"),
+                    EnumCaseSpec{"Red"},
+                    EnumCaseSpec{"Green"},
+                    EnumCaseSpec{"Blue"}
+                )
             });
 
             reg({
                 .name = "CasesWithExplicitValues",
                 .code = "enum Status: int { Active = 1, Inactive = 0, Pending = 2 }",
-                .verifier = IsEnumDef("Status", {}, IsType("int"), {
-                    {"Active", {}, IsNumber("1")},
-                    {"Inactive", {}, IsNumber("0")},
-                    {"Pending", {}, IsNumber("2")}
-                })
+                .verifier = IsEnumDef("Status", {}, IsType("int"),
+                    EnumCaseSpec{"Active", IsNumber("1")},
+                    EnumCaseSpec{"Inactive", IsNumber("0")},
+                    EnumCaseSpec{"Pending", IsNumber("2")}
+                )
             });
 
             reg({
                 .name = "MixedValuedAndUnvaluedCases",
                 .code = "enum Flag: int { None = 0, First, Second, Last = 10 }",
-                .verifier = IsEnumDef("Flag", {}, IsType("int"), {
-                    {"None", {}, IsNumber("0")},
-                    {"First"},
-                    {"Second"},
-                    {"Last", {}, IsNumber("10")}
-                })
+                .verifier = IsEnumDef("Flag", {}, IsType("int"),
+                    EnumCaseSpec{"None", IsNumber("0")},
+                    EnumCaseSpec{"First"},
+                    EnumCaseSpec{"Second"},
+                    EnumCaseSpec{"Last", IsNumber("10")}
+                )
             });
 
             reg({
                 .name = "TrailingComma",
                 .code = "enum E: int { A, B, }",
-                .verifier = IsEnumDef("E", {}, IsType("int"), {
-                    {"A"},
-                    {"B"}
-                })
+                .verifier = IsEnumDef("E", {}, IsType("int"),
+                    EnumCaseSpec{"A"},
+                    EnumCaseSpec{"B"}
+                )
             });
 
             reg({
                 .name = "InterleavingModifiedCases",
                 .code = "enum E: int { @primary A, B, @deprecated C = 99 }",
-                .verifier = IsEnumDef("E", {}, IsType("int"), {
-                    {"A", {{"primary"}}},
-                    {"B"},
-                    {"C", {{"deprecated"}}, IsNumber("99")}
-                })
+                .verifier = IsEnumDef("E", {}, IsType("int"),
+                    EnumCaseSpec{"A", std::vector<ModifierSpec>{{"primary"}}},
+                    EnumCaseSpec{"B"},
+                    EnumCaseSpec{"C", std::vector<ModifierSpec>{{"deprecated"}}, IsNumber("99")}
+                )
             });
 
             reg({
@@ -88,10 +88,10 @@ namespace valuascript::compiler::test
                 "  @init Open = \"open\",\n"
                 "  Closed = \"closed\"\n"
                 "}",
-                .verifier = IsEnumDef("State", {}, IsType("string"), {
-                    {"Open", {{"init"}}, IsString("\"open\"")},
-                    {"Closed", {}, IsString("\"closed\"")}
-                })
+                .verifier = IsEnumDef("State", {}, IsType("string"),
+                    EnumCaseSpec{"Open", std::vector<ModifierSpec>{{"init"}}, IsString("\"open\"")},
+                    EnumCaseSpec{"Closed", IsString("\"closed\"")}
+                )
             });
 
             return true;

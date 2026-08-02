@@ -14,16 +14,14 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> 1 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")}
-                    }
+                    SwitchCaseSpec("A", IsNumber("1"))
                 )
             });
 
             reg({
                 .name = "EmptySwitch",
                 .code = "switch (x) { }",
-                .verifier = IsSwitch(IsIdentifier("x"), {})
+                .verifier = IsSwitch(IsIdentifier("x"), std::vector<SwitchCaseSpec>{})
             });
 
             reg({
@@ -31,9 +29,7 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A, B, C -> 1 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {
-                        SwitchCaseSpec{{"A", "B", "C"}, IsNumber("1")}
-                    }
+                    SwitchCaseSpec("A", "B", "C", IsNumber("1"))
                 )
             });
 
@@ -42,10 +38,8 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> 1 case B -> 2 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")},
-                        SwitchCaseSpec{{"B"}, IsNumber("2")}
-                    }
+                    SwitchCaseSpec("A", IsNumber("1")),
+                    SwitchCaseSpec("B", IsNumber("2"))
                 )
             });
 
@@ -54,7 +48,7 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { default -> 0 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {},
+                    std::vector<SwitchCaseSpec>{},
                     IsNumber("0")
                 )
             });
@@ -64,9 +58,9 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> 1 case B -> 2 default -> 0 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {
-                        SwitchCaseSpec{{}, {"A"}, IsNumber("1")},
-                        SwitchCaseSpec{{}, {"B"}, IsNumber("2")}
+                    std::vector<SwitchCaseSpec>{
+                        SwitchCaseSpec("A", IsNumber("1")),
+                        SwitchCaseSpec("B", IsNumber("2"))
                     },
                     {},
                     IsNumber("0")
@@ -78,19 +72,18 @@ namespace valuascript::compiler::test
                 .code = "switch (x) { case A -> switch (y) { case B -> 1 default -> 2 } default -> 3 }",
                 .verifier = IsSwitch(
                     IsIdentifier("x"),
-                    {
-                        SwitchCaseSpec{
-                            {},
-                            {"A"},
+                    std::vector<SwitchCaseSpec>{
+                        SwitchCaseSpec(
+                            "A",
                             IsSwitch(
                                 IsIdentifier("y"),
-                                {
-                                    SwitchCaseSpec{{}, {"B"}, IsNumber("1")}
+                                std::vector<SwitchCaseSpec>{
+                                    SwitchCaseSpec("B", IsNumber("1"))
                                 },
                                 {},
                                 IsNumber("2")
                             )
-                        }
+                        )
                     },
                     {},
                     IsNumber("3")
@@ -106,9 +99,9 @@ namespace valuascript::compiler::test
                 "}",
                 .verifier = IsSwitch(
                     IsIdentifier("state"),
-                    {
-                        SwitchCaseSpec{{"Active", "Pending"}, IsString("\"ok\"")},
-                        SwitchCaseSpec{{"Error"}, IsString("\"fail\"")}
+                    std::vector<SwitchCaseSpec>{
+                        SwitchCaseSpec("Active", "Pending", IsString("\"ok\"")),
+                        SwitchCaseSpec("Error", IsString("\"fail\""))
                     },
                     IsString("\"unknown\"")
                 )

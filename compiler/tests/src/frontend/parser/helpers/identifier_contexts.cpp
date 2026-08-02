@@ -205,7 +205,7 @@ namespace valuascript::compiler::test
                 .suffix = ": 1 }",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsDict({{SpecAdder::get_id(v), {}, IsNumber("1")}}));
+                    return UniversalVerifier(IsDict(DictItemSpec{SpecAdder::get_id(v), {}, IsNumber("1")}));
                 }
             },
             {
@@ -219,7 +219,7 @@ namespace valuascript::compiler::test
                     return UniversalVerifier(
                         IsSwitch(
                             IsNumber("1"),
-                            {SwitchCaseSpec{{SpecAdder::get_id(v)}, IsNumber("1")}}
+                            SwitchCaseSpec(SpecAdder::get_id(v), IsNumber("1"))
                         )
                     );
                 }
@@ -235,7 +235,7 @@ namespace valuascript::compiler::test
                     return UniversalVerifier(
                         IsSwitch(
                             IsNumber("1"),
-                            {SwitchCaseSpec{{SpecAdder::get_id(v), "B", "C"}, IsNumber("1")}}
+                            SwitchCaseSpec(SpecAdder::get_id(v), "B", "C", IsNumber("1"))
                         )
                     );
                 }
@@ -251,7 +251,7 @@ namespace valuascript::compiler::test
                     return UniversalVerifier(
                         IsSwitch(
                             IsNumber("1"),
-                            {SwitchCaseSpec{{"A", SpecAdder::get_id(v), "C"}, IsNumber("1")}}
+                            SwitchCaseSpec("A", SpecAdder::get_id(v), "C", IsNumber("1"))
                         )
                     );
                 }
@@ -267,7 +267,7 @@ namespace valuascript::compiler::test
                     return UniversalVerifier(
                         IsSwitch(
                             IsNumber("1"),
-                            {SwitchCaseSpec{{"A", "B", SpecAdder::get_id(v)}, IsNumber("1")}}
+                            SwitchCaseSpec("A", "B", SpecAdder::get_id(v), IsNumber("1"))
                         )
                     );
                 }

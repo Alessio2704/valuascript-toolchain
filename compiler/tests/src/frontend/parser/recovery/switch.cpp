@@ -20,9 +20,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5, 2, 12}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")}
-                    }
+                    IsIdentifier("v"),
+                    SwitchCaseSpec("A", IsNumber("1"))
                 )
             });
 
@@ -33,9 +32,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedEnumCaseNameAfterCase, 1, 21, 1, 22}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("res"), {
-                        SwitchCaseSpec{{"<error>"}, IsNumber("10")}
-                    }
+                    IsIdentifier("res"),
+                    SwitchCaseSpec("<error>", IsNumber("10"))
                 )
             });
 
@@ -46,9 +44,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedEnumCaseNameAfterCase, 1, 21, 1, 25}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("res"), {
-                        SwitchCaseSpec{{"<error>"}, IsNumber("10")}
-                    }
+                    IsIdentifier("res"),
+                    SwitchCaseSpec("<error>", IsNumber("10"))
                 )
             });
 
@@ -62,9 +59,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedRightArrowAfterSwitchCaseIdentifier, 2, 12, 2, 13}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {
-                        SwitchCaseSpec{{"A"}, IsNull()}
-                    },
+                    IsIdentifier("v"),
+                    std::vector<SwitchCaseSpec>{SwitchCaseSpec("A", IsNull())},
                     IsNumber("2")
                 )
             });
@@ -79,7 +75,7 @@ namespace valuascript::compiler::test
                     {E::MultipleDefaultCasesInSwitch, 3, 5, 3, 12}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {}, IsNumber("2")
+                    IsIdentifier("v"), std::vector<SwitchCaseSpec>{}, IsNumber("2")
                 )
             });
 
@@ -92,9 +88,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedCommaBetweenCaseIdentifiers, 2, 12, 2, 13}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {
-                        SwitchCaseSpec{{"A", "B"}, IsNumber("1")}
-                    }
+                    IsIdentifier("v"),
+                    SwitchCaseSpec("A", "B", IsNumber("1"))
                 )
             });
 
@@ -107,9 +102,8 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 2, 12, 2, 14}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {
-                        SwitchCaseSpec{{"A"}, IsNull()}
-                    }
+                    IsIdentifier("v"),
+                    SwitchCaseSpec("A", IsNull())
                 )
             });
 
@@ -122,9 +116,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedLeftParenAfterSwitch, 1, 8, 1, 9}
                 },
                 .verifier = IsSwitch(
-                    IsNull(), {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")}
-                    }
+                    IsNull(),
+                    SwitchCaseSpec("A", IsNumber("1"))
                 )
             });
 
@@ -137,9 +130,8 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 8, 1, 9}
                 },
                 .verifier = IsSwitch(
-                    IsNull(), {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")}
-                    }
+                    IsNull(),
+                    SwitchCaseSpec("A", IsNumber("1"))
                 )
             });
 
@@ -152,9 +144,8 @@ namespace valuascript::compiler::test
                     {E::InvalidExpression, 1, 9, 1, 10}
                 },
                 .verifier = IsSwitch(
-                    IsNull(), {
-                        SwitchCaseSpec{{"A"}, IsNumber("1")}
-                    }
+                    IsNull(),
+                    SwitchCaseSpec("A", IsNumber("1"))
                 )
             });
 
@@ -166,7 +157,7 @@ namespace valuascript::compiler::test
                 .errors = {
                     {E::ExpectedCaseOrDefaultInsideSwitchBody, 2, 5, 2, 6}
                 },
-                .verifier = IsSwitch(IsIdentifier("v"), {})
+                .verifier = IsSwitch(IsIdentifier("v"), std::vector<SwitchCaseSpec>{})
             });
 
             reg({
@@ -178,9 +169,8 @@ namespace valuascript::compiler::test
                     {E::ExpectedEnumCaseNameAfterCase, 2, 13, 2, 14}
                 },
                 .verifier = IsSwitch(
-                    IsIdentifier("v"), {
-                        SwitchCaseSpec{{"A", "<error>", "B"}, IsNumber("1")}
-                    }
+                    IsIdentifier("v"),
+                    SwitchCaseSpec("A", "<error>", "B", IsNumber("1"))
                 )
             });
 
