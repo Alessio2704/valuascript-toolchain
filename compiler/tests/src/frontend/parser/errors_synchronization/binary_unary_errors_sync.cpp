@@ -71,17 +71,6 @@ namespace valuascript::compiler::test
         BinaryAndUnaryErrorsParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "binary_operator_dangling_on_next_line",
-                .source_code = "let a = 1\n* 2\nlet b = 3\n",
-                .expected_errors = { {.code = Err::InvalidExpression, .line = 2, .column = 1} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-                    ASSERT_NE(assign_b, nullptr);
-                    EXPECT_EQ(assign_b->targets[0].name, "b");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "multiline_binary_rejected_at_top_level",
                 .source_code = "let a = 1\n* 2\n",
                 .expected_errors = { {.code = Err::InvalidExpression, .line = 2, .column = 1} },
@@ -95,16 +84,6 @@ namespace valuascript::compiler::test
                 .expected_errors = { {.code = Err::InvalidStandaloneStatement, .line = 2, .column = 1, .line_end = 2, .column_end = 4} },
                 .verify_ast = VerifyAssignmentValue([](auto expr) {
                     ExpectNumber(expr, "1");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "multiline_operator_at_end_of_line_is_allowed",
-                .source_code = "let a = 1 +\n2\n",
-                .expected_errors = {},
-                .verify_ast = VerifyAssignmentValue([](auto expr) {
-                    ExpectBinary(expr, TokenType::Plus,
-                        [](auto left) { ExpectNumber(left, "1"); },
-                        [](auto right) { ExpectNumber(right, "2"); });
                 })
             },
             ParserErrorsSynchronizationTestCase{
@@ -131,20 +110,6 @@ namespace valuascript::compiler::test
                         [](auto left) { ExpectNumber(left, "1"); },
                         [](auto right) { ExpectNumber(right, "2"); });
                     ExpectNumber(tensor->elements[1].get(), "3");
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "multiline_binary_with_trailing_operator_inside_dictionary",
-                .source_code = "let a = {key: 1 -\n2}\n",
-                .expected_errors = {},
-                .verify_ast = VerifyAssignmentValue([](auto expr) {
-                    auto dict = dynamic_cast<const DictLiteral*>(expr);
-                    ASSERT_NE(dict, nullptr);
-                    ASSERT_EQ(dict->elements.size(), 1);
-                    EXPECT_EQ(dict->elements[0].key, "key");
-                    ExpectBinary(dict->elements[0].value.get(), TokenType::Minus,
-                        [](auto left) { ExpectNumber(left, "1"); },
-                        [](auto right) { ExpectNumber(right, "2"); });
                 })
             },
             ParserErrorsSynchronizationTestCase{

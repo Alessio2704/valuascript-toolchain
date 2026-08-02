@@ -17,8 +17,9 @@ namespace valuascript::compiler
 
     bool ExpressionParser::is_inside_expr_grouping() const
     {
-        return std::any_of(ctx.active_closers.begin(), ctx.active_closers.end(),
-                           [](TokenType t) { return t == TokenType::RightParen || t == TokenType::RightBracket; });
+        if (ctx.active_closers.empty()) return false;
+        TokenType top = ctx.active_closers.back();
+        return top == TokenType::RightParen || top == TokenType::RightBracket;
     }
 
     bool ExpressionParser::can_continue_expression(const Token& op_tok, const ParseRule& rule, Precedence min_prec,

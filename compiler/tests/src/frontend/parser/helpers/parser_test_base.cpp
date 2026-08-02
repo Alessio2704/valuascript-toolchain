@@ -163,9 +163,11 @@ namespace valuascript::compiler::test
                 UniversalVerifier final_verifier = inner_verifier;
                 bool needs_transform = true;
 
+                bool is_injectable_inner_verifier = is_injectable_payload_for_context(inner_verifier, ctx.input_types);
+
                 if (match && match->verifier.has_value())
                 {
-                    needs_transform = false;
+                    needs_transform = is_injectable_inner_verifier && (ctx.transform_verifier != nullptr);
                 }
                 else if (auto* m_v_ptr = std::get_if<std::shared_ptr<MultiInjectVerifier>>(&inner_verifier))
                 {
@@ -263,6 +265,8 @@ namespace valuascript::compiler::test
                     combined_accepted = std::move(filtered);
                 }
 
+                bool is_injectable_inner_verifier = is_injectable_payload_for_context(inner_verifier, ctx.input_types);
+
                 auto make_item = [&](const std::vector<SentinelKind>& excluded_for_gen,
                                      const std::vector<SentinelKind>& accepted_for_gen,
                                      size_t seed_offset) -> ProcessingItem
@@ -282,7 +286,10 @@ namespace valuascript::compiler::test
 
                     return ProcessingItem{
                         ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
-                        (match && match->verifier.has_value()) ? inner_verifier : ctx.transform_verifier_block(inner_verifier, pre, post),
+                        (match && match->verifier.has_value() && !is_injectable_inner_verifier)
+                            ? inner_verifier
+                            : (ctx.transform_verifier_block ? ctx.transform_verifier_block(inner_verifier, pre, post)
+                                                            : (ctx.transform_verifier ? ctx.transform_verifier(inner_verifier) : inner_verifier)),
                         item.path_name + " -> " + (next_rec_depth > item.recursion_depth
                                                        ? std::string(ctx.name) + "(Recurse)"
                                                        : std::string(ctx.name)),

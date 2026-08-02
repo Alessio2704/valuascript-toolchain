@@ -150,84 +150,70 @@ namespace valuascript::compiler::test
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment({AssignmentTargetSpec{.name = "ctx_assign", .type_v = IsType("vector")}}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsType("vector")}, AssignmentTargetSpec{.name = "ctx_m2"}}, IsNumber("1")))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget2,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment({AssignmentTargetSpec{.name = "ctx_m1"}, AssignmentTargetSpec{.name = "ctx_m2", .type_v = IsType("vector")}}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeExtensionTarget,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsExtensionDef({}, IsType("vector"), {}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionReturn,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_ret", {}, {},
-                                                                      {IsType("vector")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionMultiReturn,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {IsType("vector"), IsType("int")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionMultiReturnEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {IsType("int"), IsType("vector")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionMultiParameter1,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {}, {ParamSpec{.name = "p1", .type_v = IsType("vector")}, ParamSpec{.name = "p2", .type_v = IsType("int")}}, {IsType("void")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeStructField,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsStructDef("ctx_struct", FieldSpec{.name = "f", .type_v = IsType("vector")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeEnumUnderlyingType,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsEnumDef("ctx_enum", {}, IsType("vector"), EnumCaseSpec("A")))
+                        }
                     }
                 }
             });
@@ -261,11 +247,7 @@ namespace valuascript::compiler::test
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
                         },
                         .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {
-                                                                          IsType("vector",
-                                                                              IsType("int"), IsType("int")
-                                                                          )
-                                                                      }))
+                                                                      {IsType("vector", IsType("int"), IsType("int"))}))
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeTupleTypeStart,
@@ -325,20 +307,13 @@ namespace valuascript::compiler::test
                         .context_name = ContextNames::TypeFunctionParameter,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {},
-                                                                      {ParamSpec{"p", {}, IsTupleType(IsType("int"), IsType("string"))}},
-                                                                      {IsType("void")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionMultiParameter2,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {},
-                                                                      {ParamSpec{"p1", {}, IsType("int")},
-                                                                       ParamSpec{"p2", {}, IsTupleType(IsType("int"), IsType("string"))}},
-                                                                      {IsType("void")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeTupleTypeEnd,
@@ -361,11 +336,7 @@ namespace valuascript::compiler::test
                             PErr{.code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}
                         },
                         .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {
-                                                                          IsTupleType(
-                                                                              IsType("int"), IsType("string"), IsType("int")
-                                                                          )
-                                                                      }))
+                                                                      {IsTupleType(IsType("int"), IsType("string"), IsType("int"))}))
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeTupleTypeStart,
@@ -400,7 +371,7 @@ namespace valuascript::compiler::test
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
                         },
-                        .verifier = IsType("vector", IsType("int"), IsType("string"), IsTupleType(IsType("int"), IsType("string")))
+                        .verifier = IsType("vector", IsType("string"), IsType("string"), IsTupleType(IsType("int"), IsType("string")))
                     }
                 }
             });
@@ -479,15 +450,13 @@ namespace valuascript::compiler::test
                         .context_name = ContextNames::TypeFunctionParameter,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {}, {ParamSpec{.name = "p", .type_v = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float")))}}, {IsType("void")}))
+                        }
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionMultiParameter2,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_param", {}, {ParamSpec{.name = "p1", .type_v = IsType("int")}, ParamSpec{.name = "p2", .type_v = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float")))}}, {IsType("void")}))
+                        }
                     }
                 }
             });

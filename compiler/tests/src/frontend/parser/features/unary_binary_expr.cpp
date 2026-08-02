@@ -642,6 +642,12 @@ namespace valuascript::compiler::test
                 .verifier = IsUnary(TokenType::Minus, IsNumber("2"))
             });
 
+            reg({
+                .name = "MultilineBinary",
+                .code = "1 +\n2",
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
+            });
+
             return true;
         }();
     }
