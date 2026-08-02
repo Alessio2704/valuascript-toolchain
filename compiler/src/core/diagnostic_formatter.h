@@ -16,9 +16,9 @@ namespace valuascript::compiler {
         static void print_errors(const std::vector<ValuaScriptException> &errors,
                                  const SourceManager &source_manager);
 
-        static std::string format_error(const ValuaScriptException &err, const std::string &source_code);
+        static std::string format_error(const ValuaScriptException &err, std::string_view source_code);
 
     private:
-        static std::vector<std::string> extract_lines(const std::string &source, size_t line_start, size_t line_end);
+        static std::vector<std::string_view> extract_lines(std::string_view source, size_t line_start, size_t line_end);
     };
 }

@@ -1,6 +1,7 @@
 #include <string>
+#include <string_view>
 #include <vector>
-#include <sstream>
+#include <format>
 #include <iostream>
 #include "diagnostic_formatter.h"
 
@@ -12,41 +13,40 @@ namespace valuascript::compiler
         for (const auto& err : errors)
         {
             const auto& loc = err.get_span();
-            std::string source_code;
+            std::string_view source_code;
 
             if (auto source_opt = source_manager.get_source(loc.path()); source_opt.has_value())
             {
-                source_code = std::string(source_opt.value());
+                source_code = source_opt.value();
             }
 
             std::cout << format_error(err, source_code) << "\n\n";
         }
     }
 
-    std::string DiagnosticFormatter::format_error(const ValuaScriptException& err, const std::string& source_code)
+    std::string DiagnosticFormatter::format_error(const ValuaScriptException& err, std::string_view source_code)
     {
-        std::ostringstream output;
+        std::string output;
+        output.reserve(512);
+
         const auto& span = err.get_span();
 
-        output << RED << BOLD << "error[E" << err.get_error_number() << "]: "
-            << RESET << BOLD << err.what() << RESET << "\n";
-
-        output << BLUE << "  --> " << RESET
-            << span.path() << ":" << span.line_start << ":" << span.column_start << "\n";
+        std::format_to(std::back_inserter(output), "{}{}error[E{}]: {}{}{}\n",
+                       RED, BOLD, err.get_error_number(), RESET, BOLD, err.what());
+        std::format_to(std::back_inserter(output), "{}  --> {}{}:{}:{}\n",
+                       BLUE, RESET, span.path(), span.line_start, span.column_start);
 
         size_t start = span.line_start;
         size_t end = (span.line_end > 0) ? span.line_end : start;
         if (end < start) end = start;
 
-        std::vector<std::string> lines = extract_lines(source_code, start, end);
+        std::vector<std::string_view> lines = extract_lines(source_code, start, end);
 
         auto padding = std::to_string(end).length();
 
         auto print_margin = [&](size_t line_num)
         {
-            std::string num_str = std::to_string(line_num);
-            std::string pad(padding - num_str.length(), ' ');
-            return " " + pad + num_str + " | ";
+            return std::format(" {:>{}} | ", line_num, padding);
         };
 
         std::string empty_margin(padding + 4, ' ');
@@ -54,8 +54,9 @@ namespace valuascript::compiler
 
         if (start == end)
         {
-            std::string target_line = lines.empty() ? "<source line not available>" : lines[0];
-            output << BLUE << print_margin(start) << RESET << target_line << "\n";
+            std::string_view target_line = lines.empty() ? "<source line not available>" : lines[0];
+            std::format_to(std::back_inserter(output), "{}{}{}{}\n",
+                           BLUE, print_margin(start), RESET, target_line);
 
             size_t spaces = (span.column_start > 1) ? span.column_start - 1 : 0;
             std::string indent(spaces, ' ');
@@ -72,13 +73,15 @@ namespace valuascript::compiler
                 squiggles += std::string(squiggle_length - 1, '~');
             }
 
-            output << empty_margin << indent << RED << squiggles << RESET;
+            std::format_to(std::back_inserter(output), "{}{}{}{}{}",
+                           empty_margin, indent, RED, squiggles, RESET);
         }
         else
         {
             if (lines.empty())
             {
-                output << BLUE << print_margin(start) << RESET << "<source line not available>\n";
+                std::format_to(std::back_inserter(output), "{}{}{}<source line not available>\n",
+                               BLUE, print_margin(start), RESET);
             }
             else
             {
@@ -87,47 +90,65 @@ namespace valuascript::compiler
 
                 size_t spaces = (span.column_start > 1) ? span.column_start - 1 : 0;
 
-                output << BLUE << print_margin(start) << RED << "/ " << RESET << lines[0] << "\n";
+                std::format_to(std::back_inserter(output), "{}{}{}/ {}{}\n",
+                               BLUE, print_margin(start), RED, RESET, lines[0]);
 
                 if (truncated)
                 {
-                    output << BLUE << print_margin(start + 1) << RED << "| " << RESET << lines[1] << "\n";
-                    output << BLUE << print_margin(start + 2) << RED << "| " << RESET << lines[2] << "\n";
-                    output << pipe_margin << RED << "| " << BLUE << "...\n" << RESET;
-                    output << BLUE << print_margin(end - 1) << RED << "| " << RESET << lines[lines.size() - 2] << "\n";
-                    output << BLUE << print_margin(end) << RED << "| " << RESET << lines[lines.size() - 1] << "\n";
+                    std::format_to(std::back_inserter(output), "{}{}{}| {}{}\n",
+                                   BLUE, print_margin(start + 1), RED, RESET, lines[1]);
+                    std::format_to(std::back_inserter(output), "{}{}{}| {}{}\n",
+                                   BLUE, print_margin(start + 2), RED, RESET, lines[2]);
+                    std::format_to(std::back_inserter(output), "{}{}| {}{}...\n",
+                                   pipe_margin, RED, BLUE, RESET);
+                    std::format_to(std::back_inserter(output), "{}{}{}| {}{}\n",
+                                   BLUE, print_margin(end - 1), RED, RESET, lines[lines.size() - 2]);
+                    std::format_to(std::back_inserter(output), "{}{}{}| {}{}\n",
+                                   BLUE, print_margin(end), RED, RESET, lines[lines.size() - 1]);
                 }
                 else
                 {
                     for (size_t i = 1; i < lines.size(); ++i)
                     {
-                        output << BLUE << print_margin(start + i) << RED << "| " << RESET << lines[i] << "\n";
+                        std::format_to(std::back_inserter(output), "{}{}{}| {}{}\n",
+                                       BLUE, print_margin(start + i), RED, RESET, lines[i]);
                     }
                 }
 
-                output << pipe_margin << RED << "|___" << std::string(spaces, '_') << "^" << RESET;
+                std::format_to(std::back_inserter(output), "{}{}|___{}^{}",
+                               pipe_margin, RED, std::string(spaces, '_'), RESET);
             }
         }
 
-        return output.str();
+        return output;
     }
 
-    std::vector<std::string> DiagnosticFormatter::extract_lines(const std::string& source, size_t line_start,
-                                                                size_t line_end)
+    std::vector<std::string_view> DiagnosticFormatter::extract_lines(std::string_view source, size_t line_start,
+                                                                     size_t line_end)
     {
-        std::istringstream stream(source);
-        std::string line;
-        std::vector<std::string> lines;
-        size_t current = 1;
+        std::vector<std::string_view> lines;
+        if (source.empty() || line_start == 0) return lines;
 
-        while (std::getline(stream, line))
+        size_t current_line = 1;
+        size_t line_begin = 0;
+
+        for (size_t i = 0; i <= source.size(); ++i)
         {
-            if (current >= line_start && current <= line_end)
+            if (i == source.size() || source[i] == '\n')
             {
-                lines.push_back(line);
+                if (current_line >= line_start && current_line <= line_end)
+                {
+                    std::string_view line_view = source.substr(line_begin, i - line_begin);
+                    if (!line_view.empty() && line_view.back() == '\r')
+                    {
+                        line_view.remove_suffix(1);
+                    }
+                    lines.push_back(line_view);
+                }
+                if (current_line == line_end) break;
+                current_line++;
+                line_begin = i + 1;
             }
-            if (current == line_end) break;
-            current++;
         }
         return lines;
     }

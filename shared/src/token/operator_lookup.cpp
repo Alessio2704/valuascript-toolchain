@@ -28,24 +28,22 @@ namespace valuascript::shared
 
     std::vector<std::pair<TokenType, std::string>> get_all_binary_operators()
     {
-        auto& map = get_binary_operators_map();
         std::vector<std::pair<TokenType, std::string>> ops;
-        ops.reserve(map.size());
-        for (const auto& [text, type] : map)
+        ops.reserve(BINARY_OPERATORS.size());
+        for (const auto& op : BINARY_OPERATORS)
         {
-            ops.emplace_back(type, text);
+            ops.emplace_back(op.type, std::string(op.text));
         }
         return ops;
     }
 
     std::vector<std::pair<TokenType, std::string>> get_all_unary_operators()
     {
-        auto& map = get_unary_operators_map();
         std::vector<std::pair<TokenType, std::string>> ops;
-        ops.reserve(map.size());
-        for (const auto& [text, type] : map)
+        ops.reserve(UNARY_OPERATORS.size());
+        for (const auto& op : UNARY_OPERATORS)
         {
-            ops.emplace_back(type, text);
+            ops.emplace_back(op.type, std::string(op.text));
         }
         return ops;
     }

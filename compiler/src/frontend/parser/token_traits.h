@@ -1,12 +1,10 @@
 #pragma once
 #include "ast.h"
+#include "token/operator_lookup.h"
 
 namespace valuascript::compiler
 {
-    enum class Precedence
-    {
-        None = 0, Or = 1, And = 2, Comparison = 3, Term = 4, Factor = 5, Power = 6, Unary = 7, Postfix = 8
-    };
+    using valuascript::shared::Precedence;
 
     struct TokenTraits
     {
