@@ -220,8 +220,10 @@ namespace valuascript::compiler
             if (is_at_boundary()) cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
             else
             {
-                value = parser.parse_expression();
-                if (cursor.peek().type == TokenType::Assign)
+                value = ErrorRecovery::try_parse<ExprPtr>(
+                    ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline()
+                );
+                if (value && cursor.peek().type == TokenType::Assign)
                 {
                     SourceSpan error_span = value->span;
                     while (cursor.peek().type == TokenType::Assign)
@@ -295,8 +297,10 @@ namespace valuascript::compiler
             }
             else
             {
-                value = parser.parse_expression();
-                if (cursor.peek().type == TokenType::Assign)
+                value = ErrorRecovery::try_parse<ExprPtr>(
+                    ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline()
+                );
+                if (value && cursor.peek().type == TokenType::Assign)
                 {
                     SourceSpan error_span = value->span;
                     while (cursor.peek().type == TokenType::Assign)

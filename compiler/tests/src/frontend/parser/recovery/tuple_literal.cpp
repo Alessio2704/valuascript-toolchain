@@ -102,7 +102,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3},
                     PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                 },
-                .verifier = IsTuple()
+                .verifier = IsTuple(IsNull())
             });
 
             return true;

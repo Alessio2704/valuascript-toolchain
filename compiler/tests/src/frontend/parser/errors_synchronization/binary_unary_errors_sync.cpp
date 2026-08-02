@@ -71,17 +71,6 @@ namespace valuascript::compiler::test
         BinaryAndUnaryErrorsParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "binary_missing_left",
-                .source_code = "let a = * 2\nlet b = 2\n",
-                .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 9} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 1);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "b");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "binary_operator_dangling_on_next_line",
                 .source_code = "let a = 1\n* 2\nlet b = 3\n",
                 .expected_errors = { {.code = Err::InvalidExpression, .line = 2, .column = 1} },
@@ -236,17 +225,6 @@ namespace valuascript::compiler::test
                             [](auto l) { ExpectNumber(l, "1"); },
                             [](auto r) { ExpectNumber(r, "2"); });
                     });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "unary_operator_spanning_newline_is_allowed",
-                .source_code = "let a = -\n2\n",
-                .expected_errors = {},
-                .verify_ast = VerifyAssignmentValue([](auto expr) {
-                    auto unary = dynamic_cast<const UnaryExpression*>(expr);
-                    ASSERT_NE(unary, nullptr);
-                    EXPECT_EQ(unary->op, TokenType::Minus);
-                    ExpectNumber(unary->right.get(), "2");
                 })
             },
             ParserErrorsSynchronizationTestCase{

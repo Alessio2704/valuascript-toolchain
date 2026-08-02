@@ -533,7 +533,7 @@ namespace valuascript::compiler
                 cursor.previous(), E::SingleElementTuplesNotAllowed);
 
         std::vector<ExprPtr> elements;
-        if (first_expr) elements.push_back(std::move(first_expr));
+        elements.push_back(std::move(first_expr));
 
         auto remaining = parse_expression_list(TokenType::RightParen, E::TrailingCommaInTuple);
         elements.insert(elements.end(), std::make_move_iterator(remaining.begin()),
