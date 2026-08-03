@@ -26,7 +26,12 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "func f() -> void {}\n",
-            {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 8, .column_start = 3, .line_end = 8, .column_end = 9}},
+            {
+                PErr{
+                    .code = E::InvalidLeftSideExpressionInReassignment, .line_start = 8, .column_start = 3,
+                    .line_end = 8, .column_end = 9
+                }
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({AssignmentTargetSpec{.name = "ifthenelse"}}, IsNumber("1"))
@@ -62,23 +67,28 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "struct Point { x: float, y: float, z: float }\n",
-            {PErr{.code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6, .column_end = 6}},
+            {
+                PErr{
+                    .code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6,
+                    .column_end = 6
+                }
+            },
             ProgramSpec{
                 .execution_steps = {
                     IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
                 },
                 .functions = {
                     IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {
-                        IsReturn({{"mod2", {}}}, {IsNumber("1")}),
-                        IsReassignment(IsIdentifier("a"), IsNull()),
-                        IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1"))
-                    })
+                                      IsReturn({{"mod2", {}}}, {IsNumber("1")}),
+                                      IsReassignment(IsIdentifier("a"), IsNull()),
+                                      IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1"))
+                                  })
                 },
                 .structs = {
                     IsStructDef("Point",
-                        FieldSpec{.name = "x", .type_v = IsType("float")},
-                        FieldSpec{.name = "y", .type_v = IsType("float")},
-                        FieldSpec{.name = "z", .type_v = IsType("float")}
+                                FieldSpec{.name = "x", .type_v = IsType("float")},
+                                FieldSpec{.name = "y", .type_v = IsType("float")},
+                                FieldSpec{.name = "z", .type_v = IsType("float")}
                     )
                 }
             }
@@ -98,7 +108,12 @@ namespace valuascript::compiler::test
             "}\n"
             "\n"
             "let a: int = 1\n",
-            {PErr{.code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6, .column_end = 6}},
+            {
+                PErr{
+                    .code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6,
+                    .column_end = 6
+                }
+            },
             ProgramSpec{
                 .imports = {
                     IsImport("\"lib\"", {{"mod2", {}}})
@@ -108,12 +123,51 @@ namespace valuascript::compiler::test
                 },
                 .extensions = {
                     IsExtensionDef({}, IsType("ctx_target"), ProgramSpec{
-                        .execution_steps = {
-                            IsReassignment(IsIdentifier("a"), IsNumber("1")),
-                            IsReassignment(IsIdentifier("a"), IsNull()),
-                            IsExprStmt(IsCall(IsIdentifier("init"), {}))
-                        }
-                    })
+                                       .execution_steps = {
+                                           IsReassignment(IsIdentifier("a"), IsNumber("1")),
+                                           IsReassignment(IsIdentifier("a"), IsNull()),
+                                           IsExprStmt(IsCall(IsIdentifier("init"), {}))
+                                       }
+                                   })
+                }
+            }
+        );
+    }
+
+    TEST_F(ReassignmentRegressionTest, IncompleteReassignmentBeforeLetWithModifierInFunction)
+    {
+        ExpectParseErrorsWithRecovery(
+            "@mod2() import \"lib\"\n"
+            "\n"
+            "\n"
+            "func ctx_wrapper() -> void {\n"
+            "  self.field = 1\n"
+            "  a = \n"
+            "  @mod2() let a_m2 = 1\n"
+            "\n"
+            "}\n"
+            "\n"
+            "#value = 1\n",
+            {
+                PErr{
+                    .code = E::MissingValueAfterEquals, .line_start = 6, .column_start = 5, .line_end = 6,
+                    .column_end = 6
+                }
+            },
+            ProgramSpec{
+                .imports = {
+                    IsImport("\"lib\"", {{"mod2", {}}})
+                },
+                .directives = {
+                    IsDirective("value", IsNumber("1"))
+                },
+                .functions = {
+                    IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {
+                                      IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1")),
+                                      IsReassignment(IsIdentifier("a"), IsNull()),
+                                      IsAssignment({AssignmentTargetSpec{.modifiers = {{"mod2", {}}}, .name = "a_m2"}},
+                                                   IsNumber("1"))
+                                  })
                 }
             }
         );

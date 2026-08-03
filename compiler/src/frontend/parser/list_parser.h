@@ -123,7 +123,10 @@ namespace valuascript::compiler
                         }
                     }
 
-                    if ((TokenTraits::is_statement_start(tok, next) ||
+                    bool is_stmt = TokenTraits::is_statement_start(tok, next);
+                    if (tok.type == TokenType::At && !ctx_.is_at_any_declaration()) is_stmt = false;
+
+                    if ((is_stmt ||
                         TokenTraits::is_top_level_only_declaration(tok.type)) && !is_element_start_())
                     {
                         if (tok.line > ctx_.cursor.previous().line) break;

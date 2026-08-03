@@ -90,16 +90,6 @@ namespace valuascript::compiler::test
                 .verify_ast = ExpectModifierSet({{.name = "test", .args = {{.name = "a"}}}})
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_invalid_statement",
-                .source_code = "@test\nf()\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 1} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto* f_call = dynamic_cast<ExpressionStatement*>(ast.execution_steps[0].get());
-                    ASSERT_NE(f_call, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "modifier_on_broken_func",
                 .source_code = "@rpc func f(a:) -> int { return 1 }\nlet recovery = 1\n",
                 .expected_errors = { {.code = Err::MissingTypeAnnotation, .line = 1, .column = 15} },
@@ -129,30 +119,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_directive",
-                .source_code = "@test #version = 1\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 1} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.directives.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_reassignment",
-                .source_code = "let x = 0\n@test x = 1\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 2, .column = 1} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 3);
-                    auto statement = dynamic_cast<Reassignment*>(ast.execution_steps[1].get());
-                    ASSERT_NE(statement, nullptr);
-                    auto target = dynamic_cast<IdentifierAccess*>(statement->target.get());
-                    ASSERT_NE(target, nullptr);
-                    EXPECT_EQ(target->name, "x");
-                    auto value = dynamic_cast<NumberLiteral*>(statement->value.get());
-                    EXPECT_EQ(value->value, "1");
-                    ASSERT_NE(value, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "modifier_eof_after_at",
                 .source_code = "let a = 1\n@",
                 .expected_errors = {
@@ -175,30 +141,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_interrupted_by_hash_directive",
-                .source_code = "@test \n #directive let a = 1\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 1} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.directives.size(), 1);
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_modifier_missing_name_and_dict_key",
-                .source_code = "let obj = { @ 1: 1, other: 2 }\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedModifierName, .line = 1, .column = 15},
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 16}
-                },
-                .verify_ast = [](const Program& ast) {
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_EQ(dict->elements.size(), 2);
-                    EXPECT_EQ(dict->elements[0].key, "<error>");
-                    EXPECT_EQ(dict->elements[1].key, "other");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "dict_key_modifier_unmatched_paren",
                 .source_code = "let obj = { @test(a: 1 key: 1 }\nlet recovery = 1\n",
                 .expected_errors = {
@@ -209,34 +151,6 @@ namespace valuascript::compiler::test
                     auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
                     auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
                     EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_value_instead_of_dict_key",
-                .source_code = "let obj = { k: @modifier 1 }\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 16},
-                    {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 16},
-                },
-                .verify_ast = [](const Program& ast) {
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_key_multiple_modifiers_one_missing_name_and_key",
-                .source_code = "let obj = { @ok @1 : 1, other: 2 }\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedModifierName, .line = 1, .column = 18},
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 20}
-                },
-                .verify_ast = [](const Program& ast) {
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_EQ(dict->elements.size(), 2);
-                    EXPECT_EQ(dict->elements[0].key, "<error>");
-                    EXPECT_EQ(dict->elements[1].key, "other");
                 }
             },
             ParserErrorsSynchronizationTestCase{

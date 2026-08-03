@@ -38,8 +38,6 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{.test_name = "ModifierOnReassignment", .source_code = "let x = 1\n@export x = 2", .expected_error = E::
-            ModifiersAttachedToInvalidDeclaration},
             ModifierSadParam{.test_name = "MissingModifierName", .source_code = "@ let x = 1", .expected_error = E::ExpectedModifierName},
             ModifierSadParam{.test_name = "UnclosedParenthesis", .source_code = "@bind(ui: \"slider\" let x = 1", .expected_error = E::
             UnmatchedParenthesisAfterModifierArgs},

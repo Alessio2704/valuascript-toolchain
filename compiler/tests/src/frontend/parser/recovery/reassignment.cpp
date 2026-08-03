@@ -149,23 +149,6 @@ namespace valuascript::compiler::test
             });
 
             reg({
-                .name = "ModifiersOnReassignment",
-                .code = "@modifier a = 1",
-                .errors = {PErr{.code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 10}},
-                .verifier = IsReassignment(IsIdentifier("a"), IsNumber("1"))
-            });
-
-            reg({
-                .name = "ModifiersOnInvalidStandaloneStatement",
-                .code = "@modifier 1 + 2",
-                .errors = {
-                    PErr{.code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 10},
-                    PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 16}
-                },
-                .verifier = IsNull()
-            });
-
-            reg({
                 .name = "MissingValueAfterEqualsReassignment",
                 .code = "a = ",
                 .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}},

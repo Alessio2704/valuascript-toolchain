@@ -16,6 +16,16 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.peek();
 
+        if (cursor.check(TokenType::At))
+        {
+            auto mods = parser.parse_modifiers();
+            if (!mods.empty())
+            {
+                SourceSpan span = cursor.combine_spans(mods.front().span, mods.back().span);
+                cursor.report_error_no_panic(span, E::ModifiersAttachedToInvalidDeclaration);
+            }
+        }
+
         if (cursor.match(TokenType::LeftParen))
         {
             CloserTracker tracker(ctx, TokenType::RightParen);

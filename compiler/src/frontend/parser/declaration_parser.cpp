@@ -48,7 +48,7 @@ namespace valuascript::compiler
         {
             if (cursor.match(TokenType::Assign))
             {
-                bool is_pseudo_stmt = TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                bool is_pseudo_stmt = (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
                     (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
                         cursor.peek(), cursor.peek(1).type));
                 if (cursor.is_at_end() || is_pseudo_stmt || cursor.peek().line > cursor.previous().line || ctx.
@@ -63,8 +63,8 @@ namespace valuascript::compiler
                     );
                 }
             }
-            else if (cursor.peek().line == cursor.previous().line && TokenTraits::is_expression_start(
-                cursor.peek().type))
+            else if (cursor.peek().line == cursor.previous().line && (cursor.peek().type == TokenType::At || TokenTraits::is_expression_start(
+                cursor.peek().type)))
             {
                 value = ErrorRecovery::try_parse<ExprPtr>(
                     ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline());
@@ -421,7 +421,7 @@ namespace valuascript::compiler
                 TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
-        if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen) && !is_reserved_keyword(cursor.peek()))
+        if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen) && !is_reserved_keyword(cursor.peek()) && !cursor.check(TokenType::At))
         {
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, true);
             cursor.advance();

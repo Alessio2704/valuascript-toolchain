@@ -159,10 +159,6 @@ namespace valuascript::compiler::test
                 .code = "1 + @test 2",
                 .errors = {
                     PErr{
-                        .code = E::TopLevelDeclarationNotAllowedHere, .line_start = 1, .column_start = 5, .line_end = 1,
-                        .column_end = 10
-                    },
-                    PErr{
                         .code = E::ModifiersAttachedToInvalidDeclaration, .line_start = 1, .column_start = 5,
                         .line_end = 1, .column_end = 10
                     }

@@ -314,23 +314,21 @@ namespace valuascript::compiler
 
         if (is_stmt_start)
         {
-            if (tok.line > prev.line)
-            {
-                if (TokenTraits::is_dangling_operator(prev.type) || TokenTraits::is_grouping_opener(prev.type))
-                    cursor.
-                        report_error(prev, E::InvalidExpression);
-                else cursor.report_error(tok, E::InvalidExpression, force_location);
-            }
             const Token& start_tok = cursor.peek();
             if (tok.type == TokenType::At && !ctx.is_at_any_declaration())
             {
                 parser.parse_modifiers();
                 SourceSpan span = cursor.make_span(start_tok, cursor.previous());
-                cursor.report_error_no_panic(span, E::TopLevelDeclarationNotAllowedHere);
                 cursor.report_error_no_panic(span, E::ModifiersAttachedToInvalidDeclaration);
             }
             else
             {
+                if (tok.line > prev.line)
+                {
+                    if (TokenTraits::is_dangling_operator(prev.type) || TokenTraits::is_grouping_opener(prev.type))
+                        cursor.report_error(prev, E::InvalidExpression);
+                    else cursor.report_error(tok, E::InvalidExpression, force_location);
+                }
                 parser.consume_unexpected_statement_gracefully();
                 SourceSpan span = cursor.make_span(start_tok, cursor.previous());
                 cursor.report_error_no_panic(span, E::TopLevelDeclarationNotAllowedHere);
