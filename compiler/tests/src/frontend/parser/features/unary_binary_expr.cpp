@@ -648,6 +648,18 @@ namespace valuascript::compiler::test
                 .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))
             });
 
+            reg({
+                .name = "MultilineBinaryPrecedenceInversionInsideGrouping",
+                .code = "(1\n+ 2 * 3)",
+                .verifier = IsGrouping(
+                    IsBinary(
+                        TokenType::Plus,
+                        IsNumber("1"),
+                        IsBinary(TokenType::Star, IsNumber("2"), IsNumber("3"))
+                    )
+                )
+            });
+
             return true;
         }();
     }

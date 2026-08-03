@@ -294,6 +294,194 @@ namespace valuascript::compiler::test
                 }
             });
 
+            reg({
+                .name = "MultilineBinaryRejectedAfterGroupingCloses",
+                .code = "(1\n+ 2)\n+ 3\n",
+                .errors = {},
+                .verifier = IsBinary(
+                    TokenType::Plus,
+                    IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))),
+                    IsNumber("3")
+                ),
+                .skip_contexts = {
+                    ContextNames::ExprIfCond,
+                    ContextNames::ExprIfThen,
+                    ContextNames::ExprIfElse
+                },
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSingleAssignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprMultiAssignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprReassignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprReturnStmt,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDirectiveNoEq,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDirectiveEq,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidStandaloneStatement, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 4}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprEnumCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValue,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueFirst,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueComma,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    }
+                }
+            });
+
+            reg({
+                .name = "DanglingBinaryOperatorAtNewline",
+                .code = "1\n*",
+                .errors = std::vector<ParserExpectedError>{
+                    PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 2, .line_end = 2, .column_end = 3}
+                },
+                .verifier = IsBinary(TokenType::Star, IsNumber("1")),
+                .skip_contexts = {
+                    ContextNames::ExprIfCond,
+                    ContextNames::ExprIfThen,
+                    ContextNames::ExprIfElse
+                },
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSingleAssignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprMultiAssignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprReassignment,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprReturnStmt,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDirectiveNoEq,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDirectiveEq,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprEnumCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValue,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueFirst,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueComma,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    }
+                }
+            });
+
             return true;
         }();
     }
