@@ -1,5 +1,6 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/construct_registry.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -100,6 +101,20 @@ namespace valuascript::compiler::test
                     IsIdentifier("a"),
                     IsBinary(TokenType::Colon, IsNull(), IsNull())
                 )
+            });
+
+            reg({
+                .name = "DotAccessSucceedsAtNewlineFuncCallNoArgs",
+                .code = "obj.\ntest()",
+                .verifier = IsCall(IsDot(IsIdentifier("obj"), "test"), {})
+            });
+
+            reg({
+                .name = "DotAccessSucceedsAtNewlineFuncCallWithArgs",
+                .code = "obj.\ntest(arg: 1)",
+                .verifier = IsCall(IsDot(IsIdentifier("obj"), "test"), {
+                    {.label = "arg", .value_v = IsNumber("1")}
+                })
             });
 
             return true;

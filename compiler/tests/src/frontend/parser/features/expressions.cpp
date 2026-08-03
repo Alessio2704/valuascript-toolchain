@@ -10,10 +10,10 @@ namespace valuascript::compiler::test
 
     TEST_P(ExpressionRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidExpression(code, verifier);
+        ExpectValidExpression(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(

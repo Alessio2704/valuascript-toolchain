@@ -32,17 +32,22 @@ namespace valuascript::compiler
             else if (TokenTraits::is_grouping_closer(tok.type))
             {
                 depth--;
-                if (depth < 0) depth = 0;
+                if (depth < 0) break;
             }
             else if (depth == 0)
             {
                 if (tok.type == TokenType::Assign) return true;
-                if (tok.type == TokenType::RightBrace ||
+                if (tok.type == TokenType::Comma || tok.type == TokenType::Colon ||
+                    tok.type == TokenType::At || tok.type == TokenType::RightBrace ||
                     TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type)) break;
+
+                if (offset > 0 && tok.line > cursor.peek(offset - 1).line &&
+                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type)) break;
             }
 
             offset++;
         }
+
         return false;
     }
 

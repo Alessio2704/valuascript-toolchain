@@ -100,10 +100,10 @@ namespace valuascript::compiler::test
 
     TEST_P(EnumDefinitionRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidEnumDefinition(code, verifier);
+        ExpectValidEnumDefinition(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(

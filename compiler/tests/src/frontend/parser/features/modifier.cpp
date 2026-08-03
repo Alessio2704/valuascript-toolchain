@@ -98,10 +98,10 @@ namespace valuascript::compiler::test
 
     TEST_P(ModifierRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidModifiers(code, verifier);
+        ExpectValidModifiers(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(

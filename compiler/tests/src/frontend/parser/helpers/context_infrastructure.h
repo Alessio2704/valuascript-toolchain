@@ -223,7 +223,10 @@ namespace valuascript::compiler::test
             {
                 return true;
             }
-            return false;
+            else
+            {
+                return false;
+            }
         }, v);
     }
 

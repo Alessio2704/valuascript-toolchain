@@ -13,6 +13,7 @@ namespace valuascript::compiler::test
         std::string test_name;
         std::string code;
         Verifier verifier;
+        std::vector<std::string_view> skip_contexts = {};
     };
 
     template <typename Verifier>
@@ -21,6 +22,7 @@ namespace valuascript::compiler::test
         std::string name;
         std::string code;
         Verifier verifier;
+        std::vector<std::string_view> skip_contexts = {};
     };
 
     class ConstructRegistry
@@ -29,7 +31,7 @@ namespace valuascript::compiler::test
         template <typename Verifier>
         static void add(const ConstructCase<Verifier>& spec)
         {
-            add(spec.name, spec.code, spec.verifier);
+            add(spec.name, spec.code, spec.verifier, spec.skip_contexts);
         }
 
         static std::vector<RegistryEntry<ImportVerifier>>& imports();
@@ -55,19 +57,19 @@ namespace valuascript::compiler::test
         static std::vector<RegistryEntry<ModifierVerifier>>& modifiers();
         static std::vector<RegistryEntry<TypeVerifier>>& type_annotations();
 
-        static void add(const std::string& n, const std::string& c, const ImportVerifier& v) { imports().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v) { directives().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const FuncVerifier& v) { functions().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ExtVerifier& v) { extensions().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const StructVerifier& v) { structs().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const EnumVerifier& v) { enums().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const AliasVerifier& v) { aliases().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const AssignmentVerifier& v) { assignments().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ReassignmentVerifier& v) { reassignments().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ReturnVerifier& v) { returns().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ExprStmtVerifier& v) { expr_stmts().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ExprVerifier& v) { expressions().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const ModifierVerifier& v) { modifiers().push_back({.test_name = n, .code = c, .verifier = v}); }
-        static void add(const std::string& n, const std::string& c, const TypeVerifier& v) { type_annotations().push_back({.test_name = n, .code = c, .verifier = v}); }
+        static void add(const std::string& n, const std::string& c, const ImportVerifier& v, const std::vector<std::string_view>& s = {}) { imports().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const DirectiveVerifier& v, const std::vector<std::string_view>& s = {}) { directives().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const FuncVerifier& v, const std::vector<std::string_view>& s = {}) { functions().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ExtVerifier& v, const std::vector<std::string_view>& s = {}) { extensions().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const StructVerifier& v, const std::vector<std::string_view>& s = {}) { structs().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const EnumVerifier& v, const std::vector<std::string_view>& s = {}) { enums().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const AliasVerifier& v, const std::vector<std::string_view>& s = {}) { aliases().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const AssignmentVerifier& v, const std::vector<std::string_view>& s = {}) { assignments().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ReassignmentVerifier& v, const std::vector<std::string_view>& s = {}) { reassignments().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ReturnVerifier& v, const std::vector<std::string_view>& s = {}) { returns().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ExprStmtVerifier& v, const std::vector<std::string_view>& s = {}) { expr_stmts().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ExprVerifier& v, const std::vector<std::string_view>& s = {}) { expressions().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const ModifierVerifier& v, const std::vector<std::string_view>& s = {}) { modifiers().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
+        static void add(const std::string& n, const std::string& c, const TypeVerifier& v, const std::vector<std::string_view>& s = {}) { type_annotations().push_back({.test_name = n, .code = c, .verifier = v, .skip_contexts = s}); }
     };
 }

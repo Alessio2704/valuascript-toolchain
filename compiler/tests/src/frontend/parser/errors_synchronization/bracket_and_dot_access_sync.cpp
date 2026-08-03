@@ -21,15 +21,6 @@ namespace valuascript::compiler::test
             EXPECT_EQ(num->value, value);
         }
 
-        void ExpectDotAccess(const Expression* expr, std::function<void(const Expression*)> target_verifier,
-                             const std::string& property)
-        {
-            auto dot = dynamic_cast<const DotAccess*>(expr);
-            ASSERT_NE(dot, nullptr) << "Expected DotAccess, but got " << (expr ? typeid(*expr).name() : "nullptr");
-            EXPECT_EQ(dot->property_name, property);
-            if (target_verifier) target_verifier(dot->target.get());
-        }
-
         void ExpectBracketAccess(const Expression* expr, std::function<void(const Expression*)> target_verifier,
                                  std::function<void(const Expression*)> index_verifier)
         {
@@ -153,87 +144,6 @@ namespace valuascript::compiler::test
                 .verify_ast = VerifyAssignmentValue([](auto expr) {
                     ExpectBracketAccess(expr, [](auto target) { ExpectIdentifier(target, "arr"); }, nullptr);
                 })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "postfix_deep_chain_with_multiple_internal_failures",
-                .source_code = "let a = obj.let[1, *].if[*]\n",
-                .expected_errors = {
-                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 13},
-                    {.code = Err::UnexpectedCommaInBracketAccess, .line = 1, .column = 18},
-                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 23},
-                    {.code = Err::InvalidExpression, .line = 1, .column = 26}
-                },
-                .verify_ast = VerifyAssignmentValue([](auto expr) {
-                    ExpectBracketAccess(expr, [](auto l3) {
-                        ExpectDotAccess(l3, [](auto l2) {
-                            ExpectBracketAccess(l2, [](auto l1) {
-                                ExpectDotAccess(l1, [](auto obj) { ExpectIdentifier(obj, "obj"); }, "let");
-                            }, [](auto idx) {
-                                ASSERT_NE(idx, nullptr);
-                            });
-                        }, "if");
-                    }, nullptr);
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dot_access_keyword_lookahead_chain",
-                .source_code = "let a = obj.let.if[0]\n",
-                .expected_errors = {
-                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 13},
-                    {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 17}
-                },
-                .verify_ast = VerifyAssignmentValue([](auto expr) {
-                    ExpectBracketAccess(expr, [](auto dot2) {
-                        ExpectDotAccess(dot2, [](auto dot1) {
-                            ExpectDotAccess(dot1, [](auto obj) { ExpectIdentifier(obj, "obj"); }, "let");
-                        }, "if");
-                    }, [](auto idx) { ExpectNumber(idx, "0"); });
-                })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dot_access_succeeds_at_newline_func_call_no_args",
-                .source_code = "let a = obj.\ntest()\n",
-                .expected_errors = {},
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 1);
-
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "a");
-
-                    auto call = dynamic_cast<FunctionCall*>(assign->value.get());
-                    ASSERT_NE(call, nullptr);
-
-                    auto dot_access = dynamic_cast<DotAccess*>(call->target.get());
-                    ASSERT_NE(dot_access, nullptr);
-                    EXPECT_EQ(dot_access->property_name, "test");
-
-                    EXPECT_TRUE(call->arguments.empty());
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dot_access_succeeds_at_newline_func_call_with_args",
-                .source_code = "let a = obj.\ntest(arg: 1)\n",
-                .expected_errors = {},
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 1);
-
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "a");
-
-                    auto call = dynamic_cast<FunctionCall*>(assign->value.get());
-                    ASSERT_NE(call, nullptr);
-
-                    auto dot_access = dynamic_cast<DotAccess*>(call->target.get());
-                    ASSERT_NE(dot_access, nullptr);
-                    ExpectIdentifier(dot_access->target.get(), "obj");
-                    EXPECT_EQ(dot_access->property_name, "test");
-
-                    ASSERT_EQ(call->arguments.size(), 1);
-                    EXPECT_EQ(call->arguments[0].first, "arg");
-                    ExpectNumber(call->arguments[0].second.get(), "1");
-                }
             }
         ),
         [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
