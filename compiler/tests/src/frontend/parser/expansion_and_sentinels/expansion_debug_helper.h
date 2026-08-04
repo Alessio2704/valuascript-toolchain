@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "frontend/parser/helpers/context_names.h"
@@ -62,7 +63,7 @@ namespace valuascript::compiler::test
             out << "============================================================\n\n";
 
             size_t scenario_index = 0;
-            size_t base_seed = RecoverySentinel::make_seed(label);
+            size_t base_seed = DeterministicSampler::make_seed(label);
 
             expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
             {

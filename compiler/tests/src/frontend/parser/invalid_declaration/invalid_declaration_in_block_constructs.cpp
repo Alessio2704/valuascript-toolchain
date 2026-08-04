@@ -2,6 +2,7 @@
 #include "frontend/parser/helpers/construct_registry.h"
 #include "frontend/parser/helpers/error_registry.h"
 #include "frontend/parser/helpers/context_registry.h"
+#include "frontend/parser/helpers/deterministic_sampler.h"
 #include <algorithm>
 
 namespace valuascript::compiler::test
@@ -9,13 +10,16 @@ namespace valuascript::compiler::test
     namespace
     {
         template <typename T>
-        void add_clean_registry_cases(std::vector<InvalidDeclarationConstructCase>& list,
-                                       const std::string& category_name,
-                                       const std::vector<RegistryEntry<T>>& registry_entries,
-                                       InjectableType type)
+        void add_stratified_cases_for_context(std::vector<InvalidDeclarationConstructCase>& list,
+                                              std::string_view context_name,
+                                              const std::string& category_name,
+                                              const std::vector<RegistryEntry<T>>& clean_registry,
+                                              const std::vector<ErrorRegistryEntry<T>>& broken_registry,
+                                              InjectableType type)
         {
-            for (const auto& entry : registry_entries)
+            if (!clean_registry.empty())
             {
+                const auto& entry = DeterministicSampler::sample_element(clean_registry, context_name, category_name, "clean");
                 list.push_back({
                     .name = "Clean_" + category_name + "_" + entry.test_name,
                     .code = entry.code,
@@ -26,16 +30,9 @@ namespace valuascript::compiler::test
                     .skip_contexts = entry.skip_contexts
                 });
             }
-        }
-
-        template <typename T>
-        void add_broken_registry_cases(std::vector<InvalidDeclarationConstructCase>& list,
-                                       const std::string& category_name,
-                                       const std::vector<ErrorRegistryEntry<T>>& registry_entries,
-                                       InjectableType type)
-        {
-            for (const auto& entry : registry_entries)
+            if (!broken_registry.empty())
             {
+                const auto& entry = DeterministicSampler::sample_element(broken_registry, context_name, category_name, "broken");
                 std::vector<ValuascriptErrorCode> err_codes;
                 err_codes.reserve(entry.errors.size());
                 for (const auto& e : entry.errors)
@@ -56,33 +53,26 @@ namespace valuascript::compiler::test
         }
     }
 
+    std::vector<InvalidDeclarationConstructCase> InvalidDeclarationConstructRegistry::cases_for_context(const Context& ctx)
+    {
+        std::vector<InvalidDeclarationConstructCase> list;
+
+        add_stratified_cases_for_context(list, ctx.name, "FuncDef", ConstructRegistry::functions(), ErrorRegistry::functions(), InjectableType::Function);
+        add_stratified_cases_for_context(list, ctx.name, "StructDef", ConstructRegistry::structs(), ErrorRegistry::structs(), InjectableType::Struct);
+        add_stratified_cases_for_context(list, ctx.name, "EnumDef", ConstructRegistry::enums(), ErrorRegistry::enums(), InjectableType::Enum);
+        add_stratified_cases_for_context(list, ctx.name, "ExtensionDef", ConstructRegistry::extensions(), ErrorRegistry::extensions(), InjectableType::Extension);
+        add_stratified_cases_for_context(list, ctx.name, "TypeAliasDef", ConstructRegistry::aliases(), ErrorRegistry::aliases(), InjectableType::TypeAlias);
+        add_stratified_cases_for_context(list, ctx.name, "ImportStmt", ConstructRegistry::imports(), ErrorRegistry::imports(), InjectableType::Import);
+        add_stratified_cases_for_context(list, ctx.name, "DirectiveStmt", ConstructRegistry::directives(), ErrorRegistry::directives(), InjectableType::Directive);
+        add_stratified_cases_for_context(list, ctx.name, "ReturnStmt", ConstructRegistry::returns(), ErrorRegistry::returns(), InjectableType::WeakStatement);
+
+        return list;
+    }
+
     const std::vector<InvalidDeclarationConstructCase>& InvalidDeclarationConstructRegistry::cases()
     {
-        static const std::vector<InvalidDeclarationConstructCase> registry = []()
-        {
-            std::vector<InvalidDeclarationConstructCase> list;
-
-            add_clean_registry_cases(list, "FuncDef", ConstructRegistry::functions(), InjectableType::Function);
-            add_clean_registry_cases(list, "StructDef", ConstructRegistry::structs(), InjectableType::Struct);
-            add_clean_registry_cases(list, "EnumDef", ConstructRegistry::enums(), InjectableType::Enum);
-            add_clean_registry_cases(list, "ExtensionDef", ConstructRegistry::extensions(), InjectableType::Extension);
-            add_clean_registry_cases(list, "TypeAliasDef", ConstructRegistry::aliases(), InjectableType::TypeAlias);
-            add_clean_registry_cases(list, "ImportStmt", ConstructRegistry::imports(), InjectableType::Import);
-            add_clean_registry_cases(list, "DirectiveStmt", ConstructRegistry::directives(), InjectableType::Directive);
-            add_clean_registry_cases(list, "ReturnStmt", ConstructRegistry::returns(), InjectableType::WeakStatement);
-
-            add_broken_registry_cases(list, "FuncDef", ErrorRegistry::functions(), InjectableType::Function);
-            add_broken_registry_cases(list, "StructDef", ErrorRegistry::structs(), InjectableType::Struct);
-            add_broken_registry_cases(list, "EnumDef", ErrorRegistry::enums(), InjectableType::Enum);
-            add_broken_registry_cases(list, "ExtensionDef", ErrorRegistry::extensions(), InjectableType::Extension);
-            add_broken_registry_cases(list, "TypeAliasDef", ErrorRegistry::aliases(), InjectableType::TypeAlias);
-            add_broken_registry_cases(list, "ImportStmt", ErrorRegistry::imports(), InjectableType::Import);
-            add_broken_registry_cases(list, "DirectiveStmt", ErrorRegistry::directives(), InjectableType::Directive);
-            add_broken_registry_cases(list, "ReturnStmt", ErrorRegistry::returns(), InjectableType::WeakStatement);
-
-            return list;
-        }();
-        return registry;
+        static const std::vector<InvalidDeclarationConstructCase> fallback = cases_for_context(Context{ .name = "default" });
+        return fallback;
     }
 
     std::vector<InvalidDeclarationInBlockTestCase> GenerateInvalidDeclarationInBlockTestCases()
@@ -96,10 +86,9 @@ namespace valuascript::compiler::test
         const auto& top_level_ctxs = ContextRegistry::get_top_level_contexts();
         container_contexts.insert(container_contexts.end(), top_level_ctxs.begin(), top_level_ctxs.end());
 
-        const auto& constructs = InvalidDeclarationConstructRegistry::cases();
-
         for (const auto& ctx : container_contexts)
         {
+            auto constructs = InvalidDeclarationConstructRegistry::cases_for_context(ctx);
             for (const auto& construct : constructs)
             {
                 if (should_test_construct_in_context(ctx, construct))

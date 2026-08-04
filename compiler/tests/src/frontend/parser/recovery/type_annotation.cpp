@@ -140,9 +140,11 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
@@ -174,28 +176,28 @@ namespace valuascript::compiler::test
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionReturn,
+                        .context_name = ContextNames::TypeFunctionReturnSingle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturnEnd,
+                        .context_name = ContextNames::TypeFunctionReturnEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiParameter1,
+                        .context_name = ContextNames::TypeFunctionParamStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::EmptyGenericTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
@@ -228,9 +230,15 @@ namespace valuascript::compiler::test
                 .skip_contexts = {
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
+                    ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle,
+                    ContextNames::TypeFunctionReturnStart,
+                    ContextNames::TypeFunctionReturnMiddle,
+                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
@@ -242,12 +250,12 @@ namespace valuascript::compiler::test
                             {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsType("vector", IsType("int"), IsType("ctx_m2"))}}, IsNumber("1")))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnSingle,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                            PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
                         },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {IsType("vector", IsType("int"), IsType("int"))}))
+                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_ret", {}, {},
+                                                                      {IsType("vector", IsType("int"))}))
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeTupleTypeStart,
@@ -298,19 +306,27 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle,
+                    ContextNames::TypeFunctionParamStart,
+                    ContextNames::TypeFunctionParamMiddle,
+                    ContextNames::TypeFunctionParamEnd,
+                    ContextNames::TypeFunctionReturnStart,
+                    ContextNames::TypeFunctionReturnMiddle,
+                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParameter,
+                        .context_name = ContextNames::TypeFunctionParamSingle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiParameter2,
+                        .context_name = ContextNames::TypeFunctionParamMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}
                         }
@@ -331,7 +347,7 @@ namespace valuascript::compiler::test
                             {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsTupleType(IsType("int"), IsType("string"), IsType("ctx_m2"))}}, IsNumber("1")))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}
                         },
@@ -388,9 +404,14 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle,
+                    ContextNames::TypeFunctionReturnStart,
+                    ContextNames::TypeFunctionReturnMiddle,
+                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
@@ -403,7 +424,7 @@ namespace valuascript::compiler::test
                             {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsType("vector", IsTupleType(IsType("int"), IsType("string")), IsType("ctx_m2"))}}, IsNumber("1")))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20},
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 26}
@@ -425,9 +446,17 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle,
+                    ContextNames::TypeFunctionParamStart,
+                    ContextNames::TypeFunctionParamMiddle,
+                    ContextNames::TypeFunctionParamEnd,
+                    ContextNames::TypeFunctionReturnStart,
+                    ContextNames::TypeFunctionReturnMiddle,
+                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
@@ -439,7 +468,7 @@ namespace valuascript::compiler::test
                             {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float")), IsType("ctx_m2"))}}, IsNumber("1")))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 26, .line_end = 1, .column_end = 27}
                         },
@@ -447,13 +476,13 @@ namespace valuascript::compiler::test
                                                                       {IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float")), IsType("int"))}))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParameter,
+                        .context_name = ContextNames::TypeFunctionParamSingle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
                         }
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiParameter2,
+                        .context_name = ContextNames::TypeFunctionParamMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
                         }
@@ -472,9 +501,11 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle
                 }
             });
 
@@ -489,9 +520,14 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeStart,
                     ContextNames::TypeTupleTypeMiddle,
                     ContextNames::TypeTupleTypeEnd,
+                    ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd
+                    ContextNames::TypeGenericTypeEnd,
+                    ContextNames::TypeGenericTypeSingle,
+                    ContextNames::TypeFunctionReturnStart,
+                    ContextNames::TypeFunctionReturnMiddle,
+                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
@@ -503,7 +539,7 @@ namespace valuascript::compiler::test
                             {AssignmentTargetSpec{.name = "ctx_m1", .type_v = IsType("vector", IsType("map", IsType("int"), IsType("string")), IsType("ctx_m2"))}}, IsNumber("1")))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionMultiReturn,
+                        .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 29}
                         },

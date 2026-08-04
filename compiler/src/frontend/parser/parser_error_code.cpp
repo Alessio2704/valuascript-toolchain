@@ -22,20 +22,20 @@ namespace valuascript::compiler
         case ParserErrorCode::UnmatchedParenthesisAfterModifierArgs: return "Expected ')' after modifier arguments.";
         case ParserErrorCode::ExpectedStructToken: return "Expected 'struct'.";
         case ParserErrorCode::ExpectedStructName: return "Expected struct name.";
-        case ParserErrorCode::ExpectedBraceInStructDefinition: return "Expected '{{' before struct body.";
+        case ParserErrorCode::ExpectedBraceInStructDefinition: return "Expected '{' before struct body.";
         case ParserErrorCode::ExpectedStructFieldName: return "Expected field name.";
         case ParserErrorCode::ExpectedColonAfterStructFieldName: return "Expected ':'.";
         case ParserErrorCode::ExpectedCommaSeparatorInStruct: return
                 "Syntax Error: Missing comma ',' between struct fields.";
-        case ParserErrorCode::ExpectedRightBraceAfterStructBody: return "Expected '}}' after struct body.";
+        case ParserErrorCode::ExpectedRightBraceAfterStructBody: return "Expected '}' after struct body.";
         case ParserErrorCode::ExpectedEnumToken: return "Expected 'enum' keyword.";
         case ParserErrorCode::ExpectedEnumName: return "Expected enum name.";
         case ParserErrorCode::ExpectedColonAfterEnumName: return "Expected ':' and underlying type after enum name.";
-        case ParserErrorCode::ExpectedLeftBraceBeforeEnumBody: return "Expected '{{' before enum body.";
+        case ParserErrorCode::ExpectedLeftBraceBeforeEnumBody: return "Expected '{' before enum body.";
         case ParserErrorCode::ExpectedEnumCaseName: return "Expected enum case identifier.";
         case ParserErrorCode::ExpectedCommaSeparatorInEnum: return
                 "Syntax Error: Missing comma ',' between enum cases.";
-        case ParserErrorCode::ExpectedRightBraceAfterEnumBody: return "Expected '}}' after enum body.";
+        case ParserErrorCode::ExpectedRightBraceAfterEnumBody: return "Expected '}' after enum body.";
         case ParserErrorCode::ExpectedFuncToken: return "Expected 'func'.";
         case ParserErrorCode::MissingFunctionName: return "Syntax Error: Expected function name.";
         case ParserErrorCode::ExpectedLeftParenAfterFunctionName: return "Expected '(' after function name.";
@@ -53,8 +53,8 @@ namespace valuascript::compiler
                 "Syntax Error: Expected at least one return type after '->'.";
         case ParserErrorCode::ExpectedCommaSeparatorInReturnTypeList: return
                 "Syntax Error: Missing comma ',' between return types.";
-        case ParserErrorCode::ExpectedLeftBraceBeforeFunctionBody: return "Expected '{{' before function body.";
-        case ParserErrorCode::ExpectedRightBraceAfterFunctionBody: return "Expected '}}' after function body.";
+        case ParserErrorCode::ExpectedLeftBraceBeforeFunctionBody: return "Expected '{' before function body.";
+        case ParserErrorCode::ExpectedRightBraceAfterFunctionBody: return "Expected '}' after function body.";
         case ParserErrorCode::ExpectedCommaSeparatorInTupleType: return
                 "Syntax Error: Missing comma ',' between tuple type elements.";
         case ParserErrorCode::UnmatchedParenthesisInTuple: return "Expected ')' after tuple type elements.";
@@ -110,15 +110,15 @@ namespace valuascript::compiler
         case ParserErrorCode::ExpectedColonAfterDictionaryKey: return "Expected ':' after dictionary key.";
         case ParserErrorCode::ExpectedCommaSeparatorInDictionaryLiteral: return
                 "Syntax Error: Missing comma ',' between dictionary fields.";
-        case ParserErrorCode::UnmatchedBraceInDictionaryLiteral: return "Expected '}}' after dictionary literal.";
+        case ParserErrorCode::UnmatchedBraceInDictionaryLiteral: return "Expected '}' after dictionary literal.";
         case ParserErrorCode::MissingThenToken: return "Expected 'then'.";
         case ParserErrorCode::MissingElseToken: return "Expected 'else'.";
         case ParserErrorCode::ExpectedLeftParenAfterSwitch: return "Expected '(' after 'switch'.";
         case ParserErrorCode::ExpectedRightParenAfterSwitchTarget: return "Expected ')' after switch target.";
-        case ParserErrorCode::ExpectedLeftBraceBeforeSwitchBody: return "Expected '{{' before switch body.";
+        case ParserErrorCode::ExpectedLeftBraceBeforeSwitchBody: return "Expected '{' before switch body.";
         case ParserErrorCode::ExpectedRightArrowAfterSwitchCaseIdentifier: return "Expected '->' before case result.";
         case ParserErrorCode::CaseOrDefaultMissingInSwitchAfterResult: return
-                "Syntax Error: Expected 'case', 'default', or '}}' after case result.";
+                "Syntax Error: Expected 'case', 'default', or '}' after case result.";
         case ParserErrorCode::ExpectedEnumCaseNameAfterCase: return "Expected enum case identifier after 'case'.";
         case ParserErrorCode::ExpectedCommaBetweenCaseIdentifiers: return
                 "Syntax Error: Missing comma ',' between case identifiers.";
@@ -126,7 +126,7 @@ namespace valuascript::compiler
                 "Syntax Error: A switch expression can only have one 'default' case.";
         case ParserErrorCode::ExpectedCaseOrDefaultInsideSwitchBody: return
                 "Syntax Error: Expected 'case' or 'default' inside switch body.";
-        case ParserErrorCode::ExpectedRightBraceAfterSwitchBody: return "Expected '}}' after switch body.";
+        case ParserErrorCode::ExpectedRightBraceAfterSwitchBody: return "Expected '}' after switch body.";
         case ParserErrorCode::TrailingCommaInList: return "Syntax Error: Trailing comma in list.";
 
         case ParserErrorCode::TrailingComma: return "Syntax Error: Trailing comma.";
@@ -138,8 +138,8 @@ namespace valuascript::compiler
         case ParserErrorCode::ExpectedTypeAliasName: return "Expected type alias name.";
         case ParserErrorCode::ExpectedAssignAfterTypeAliasName: return "Expected '=' after type alias name.";
         case ParserErrorCode::ExpectedExtensionToken: return "Expected 'extension' keyword.";
-        case ParserErrorCode::ExpectedLeftBraceBeforeExtensionBody: return "Expected '{{' before extension body.";
-        case ParserErrorCode::ExpectedRightBraceAfterExtensionBody: return "Expected '}}' after extension body.";
+        case ParserErrorCode::ExpectedLeftBraceBeforeExtensionBody: return "Expected '{' before extension body.";
+        case ParserErrorCode::ExpectedRightBraceAfterExtensionBody: return "Expected '}' after extension body.";
         }
         return "Unknown Parser Error";
     }

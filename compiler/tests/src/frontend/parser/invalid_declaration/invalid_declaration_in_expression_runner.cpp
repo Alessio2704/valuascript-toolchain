@@ -1,24 +1,23 @@
 #include <gtest/gtest.h>
 #include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "invalid_declaration_in_block_constructs.h"
+#include "invalid_declaration_in_expression_constructs.h"
 
 namespace valuascript::compiler::test
 {
-    class InvalidDeclarationInBlockTest : public ParserTestBase,
-                                          public testing::WithParamInterface<InvalidDeclarationInBlockTestCase>
+    class InvalidDeclarationInExpressionTest : public ParserTestBase,
+                                                public testing::WithParamInterface<InvalidDeclarationInExpressionTestCase>
     {
     };
 
-    TEST_P(InvalidDeclarationInBlockTest, VerifyErrorAndAstEquivalence)
+    TEST_P(InvalidDeclarationInExpressionTest, VerifyErrorAndAstEquivalence)
     {
         const auto& test_case = GetParam();
-
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
         size_t base_seed = DeterministicSampler::make_seed(test_info ? test_info->name() : "fallback");
 
-        auto prog = build_invalid_declaration_program(test_case.context, test_case.construct_case, base_seed);
-        SCOPED_TRACE("Testing Invalid Declaration in Block: " + test_case.test_name + "\n--- Full Source Code Listing ---\n" + format_source_with_lines(prog.full_code));
+        auto prog = build_invalid_declaration_in_expression_program(test_case.context, test_case.construct_case, base_seed);
+        SCOPED_TRACE("Testing Invalid Declaration in Expression: " + test_case.test_name + "\n--- Full Source Code Listing ---\n" + format_source_with_lines(prog.full_code));
 
         CompilerContext context;
         context.settings.fail_fast = false;
@@ -26,7 +25,7 @@ namespace valuascript::compiler::test
 
         const auto& diagnostics = context.diagnostics.get_errors();
 
-        SourceSpan expected_span = compute_expected_span(prog.full_code, test_case.construct_case.code, test_case.context.prefix.length());
+        SourceSpan expected_span = compute_expected_span(prog.full_code, test_case.construct_case.code, prog.prefix_for_shifting.length());
 
         const ValuaScriptException* target_diag = nullptr;
         for (const auto& err : diagnostics)
@@ -49,6 +48,18 @@ namespace valuascript::compiler::test
             << " but found " << span.line_start
             << " in context " << test_case.context.name
             << " for source:\n" << format_source_with_lines(prog.full_code);
+
+        std::string expected_construct = (test_case.construct_case.name.find("Reassignment") != std::string::npos)
+                                             ? "reassignment"
+                                             : "declaration";
+        std::string expected_context = get_expected_disallowed_context(test_case.context.name);
+        std::string error_msg = target_diag->what();
+
+        EXPECT_TRUE(error_msg.find("declaration") != std::string::npos ||
+                    error_msg.find("reassignment") != std::string::npos)
+            << "Expected error message to contain 'declaration' or 'reassignment', but got: " << error_msg;
+        EXPECT_TRUE(error_msg.find("in list") != std::string::npos || error_msg.find("in expression") != std::string::npos)
+            << "Expected error message to contain 'in list' or 'in expression', but got: " << error_msg;
 
         if (test_case.construct_case.is_broken)
         {
@@ -79,18 +90,19 @@ namespace valuascript::compiler::test
                 EXPECT_FALSE(found_suppressed)
                     << "Internal error code " << std::visit(
                         [](auto&& c) { return std::to_string(static_cast<int>(c)); }, suppressed_code)
-                    << " should have been suppressed for invalid declaration in block context:\n"
+                    << " should have been suppressed for invalid declaration in expression context:\n"
                     << format_source_with_lines(prog.full_code);
             }
         }
 
+        ASSERT_NE(program, nullptr);
         ExpectProgram(program.get(), prog.full_spec);
     }
 
     INSTANTIATE_TEST_SUITE_P(
-        InvalidDeclarationInBlock,
-        InvalidDeclarationInBlockTest,
-        testing::ValuesIn(GenerateInvalidDeclarationInBlockTestCases()),
+        InvalidDeclarationInExpression,
+        InvalidDeclarationInExpressionTest,
+        testing::ValuesIn(GenerateInvalidDeclarationInExpressionTestCases()),
         TestNameGenerator{}
     );
 }

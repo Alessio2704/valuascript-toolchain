@@ -226,7 +226,9 @@ namespace valuascript::compiler
     void Parser::consume_unexpected_statement_gracefully()
     {
         bool prev_suppress = ctx.cursor.get_suppress_errors();
+        bool prev_consuming = ctx.is_consuming_unexpected;
         ctx.cursor.set_suppress_errors(true);
+        ctx.is_consuming_unexpected = true;
         Program dummy;
         try
         {
@@ -237,6 +239,7 @@ namespace valuascript::compiler
         {
         }
         ctx.cursor.set_suppress_errors(prev_suppress);
+        ctx.is_consuming_unexpected = prev_consuming;
     }
 
     ExprPtr Parser::parse_expression(Precedence min_precedence)

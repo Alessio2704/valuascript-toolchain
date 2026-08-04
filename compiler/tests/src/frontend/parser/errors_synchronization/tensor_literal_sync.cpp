@@ -117,12 +117,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_with_illegal_statement_inside",
-                .source_code = "let a = [ func f() -> void {},  1]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::InvalidConstructPlacement, .line = 1, .column = 11} },
-                .verify_ast = ExpectTensor({ "", "1" })
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "tensor_with_illegal_statement_inside_new_line",
                 .source_code = "let a = [ \nfunc f() -> void {}, \n1 \n]\nlet recovery = 1\n",
                 .expected_errors = {

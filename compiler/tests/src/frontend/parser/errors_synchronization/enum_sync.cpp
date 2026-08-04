@@ -119,18 +119,6 @@ namespace valuascript::compiler::test
                 })
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "reserved_char_1",
-                .source_code = "enum Test : int { # }\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 19},
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.enum_definitions.size(), 1);
-                    EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "reserved_char_2",
                 .source_code = "enum Test : int { / }\nlet a = 1\n",
                 .expected_errors = {

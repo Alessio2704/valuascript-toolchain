@@ -66,7 +66,7 @@ namespace valuascript::compiler::test
             },
             {
                 ContextOverride{.context_name = ContextNames::TypeMultiAssignmentTarget1},
-                ContextOverride{.context_name = ContextNames::TypeFunctionMultiReturn},
+                ContextOverride{.context_name = ContextNames::TypeFunctionReturnStart},
                 ContextOverride{.context_name = ContextNames::TypeTupleTypeStart},
                 ContextOverride{.context_name = ContextNames::TypeTupleTypeMiddle},
                 ContextOverride{.context_name = ContextNames::TypeGenericTypeStart},
@@ -88,11 +88,11 @@ namespace valuascript::compiler::test
                 ContextNames::TypeGenericTypeEnd
             },
             {
-                ContextOverride{.context_name = ContextNames::TypeFunctionParameter},
-                ContextOverride{.context_name = ContextNames::TypeFunctionMultiParameter2},
+                ContextOverride{.context_name = ContextNames::TypeFunctionParamSingle},
+                ContextOverride{.context_name = ContextNames::TypeFunctionParamMiddle},
                 ContextOverride{.context_name = ContextNames::TypeTupleTypeEnd},
                 ContextOverride{.context_name = ContextNames::TypeMultiAssignmentTarget1},
-                ContextOverride{.context_name = ContextNames::TypeFunctionMultiReturn},
+                ContextOverride{.context_name = ContextNames::TypeFunctionReturnStart},
                 ContextOverride{.context_name = ContextNames::TypeTupleTypeStart},
                 ContextOverride{.context_name = ContextNames::TypeTupleTypeMiddle},
                 ContextOverride{.context_name = ContextNames::TypeGenericTypeStart},
@@ -118,10 +118,14 @@ namespace valuascript::compiler::test
                 ContextOverride{.context_name = ContextNames::ExprDirectiveNoEq},
                 ContextOverride{.context_name = ContextNames::ExprDirectiveEq},
                 ContextOverride{.context_name = ContextNames::ExprEnumCase},
-                ContextOverride{.context_name = ContextNames::ExprDictValue},
-                ContextOverride{.context_name = ContextNames::ExprDictValueFirst},
-                ContextOverride{.context_name = ContextNames::ExprDictValueComma},
-                ContextOverride{.context_name = ContextNames::ExprSwitchCase}
+                ContextOverride{.context_name = ContextNames::ExprDictValueStart},
+                ContextOverride{.context_name = ContextNames::ExprDictValueMiddle},
+                ContextOverride{.context_name = ContextNames::ExprDictValueEnd},
+                ContextOverride{.context_name = ContextNames::ExprDictValueSingle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseStart},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseMiddle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseEnd},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseSingle}
             }
         );
 
@@ -142,10 +146,14 @@ namespace valuascript::compiler::test
                 ContextOverride{.context_name = ContextNames::ExprDirectiveNoEq},
                 ContextOverride{.context_name = ContextNames::ExprDirectiveEq},
                 ContextOverride{.context_name = ContextNames::ExprEnumCase},
-                ContextOverride{.context_name = ContextNames::ExprDictValue},
-                ContextOverride{.context_name = ContextNames::ExprDictValueFirst},
-                ContextOverride{.context_name = ContextNames::ExprDictValueComma},
-                ContextOverride{.context_name = ContextNames::ExprSwitchCase}
+                ContextOverride{.context_name = ContextNames::ExprDictValueStart},
+                ContextOverride{.context_name = ContextNames::ExprDictValueMiddle},
+                ContextOverride{.context_name = ContextNames::ExprDictValueEnd},
+                ContextOverride{.context_name = ContextNames::ExprDictValueSingle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseStart},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseMiddle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseEnd},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseSingle}
             }
         );
 
@@ -160,10 +168,14 @@ namespace valuascript::compiler::test
             },
             {
                 ContextOverride{.context_name = ContextNames::ExprEnumCase},
-                ContextOverride{.context_name = ContextNames::ExprDictValue},
-                ContextOverride{.context_name = ContextNames::ExprDictValueFirst},
-                ContextOverride{.context_name = ContextNames::ExprDictValueComma},
-                ContextOverride{.context_name = ContextNames::ExprSwitchCase}
+                ContextOverride{.context_name = ContextNames::ExprDictValueStart},
+                ContextOverride{.context_name = ContextNames::ExprDictValueMiddle},
+                ContextOverride{.context_name = ContextNames::ExprDictValueEnd},
+                ContextOverride{.context_name = ContextNames::ExprDictValueSingle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseStart},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseMiddle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseEnd},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseSingle}
             }
         );
     }

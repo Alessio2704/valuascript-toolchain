@@ -123,19 +123,28 @@ namespace valuascript::compiler
                         }
                     }
 
-                    bool is_stmt = TokenTraits::is_statement_start(tok, next);
+                    bool is_reassign = false;
+                    if constexpr (std::is_same_v<ElementType, ExprPtr>)
+                    {
+                        is_reassign = ctx_.looks_like_reassignment();
+                    }
+                    bool is_stmt = TokenTraits::is_statement_start(tok, next) ||
+                                   tok.type == TokenType::Return ||
+                                   is_reassign;
                     if (tok.type == TokenType::At && !ctx_.is_at_any_declaration()) is_stmt = false;
 
-                    if ((is_stmt ||
-                        TokenTraits::is_top_level_only_declaration(tok.type)) && !is_element_start_())
+                    if (is_stmt && (!is_element_start_() || is_reassign))
                     {
                         if (tok.line > ctx_.cursor.previous().line) break;
                         else
                         {
                             const Token& start_tok = ctx_.cursor.peek();
+                            is_reassign = ctx_.looks_like_reassignment();
                             if (ctx_.on_unexpected_statement) ctx_.on_unexpected_statement();
                             ctx_.cursor.report_error_no_panic(ctx_.cursor.make_span(start_tok, ctx_.cursor.previous()),
-                                                             ParserErrorCode::InvalidConstructPlacement, "declaration", "in list");
+                                                             ParserErrorCode::InvalidConstructPlacement,
+                                                             is_reassign ? "reassignment" : "declaration",
+                                                             "in list");
                             throw ParseSyncException();
                         }
                     }

@@ -266,7 +266,10 @@ namespace valuascript::compiler
 
     StmtPtr StatementParser::parse_expression_statement()
     {
+        bool prev_expr_stmt = ctx.is_parsing_expression_statement;
+        ctx.is_parsing_expression_statement = true;
         auto expr = parser.parse_expression();
+        ctx.is_parsing_expression_statement = prev_expr_stmt;
         const SourceSpan start_span = expr->span;
 
         if (cursor.match(TokenType::Comma)) cursor.report_error(cursor.previous(), E::MultiReassignmentNotSupported);
@@ -282,10 +285,11 @@ namespace valuascript::compiler
             }
 
             ExprPtr value = nullptr;
-            bool is_pseudo_stmt = ctx.is_at_any_declaration() || (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
-                (cursor.peek().type == TokenType::Return && ctx.is_active_closer(TokenType::RightBrace)) ||
-                (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
-                    cursor.peek(), cursor.peek(1).type)) ||
+            TokenType peek_target = ctx.peek_past_modifiers();
+            bool is_pseudo_stmt = ctx.is_at_any_declaration() ||
+                (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
+                peek_target == TokenType::Return ||
+                (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)) ||
                 ctx.is_active_closer(cursor.peek().type);
 
             if (cursor.is_at_end() || is_pseudo_stmt)
@@ -295,11 +299,15 @@ namespace valuascript::compiler
                                              : cursor.peek();
                 cursor.report_error_no_panic(report_at, E::MissingValueAfterEquals, false);
             }
-            else
+             else
             {
+                prev_expr_stmt = ctx.is_parsing_expression_statement;
+                ctx.is_parsing_expression_statement = ctx.looks_like_reassignment();
                 value = ErrorRecovery::try_parse<ExprPtr>(
                     ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline()
                 );
+                ctx.is_parsing_expression_statement = prev_expr_stmt;
+
                 if (value && cursor.peek().type == TokenType::Assign)
                 {
                     SourceSpan error_span = value->span;
@@ -308,11 +316,14 @@ namespace valuascript::compiler
                         cursor.advance();
                         try
                         {
+                            ctx.is_parsing_expression_statement = ctx.looks_like_reassignment();
                             auto rhs = parser.parse_expression();
+                            ctx.is_parsing_expression_statement = prev_expr_stmt;
                             if (rhs) value = std::move(rhs);
                         }
                         catch (const ParseSyncException&)
                         {
+                            ctx.is_parsing_expression_statement = prev_expr_stmt;
                         }
                     }
                     cursor.report_error_no_panic(cursor.combine_spans(error_span, value->span),
@@ -342,6 +353,18 @@ namespace valuascript::compiler
         const Token& start = cursor.advance();
         std::vector<ExprPtr> return_values;
         return_values.reserve(2);
+
+        if (!cursor.is_at_end() && cursor.peek().line > start.line &&
+            (TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+             cursor.peek().type == TokenType::Return ||
+             cursor.peek().type == TokenType::At ||
+             cursor.peek().type == TokenType::Hash ||
+             cursor.peek().type == TokenType::RightBrace ||
+             TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)))
+        {
+            verify_statement_end();
+            return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(modifiers), std::move(return_values));
+        }
 
         do
         {

@@ -248,7 +248,7 @@ namespace valuascript::compiler::test
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValue,
+                        .context_name = ContextNames::ExprDictValueStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
                                 .code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1,
@@ -258,7 +258,7 @@ namespace valuascript::compiler::test
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueFirst,
+                        .context_name = ContextNames::ExprDictValueMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
                                 .code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1,
@@ -268,7 +268,7 @@ namespace valuascript::compiler::test
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueComma,
+                        .context_name = ContextNames::ExprDictValueEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
                                 .code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1,
@@ -278,7 +278,17 @@ namespace valuascript::compiler::test
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprSwitchCase,
+                        .context_name = ContextNames::ExprDictValueSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1,
+                                .column_end = 3
+                            }
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
                                 .code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1,
@@ -286,7 +296,37 @@ namespace valuascript::compiler::test
                             }
                         },
                         .verifier = IsNumber("1")
-                    }
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1,
+                                .line_end = 2, .column_end = 2
+                            }
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1,
+                                .line_end = 2, .column_end = 2
+                            }
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1,
+                                .line_end = 2, .column_end = 2
+                            }
+                        },
+                        .verifier = IsNumber("1")
+                    },
                 }
             });
 
@@ -355,33 +395,61 @@ namespace valuascript::compiler::test
                         .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValue,
+                        .context_name = ContextNames::ExprDictValueStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
                         },
                         .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueFirst,
+                        .context_name = ContextNames::ExprDictValueMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
                         },
                         .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueComma,
+                        .context_name = ContextNames::ExprDictValueEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
                         },
                         .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprSwitchCase,
+                        .context_name = ContextNames::ExprDictValueSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 2, .column_start = 5, .line_end = 2, .column_end = 6}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2}
                         },
                         .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
-                    }
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 3, .column_start = 1, .line_end = 3, .column_end = 2}
+                        },
+                        .verifier = IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))
+                    },
                 }
             });
 
@@ -448,33 +516,61 @@ namespace valuascript::compiler::test
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValue,
+                        .context_name = ContextNames::ExprDictValueStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                         },
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueFirst,
+                        .context_name = ContextNames::ExprDictValueMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                         },
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprDictValueComma,
+                        .context_name = ContextNames::ExprDictValueEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
                         },
                         .verifier = IsNumber("1")
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprSwitchCase,
+                        .context_name = ContextNames::ExprDictValueSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::MissingOperator, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
                         },
                         .verifier = IsNumber("1")
-                    }
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedCaseOrDefaultInsideSwitchBody, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2}
+                        },
+                        .verifier = IsNumber("1")
+                    },
                 }
             });
 

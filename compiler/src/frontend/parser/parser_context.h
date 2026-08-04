@@ -14,6 +14,9 @@ namespace valuascript::compiler
         std::vector<TokenType> active_closers;
         std::vector<TokenType> sync_set;
         std::function<void()> on_unexpected_statement;
+        bool is_consuming_unexpected = false;
+        bool is_parsing_expression_statement = false;
+        bool is_parsing_list_element = false;
 
         explicit ParserContext(TokenCursor c);
 

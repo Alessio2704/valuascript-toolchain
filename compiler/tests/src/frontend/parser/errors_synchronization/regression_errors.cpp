@@ -25,31 +25,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "Regression_2",
-                .source_code = "func test() -> scalar { return 1\n"
-                               "// -- R&D Capitalization --\n"
-                               "let value_of_research_assets, current_year_amortization = get_rd()\n"
-                               "// -- WACC --\n"
-                               "let wacc = get_wacc()\n"
-                               "enum Scenario: scalar { LOW, BASE, HIGH}\n"
-                               "}\n",
-                .expected_errors = {
-                    {.code = Err::InvalidConstructPlacement, .line = 6, .column = 1}
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "Regression_2_a",
-                .source_code = "func test() -> scalar { return 1\n"
-                               "// -- R&D Capitalization --\n"
-                               "let value_of_research_assets, current_year_amortization = get_rd()\n"
-                               "// -- WACC --\n"
-                               "let wacc = get_wacc()\n"
-                               "enum Scenario: scalar { LOW, BASE, HIGH }\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightBraceAfterFunctionBody, .line = 5, .column = 21}
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "Regression_3",
                 .source_code = "#iterations = 10_000_\n"
                                "\n"

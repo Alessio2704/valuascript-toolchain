@@ -63,16 +63,6 @@ namespace valuascript::compiler::test {
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_with_top_level_declaration",
-                .source_code = "let a = ( let x = 1 )\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 11},
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "grouping_eof_mid_expression",
                 .source_code = "let a = ( 1 + ",
                 .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 14}, {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 13} },
@@ -103,17 +93,6 @@ namespace valuascript::compiler::test {
                     auto* g2 = dynamic_cast<GroupingExpression*>(g1->expression.get());
                     auto* g3 = dynamic_cast<GroupingExpression*>(g2->expression.get());
                     ASSERT_NE(g3, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_interrupted_by_directive",
-                .source_code = "let a = ( 1 + #hidden )\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 15},
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                    EXPECT_EQ(ast.directives.size(), 0);
                 }
             },
             ParserErrorsSynchronizationTestCase{

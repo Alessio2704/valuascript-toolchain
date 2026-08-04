@@ -170,7 +170,7 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.consume(TokenType::Struct, E::ExpectedStructToken);
         Token name = ErrorRecovery::try_consume_identifier(
-            ctx, E::ExpectedStructName, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}));
+            ctx, E::ExpectedStructName, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}), false);
 
         cursor.consume(TokenType::LeftBrace, E::ExpectedBraceInStructDefinition);
         CloserTracker tracker(ctx, TokenType::RightBrace);
@@ -223,7 +223,7 @@ namespace valuascript::compiler
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::ExpectedEnumName, RecoveryConfig::StopAtBoundary({
                 TokenType::Colon, TokenType::LeftBrace, TokenType::Comma
-            }));
+            }), false);
 
         TypeAnnPtr underlying_type = nullptr;
         if (cursor.check(TokenType::Colon))
@@ -291,7 +291,7 @@ namespace valuascript::compiler
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::MissingFunctionName, RecoveryConfig::StopAtBoundary({
                 TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma
-            }));
+            }), false);
 
         cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterFunctionName);
 
@@ -405,7 +405,7 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.consume(TokenType::Typealias, E::ExpectedTypeAliasToken);
         Token name = ErrorRecovery::try_consume_identifier(
-            ctx, E::ExpectedTypeAliasName, RecoveryConfig::StopAtBoundary({TokenType::Assign, TokenType::Comma}));
+            ctx, E::ExpectedTypeAliasName, RecoveryConfig::StopAtBoundary({TokenType::Assign, TokenType::Comma}), false);
 
         if (cursor.check(TokenType::Assign)) cursor.advance();
         else cursor.consume(TokenType::Assign, E::ExpectedAssignAfterTypeAliasName);
@@ -513,7 +513,10 @@ namespace valuascript::compiler
                         ctx,
                         [&]()
                         {
+                            bool prev_list = ctx.is_parsing_list_element;
+                            ctx.is_parsing_list_element = true;
                             result.value = parser.parse_expression();
+                            ctx.is_parsing_list_element = prev_list;
                             if ((TokenTraits::is_expression_start(cursor.peek().type) ||
                                     TokenTraits::is_binary_operator(cursor.peek().type))
                                 &&

@@ -6,7 +6,7 @@
 #include <functional>
 #include "construct_registry.h"
 #include "spec_adder.h"
-#include "context_infrastructure.h"
+#include "deterministic_sampler.h"
 
 namespace valuascript::compiler::test
 {
@@ -252,11 +252,6 @@ namespace valuascript::compiler::test
             return false;
         }
 
-        static size_t make_seed(const std::string& key)
-        {
-            return std::hash<std::string>{}(key);
-        }
-
         static RecoveryBlock generate_block_sentinel(size_t seed, BlockContext ctx_type,
                                                      const std::vector<SentinelKind>& excluded_kinds = {},
                                                      const std::vector<SentinelKind>& accepted_kinds = {})
@@ -271,10 +266,7 @@ namespace valuascript::compiler::test
                     }
                 };
 
-            std::mt19937 rng(static_cast<unsigned int>(seed));
-            std::uniform_int_distribution<uint64_t> dist(0, static_cast<uint64_t>(pool.size()) - 1);
-
-            return pool[static_cast<size_t>(dist(rng))];
+            return DeterministicSampler::sample_element_rng(pool, seed);
         }
 
     };

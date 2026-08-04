@@ -121,7 +121,62 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprTupleElement,
+                .name = ContextNames::ExprTupleStart,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "(",
+                .suffix = ", 2, 3)",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTuple(SpecAdder::get_v<ExprVerifier>(v), IsNumber("2"), IsNumber("3")));
+                }
+            },
+            {
+                .name = ContextNames::ExprTupleMiddle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "(1, ",
+                .suffix = ", 3)",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTuple(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v), IsNumber("3")));
+                },
+                .block_context = BlockContext::None,
+                .transform_verifier_block = nullptr,
+                .operator_binding_required = false,
+                .transform_multi_verifier = [](const std::vector<UniversalVerifier>& vs) -> UniversalVerifier
+                {
+                    std::vector<ExprVerifier> elements;
+                    elements.push_back(IsNumber("1"));
+                    for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
+                    elements.push_back(IsNumber("3"));
+                    return UniversalVerifier(IsTuple(elements));
+                }
+            },
+            {
+                .name = ContextNames::ExprTupleEnd,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "(1, 2, ",
+                .suffix = ")",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTuple(IsNumber("1"), IsNumber("2"), SpecAdder::get_v<ExprVerifier>(v)));
+                },
+                .block_context = BlockContext::None,
+                .transform_verifier_block = nullptr,
+                .operator_binding_required = false,
+                .transform_multi_verifier = [](const std::vector<UniversalVerifier>& vs) -> UniversalVerifier
+                {
+                    std::vector<ExprVerifier> elements;
+                    elements.push_back(IsNumber("1"));
+                    elements.push_back(IsNumber("2"));
+                    for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
+                    return UniversalVerifier(IsTuple(elements));
+                }
+            },
+            {
+                .name = ContextNames::ExprTupleSingle,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
                 .prefix = "(",
@@ -132,14 +187,14 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprTensorElement,
+                .name = ContextNames::ExprTensorStart,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
                 .prefix = "[",
-                .suffix = ", 1]",
+                .suffix = ", 2, 3]",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsTensor(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")));
+                    return UniversalVerifier(IsTensor(SpecAdder::get_v<ExprVerifier>(v), IsNumber("2"), IsNumber("3")));
                 },
                 .block_context = BlockContext::None,
                 .transform_verifier_block = nullptr,
@@ -148,12 +203,57 @@ namespace valuascript::compiler::test
                 {
                     std::vector<ExprVerifier> elements;
                     for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
-                    elements.push_back(IsNumber("1"));
+                    elements.push_back(IsNumber("2"));
+                    elements.push_back(IsNumber("3"));
                     return UniversalVerifier(IsTensor(elements));
                 }
             },
             {
-                .name = ContextNames::ExprTensorSingleElement,
+                .name = ContextNames::ExprTensorMiddle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "[1, ",
+                .suffix = ", 3]",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTensor(IsNumber("1"), SpecAdder::get_v<ExprVerifier>(v), IsNumber("3")));
+                },
+                .block_context = BlockContext::None,
+                .transform_verifier_block = nullptr,
+                .operator_binding_required = false,
+                .transform_multi_verifier = [](const std::vector<UniversalVerifier>& vs) -> UniversalVerifier
+                {
+                    std::vector<ExprVerifier> elements;
+                    elements.push_back(IsNumber("1"));
+                    for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
+                    elements.push_back(IsNumber("3"));
+                    return UniversalVerifier(IsTensor(elements));
+                }
+            },
+            {
+                .name = ContextNames::ExprTensorEnd,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "[1, 2, ",
+                .suffix = "]",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTensor(IsNumber("1"), IsNumber("2"), SpecAdder::get_v<ExprVerifier>(v)));
+                },
+                .block_context = BlockContext::None,
+                .transform_verifier_block = nullptr,
+                .operator_binding_required = false,
+                .transform_multi_verifier = [](const std::vector<UniversalVerifier>& vs) -> UniversalVerifier
+                {
+                    std::vector<ExprVerifier> elements;
+                    elements.push_back(IsNumber("1"));
+                    elements.push_back(IsNumber("2"));
+                    for (const auto& v : vs) elements.push_back(SpecAdder::get_v<ExprVerifier>(v));
+                    return UniversalVerifier(IsTensor(elements));
+                }
+            },
+            {
+                .name = ContextNames::ExprTensorSingle,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
                 .prefix = "[",
@@ -173,36 +273,47 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprDictValue,
+                .name = ContextNames::ExprDictValueStart,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
-                .prefix = "{ k: ",
+                .prefix = "{ k1: ",
+                .suffix = ", k2: 2, k3: 3 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k1", .value_v = SpecAdder::get_v<ExprVerifier>(v)}, DictItemSpec{.key = "k2", .value_v = IsNumber("2")}, DictItemSpec{.key = "k3", .value_v = IsNumber("3")}));
+                }
+            },
+            {
+                .name = ContextNames::ExprDictValueMiddle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ k1: 1, k2: ",
+                .suffix = ", k3: 3 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k1", .value_v = IsNumber("1")}, DictItemSpec{.key = "k2", .value_v = SpecAdder::get_v<ExprVerifier>(v)}, DictItemSpec{.key = "k3", .value_v = IsNumber("3")}));
+                }
+            },
+            {
+                .name = ContextNames::ExprDictValueEnd,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ k1: 1, k2: 2, k3: ",
                 .suffix = " }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k1", .value_v = IsNumber("1")}, DictItemSpec{.key = "k2", .value_v = IsNumber("2")}, DictItemSpec{.key = "k3", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
             {
-                .name = ContextNames::ExprDictValueFirst,
+                .name = ContextNames::ExprDictValueSingle,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
-                .prefix = "{ k: ",
-                .suffix = ", x: 1 }",
+                .prefix = "{ k1: ",
+                .suffix = " }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}, DictItemSpec{.key = "x", .value_v = IsNumber("1")}));
-                }
-            },
-            {
-                .name = ContextNames::ExprDictValueComma,
-                .input_types = {InjectableType::Expression},
-                .output_type = InjectableType::Expression,
-                .prefix = "{ k: ",
-                .suffix = ", }",
-                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
-                {
-                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
+                    return UniversalVerifier(IsDict(DictItemSpec{.key = "k1", .value_v = SpecAdder::get_v<ExprVerifier>(v)}));
                 }
             },
             {
@@ -217,7 +328,40 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprFunctionCallArg,
+                .name = ContextNames::ExprCallArgStart,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "f(arg: ",
+                .suffix = ", b: 2, c: 3)",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"arg", SpecAdder::get_v<ExprVerifier>(v)}, {"b", IsNumber("2")}, {"c", IsNumber("3")}}));
+                }
+            },
+            {
+                .name = ContextNames::ExprCallArgMiddle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "f(a: 1, arg: ",
+                .suffix = ", c: 3)",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"a", IsNumber("1")}, {"arg", SpecAdder::get_v<ExprVerifier>(v)}, {"c", IsNumber("3")}}));
+                }
+            },
+            {
+                .name = ContextNames::ExprCallArgEnd,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "f(a: 1, b: 2, arg: ",
+                .suffix = ")",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"a", IsNumber("1")}, {"b", IsNumber("2")}, {"arg", SpecAdder::get_v<ExprVerifier>(v)}}));
+                }
+            },
+            {
+                .name = ContextNames::ExprCallArgSingle,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
                 .prefix = "f(arg: ",
@@ -330,16 +474,67 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprSwitchCase,
+                .name = ContextNames::ExprSwitchCaseStart,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,
                 .prefix = "switch (1) { case A -> ",
-                .suffix = " default -> 1 }",
+                .suffix = "\n case B -> 2\n case C -> 3\n default -> 4 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
+                                                      std::vector<SwitchCaseSpec>{
+                                                          SwitchCaseSpec{.labels = {"A"}, .result_v = SpecAdder::get_v<ExprVerifier>(v)},
+                                                          SwitchCaseSpec{.labels = {"B"}, .result_v = IsNumber("2")},
+                                                          SwitchCaseSpec{.labels = {"C"}, .result_v = IsNumber("3")}
+                                                      },
+                                                      IsNumber("4")));
+                }
+            },
+            {
+                .name = ContextNames::ExprSwitchCaseMiddle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch (1) { case A -> 1\n case B -> ",
+                .suffix = "\n case C -> 3\n default -> 4 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
+                                                      std::vector<SwitchCaseSpec>{
+                                                          SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")},
+                                                          SwitchCaseSpec{.labels = {"B"}, .result_v = SpecAdder::get_v<ExprVerifier>(v)},
+                                                          SwitchCaseSpec{.labels = {"C"}, .result_v = IsNumber("3")}
+                                                      },
+                                                      IsNumber("4")));
+                }
+            },
+            {
+                .name = ContextNames::ExprSwitchCaseEnd,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch (1) { case A -> 1\n case B -> 2\n case C -> ",
+                .suffix = "\n default -> 4 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
+                                                      std::vector<SwitchCaseSpec>{
+                                                          SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")},
+                                                          SwitchCaseSpec{.labels = {"B"}, .result_v = IsNumber("2")},
+                                                          SwitchCaseSpec{.labels = {"C"}, .result_v = SpecAdder::get_v<ExprVerifier>(v)}
+                                                      },
+                                                      IsNumber("4")));
+                }
+            },
+            {
+                .name = ContextNames::ExprSwitchCaseSingle,
+                .input_types = {InjectableType::Expression},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch (1) { case A -> ",
+                .suffix = "\n default -> 4 }",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsSwitch(IsNumber("1"),
                                                       std::vector<SwitchCaseSpec>{SwitchCaseSpec{.labels = {"A"}, .result_v = SpecAdder::get_v<ExprVerifier>(v)}},
-                                                      IsNumber("1")));
+                                                      IsNumber("4")));
                 }
             },
             {

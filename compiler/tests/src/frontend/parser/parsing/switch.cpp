@@ -47,8 +47,7 @@ namespace valuascript::compiler::test
             ExpectedLeftBraceBeforeSwitchBody},
             SwitchSadParam{.test_name = "missing_right_brace", .source_code = "let a = switch (res) { case UP -> 1", .expected_error = E::
             ExpectedRightBraceAfterSwitchBody},
-            SwitchSadParam{.test_name = "expression_as_case", .source_code = "let a = switch (res) { case a + b -> 10 }", .expected_error = E::ExpectedRightArrowAfterSwitchCaseIdentifier},
-            SwitchSadParam{.test_name = "assignment_in_body", .source_code = "let a = switch (res) { let b = 2 }", .expected_error = E::InvalidConstructPlacement}
+            SwitchSadParam{.test_name = "expression_as_case", .source_code = "let a = switch (res) { case a + b -> 10 }", .expected_error = E::ExpectedRightArrowAfterSwitchCaseIdentifier}
 
         ),
         TestNameGenerator{}

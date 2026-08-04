@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "token/reserved_keyword_lookup.h"
@@ -28,7 +29,7 @@ namespace valuascript::compiler::test
             ParserExpectedError base_error(ParserErrorCode::ReservedKeywordAsIdentifier, 1, 1, 1, keyword.length() + 1);
 
             size_t scenario_index = 0;
-            size_t base_seed = RecoverySentinel::make_seed("ReservedKeywordDebugger_" + keyword);
+            size_t base_seed = DeterministicSampler::make_seed("ReservedKeywordDebugger", keyword);
 
             expand_to_top_level_stream(
                 InjectableType::Identifier,

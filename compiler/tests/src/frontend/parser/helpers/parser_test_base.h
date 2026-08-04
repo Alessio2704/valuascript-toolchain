@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "deterministic_sampler.h"
 #include "recovery_sentinel.h"
 #include "test_structures.h"
 #include "core/compiler_context.h"

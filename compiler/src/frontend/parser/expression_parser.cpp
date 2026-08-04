@@ -141,6 +141,10 @@ namespace valuascript::compiler
         } scope(allow_missing_operator_binding_, allow_missing_operator_binding);
 
         const Token& start_tok = cursor.peek();
+        if (!ctx.is_consuming_unexpected && !ctx.is_parsing_expression_statement && ctx.looks_like_reassignment())
+        {
+            return handle_invalid_expression_start();
+        }
         ParseRule rule = get_rule(start_tok.type);
 
         if (rule.prefix == nullptr) return handle_invalid_expression_start();
@@ -309,7 +313,9 @@ namespace valuascript::compiler
         const Token& tok = cursor.peek();
         const Token& next = cursor.peek(1);
         const Token& prev = cursor.previous();
-        bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type);
+        bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type) ||
+                             tok.type == TokenType::Return ||
+                             ctx.looks_like_reassignment();
         bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
         if (is_stmt_start)
@@ -329,12 +335,21 @@ namespace valuascript::compiler
                         cursor.report_error(prev, E::InvalidExpression);
                     else cursor.report_error(tok, E::InvalidExpression, force_location);
                 }
+                bool is_reassign = ctx.looks_like_reassignment();
                 parser.consume_unexpected_statement_gracefully();
                 SourceSpan span = cursor.make_span(start_tok, cursor.previous());
-                cursor.report_error_no_panic(span, E::InvalidConstructPlacement, "declaration", "in expression");
+                cursor.report_error_no_panic(span, E::InvalidConstructPlacement,
+                                             is_reassign ? "reassignment" : "declaration",
+                                             ctx.is_parsing_list_element ? "in list" : "in expression");
             }
 
-            if (TokenTraits::is_expression_start(cursor.peek().type)) return parse_expression();
+            if (!cursor.is_at_end() &&
+                !(cursor.peek().line > cursor.previous().line &&
+                  TokenTraits::is_newline_statement_boundary(cursor.previous(), cursor.peek(), cursor.peek(1).type)) &&
+                TokenTraits::is_expression_start(cursor.peek().type))
+            {
+                return parse_expression();
+            }
             throw ParseSyncException();
         }
 

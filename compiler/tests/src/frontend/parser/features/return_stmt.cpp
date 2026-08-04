@@ -20,14 +20,20 @@ namespace valuascript::compiler::test
                 .verifier = IsReturn({}, {IsNumber("1")})
             });
 
+            // reg({
+            //     .name = "ReturnNoValue",
+            //     .code = "return",
+            //     .verifier = IsReturn({}, {})
+            // });
+
             reg({
                 .name = "ReturnMultipleValues",
                 .code = "return 1, true, \"success\"",
                 .verifier = IsReturn({}, {
-                    IsNumber("1"),
-                    IsBoolean(true),
-                    IsString("\"success\"")
-                })
+                                         IsNumber("1"),
+                                         IsBoolean(true),
+                                         IsString("\"success\"")
+                                     })
             });
 
             reg({
@@ -42,9 +48,9 @@ namespace valuascript::compiler::test
                 "  1, \n"
                 "  2",
                 .verifier = IsReturn({}, {
-                    IsNumber("1"),
-                    IsNumber("2")
-                })
+                                         IsNumber("1"),
+                                         IsNumber("2")
+                                     })
             });
 
             return true;

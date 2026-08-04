@@ -18,8 +18,38 @@ namespace valuascript::compiler
         return std::find(sync_set.begin(), sync_set.end(), type) != sync_set.end();
     }
 
+    namespace
+    {
+        bool can_end_expression(TokenType type)
+        {
+            switch (type)
+            {
+            case TokenType::RightParen:
+            case TokenType::RightBracket:
+            case TokenType::RightBrace:
+            case TokenType::Identifier:
+            case TokenType::Number:
+            case TokenType::String:
+            case TokenType::True:
+            case TokenType::False:
+            case TokenType::Self: return true;
+            default: return false;
+            }
+        }
+    }
+
     bool ParserContext::looks_like_reassignment() const
     {
+        const Token& first = cursor.peek();
+        if (!TokenTraits::is_identifier_start(first) &&
+            first.type != TokenType::Self &&
+            first.type != TokenType::LeftParen &&
+            first.type != TokenType::LeftBracket &&
+            first.type != TokenType::LeftBrace)
+        {
+            return false;
+        }
+
         int depth = 0;
         size_t offset = 0;
 
@@ -33,16 +63,25 @@ namespace valuascript::compiler
             {
                 depth--;
                 if (depth < 0) break;
+                if (depth == 0 && tok.type == TokenType::RightBrace) break;
             }
             else if (depth == 0)
             {
                 if (tok.type == TokenType::Assign) return true;
                 if (tok.type == TokenType::Comma || tok.type == TokenType::Colon ||
                     tok.type == TokenType::At || tok.type == TokenType::RightBrace ||
-                    TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type)) break;
+                    TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type))
+                    break;
 
                 if (offset > 0 && tok.line > cursor.peek(offset - 1).line &&
-                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type)) break;
+                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type))
+                    break;
+
+                if (offset > 0 && (tok.type == TokenType::Identifier || TokenTraits::is_identifier_start(tok)) &&
+                    can_end_expression(cursor.peek(offset - 1).type))
+                {
+                    break;
+                }
             }
 
             offset++;
@@ -77,14 +116,16 @@ namespace valuascript::compiler
                 }
                 else if (peek_tok.type == TokenType::Else)
                 {
-                    if (cursor.peek(1).line == peek_tok.line && (TokenTraits::is_expression_start(next) || next == TokenType::If))
+                    if (cursor.peek(1).line == peek_tok.line && (TokenTraits::is_expression_start(next) || next ==
+                        TokenType::If))
                     {
                         is_same_line_clause_boundary = true;
                     }
                 }
             }
 
-            if (is_same_line_clause_boundary || (is_newline && (is_reserved_keyword(peek_tok) || looks_like_reassignment())))
+            if (is_same_line_clause_boundary || (is_newline && (is_reserved_keyword(peek_tok) ||
+                looks_like_reassignment())))
             {
                 cursor.report_error(cursor.peek(), fallback_err);
             }
@@ -111,7 +152,8 @@ namespace valuascript::compiler
 
             if (cursor.previous().type == TokenType::Dot)
             {
-                if (cursor.peek().line == cursor.previous().line && !TokenTraits::is_statement_start(cursor.peek(), next))
+                if (cursor.peek().line == cursor.previous().line && !TokenTraits::is_statement_start(
+                    cursor.peek(), next))
                 {
                     acts_like_id = true;
                 }
@@ -121,7 +163,8 @@ namespace valuascript::compiler
                 cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
                     cursor.peek(), next));
 
-            if (cursor.previous().type == TokenType::Dot || acts_like_id || !allow_top_level_keywords || !forms_statement)
+            if (cursor.previous().type == TokenType::Dot || acts_like_id || !allow_top_level_keywords || !
+                forms_statement)
             {
                 cursor.report_error_no_panic(cursor.peek(), ParserErrorCode::ReservedKeywordAsIdentifier, true);
                 return cursor.advance();

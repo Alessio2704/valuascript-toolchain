@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "invalid_modifier_placement_shared.h"
 
@@ -16,7 +17,7 @@ namespace valuascript::compiler::test
 
         std::string snippet = build_invalid_modifier_snippet(test_case);
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-        size_t base_seed = RecoverySentinel::make_seed(test_info ? test_info->name() : "fallback");
+        size_t base_seed = DeterministicSampler::make_seed(test_info ? test_info->name() : "fallback");
         size_t scenario_index = 0;
 
         expand_to_top_level_stream(
@@ -30,6 +31,7 @@ namespace valuascript::compiler::test
                 std::visit([&](auto&& ver) { SpecAdder::add(inner_spec, ver); }, processed.verifier);
 
                 auto prog = BuildRecoveryProgram(processed, inner_spec, base_seed + (scenario_index++ * 2));
+                SCOPED_TRACE("Testing Invalid Modifier Placement: " + test_case.test_name + " (" + processed.path_name + ")\n--- Full Source Code Listing ---\n" + format_source_with_lines(prog.full_code));
 
                 CompilerContext context;
                 context.settings.fail_fast = false;

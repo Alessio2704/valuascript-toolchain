@@ -8,5 +8,6 @@ namespace valuascript::compiler::test
     {
     public:
         static const std::vector<InvalidDeclarationConstructCase>& cases();
+        static std::vector<InvalidDeclarationConstructCase> cases_for_context(const Context& ctx);
     };
 }

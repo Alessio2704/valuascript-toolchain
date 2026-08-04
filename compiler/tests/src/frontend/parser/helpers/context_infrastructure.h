@@ -238,12 +238,12 @@ namespace valuascript::compiler::test
 
     struct Context
     {
-        std::string_view name;
-        std::vector<InjectableType> input_types;
-        InjectableType output_type;
-        std::string prefix;
-        std::string suffix;
-        std::function<UniversalVerifier(const UniversalVerifier&)> transform_verifier;
+        std::string_view name = {};
+        std::vector<InjectableType> input_types = {};
+        InjectableType output_type = InjectableType::Identifier;
+        std::string prefix = {};
+        std::string suffix = {};
+        std::function<UniversalVerifier(const UniversalVerifier&)> transform_verifier = nullptr;
 
         BlockContext block_context = BlockContext::None;
         std::function<UniversalVerifier(const UniversalVerifier&,

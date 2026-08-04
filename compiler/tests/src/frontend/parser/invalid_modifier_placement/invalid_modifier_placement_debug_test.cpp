@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "invalid_modifier_placement_shared.h"
@@ -17,7 +18,7 @@ namespace valuascript::compiler::test
         SCOPED_TRACE("Debugging Invalid Modifier Placement: " + test_case.test_name);
 
         std::string snippet = build_invalid_modifier_snippet(test_case);
-        size_t base_seed = RecoverySentinel::make_seed(test_case.test_name);
+        size_t base_seed = DeterministicSampler::make_seed(test_case.test_name);
 
         DumpWriter writer(test_case.test_name + ".txt", "invalid_modifier_dumps");
         ASSERT_TRUE(writer.is_open()) << "Failed to open file for writing: " << writer.path_string();
