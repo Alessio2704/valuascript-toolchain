@@ -86,6 +86,19 @@ namespace valuascript::compiler::test
                 SpecAdder::add(s, StmtVerifier(v));
             });
 
+            add_if_not_empty(pool, SentinelKind::Function, ConstructRegistry::functions(), [](ProgramSpec& s, const FuncVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, SentinelKind::Struct, ConstructRegistry::structs(), [](ProgramSpec& s, const StructVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+            add_if_not_empty(pool, SentinelKind::Enum, ConstructRegistry::enums(), [](ProgramSpec& s, const EnumVerifier& v)
+            {
+                SpecAdder::add(s, v);
+            });
+
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
@@ -212,6 +225,11 @@ namespace valuascript::compiler::test
                     static std::vector<RecoveryBlock> extension_pool = build_extension_block_pool();
                     return extension_pool;
                 }
+            case BlockContext::TopLevel:
+                {
+                    static std::vector<RecoveryBlock> top_level_pool = build_top_level_pool();
+                    return top_level_pool;
+                }
             case BlockContext::FunctionBody:
             default:
                 {
@@ -234,6 +252,11 @@ namespace valuascript::compiler::test
             return false;
         }
 
+        static size_t make_seed(const std::string& key)
+        {
+            return std::hash<std::string>{}(key);
+        }
+
         static RecoveryBlock generate_block_sentinel(size_t seed, BlockContext ctx_type,
                                                      const std::vector<SentinelKind>& excluded_kinds = {},
                                                      const std::vector<SentinelKind>& accepted_kinds = {})
@@ -254,36 +277,5 @@ namespace valuascript::compiler::test
             return pool[static_cast<size_t>(dist(rng))];
         }
 
-        static RecoveryBlock generate_top_level_sentinel(size_t seed,
-                                                         const std::vector<SentinelKind>& excluded_kinds = {},
-                                                         const std::vector<SentinelKind>& accepted_kinds = {})
-        {
-            static std::vector<RecoveryBlock> base_pool = build_top_level_pool();
-            std::vector<RecoveryBlock> pool = filter_pool(base_pool, excluded_kinds, accepted_kinds);
-
-            if (pool.empty())
-                return {
-                    std::nullopt, "", [](ProgramSpec&)
-                    {
-                    }
-                };
-
-            std::mt19937 rng(static_cast<unsigned int>(seed));
-            std::uniform_int_distribution<uint64_t> dist(0, static_cast<uint64_t>(pool.size()) - 1);
-
-            return pool[static_cast<size_t>(dist(rng))];
-        }
-
-        static const std::vector<RecoveryBlock>& get_all_block_sentinels()
-        {
-            static std::vector<RecoveryBlock> pool = build_function_block_pool();
-            return pool;
-        }
-
-        static const std::vector<RecoveryBlock>& get_all_top_level_sentinels()
-        {
-            static std::vector<RecoveryBlock> pool = build_top_level_pool();
-            return pool;
-        }
     };
 }

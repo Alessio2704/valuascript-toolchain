@@ -44,8 +44,6 @@ namespace valuascript::compiler::test
             ExpressionSadParam{.test_name = "unmatched_right_parenthesis", .expression_code = "1 + 2)", .expected_error = E::InvalidExpression},
             ExpressionSadParam{.test_name = "unclosed_vector_literal", .expression_code = "[1, 2, 3", .expected_error = E::UnmatchedBracketAfterTensorElements}
         ),
-        [](const testing::TestParamInfo<ExpressionSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

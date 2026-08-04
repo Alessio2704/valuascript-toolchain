@@ -80,8 +80,6 @@ namespace valuascript::compiler::test
         Import,
         ImportErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::imports()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<ImportVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

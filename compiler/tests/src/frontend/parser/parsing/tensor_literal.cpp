@@ -45,8 +45,6 @@ namespace valuascript::compiler::test
             TensorLiteralSadParam{.test_name = "mising_operator_1", .source_code = "[1,2,4] [1,2,3]", .expected_error = E::UnexpectedCommaInBracketAccess},
             TensorLiteralSadParam{.test_name = "mising_operator_2", .source_code = "[1, [2,4]] [[1,2,3], [1,2]]", .expected_error = E::UnexpectedCommaInBracketAccess}
         ),
-        [](const testing::TestParamInfo<TensorLiteralSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

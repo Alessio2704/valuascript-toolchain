@@ -133,18 +133,13 @@ namespace valuascript::compiler
         case ParserErrorCode::TrailingCommaInGenericArgument: return
                 "Syntax Error: Trailing comma in generic arguments.";
         case ParserErrorCode::MissingCommaBetweenFields: return "Syntax Error: Missing comma ',' between fields.";
-        case ParserErrorCode::TopLevelDeclarationNotAllowedHere: return
-                "Syntax Error: Top level declaration not allowed here.";
-        case ParserErrorCode::ReturnUsedInToplevel: return "Syntax Error: 'return' keyword used at top level.";
-        case ParserErrorCode::ReturnNotAllowedInExtension: return "Syntax Error: 'return' statement is not allowed inside an extension body.";
+        case ParserErrorCode::InvalidConstructPlacement: return "Syntax Error: {} is not allowed {}.";
         case ParserErrorCode::ExpectedTypeAliasToken: return "Expected 'typealias' keyword.";
         case ParserErrorCode::ExpectedTypeAliasName: return "Expected type alias name.";
         case ParserErrorCode::ExpectedAssignAfterTypeAliasName: return "Expected '=' after type alias name.";
         case ParserErrorCode::ExpectedExtensionToken: return "Expected 'extension' keyword.";
         case ParserErrorCode::ExpectedLeftBraceBeforeExtensionBody: return "Expected '{{' before extension body.";
         case ParserErrorCode::ExpectedRightBraceAfterExtensionBody: return "Expected '}}' after extension body.";
-        case ParserErrorCode::ImportNotAllowedInExtension: return "Syntax Error: 'import' is not allowed inside an extension.";
-        case ParserErrorCode::DirectiveNotAllowedInExtension: return "Syntax Error: Directives are not allowed inside an extension.";
         }
         return "Unknown Parser Error";
     }

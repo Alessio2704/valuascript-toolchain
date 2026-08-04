@@ -28,7 +28,7 @@ namespace valuascript::compiler::test
             ParserExpectedError base_error(ParserErrorCode::ReservedKeywordAsIdentifier, 1, 1, 1, keyword.length() + 1);
 
             size_t scenario_index = 0;
-            size_t base_seed = std::hash<std::string>{}("ReservedKeywordDebugger_" + keyword);
+            size_t base_seed = RecoverySentinel::make_seed("ReservedKeywordDebugger_" + keyword);
 
             expand_to_top_level_stream(
                 InjectableType::Identifier,

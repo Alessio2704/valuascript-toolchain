@@ -110,8 +110,6 @@ namespace valuascript::compiler::test
         EnumDefinition,
         EnumDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::enums()),
-        [](const testing::TestParamInfo<RegistryEntry<EnumVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

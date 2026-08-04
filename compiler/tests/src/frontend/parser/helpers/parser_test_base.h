@@ -75,8 +75,7 @@ namespace valuascript::compiler::test
                                                                        const std::vector<SentinelKind>&
                                                                            accepted_sentinels = {});
 
-    protected:
-
+    public:
         static ConstructedRecoveryProgram BuildRecoveryProgram(std::string inner_code,
                                                                ProgramSpec inner_spec,
                                                                const std::string& inner_prefix,
@@ -100,6 +99,8 @@ namespace valuascript::compiler::test
             std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
             return BuildRecoveryProgram(item, std::move(spec), seed);
         }
+
+    protected:
 
         static void RunRecoveryScenario(ProcessingItem&& item, const std::vector<ParserExpectedError>& errors,
                                         size_t seed);

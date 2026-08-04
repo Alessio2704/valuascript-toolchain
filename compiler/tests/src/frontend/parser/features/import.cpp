@@ -42,8 +42,6 @@ namespace valuascript::compiler::test
         ImportStatement,
         ImportStatementRegistryRunner,
         testing::ValuesIn(ConstructRegistry::imports()),
-        [](const testing::TestParamInfo<RegistryEntry<ImportVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -166,9 +166,6 @@ namespace valuascript::compiler::test
         FunctionDefinition,
         FuncDefErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::functions()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<FuncVerifier>>& test_info)
-        {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

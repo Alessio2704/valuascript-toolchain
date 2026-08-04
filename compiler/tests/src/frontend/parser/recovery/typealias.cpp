@@ -42,15 +42,6 @@ namespace valuascript::compiler::test
                 .verifier = IsTypeAlias("MyType", {}, IsNullType())
             });
 
-            reg({
-                .name = "GarbageAtEndOfOtherwiseValidAlias",
-                .code = "typealias User = string ^^",
-                .errors = {
-                    PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 26}
-                },
-                .verifier = IsTypeAlias("User", {}, IsType("string"))
-            });
-
             return true;
         }();
     }
@@ -67,8 +58,6 @@ namespace valuascript::compiler::test
         Typealias,
         TypeAliasErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::aliases()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<AliasVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -17,7 +17,7 @@ namespace valuascript::compiler::test
         SCOPED_TRACE("Debugging Invalid Modifier Placement: " + test_case.test_name);
 
         std::string snippet = build_invalid_modifier_snippet(test_case);
-        size_t base_seed = std::hash<std::string>{}(test_case.test_name);
+        size_t base_seed = RecoverySentinel::make_seed(test_case.test_name);
 
         DumpWriter writer(test_case.test_name + ".txt", "invalid_modifier_dumps");
         ASSERT_TRUE(writer.is_open()) << "Failed to open file for writing: " << writer.path_string();
@@ -62,9 +62,7 @@ namespace valuascript::compiler::test
         InvalidModifierPlacementDebug,
         InvalidModifierPlacementDebugger,
         testing::ValuesIn(GenerateInvalidModifierTestCases()),
-        [](const testing::TestParamInfo<InvalidModifierPlacementTestCase>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 #endif
 }

@@ -63,14 +63,61 @@ namespace valuascript::compiler
             return;
         }
 
-        bool is_invalid_top_level = false;
+        bool is_disallowed_placement = false;
+        std::string disallowed_construct;
+        std::string disallowed_context;
         bool prev_suppress = ctx.cursor.get_suppress_errors();
+
+        auto get_construct_str = [](TokenType t) -> std::string {
+            switch (t)
+            {
+            case TokenType::Import: return "'import' statement";
+            case TokenType::Hash: return "directive";
+            case TokenType::Extension: return "'extension' declaration";
+            case TokenType::Func: return "'func' declaration";
+            case TokenType::Struct: return "'struct' declaration";
+            case TokenType::Enum: return "'enum' declaration";
+            case TokenType::Typealias: return "'typealias' declaration";
+            case TokenType::Return: return "'return' statement";
+            default: return "construct";
+            }
+        };
+
+        auto get_context_str = [](ParseContextType p_ctx) -> std::string {
+            switch (p_ctx)
+            {
+            case ParseContextType::FunctionBody: return "inside a function body";
+            case ParseContextType::ExtensionBody: return "inside an extension body";
+            case ParseContextType::TopLevel: return "at top level";
+            default: return "in this context";
+            }
+        };
 
         if (parse_ctx == ParseContextType::FunctionBody && TokenTraits::is_top_level_only_declaration(token_type))
         {
-            is_invalid_top_level = true;
+            is_disallowed_placement = true;
+            disallowed_construct = get_construct_str(token_type);
+            disallowed_context = get_context_str(parse_ctx);
             parse_ctx = ParseContextType::TopLevel;
             program = &dummy_program;
+            ctx.cursor.set_suppress_errors(true);
+        }
+        else if (parse_ctx == ParseContextType::ExtensionBody)
+        {
+            if (token_type == TokenType::Import || token_type == TokenType::Hash ||
+                token_type == TokenType::Extension || token_type == TokenType::Return)
+            {
+                is_disallowed_placement = true;
+                disallowed_construct = get_construct_str(token_type);
+                disallowed_context = get_context_str(parse_ctx);
+                ctx.cursor.set_suppress_errors(true);
+            }
+        }
+        else if (parse_ctx == ParseContextType::TopLevel && token_type == TokenType::Return)
+        {
+            is_disallowed_placement = true;
+            disallowed_construct = get_construct_str(token_type);
+            disallowed_context = get_context_str(parse_ctx);
             ctx.cursor.set_suppress_errors(true);
         }
 
@@ -79,33 +126,24 @@ namespace valuascript::compiler
             switch (token_type)
             {
             case TokenType::Import:
-                if (parse_ctx == ParseContextType::ExtensionBody)
-                {
-                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::ImportNotAllowedInExtension);
-                    decl_parser->parse_import_statement(std::move(modifiers));
-                }
-                else if (program)
+                if (program)
                     program->import_statements.push_back(decl_parser->parse_import_statement(std::move(modifiers)));
+                else
+                    decl_parser->parse_import_statement(std::move(modifiers));
                 break;
             case TokenType::Hash:
                 ctx.reject_modifiers(modifiers);
-                if (parse_ctx == ParseContextType::ExtensionBody)
-                {
-                    auto dir = decl_parser->parse_directive();
-                    ctx.cursor.report_error_no_panic(dir->span, E::DirectiveNotAllowedInExtension);
-                }
-                else if (program)
+                if (program)
                     program->directives.push_back(decl_parser->parse_directive());
+                else
+                    decl_parser->parse_directive();
                 break;
             case TokenType::Extension:
                 if (program)
                     program->extension_definitions.push_back(
                         decl_parser->parse_extension_definition(std::move(modifiers)));
-                else if (extension)
-                {
-                    ctx.cursor.report_error_no_panic(ctx.cursor.peek(), E::TopLevelDeclarationNotAllowedHere);
+                else
                     decl_parser->parse_extension_definition(std::move(modifiers));
-                }
                 break;
             case TokenType::Func:
                 if (program)
@@ -148,25 +186,13 @@ namespace valuascript::compiler
                     break;
                 }
             case TokenType::Return:
-                if (parse_ctx == ParseContextType::TopLevel || parse_ctx == ParseContextType::ExtensionBody)
                 {
-                    const Token& ret_start = ctx.cursor.peek();
                     auto ret = stmt_parser->parse_return_statement(std::move(modifiers));
-                    if (parse_ctx == ParseContextType::ExtensionBody)
-                    {
-                        ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
-                                                         E::ReturnNotAllowedInExtension);
-                    }
-                    else
-                    {
-                        ctx.cursor.report_error_no_panic(ctx.cursor.make_span(ret_start, ctx.cursor.previous()),
-                                                         E::ReturnUsedInToplevel);
-                    }
                     if (program) program->execution_steps.push_back(std::move(ret));
                     else if (extension) extension->execution_steps.push_back(std::move(ret));
+                    else block.push_back(std::move(ret));
+                    break;
                 }
-                else { block.push_back(stmt_parser->parse_return_statement(std::move(modifiers))); }
-                break;
             default:
                 ctx.reject_modifiers(modifiers);
                 if (auto expr_stmt = stmt_parser->parse_expression_statement())
@@ -180,20 +206,20 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            if (is_invalid_top_level)
+            if (is_disallowed_placement)
             {
                 ctx.cursor.set_suppress_errors(prev_suppress);
                 ctx.cursor.report_error_no_panic(ctx.cursor.make_span(start_token, ctx.cursor.previous()),
-                                                 E::TopLevelDeclarationNotAllowedHere);
+                                                 E::InvalidConstructPlacement, disallowed_construct, disallowed_context);
             }
             throw;
         }
 
-        if (is_invalid_top_level)
+        if (is_disallowed_placement)
         {
             ctx.cursor.set_suppress_errors(prev_suppress);
             ctx.cursor.report_error_no_panic(ctx.cursor.make_span(start_token, ctx.cursor.previous()),
-                                             E::TopLevelDeclarationNotAllowedHere);
+                                             E::InvalidConstructPlacement, disallowed_construct, disallowed_context);
         }
     }
 

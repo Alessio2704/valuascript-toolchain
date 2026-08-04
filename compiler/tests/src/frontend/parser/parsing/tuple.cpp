@@ -46,8 +46,6 @@ namespace valuascript::compiler::test
             ExpectedRightParenAfterTupleElements},
             TupleSadParam{.test_name = "tuple_parenthesis", .source_code = "(a, b", .expected_error = E::ExpectedRightParenAfterTupleElements}
         ),
-        [](const testing::TestParamInfo<TupleSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

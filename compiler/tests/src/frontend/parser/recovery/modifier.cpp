@@ -175,8 +175,6 @@ namespace valuascript::compiler::test
         Modifier,
         ModifierErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::modifiers()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<ModifierVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

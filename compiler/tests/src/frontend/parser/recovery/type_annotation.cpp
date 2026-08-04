@@ -529,9 +529,6 @@ namespace valuascript::compiler::test
         TypeAnnotation,
         TypeAnnotationErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::type_annotations()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<TypeVerifier>>& test_info)
-        {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

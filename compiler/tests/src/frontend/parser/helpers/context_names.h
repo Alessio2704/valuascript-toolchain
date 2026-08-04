@@ -4,6 +4,7 @@ namespace valuascript::compiler::test::ContextNames
 {
     inline constexpr const char* FunctionBodyWrapper = "function_body_wrapper";
     inline constexpr const char* ExtensionBodyWrapper = "extension_body_wrapper";
+    inline constexpr const char* TopLevelWrapper = "top_level";
 
     inline constexpr const char* ExprSingleAssignment = "single_assignment";
     inline constexpr const char* ExprMultiAssignment = "multi_assignment";

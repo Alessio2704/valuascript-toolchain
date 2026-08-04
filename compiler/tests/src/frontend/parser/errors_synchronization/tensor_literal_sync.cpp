@@ -119,7 +119,7 @@ namespace valuascript::compiler::test
             ParserErrorsSynchronizationTestCase{
                 .test_name = "tensor_with_illegal_statement_inside",
                 .source_code = "let a = [ func f() -> void {},  1]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 11} },
+                .expected_errors = { {.code = Err::InvalidConstructPlacement, .line = 1, .column = 11} },
                 .verify_ast = ExpectTensor({ "", "1" })
             },
             ParserErrorsSynchronizationTestCase{
@@ -199,8 +199,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

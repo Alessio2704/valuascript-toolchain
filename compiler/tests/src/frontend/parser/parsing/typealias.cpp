@@ -45,8 +45,6 @@ namespace valuascript::compiler::test
             TypeAliasSadParam{.test_name = "missing_assignment_multiline", .source_code = "typealias MyType \n scalar", .expected_error = E::ExpectedAssignAfterTypeAliasName
             }
         ),
-        [](const testing::TestParamInfo<TypeAliasSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

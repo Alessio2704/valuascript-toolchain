@@ -41,8 +41,6 @@ namespace valuascript::compiler::test {
             EnumSadParam{.test_name = "invalid_value_expression", .source_code = "enum Option: string { a = let }", .expected_error = E::
             ReservedKeywordAsIdentifier}
         ),
-        [](const testing::TestParamInfo<EnumSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

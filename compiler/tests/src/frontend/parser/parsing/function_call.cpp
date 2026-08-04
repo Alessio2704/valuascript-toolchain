@@ -43,8 +43,6 @@ namespace valuascript::compiler::test
             FunctionCallSadParam{.test_name = "func_missing_argument", .source_code = "test(1)", .expected_error = E::MissingOperator},
             FunctionCallSadParam{.test_name = "unclosed_call", .source_code = "test(a: 1, b: 2", .expected_error = E::ExpectedRightParenAfterArguments}
         ),
-        [](const testing::TestParamInfo<FunctionCallSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

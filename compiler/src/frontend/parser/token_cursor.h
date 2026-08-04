@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "core/compiler_context.h"
+#include "core/error_formatter.h"
 #include "token/token.h"
 #include "ast.h"
 
@@ -103,14 +104,70 @@ namespace valuascript::compiler
 
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan& start, const SourceSpan& end) const;
 
-        void report_error_no_panic(const SourceSpan& span, ParserErrorCode code) const;
+        [[nodiscard]] SourceSpan compute_token_span(const Token& token, bool use_exact_token_range, ParserErrorCode code) const;
 
-        void report_error_no_panic(const Token& token, ParserErrorCode code,
-                                   bool use_exact_token_range = false) const;
+        template <typename... Args>
+        void report_error_no_panic(const SourceSpan& span, ParserErrorCode code, Args&&... args) const
+        {
+            if (suppress_errors_) return;
+            std::string message = format_error(code, std::forward<Args>(args)...);
 
-        [[noreturn]] void report_error(const SourceSpan& span, ParserErrorCode code) const;
+            ValuaScriptException ex(
+                ValuascriptErrorCategory::Syntax,
+                code,
+                SourceSpan{
+                    .line_start = span.line_start,
+                    .column_start = span.column_start,
+                    .line_end = span.line_end,
+                    .column_end = span.column_end,
+                    .file_path = file_path_
+                },
+                std::move(message)
+            );
+            context_.handle_error(ex);
+        }
 
-        [[noreturn]] void report_error(const Token& token, ParserErrorCode code,
-                                       bool use_exact_token_range = false) const;
+        template <typename... Args>
+        void report_error_no_panic(const Token& token, ParserErrorCode code, bool use_exact_token_range, Args&&... args) const
+        {
+            if (suppress_errors_) return;
+            SourceSpan span = compute_token_span(token, use_exact_token_range, code);
+            std::string message = format_error(code, std::forward<Args>(args)...);
+
+            ValuaScriptException ex(
+                ValuascriptErrorCategory::Syntax,
+                code,
+                std::move(span),
+                std::move(message)
+            );
+            context_.handle_error(ex);
+        }
+
+        template <typename... Args>
+        void report_error_no_panic(const Token& token, ParserErrorCode code, Args&&... args) const
+        {
+            report_error_no_panic(token, code, false, std::forward<Args>(args)...);
+        }
+
+        template <typename... Args>
+        [[noreturn]] void report_error(const SourceSpan& span, ParserErrorCode code, Args&&... args) const
+        {
+            report_error_no_panic(span, code, std::forward<Args>(args)...);
+            throw ParseSyncException();
+        }
+
+        template <typename... Args>
+        [[noreturn]] void report_error(const Token& token, ParserErrorCode code, bool use_exact_token_range, Args&&... args) const
+        {
+            report_error_no_panic(token, code, use_exact_token_range, std::forward<Args>(args)...);
+            throw ParseSyncException();
+        }
+
+        template <typename... Args>
+        [[noreturn]] void report_error(const Token& token, ParserErrorCode code, Args&&... args) const
+        {
+            report_error_no_panic(token, code, false, std::forward<Args>(args)...);
+            throw ParseSyncException();
+        }
     };
 }

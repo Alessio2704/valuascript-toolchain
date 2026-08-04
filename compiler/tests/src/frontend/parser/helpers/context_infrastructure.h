@@ -14,9 +14,15 @@ namespace valuascript::compiler::test
     enum class BlockContext
     {
         None,
+        TopLevel,
         FunctionBody,
         ExtensionBody
     };
+
+    inline constexpr bool is_nested_block_context(BlockContext ctx)
+    {
+        return ctx != BlockContext::None && ctx != BlockContext::TopLevel;
+    }
 
     enum class SentinelKind
     {
@@ -247,4 +253,8 @@ namespace valuascript::compiler::test
         bool operator_binding_required = true;
         std::function<UniversalVerifier(const std::vector<UniversalVerifier>&)> transform_multi_verifier = nullptr;
     };
+
+    std::string_view get_injectable_type_keyword(InjectableType type);
+    bool is_valid_declaration_keyword(InjectableType type, const std::string& code);
+    bool has_unclosed_brace(const std::string& code);
 }

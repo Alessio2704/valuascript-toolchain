@@ -62,7 +62,7 @@ namespace valuascript::compiler::test
             out << "============================================================\n\n";
 
             size_t scenario_index = 0;
-            size_t base_seed = std::hash<std::string>{}(label);
+            size_t base_seed = RecoverySentinel::make_seed(label);
 
             expand_to_top_level_stream(type, snippet, NullVerifier{}, label, [&](ProcessingItem&& item)
             {

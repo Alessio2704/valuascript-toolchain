@@ -130,8 +130,6 @@ namespace valuascript::compiler::test
         Struct,
         StructErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::structs()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<StructVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

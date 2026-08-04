@@ -9,6 +9,7 @@ namespace valuascript::compiler::test
         static const std::vector<Context>& get_all_for(InjectableType type);
         static const std::vector<Context>& get_container_contexts_for(InjectableType type);
         static const std::vector<Context>& get_block_contexts();
+        static const std::vector<Context>& get_top_level_contexts();
 
     private:
         static const std::vector<Context>& aggregate_all();

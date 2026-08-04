@@ -157,8 +157,6 @@ namespace valuascript::compiler::test
         Assignment,
         AssignmentErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::assignments()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<AssignmentVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

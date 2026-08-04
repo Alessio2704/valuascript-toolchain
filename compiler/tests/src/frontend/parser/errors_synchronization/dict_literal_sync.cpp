@@ -102,7 +102,7 @@ namespace valuascript::compiler::test
                 .test_name = "dict_total_mangle",
                 .source_code = "let a = { x: 1, let y = 2\nlet recovery = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 17},
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 17},
                     {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 25}
                 },
                 .verify_ast = [](const Program& ast) {
@@ -192,8 +192,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

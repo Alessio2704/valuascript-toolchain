@@ -34,7 +34,7 @@ namespace valuascript::compiler::test
                                "enum Scenario: scalar { LOW, BASE, HIGH}\n"
                                "}\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 6, .column = 1}
+                    {.code = Err::InvalidConstructPlacement, .line = 6, .column = 1}
                 }
             },
             ParserErrorsSynchronizationTestCase{
@@ -71,8 +71,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

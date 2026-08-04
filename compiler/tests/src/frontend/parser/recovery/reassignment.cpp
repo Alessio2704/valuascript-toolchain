@@ -171,9 +171,6 @@ namespace valuascript::compiler::test
         Reassignment,
         ReassignmentErrorRegistryRunner,
         testing::ValuesIn(ErrorRegistry::reassignments()),
-        [](const testing::TestParamInfo<ErrorRegistryEntry<ReassignmentVerifier>>& test_info)
-        {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

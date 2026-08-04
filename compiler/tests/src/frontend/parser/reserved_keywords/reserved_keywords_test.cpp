@@ -30,8 +30,6 @@ namespace valuascript::compiler::test
         ExhaustiveKeywords,
         ReservedKeywordRecoveryTest,
         testing::ValuesIn(shared::get_all_reserved_keyword_strings()),
-        [](const testing::TestParamInfo<std::string>& test_info) {
-        return test_info.param;
-        }
+        TestNameGenerator{}
     );
 }

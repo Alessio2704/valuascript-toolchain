@@ -72,32 +72,10 @@ namespace valuascript::compiler
         };
     }
 
-    void TokenCursor::report_error_no_panic(const SourceSpan& span,
-                                            const ParserErrorCode code) const
+    SourceSpan TokenCursor::compute_token_span(const Token& token,
+                                               const bool use_exact_token_range,
+                                               const ParserErrorCode code) const
     {
-        if (suppress_errors_) return;
-        std::string message = format_error(code);
-
-        ValuaScriptException ex(
-            ValuascriptErrorCategory::Syntax,
-            code,
-            SourceSpan{
-                .line_start = span.line_start,
-                .column_start = span.column_start,
-                .line_end = span.line_end,
-                .column_end = span.column_end,
-                .file_path = file_path_
-            },
-            std::move(message)
-        );
-        context_.handle_error(ex);
-    }
-
-    void TokenCursor::report_error_no_panic(const Token& token,
-                                            const ParserErrorCode code,
-                                            const bool use_exact_token_range) const
-    {
-        if (suppress_errors_) return;
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
@@ -180,34 +158,12 @@ namespace valuascript::compiler
             }
         }
 
-        std::string message = format_error(code);
-
-        ValuaScriptException ex(
-            ValuascriptErrorCategory::Syntax,
-            code,
-            SourceSpan{
-                .line_start = err_line,
-                .column_start = err_column_start,
-                .line_end = err_line,
-                .column_end = err_column_end,
-                .file_path = file_path_
-            },
-            std::move(message)
-        );
-        context_.handle_error(ex);
-    }
-
-    [[noreturn]] void TokenCursor::report_error(const SourceSpan& span, const ParserErrorCode code) const
-    {
-        report_error_no_panic(span, code);
-        throw ParseSyncException();
-    }
-
-    [[noreturn]] void TokenCursor::report_error(const Token& token,
-                                                const ParserErrorCode code,
-                                                const bool use_exact_token_range) const
-    {
-        report_error_no_panic(token, code, use_exact_token_range);
-        throw ParseSyncException();
+        return SourceSpan{
+            .line_start = err_line,
+            .column_start = err_column_start,
+            .line_end = err_line,
+            .column_end = err_column_end,
+            .file_path = file_path_
+        };
     }
 }

@@ -66,7 +66,7 @@ namespace valuascript::compiler::test {
                 .test_name = "grouping_with_top_level_declaration",
                 .source_code = "let a = ( let x = 1 )\nlet recovery = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 11},
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 11},
                 },
                 .verify_ast = [](const Program& ast) {
                     EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -109,7 +109,7 @@ namespace valuascript::compiler::test {
                 .test_name = "grouping_interrupted_by_directive",
                 .source_code = "let a = ( 1 + #hidden )\nlet recovery = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 15},
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 15},
                 },
                 .verify_ast = [](const Program& ast) {
                     EXPECT_EQ(ast.execution_steps.size(), 2);
@@ -133,8 +133,6 @@ namespace valuascript::compiler::test {
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

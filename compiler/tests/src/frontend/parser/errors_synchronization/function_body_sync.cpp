@@ -118,58 +118,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_func",
-                .source_code = "func test() -> int {\n    func nested() -> void {}\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_struct",
-                .source_code = "func test() -> int {\n    struct Data { id: int }\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_enum",
-                .source_code = "func test() -> int {\n    enum State: int { A = 1 }\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_broken_enum",
-                .source_code = "func test() -> int {\n    enum State {}\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_import",
-                .source_code = "func test() -> int {\n    import \"module.vs\"\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_import_multiple",
-                .source_code = "func test() -> int {\n    import \"module.vs\"\n    import \"module.vs\"\n    import \"module.vs\"\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5},
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5},
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 4, .column = 5},
-                },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_directive",
-                .source_code = "func test() -> int {\n    #pragma = 1\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_attached_to_illegal_nested_declaration",
-                .source_code = "func test() -> int {\n    @export struct Data { id: int }\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 2, .column = 5} },
-                .verify_ast = ExpectFunctionBodySize("test", 1)
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "broken_function_call_recovers_to_next_statement",
                 .source_code = "func test() -> int {\n    foo(a: 1 b: 2)\n    return 1\n}\nlet a = 1\n",
                 .expected_errors = {
@@ -187,20 +135,6 @@ namespace valuascript::compiler::test
                 .verify_ast = ExpectFunctionBodySize("test", 1)
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "nested_struct_with_proper_closing_brace_stays_in_function",
-                .source_code = "func test() -> int {\n    let a = 1\n    struct Nested { id: int }\n    let b = 2\n}\nlet c = 1\n",
-                .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5}
-                },
-                .verify_ast = [](const Program &ast) {
-                    auto f = ExpectRecoveredFunction(ast, "test");
-                    ASSERT_NE(f, nullptr);
-                    EXPECT_EQ(f->body.size(), 2);
-
-                    EXPECT_EQ(ast.struct_definitions.size(), 0);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "nested_struct_without_closing_brace_escapes_to_top_level",
                 .source_code = "func test() -> int {\n    let a = 1\n    struct TopLevel { id: int }\nlet c = 1\n",
                 .expected_errors = {
@@ -216,8 +150,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -76,7 +76,7 @@ namespace valuascript::compiler::test {
                 .test_name = "tuple_total_mangle",
                 .source_code = "let a = (1, let y = 2\nlet recovery = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 13},
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 13},
                     {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 21}
                 },
                 .verify_ast = [](const Program& ast) {
@@ -91,7 +91,7 @@ namespace valuascript::compiler::test {
                 .test_name = "tuple_with_top_level_declaration_inside",
                 .source_code = "let a = (1, let b = 2, 3)\nlet recovery = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 13}
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 13}
                 },
                 .verify_ast = ExpectTuple(3)
             },
@@ -162,8 +162,6 @@ namespace valuascript::compiler::test {
                 },
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-            return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

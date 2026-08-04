@@ -15,6 +15,13 @@ namespace valuascript::compiler
     std::string format_error(T code, Args&&... args)
     {
         std::string_view msg_template = get_error_template(code);
-        return std::vformat(msg_template, std::make_format_args(args...));
+        if constexpr (sizeof...(Args) == 0)
+        {
+            return std::string(msg_template);
+        }
+        else
+        {
+            return std::vformat(msg_template, std::make_format_args(args...));
+        }
     }
 }

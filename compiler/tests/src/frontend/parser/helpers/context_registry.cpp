@@ -57,13 +57,9 @@ namespace valuascript::compiler::test
             std::vector<Context> result;
             for (const auto& ctx : aggregate_all())
             {
-                if (std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::StrongStatement) != ctx.input_types.end() ||
-                    std::find(ctx.input_types.begin(), ctx.input_types.end(), InjectableType::WeakStatement) != ctx.input_types.end())
+                if (is_nested_block_context(ctx.block_context))
                 {
-                    if (ctx.output_type == InjectableType::TopLevel)
-                    {
-                        result.push_back(ctx);
-                    }
+                    result.push_back(ctx);
                 }
             }
             return result;
@@ -87,6 +83,7 @@ namespace valuascript::compiler::test
             add(get_modifier_contexts());
             add(get_identifier_contexts());
             add(get_extension_contexts());
+            add(get_top_level_contexts());
 
             return vec;
         }();

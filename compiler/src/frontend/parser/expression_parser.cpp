@@ -331,7 +331,7 @@ namespace valuascript::compiler
                 }
                 parser.consume_unexpected_statement_gracefully();
                 SourceSpan span = cursor.make_span(start_tok, cursor.previous());
-                cursor.report_error_no_panic(span, E::TopLevelDeclarationNotAllowedHere);
+                cursor.report_error_no_panic(span, E::InvalidConstructPlacement, "declaration", "in expression");
             }
 
             if (TokenTraits::is_expression_start(cursor.peek().type)) return parse_expression();
@@ -877,7 +877,7 @@ namespace valuascript::compiler
                         const Token& start_tok = cursor.peek();
                         parser.consume_unexpected_statement_gracefully();
                         cursor.report_error_no_panic(cursor.make_span(start_tok, cursor.previous()),
-                                                     E::TopLevelDeclarationNotAllowedHere);
+                                                     E::InvalidConstructPlacement, "declaration", "inside switch body");
                         throw ParseSyncException();
                     }
                     else cursor.report_error(cursor.peek(), E::ExpectedCaseOrDefaultInsideSwitchBody, true);

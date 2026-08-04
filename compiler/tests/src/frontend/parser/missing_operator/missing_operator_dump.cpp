@@ -70,9 +70,7 @@ namespace valuascript::compiler::test
         TwoLeaves,
         MissingOperatorTwoLeavesDump,
         testing::ValuesIn(get_two_leaves_pairs()),
-        [](const testing::TestParamInfo<TwoLeavesPairDef>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 
     class MissingOperatorSpecialCasesDump : public MissingOperatorDumpBase,
@@ -90,9 +88,7 @@ namespace valuascript::compiler::test
         SpecialCases,
         MissingOperatorSpecialCasesDump,
         testing::ValuesIn(get_special_cases()),
-        [](const testing::TestParamInfo<SpecialCaseDef>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 
     class MissingOperatorDump : public MissingOperatorDumpBase,
@@ -161,9 +157,7 @@ namespace valuascript::compiler::test
         ExpressionTemplates,
         MissingOperatorDump,
         testing::ValuesIn(missing_operator_dump_templates()),
-        [](const testing::TestParamInfo<MissingOperatorTemplateBase>& param_info) {
-        return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 #endif
 }

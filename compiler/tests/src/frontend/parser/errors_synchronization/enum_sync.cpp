@@ -122,7 +122,7 @@ namespace valuascript::compiler::test
                 .test_name = "reserved_char_1",
                 .source_code = "enum Test : int { # }\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 19},
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 19},
                 },
                 .verify_ast = [](const Program& ast) {
                     EXPECT_EQ(ast.enum_definitions.size(), 1);
@@ -144,8 +144,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

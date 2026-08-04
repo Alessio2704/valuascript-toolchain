@@ -169,8 +169,6 @@ namespace valuascript::compiler::test
         TypeAnnotation,
         TypeAnnotationRegistryRunner,
         testing::ValuesIn(ConstructRegistry::type_annotations()),
-        [](const testing::TestParamInfo<RegistryEntry<TypeVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

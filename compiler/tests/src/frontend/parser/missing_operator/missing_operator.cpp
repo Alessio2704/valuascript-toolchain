@@ -35,9 +35,7 @@ namespace valuascript::compiler::test
         TwoLeaves,
         MissingOperatorTwoLeavesRunner,
         testing::ValuesIn(get_two_leaves_pairs()),
-        [](const testing::TestParamInfo<TwoLeavesPairDef>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 
     class MissingOperatorExpansionRunner : public ParserTestBase,
@@ -171,9 +169,7 @@ namespace valuascript::compiler::test
         ExpressionTemplates,
         MissingOperatorExpansionRunner,
         testing::ValuesIn(get_expansion_cases()),
-        [](const testing::TestParamInfo<MissingOperatorExpansionDef>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 
     class MissingOperatorSpecialCasesRunner : public ParserTestBase,
@@ -194,8 +190,6 @@ namespace valuascript::compiler::test
         SpecialCases,
         MissingOperatorSpecialCasesRunner,
         testing::ValuesIn(get_special_cases()),
-        [](const testing::TestParamInfo<SpecialCaseDef>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

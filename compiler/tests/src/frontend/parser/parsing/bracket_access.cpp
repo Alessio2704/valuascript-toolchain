@@ -44,8 +44,6 @@ namespace valuascript::compiler::test
             BracketAccessSadParam{.test_name = "unclosed_vector_access", .source_code = "vec[0", .expected_error = E::
             UnmatchedBracketAfterTensorIndex}
         ),
-        [](const testing::TestParamInfo<BracketAccessSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -10,6 +10,7 @@
 #include "core/compiler_context.h"
 #include "core/valuascript_exception.h"
 #include "frontend/parser/ast.h"
+#include "utils/parametrised_test_name_helper.h"
 
 using namespace valuascript::compiler;
 using Err = ParserErrorCode;

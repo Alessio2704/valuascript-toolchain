@@ -45,8 +45,6 @@ namespace valuascript::compiler::test
         ExpressionStatement,
         ExpressionStatementRegistryRunner,
         testing::ValuesIn(ConstructRegistry::expr_stmts()),
-        [](const testing::TestParamInfo<RegistryEntry<ExprStmtVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

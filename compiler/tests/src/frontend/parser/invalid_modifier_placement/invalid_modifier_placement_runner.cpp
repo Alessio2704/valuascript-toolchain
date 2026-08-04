@@ -16,7 +16,7 @@ namespace valuascript::compiler::test
 
         std::string snippet = build_invalid_modifier_snippet(test_case);
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-        size_t base_seed = std::hash<std::string>{}(test_info ? test_info->name() : "fallback");
+        size_t base_seed = RecoverySentinel::make_seed(test_info ? test_info->name() : "fallback");
         size_t scenario_index = 0;
 
         expand_to_top_level_stream(
@@ -61,8 +61,6 @@ namespace valuascript::compiler::test
         InvalidModifierPlacement,
         InvalidModifierPlacementTest,
         testing::ValuesIn(GenerateInvalidModifierTestCases()),
-        [](const testing::TestParamInfo<InvalidModifierPlacementTestCase>& param_info) {
-            return param_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

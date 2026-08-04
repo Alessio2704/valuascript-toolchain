@@ -45,8 +45,6 @@ namespace valuascript::compiler::test
         TypeAlias,
         TypeAliasRegistryRunner,
         testing::ValuesIn(ConstructRegistry::aliases()),
-        [](const testing::TestParamInfo<RegistryEntry<AliasVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -135,7 +135,7 @@ namespace valuascript::compiler
                             const Token& start_tok = ctx_.cursor.peek();
                             if (ctx_.on_unexpected_statement) ctx_.on_unexpected_statement();
                             ctx_.cursor.report_error_no_panic(ctx_.cursor.make_span(start_tok, ctx_.cursor.previous()),
-                                                              ParserErrorCode::TopLevelDeclarationNotAllowedHere);
+                                                             ParserErrorCode::InvalidConstructPlacement, "declaration", "in list");
                             throw ParseSyncException();
                         }
                     }

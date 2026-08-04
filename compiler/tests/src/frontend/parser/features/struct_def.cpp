@@ -21,10 +21,16 @@ namespace valuascript::compiler::test
             });
 
             reg({
+                .name = "MinimalStructPlusModifier",
+                .code = "@modifier struct S {}",
+                .verifier = IsStructDef("S", std::vector<ModifierSpec>{{.name = "modifier"}})
+            });
+
+            reg({
                 .name = "SingleField",
                 .code = "struct S { f: int }",
                 .verifier = IsStructDef("S",
-                    FieldSpec{.name = "f", .type_v = IsType("int")}
+                                        FieldSpec{.name = "f", .type_v = IsType("int")}
                 )
             });
 
@@ -32,9 +38,9 @@ namespace valuascript::compiler::test
                 .name = "MultipleFields",
                 .code = "struct Point { x: float, y: float, z: float }",
                 .verifier = IsStructDef("Point",
-                    FieldSpec{.name = "x", .type_v = IsType("float")},
-                    FieldSpec{.name = "y", .type_v = IsType("float")},
-                    FieldSpec{.name = "z", .type_v = IsType("float")}
+                                        FieldSpec{.name = "x", .type_v = IsType("float")},
+                                        FieldSpec{.name = "y", .type_v = IsType("float")},
+                                        FieldSpec{.name = "z", .type_v = IsType("float")}
                 )
             });
 
@@ -42,8 +48,8 @@ namespace valuascript::compiler::test
                 .name = "TrailingComma",
                 .code = "struct S { f1: int, f2: bool, }",
                 .verifier = IsStructDef("S",
-                    FieldSpec{.name = "f1", .type_v = IsType("int")},
-                    FieldSpec{.name = "f2", .type_v = IsType("bool")}
+                                        FieldSpec{.name = "f1", .type_v = IsType("int")},
+                                        FieldSpec{.name = "f2", .type_v = IsType("bool")}
                 )
             });
 
@@ -51,9 +57,11 @@ namespace valuascript::compiler::test
                 .name = "InterleavingModifiedFields",
                 .code = "struct User { @id id: int, username: string, @optional bio: string }",
                 .verifier = IsStructDef("User",
-                    FieldSpec{.name = "id", .modifiers = {{"id"}}, .type_v = IsType("int")},
-                    FieldSpec{.name = "username", .type_v = IsType("string")},
-                    FieldSpec{.name = "bio", .modifiers = {{"optional"}}, .type_v = IsType("string")}
+                                        FieldSpec{.name = "id", .modifiers = {{"id"}}, .type_v = IsType("int")},
+                                        FieldSpec{.name = "username", .type_v = IsType("string")},
+                                        FieldSpec{
+                                            .name = "bio", .modifiers = {{"optional"}}, .type_v = IsType("string")
+                                        }
                 )
             });
 
@@ -68,8 +76,10 @@ namespace valuascript::compiler::test
                 "  version: int \n"
                 "}",
                 .verifier = IsStructDef("Config",
-                    FieldSpec{.name = "secret", .modifiers = {{"internal"}}, .type_v = IsType("string")},
-                    FieldSpec{.name = "version", .type_v = IsType("int")}
+                                        FieldSpec{
+                                            .name = "secret", .modifiers = {{"internal"}}, .type_v = IsType("string")
+                                        },
+                                        FieldSpec{.name = "version", .type_v = IsType("int")}
                 )
             });
 
@@ -89,8 +99,6 @@ namespace valuascript::compiler::test
         StructDefinition,
         StructDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::structs()),
-        [](const testing::TestParamInfo<RegistryEntry<StructVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

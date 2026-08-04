@@ -47,8 +47,6 @@ namespace valuascript::compiler::test
             ModifierSadParam{.test_name = "StructFieldModifierOnClosingBrace", .source_code = "struct S { @ }", .expected_error = E::
             ExpectedModifierName}
         ),
-        [](const testing::TestParamInfo<ModifierSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

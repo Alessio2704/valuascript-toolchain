@@ -40,8 +40,6 @@ namespace valuascript::compiler::test
         testing::Values(
             DotAccessSadParam{.test_name = "number_as_property", .source_code = "let a = model.123", .expected_error = E::MissingOperator}
         ),
-        [](const testing::TestParamInfo<DotAccessSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

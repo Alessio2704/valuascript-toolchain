@@ -93,7 +93,7 @@ namespace valuascript::compiler::test
                 .test_name = "garbage_statements_between_cases",
                 .source_code = "let x = switch(v) {\n    case A -> 1\n    let y = 2\n    foo()\n    case B -> 3\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5}
+                    {.code = Err::InvalidConstructPlacement, .line = 3, .column = 5}
                 },
                 .verify_ast = ExpectSwitchCases(2, false)
             },
@@ -117,7 +117,7 @@ namespace valuascript::compiler::test
                 .test_name = "illegal_nested_func_in_closed_switch",
                 .source_code = "let x = switch(v) {\n    case A -> 1\n    func nested() -> void {}\n    case B -> 2\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5}
+                    {.code = Err::InvalidConstructPlacement, .line = 3, .column = 5}
                 },
                 .verify_ast = ExpectSwitchCases(2, false)
             },
@@ -125,7 +125,7 @@ namespace valuascript::compiler::test
                 .test_name = "illegal_nested_struct_in_closed_switch",
                 .source_code = "let x = switch(v) {\n    case A -> 1\n    struct Nested { id: int }\n    case B -> 2\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5}
+                    {.code = Err::InvalidConstructPlacement, .line = 3, .column = 5}
                 },
                 .verify_ast = ExpectSwitchCases(2, false)
             },
@@ -133,7 +133,7 @@ namespace valuascript::compiler::test
                 .test_name = "illegal_directive_in_closed_switch",
                 .source_code = "let x = switch(v) {\n    case A -> 1\n    #pragma = 1\n    case B -> 2\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 3, .column = 5}
+                    {.code = Err::InvalidConstructPlacement, .line = 3, .column = 5}
                 },
                 .verify_ast = ExpectSwitchCases(2, false)
             },
@@ -204,7 +204,7 @@ namespace valuascript::compiler::test
                 .test_name = "switch_target_top_level_declaration_1",
                 .source_code = "let x = switch(let a = 1) {\n    case A -> 1\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 16}
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 16}
                 },
                 .verify_ast = ExpectSwitchCases(1, false)
             },
@@ -212,7 +212,7 @@ namespace valuascript::compiler::test
                 .test_name = "switch_target_top_level_declaration_2",
                 .source_code = "let x = switch(enum Test: int { A }) {\n    case A -> 1\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 16}
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 16}
                 },
                 .verify_ast = ExpectSwitchCases(1, false)
             },
@@ -220,7 +220,7 @@ namespace valuascript::compiler::test
                 .test_name = "switch_target_top_level_declaration_3",
                 .source_code = "let x = switch(func test() -> int {}) {\n    case A -> 1\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 16}
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 16}
                 },
                 .verify_ast = ExpectSwitchCases(1, false)
             },
@@ -228,7 +228,7 @@ namespace valuascript::compiler::test
                 .test_name = "switch_target_top_level_declaration_4",
                 .source_code = "let x = switch(struct Data {}) {\n    case A -> 1\n}\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::TopLevelDeclarationNotAllowedHere, .line = 1, .column = 16}
+                    {.code = Err::InvalidConstructPlacement, .line = 1, .column = 16}
                 },
                 .verify_ast = ExpectSwitchCases(1, false)
             },
@@ -261,8 +261,6 @@ namespace valuascript::compiler::test
                 }
             }
         ),
-        [](const ::testing::TestParamInfo<ParserErrorsSynchronizationTestCase>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

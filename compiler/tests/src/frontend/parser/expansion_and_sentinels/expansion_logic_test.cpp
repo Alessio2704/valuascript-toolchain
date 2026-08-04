@@ -181,7 +181,7 @@ namespace valuascript::compiler::test
         ContextExpansionFrameworkIntegrityTest,
         ContextExpansionFrameworkIntegrityTest,
         testing::ValuesIn(GetIntegritySamples()),
-        [](const testing::TestParamInfo<IntegritySample>& test_info) { return test_info.param.test_name; }
+        TestNameGenerator{}
     );
 
     class RecoveryExpansionIntegrityTest : public ParserTestBase,
@@ -263,6 +263,6 @@ namespace valuascript::compiler::test
         RecoveryIntegrity,
         RecoveryExpansionIntegrityTest,
         testing::ValuesIn(GetIntegritySamples()),
-        [](const testing::TestParamInfo<IntegritySample>& test_info) { return test_info.param.test_name; }
+        TestNameGenerator{}
     );
 }

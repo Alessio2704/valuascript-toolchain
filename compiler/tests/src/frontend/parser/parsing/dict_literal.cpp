@@ -49,8 +49,6 @@ namespace valuascript::compiler::test
             DictLiteralSadParam{.test_name = "dict_key_string_literal", .source_code = "{ \"key\" 10 }", .expected_error = E::ExpectedDictionaryKey
             }
         ),
-        [](const testing::TestParamInfo<DictLiteralSadParam>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

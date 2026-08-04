@@ -54,8 +54,6 @@ namespace valuascript::compiler::test
         ExtensionDefinition,
         ExtensionDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::extensions()),
-        [](const testing::TestParamInfo<RegistryEntry<ExtVerifier>>& test_info) {
-        return test_info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

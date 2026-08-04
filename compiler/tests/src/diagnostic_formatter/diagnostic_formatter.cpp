@@ -229,7 +229,7 @@ namespace valuascript::compiler::test
         std::string source = "func test() -> void {\n    func test_inside() -> void {}\n}";
 
         // Error on line 2, from col 5 to col 34 (length of "func test_inside() -> void {}")
-        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 34);
+        auto err = create_dummy_error(E::InvalidConstructPlacement, 2, 5, 34);
 
         std::string clean_output = strip_ansi(DiagnosticFormatter::format_error(err, source));
 
@@ -252,7 +252,7 @@ namespace valuascript::compiler::test
             "    }\n"
             "}";
 
-        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
+        auto err = create_dummy_error(E::InvalidConstructPlacement, 2, 5, 2);
         auto span = err.get_span();
         span.line_end = 4;
         span.column_end = 6;
@@ -293,7 +293,7 @@ namespace valuascript::compiler::test
             "    }\n"
             "}";
 
-        auto err = create_dummy_error(E::TopLevelDeclarationNotAllowedHere, 2, 5, 2);
+        auto err = create_dummy_error(E::InvalidConstructPlacement, 2, 5, 2);
         auto span = err.get_span();
         span.line_end = 15;
         span.column_end = 6;

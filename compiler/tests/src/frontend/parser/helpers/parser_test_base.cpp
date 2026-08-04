@@ -277,7 +277,7 @@ namespace valuascript::compiler::test
 
                     if (inject_sentinels)
                     {
-                        size_t seed = std::hash<std::string>{}(item.path_name + std::string(ctx.name) + item.code) + seed_offset;
+                        size_t seed = RecoverySentinel::make_seed(item.path_name + std::string(ctx.name) + item.code) + seed_offset;
                         pre.push_back(RecoverySentinel::generate_block_sentinel(seed, ctx.block_context, excluded_for_gen, {}));
                         post.push_back(RecoverySentinel::generate_block_sentinel(seed + 1, ctx.block_context, excluded_for_gen, accepted_for_gen));
                         inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
@@ -352,7 +352,7 @@ namespace valuascript::compiler::test
                                                   const std::string& group_name)
     {
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-        size_t base_seed = std::hash<std::string>{}(test_info ? test_info->name() : "fallback");
+        size_t base_seed = RecoverySentinel::make_seed(test_info ? test_info->name() : "fallback");
 
         size_t actual_expansions = 0;
         size_t scenario_index = 0;
@@ -379,8 +379,8 @@ namespace valuascript::compiler::test
                                                                     const std::vector<SentinelKind>& excluded_sentinels,
                                                                     const std::vector<SentinelKind>& accepted_sentinels)
     {
-        RecoveryBlock pre = RecoverySentinel::generate_top_level_sentinel(seed, excluded_sentinels, {});
-        RecoveryBlock post = RecoverySentinel::generate_top_level_sentinel(seed + 1, excluded_sentinels, accepted_sentinels);
+        RecoveryBlock pre = RecoverySentinel::generate_block_sentinel(seed, BlockContext::TopLevel, excluded_sentinels, {});
+        RecoveryBlock post = RecoverySentinel::generate_block_sentinel(seed + 1, BlockContext::TopLevel, excluded_sentinels, accepted_sentinels);
 
         while (!inner_code.empty() && (inner_code.back() == '\n' || inner_code.back() == '\r'))
         {
@@ -474,7 +474,7 @@ namespace valuascript::compiler::test
                                                        ProgramSpec broken_part_spec)
     {
         auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
-        size_t base_seed = std::hash<std::string>{}(test_info ? test_info->name() : "fallback");
+        size_t base_seed = RecoverySentinel::make_seed(test_info ? test_info->name() : "fallback");
 
         auto prog = BuildRecoveryProgram(code, std::move(broken_part_spec), "", base_seed);
 
