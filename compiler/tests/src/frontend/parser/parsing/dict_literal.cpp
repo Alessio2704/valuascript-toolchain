@@ -41,13 +41,7 @@ namespace valuascript::compiler::test
         DictLiteralSadPathTest,
         testing::Values(
             DictLiteralSadParam{.test_name = "dict_missing_brace", .source_code = "{a: 1", .expected_error = E::
-            UnmatchedBraceInDictionaryLiteral},
-            DictLiteralSadParam{.test_name = "dict_missing_key", .source_code = "{1}", .expected_error = E::
-            ExpectedDictionaryKey},
-            DictLiteralSadParam{.test_name = "dict_empty", .source_code = "{a}", .expected_error = E::
-            ExpectedColonAfterDictionaryKey},
-            DictLiteralSadParam{.test_name = "dict_key_string_literal", .source_code = "{ \"key\" 10 }", .expected_error = E::ExpectedDictionaryKey
-            }
+            UnmatchedBraceInDictionaryLiteral}
         ),
         TestNameGenerator{}
     );

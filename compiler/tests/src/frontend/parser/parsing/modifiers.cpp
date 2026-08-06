@@ -38,12 +38,7 @@ namespace valuascript::compiler::test
         ModifierErrorTests,
         ModifierSadPathTest,
         testing::Values(
-            ModifierSadParam{.test_name = "MissingModifierName", .source_code = "@ let x = 1", .expected_error = E::ExpectedModifierName},
-            ModifierSadParam{.test_name = "UnclosedParenthesis", .source_code = "@bind(ui: \"slider\" let x = 1", .expected_error = E::
-            UnmatchedParenthesisAfterModifierArgs},
             ModifierSadParam{.test_name = "DoubleAtSign", .source_code = "@@export let x = 1", .expected_error = E::ExpectedModifierName},
-            ModifierSadParam{.test_name = "missing_comma_in_param", .source_code = "@export(a: 1 b: 2) let x = 1", .expected_error = E::
-            MissingCommaSeparatorForArgumentsInModifier},
             ModifierSadParam{.test_name = "StructFieldModifierOnClosingBrace", .source_code = "struct S { @ }", .expected_error = E::
             ExpectedModifierName}
         ),

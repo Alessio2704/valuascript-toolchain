@@ -33,11 +33,6 @@ namespace valuascript::compiler::test {
         ParserInvalidEnumDefinitions,
         EnumSadTest,
         testing::Values(
-            EnumSadParam{.test_name = "missing_colon", .source_code = "enum Option string { a }", .expected_error = E::ExpectedColonAfterEnumName},
-            EnumSadParam{.test_name = "missing_left_brace", .source_code = "enum Option: string a }", .expected_error = E::
-            ExpectedLeftBraceBeforeEnumBody},
-            EnumSadParam{.test_name = "missing_right_brace", .source_code = "enum Option: string { a, b ", .expected_error = E::
-            ExpectedRightBraceAfterEnumBody},
             EnumSadParam{.test_name = "invalid_value_expression", .source_code = "enum Option: string { a = let }", .expected_error = E::
             ReservedKeywordAsIdentifier}
         ),

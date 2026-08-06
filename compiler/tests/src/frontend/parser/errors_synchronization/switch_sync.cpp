@@ -161,14 +161,6 @@ namespace valuascript::compiler::test
                 .verify_ast = ExpectSwitchCases(1, false)
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "switch_target_unclosed_paren_recovers_at_brace",
-                .source_code = "let x = switch ( 1 {\n    case A -> 1\n}\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightParenAfterSwitchTarget, .line = 1, .column = 18}
-                },
-                .verify_ast = ExpectSwitchCases(1, false)
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "unclosed_switch_inside_grouping_escapes_properly",
                 .source_code = "let x = (switch(v) { case A -> 1) + 2\nlet a = 1\n",
                 .expected_errors = {

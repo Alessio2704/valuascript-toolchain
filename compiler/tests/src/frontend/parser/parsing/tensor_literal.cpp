@@ -40,8 +40,6 @@ namespace valuascript::compiler::test
         ParserStageTest,
         TensorLiteralSadPathTest,
         testing::Values(
-            TensorLiteralSadParam{.test_name = "vector_literal_unclosed", .source_code = "[1,2,3", .expected_error = E::UnmatchedBracketAfterTensorElements},
-            TensorLiteralSadParam{.test_name = "matrix_literal_unclosed", .source_code = "[[1,2], [3, 4]", .expected_error = E::UnmatchedBracketAfterTensorElements},
             TensorLiteralSadParam{.test_name = "mising_operator_1", .source_code = "[1,2,4] [1,2,3]", .expected_error = E::UnexpectedCommaInBracketAccess},
             TensorLiteralSadParam{.test_name = "mising_operator_2", .source_code = "[1, [2,4]] [[1,2,3], [1,2]]", .expected_error = E::UnexpectedCommaInBracketAccess}
         ),

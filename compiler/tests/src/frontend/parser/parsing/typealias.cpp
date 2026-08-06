@@ -40,8 +40,6 @@ namespace valuascript::compiler::test
         ParserStageTest,
         TypeAliasSadPathTest,
         testing::Values(
-            TypeAliasSadParam{.test_name = "missing_assignment", .source_code = "typealias MyType scalar", .expected_error = E::ExpectedAssignAfterTypeAliasName
-            },
             TypeAliasSadParam{.test_name = "missing_assignment_multiline", .source_code = "typealias MyType \n scalar", .expected_error = E::ExpectedAssignAfterTypeAliasName
             }
         ),

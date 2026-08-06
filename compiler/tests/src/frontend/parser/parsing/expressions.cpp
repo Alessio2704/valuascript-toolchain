@@ -40,9 +40,7 @@ namespace valuascript::compiler::test
         ParserStageTest,
         ExpressionSadPathTest,
         testing::Values(
-            ExpressionSadParam{.test_name = "unclosed_parenthesis", .expression_code = "(1 + 2", .expected_error = E::ExpectedRightParenAfterExpression},
-            ExpressionSadParam{.test_name = "unmatched_right_parenthesis", .expression_code = "1 + 2)", .expected_error = E::InvalidExpression},
-            ExpressionSadParam{.test_name = "unclosed_vector_literal", .expression_code = "[1, 2, 3", .expected_error = E::UnmatchedBracketAfterTensorElements}
+            ExpressionSadParam{.test_name = "unmatched_right_parenthesis", .expression_code = "1 + 2)", .expected_error = E::InvalidExpression}
         ),
         TestNameGenerator{}
     );

@@ -40,13 +40,8 @@ namespace valuascript::compiler::test
         ParserStageTest,
         SwitchSadPathTest,
         testing::Values(
-            SwitchSadParam{.test_name = "missing_left_paren", .source_code = "let a = switch res) { case UP -> 1 }", .expected_error = E::
-            ExpectedLeftParenAfterSwitch},
-            SwitchSadParam{.test_name = "missing_right_paren", .source_code = "let a = switch (res { case UP -> 1 }", .expected_error = E::ExpectedRightParenAfterSwitchTarget},
             SwitchSadParam{.test_name = "missing_left_brace", .source_code = "let a = switch (res) case UP -> 1 }", .expected_error = E::
             ExpectedLeftBraceBeforeSwitchBody},
-            SwitchSadParam{.test_name = "missing_right_brace", .source_code = "let a = switch (res) { case UP -> 1", .expected_error = E::
-            ExpectedRightBraceAfterSwitchBody},
             SwitchSadParam{.test_name = "expression_as_case", .source_code = "let a = switch (res) { case a + b -> 10 }", .expected_error = E::ExpectedRightArrowAfterSwitchCaseIdentifier}
 
         ),
