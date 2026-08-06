@@ -44,32 +44,33 @@ namespace valuascript::compiler::test
                 variation_index++;
                 size_t base_seed = DeterministicSampler::make_seed(ctx.name, construct.name);
 
-                auto prog = build_invalid_declaration_in_expression_program(ctx, construct, base_seed);
-
-                out << "--- VARIATION " << variation_index << " (" << construct.name << ") ---\n";
-                out << "TYPE:           " << (construct.is_broken ? "Broken" : "Clean") << "\n";
-
-                if (construct.is_broken && !construct.suppressed_errors.empty())
+                for_each_invalid_declaration_in_expression_program(ctx, construct, base_seed, [&](const ConstructedRecoveryProgram& prog)
                 {
-                    out << "SUPPRESSED:     ";
-                    for (size_t i = 0; i < construct.suppressed_errors.size(); ++i)
+                    out << "--- VARIATION " << variation_index << " (" << construct.name << ") ---\n";
+                    out << "TYPE:           " << (construct.is_broken ? "Broken" : "Clean") << "\n";
+
+                    if (construct.is_broken && !construct.suppressed_errors.empty())
                     {
-                        if (i > 0) out << ", ";
-                        out << std::visit([](auto&& c) { return std::to_string(static_cast<int>(c)); },
-                                          construct.suppressed_errors[i]);
+                        out << "SUPPRESSED:     ";
+                        for (size_t i = 0; i < construct.suppressed_errors.size(); ++i)
+                        {
+                            if (i > 0) out << ", ";
+                            out << std::visit([](auto&& c) { return std::to_string(static_cast<int>(c)); },
+                                              construct.suppressed_errors[i]);
+                        }
+                        out << "\n";
                     }
-                    out << "\n";
-                }
 
-                out << "\nCONSTRUCT CODE:\n";
-                out << construct.code;
-                if (!construct.code.empty() && construct.code.back() != '\n') out << "\n";
+                    out << "\nCONSTRUCT CODE:\n";
+                    out << construct.code;
+                    if (!construct.code.empty() && construct.code.back() != '\n') out << "\n";
 
-                out << "\nFULL RECOVERY CODE:\n";
-                out << prog.full_code;
-                if (!prog.full_code.empty() && prog.full_code.back() != '\n') out << "\n";
+                    out << "\nFULL RECOVERY CODE:\n";
+                    out << prog.full_code;
+                    if (!prog.full_code.empty() && prog.full_code.back() != '\n') out << "\n";
 
-                out << "------------------------------------------------------------\n\n";
+                    out << "------------------------------------------------------------\n\n";
+                });
             }
         }
 

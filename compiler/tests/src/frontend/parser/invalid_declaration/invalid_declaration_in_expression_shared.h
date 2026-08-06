@@ -12,15 +12,17 @@ namespace valuascript::compiler::test
         InvalidDeclarationConstructCase construct_case;
     };
 
-    inline ConstructedRecoveryProgram build_invalid_declaration_in_expression_program(const Context& ctx,
-                                                                                      const InvalidDeclarationConstructCase& construct,
-                                                                                      size_t seed)
+    template <typename Callback>
+    inline void for_each_invalid_declaration_in_expression_program(const Context& ctx,
+                                                                   const InvalidDeclarationConstructCase& construct,
+                                                                   size_t seed,
+                                                                   Callback&& callback)
     {
         std::string wrapped_code = "let _test_expr = " + ctx.prefix + construct.code + ctx.suffix + "\n";
         ProgramSpec inner_spec;
         SpecAdder::add(inner_spec, IsAssignment({AssignmentTargetSpec{.name = "_test_expr"}}));
         std::string inner_prefix = "let _test_expr = " + ctx.prefix;
-        return ParserTestBase::BuildRecoveryProgram(wrapped_code, inner_spec, inner_prefix, seed);
+        ParserTestBase::ForEachRecoveryProgram(wrapped_code, inner_spec, inner_prefix, seed, std::forward<Callback>(callback));
     }
 
     inline std::string get_expected_disallowed_context(std::string_view context_name)

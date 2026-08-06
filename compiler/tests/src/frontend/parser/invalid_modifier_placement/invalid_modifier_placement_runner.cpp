@@ -30,29 +30,31 @@ namespace valuascript::compiler::test
                 ProgramSpec inner_spec;
                 std::visit([&](auto&& ver) { SpecAdder::add(inner_spec, ver); }, processed.verifier);
 
-                auto prog = BuildRecoveryProgram(processed, inner_spec, base_seed + (scenario_index++ * 2));
-                SCOPED_TRACE("Testing Invalid Modifier Placement: " + test_case.test_name + " (" + processed.path_name + ")\n--- Full Source Code Listing ---\n" + format_source_with_lines(prog.full_code));
-
-                CompilerContext context;
-                context.settings.fail_fast = false;
-                auto program = run_parser(prog.full_code, context);
-
-                bool has_modifier_error = false;
-                for (const auto& err : context.diagnostics.get_errors())
+                ForEachRecoveryProgram(processed, inner_spec, base_seed + (scenario_index++ * 2), [&](const ConstructedRecoveryProgram& prog)
                 {
-                    if (std::holds_alternative<ParserErrorCode>(err.get_code()) &&
-                        std::get<ParserErrorCode>(err.get_code()) == ParserErrorCode::ModifiersAttachedToInvalidDeclaration)
+                    SCOPED_TRACE("Testing Invalid Modifier Placement: " + test_case.test_name + " (" + (prog.path_name.empty() ? processed.path_name : prog.path_name) + ")\n--- Full Source Code Listing ---\n" + format_source_with_lines(prog.full_code));
+
+                    CompilerContext context;
+                    context.settings.fail_fast = false;
+                    auto program = run_parser(prog.full_code, context);
+
+                    bool has_modifier_error = false;
+                    for (const auto& err : context.diagnostics.get_errors())
                     {
-                        has_modifier_error = true;
-                        break;
+                        if (std::holds_alternative<ParserErrorCode>(err.get_code()) &&
+                            std::get<ParserErrorCode>(err.get_code()) == ParserErrorCode::ModifiersAttachedToInvalidDeclaration)
+                        {
+                            has_modifier_error = true;
+                            break;
+                        }
                     }
-                }
 
-                EXPECT_TRUE(has_modifier_error)
-                    << "Expected ModifiersAttachedToInvalidDeclaration error in expanded code:\n"
-                    << format_source_with_lines(prog.full_code);
+                    EXPECT_TRUE(has_modifier_error)
+                        << "Expected ModifiersAttachedToInvalidDeclaration error in expanded code:\n"
+                        << format_source_with_lines(prog.full_code);
 
-                ExpectProgram(program.get(), prog.full_spec);
+                    ExpectProgram(program.get(), prog.full_spec);
+                });
             },
             true,
             test_case.construct_case.skip_contexts

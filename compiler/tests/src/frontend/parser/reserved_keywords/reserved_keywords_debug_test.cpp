@@ -40,23 +40,25 @@ namespace valuascript::compiler::test
                 {
                     if (item.is_skipped) return;
 
-                    count++;
                     size_t seed = base_seed + (scenario_index++ * 2);
 
-                    auto prog = BuildRecoveryProgram(item, seed);
-                    auto shifted_errors = ErrorShifter::shift_errors(prog.prefix_for_shifting, {base_error});
-
-                    out << "--- VARIATION " << count << " ---\n";
-                    out << "PATH:  " << item.path_name << "\n";
-                    out << "CODE:\n" << prog.full_code << "\n";
-                    out << "EXPECTED ERRORS:\n";
-                    for (const auto& err : shifted_errors)
+                    ForEachRecoveryProgram(item, seed, [&](const ConstructedRecoveryProgram& prog)
                     {
-                        out << "  - Code: " << static_cast<int>(std::get<ParserErrorCode>(err.code))
-                            << ", Line: " << err.line_start
-                            << ", Col: " << err.column_start << "\n";
-                    }
-                    out << "------------------------------------------------------------\n\n";
+                        count++;
+                        auto shifted_errors = ErrorShifter::shift_errors(prog.prefix_for_shifting, {base_error});
+
+                        out << "--- VARIATION " << count << " ---\n";
+                        out << "PATH:  " << (prog.path_name.empty() ? item.path_name : prog.path_name) << "\n";
+                        out << "CODE:\n" << prog.full_code << "\n";
+                        out << "EXPECTED ERRORS:\n";
+                        for (const auto& err : shifted_errors)
+                        {
+                            out << "  - Code: " << static_cast<int>(std::get<ParserErrorCode>(err.code))
+                                << ", Line: " << err.line_start
+                                << ", Col: " << err.column_start << "\n";
+                        }
+                        out << "------------------------------------------------------------\n\n";
+                    });
                 },
                 true,
                 skip_contexts,

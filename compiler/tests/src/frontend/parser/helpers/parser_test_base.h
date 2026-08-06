@@ -20,6 +20,7 @@ namespace valuascript::compiler::test
         std::string full_code;
         ProgramSpec full_spec;
         std::string prefix_for_shifting;
+        std::string path_name = "";
     };
 
     using ExpansionCallback = std::function<void(ProcessingItem&&)>;
@@ -77,29 +78,71 @@ namespace valuascript::compiler::test
                                                                            accepted_sentinels = {});
 
     public:
-        static ConstructedRecoveryProgram BuildRecoveryProgram(std::string inner_code,
-                                                               ProgramSpec inner_spec,
-                                                               const std::string& inner_prefix,
-                                                               size_t seed,
-                                                               const std::vector<SentinelKind>& excluded_sentinels = {},
-                                                               const std::vector<SentinelKind>& accepted_sentinels = {});
-
-        static ConstructedRecoveryProgram BuildRecoveryProgram(const ProcessingItem& item,
-                                                               ProgramSpec inner_spec,
-                                                               size_t seed)
+        template <typename Callback>
+        static void ForEachRecoveryProgram(const ProcessingItem& item, size_t seed, Callback&& callback)
         {
-            bool is_top_level = (item.type == InjectableType::TopLevel);
-            const std::vector<SentinelKind>& top_level_accepted = is_top_level ? item.accepted_sentinels : std::vector<SentinelKind>{};
-            return BuildRecoveryProgram(item.code, std::move(inner_spec), item.cumulative_prefix, seed, item.excluded_sentinels, top_level_accepted);
+            auto progs = BuildRecoveryPrograms(item, seed);
+            for (const auto& prog : progs)
+            {
+                SCOPED_TRACE("Recovery Path: " + (prog.path_name.empty() ? item.path_name : prog.path_name));
+                callback(prog);
+            }
         }
 
-        static ConstructedRecoveryProgram BuildRecoveryProgram(const ProcessingItem& item,
-                                                               size_t seed)
+        template <typename Callback>
+        static void ForEachRecoveryProgram(const ProcessingItem& item, ProgramSpec inner_spec, size_t seed, Callback&& callback)
         {
-            ProgramSpec spec;
-            std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
-            return BuildRecoveryProgram(item, std::move(spec), seed);
+            auto progs = BuildRecoveryPrograms(item, seed, std::move(inner_spec));
+            for (const auto& prog : progs)
+            {
+                SCOPED_TRACE("Recovery Path: " + (prog.path_name.empty() ? item.path_name : prog.path_name));
+                callback(prog);
+            }
         }
+
+        template <typename Callback>
+        static void ForEachRecoveryProgram(std::string inner_code,
+                                           ProgramSpec inner_spec,
+                                           const std::string& inner_prefix,
+                                           size_t seed,
+                                           const std::vector<SentinelKind>& excluded_sentinels,
+                                           const std::vector<SentinelKind>& accepted_sentinels,
+                                           const std::string& path_name,
+                                           Callback&& callback)
+        {
+            auto progs = BuildRecoveryPrograms(std::move(inner_code), std::move(inner_spec), inner_prefix, seed, excluded_sentinels, accepted_sentinels, path_name);
+            for (const auto& prog : progs)
+            {
+                if (!prog.path_name.empty())
+                {
+                    SCOPED_TRACE("Recovery Path: " + prog.path_name);
+                }
+                callback(prog);
+            }
+        }
+
+        template <typename Callback>
+        static void ForEachRecoveryProgram(std::string inner_code,
+                                           ProgramSpec inner_spec,
+                                           const std::string& inner_prefix,
+                                           size_t seed,
+                                           Callback&& callback)
+        {
+            ForEachRecoveryProgram(std::move(inner_code), std::move(inner_spec), inner_prefix, seed, {}, {}, "", std::forward<Callback>(callback));
+        }
+
+    private:
+        static std::vector<ConstructedRecoveryProgram> BuildRecoveryPrograms(std::string inner_code,
+                                                                             ProgramSpec inner_spec,
+                                                                             const std::string& inner_prefix,
+                                                                             size_t seed,
+                                                                             const std::vector<SentinelKind>& excluded_sentinels = {},
+                                                                             const std::vector<SentinelKind>& accepted_sentinels = {},
+                                                                             const std::string& path_name = "");
+
+        static std::vector<ConstructedRecoveryProgram> BuildRecoveryPrograms(const ProcessingItem& item,
+                                                                             size_t seed,
+                                                                             std::optional<ProgramSpec> inner_spec_override = std::nullopt);
 
     protected:
 

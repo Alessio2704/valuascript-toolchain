@@ -37,16 +37,17 @@ namespace valuascript::compiler::test
             {
                 if (out_item.is_skipped) return;
 
-                auto prog = BuildRecoveryProgram(out_item, ProgramSpec{}, base_seed + (file_index * 2));
+                ForEachRecoveryProgram(out_item, ProgramSpec{}, base_seed + (file_index * 2), [&](const ConstructedRecoveryProgram& prog)
+                {
+                    out << "--- VARIATION " << (file_index + 1) << " ---\n";
+                    out << "PATH:  " << (prog.path_name.empty() ? out_item.path_name : prog.path_name) << "\n";
+                    out << "DEPTH: " << out_item.depth << "\n";
+                    out << "FULL CODE:\n";
+                    out << prog.full_code;
+                    out << "------------------------------------------------------------\n\n";
 
-                out << "--- VARIATION " << (file_index + 1) << " ---\n";
-                out << "PATH:  " << out_item.path_name << "\n";
-                out << "DEPTH: " << out_item.depth << "\n";
-                out << "FULL CODE:\n";
-                out << prog.full_code;
-                out << "------------------------------------------------------------\n\n";
-
-                file_index++;
+                    file_index++;
+                });
             }, true, skip_contexts, context_overrides, std::nullopt, excluded_sentinels, accepted_sentinels);
 
             out << "[DEBUG] Recovery expansion dump finished (" << file_index << " variations)\n";

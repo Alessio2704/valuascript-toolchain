@@ -42,15 +42,16 @@ namespace valuascript::compiler::test
                 ProgramSpec inner_spec;
                 std::visit([&](auto&& ver) { SpecAdder::add(inner_spec, ver); }, processed.verifier);
 
-                auto prog = BuildRecoveryProgram(processed, inner_spec, base_seed + (variation_index * 2));
-
-                variation_index++;
-                out << "--- VARIATION " << variation_index << " ---\n";
-                out << "PATH:  " << processed.path_name << "\n";
-                out << "DEPTH: " << processed.depth << "\n";
-                out << "FULL CODE:\n";
-                out << prog.full_code;
-                out << "------------------------------------------------------------\n\n";
+                ForEachRecoveryProgram(processed, inner_spec, base_seed + (variation_index * 2), [&](const ConstructedRecoveryProgram& prog)
+                {
+                    variation_index++;
+                    out << "--- VARIATION " << variation_index << " ---\n";
+                    out << "PATH:  " << (prog.path_name.empty() ? processed.path_name : prog.path_name) << "\n";
+                    out << "DEPTH: " << processed.depth << "\n";
+                    out << "FULL CODE:\n";
+                    out << prog.full_code;
+                    out << "------------------------------------------------------------\n\n";
+                });
             },
             true,
             test_case.construct_case.skip_contexts

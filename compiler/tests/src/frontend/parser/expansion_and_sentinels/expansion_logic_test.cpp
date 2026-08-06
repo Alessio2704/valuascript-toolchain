@@ -194,61 +194,63 @@ namespace valuascript::compiler::test
             SCOPED_TRACE("Checking Scenario: " + item.path_name);
 
             ProgramSpec item_spec;
-            auto prog = BuildRecoveryProgram(
+            ForEachRecoveryProgram(
                 std::move(item.code),
                 std::move(item_spec),
                 std::move(item.cumulative_prefix),
                 base_seed + (scenario_index++ * 2),
                 item.excluded_sentinels,
-                item.accepted_sentinels
-            );
-
-            CompilerContext context;
-
-            auto ast = run_parser(prog.full_code, context);
-            ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << prog.full_code;
-
-            size_t total_top_level_items =
-                ast->import_statements.size() +
-                ast->directives.size() +
-                ast->function_definitions.size() +
-                ast->struct_definitions.size() +
-                ast->enum_definitions.size() +
-                ast->type_aliases.size() +
-                ast->extension_definitions.size() +
-                ast->execution_steps.size();
-
-            EXPECT_EQ(total_top_level_items, 3)
-                << "Top-level sentinel injection missing in path: " << item.path_name;
-
-            if (item.path_name.find("function_body_wrapper") != std::string::npos)
-            {
-                bool wrapper_found = false;
-                for (const auto& f : ast->function_definitions)
+                item.accepted_sentinels,
+                item.path_name,
+                [&](const ConstructedRecoveryProgram& prog)
                 {
-                    if (f->name == "ctx_wrapper")
+                CompilerContext context;
+
+                auto ast = run_parser(prog.full_code, context);
+                ASSERT_NE(ast, nullptr) << "Failed to parse generated recovery code:\n" << prog.full_code;
+
+                size_t total_top_level_items =
+                    ast->import_statements.size() +
+                    ast->directives.size() +
+                    ast->function_definitions.size() +
+                    ast->struct_definitions.size() +
+                    ast->enum_definitions.size() +
+                    ast->type_aliases.size() +
+                    ast->extension_definitions.size() +
+                    ast->execution_steps.size();
+
+                EXPECT_EQ(total_top_level_items, 3)
+                    << "Top-level sentinel injection missing in path: " << item.path_name;
+
+                if (item.path_name.find("function_body_wrapper") != std::string::npos)
+                {
+                    bool wrapper_found = false;
+                    for (const auto& f : ast->function_definitions)
+                    {
+                        if (f->name == "ctx_wrapper")
+                        {
+                            wrapper_found = true;
+                            EXPECT_EQ(f->body.size(), 3)
+                                << "Block-level sentinels missing inside ctx_wrapper for path: " << item.path_name
+                                << "\nBody size was: " << f->body.size();
+                        }
+                    }
+                    EXPECT_TRUE(wrapper_found) << "Path indicated a function wrapper, but ctx_wrapper not found in AST.";
+                }
+                else if (item.path_name.find("extension_body_wrapper") != std::string::npos)
+                {
+                    bool wrapper_found = false;
+                    for (const auto& e : ast->extension_definitions)
                     {
                         wrapper_found = true;
-                        EXPECT_EQ(f->body.size(), 3)
-                            << "Block-level sentinels missing inside ctx_wrapper for path: " << item.path_name
-                            << "\nBody size was: " << f->body.size();
+                        size_t body_size = e->execution_steps.size() + e->function_definitions.size() + e->struct_definitions.size() + e->enum_definitions.size() + e->type_aliases.size();
+                        EXPECT_EQ(body_size, 3)
+                            << "Block-level sentinels missing inside extension_body_wrapper for path: " << item.path_name
+                            << "\nBody size was: " << body_size;
                     }
+                    EXPECT_TRUE(wrapper_found) << "Path indicated an extension wrapper, but no extension found in AST.";
                 }
-                EXPECT_TRUE(wrapper_found) << "Path indicated a function wrapper, but ctx_wrapper not found in AST.";
-            }
-            else if (item.path_name.find("extension_body_wrapper") != std::string::npos)
-            {
-                bool wrapper_found = false;
-                for (const auto& e : ast->extension_definitions)
-                {
-                    wrapper_found = true;
-                    size_t body_size = e->execution_steps.size() + e->function_definitions.size() + e->struct_definitions.size() + e->enum_definitions.size() + e->type_aliases.size();
-                    EXPECT_EQ(body_size, 3)
-                        << "Block-level sentinels missing inside extension_body_wrapper for path: " << item.path_name
-                        << "\nBody size was: " << body_size;
-                }
-                EXPECT_TRUE(wrapper_found) << "Path indicated an extension wrapper, but no extension found in AST.";
-            }
+            });
         }, true);
     }
 

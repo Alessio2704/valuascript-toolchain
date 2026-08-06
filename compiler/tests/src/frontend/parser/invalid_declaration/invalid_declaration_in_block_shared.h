@@ -77,9 +77,11 @@ namespace valuascript::compiler::test
         return is_disallowed_placement(ctx.block_context, construct.type);
     }
 
-    inline ConstructedRecoveryProgram build_invalid_declaration_program(const Context& ctx,
-                                                                         const InvalidDeclarationConstructCase& construct,
-                                                                         size_t seed)
+    template <typename Callback>
+    inline void for_each_invalid_declaration_program(const Context& ctx,
+                                                     const InvalidDeclarationConstructCase& construct,
+                                                     size_t seed,
+                                                     Callback&& callback)
     {
         std::vector<RecoveryBlock> pre, post;
         std::string inner_code = construct.code;
@@ -128,7 +130,7 @@ namespace valuascript::compiler::test
             }
         }, expected_v);
 
-        return ParserTestBase::BuildRecoveryProgram(wrapped_code, inner_spec, "", seed + 2);
+        ParserTestBase::ForEachRecoveryProgram(wrapped_code, inner_spec, "", seed + 2, std::forward<Callback>(callback));
     }
 
     inline SourceSpan compute_expected_span(const std::string& full_code, const std::string& construct_code, size_t search_start = 0)
