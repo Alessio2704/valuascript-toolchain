@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
 
         ASSERT_FALSE(results.empty()) << "Expansion logic produced zero terminal programs.";
 
-        bool elevation_occurred = false;
+        bool top_level_reached = false;
         int max_observed_depth = 0;
 
         for (const auto& item : results)
@@ -93,11 +93,9 @@ namespace valuascript::compiler::test
 
             if (item.depth > max_observed_depth) max_observed_depth = item.depth;
 
-            if (item.path_name.find("TopLevelPromotion") != std::string::npos)
+            if (item.type == InjectableType::TopLevel)
             {
-                elevation_occurred = true;
-                EXPECT_EQ(item.type, InjectableType::TopLevel)
-                    << "Logic Error: Elevation occurred but output type is not TopLevel.";
+                top_level_reached = true;
             }
         }
 
@@ -108,7 +106,7 @@ namespace valuascript::compiler::test
 
         if (start_type == InjectableType::StrongStatement || start_type == InjectableType::Expression)
         {
-            EXPECT_TRUE(elevation_occurred) << "Logic Error: Elevation branch (Promotion) was never taken.";
+            EXPECT_TRUE(top_level_reached) << "Logic Error: TopLevel context was never reached.";
         }
 
         auto available_contexts = ContextRegistry::get_all_for(start_type);
@@ -138,11 +136,6 @@ namespace valuascript::compiler::test
 
         bool reached_terminal = false;
         cb.on_terminal = [&](WalkState) { reached_terminal = true; };
-
-        cb.on_promotion = [&](const WalkState& s)
-        {
-            cb.on_terminal(WalkState{.type = InjectableType::TopLevel, .depth = s.depth + 1});
-        };
 
         cb.on_normal_branch = [](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {

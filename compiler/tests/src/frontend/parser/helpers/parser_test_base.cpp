@@ -93,20 +93,6 @@ namespace valuascript::compiler::test
                     callback(std::move(item));
                 }
             };
-            cb.on_promotion = [&](const ProcessingItem& item)
-            {
-                if (!item.is_skipped)
-                {
-                    callback({
-                        InjectableType::TopLevel, item.code, item.verifier,
-                        item.path_name + " -> TopLevelPromotion", item.cumulative_prefix,
-                        item.depth + 1, item.recursion_depth,
-                        item.skip_contexts, item.is_skipped,
-                        item.context_overrides, item.custom_errors,
-                        item.excluded_sentinels, item.accepted_sentinels
-                    });
-                }
-            };
             cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
             -> std::vector<ProcessingItem>
             {

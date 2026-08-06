@@ -93,12 +93,6 @@ namespace valuascript::compiler::test
                 };
             };
 
-            cb.on_promotion = [&](const FuzzState& s)
-            {
-                FuzzState promoted{InjectableType::TopLevel, s.code, s.verifier};
-                cb.on_terminal(promoted);
-            };
-
             cb.on_normal_branch = [](const FuzzState& s, const Context& ctx, int) -> std::vector<FuzzState>
             {
                 return { FuzzState{

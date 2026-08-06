@@ -8,11 +8,8 @@
 
 namespace valuascript::compiler::test
 {
-    enum class StepKind { Promotion, Context };
-
     struct NextStep
     {
-        StepKind kind;
         const Context* context = nullptr;
     };
 
@@ -25,7 +22,6 @@ namespace valuascript::compiler::test
             std::function<InjectableType(const State&)> get_type;
 
             std::function<void(State)> on_terminal;
-            std::function<void(const State&)> on_promotion;
             std::function<std::vector<State>(const State&, const Context&, int next_rec_depth)> on_normal_branch;
             std::function<std::vector<State>(const State&, const Context&, int next_rec_depth)> on_block_branch;
 
@@ -60,11 +56,6 @@ namespace valuascript::compiler::test
 
             std::vector<NextStep> possible_steps;
 
-            if (type == InjectableType::StrongStatement)
-            {
-                possible_steps.push_back({.kind = StepKind::Promotion, .context = nullptr});
-            }
-
             if (depth < max_depth)
             {
                 const auto& contexts = ContextRegistry::get_all_for(type);
@@ -82,7 +73,7 @@ namespace valuascript::compiler::test
 
                     if (is_recursive && rec_depth >= max_rec) continue;
 
-                    possible_steps.push_back({.kind = StepKind::Context, .context = &ctx});
+                    possible_steps.push_back({.context = &ctx});
                 }
             }
 
@@ -92,11 +83,7 @@ namespace valuascript::compiler::test
             {
                 if (cb.should_abort()) return;
 
-                if (step.kind == StepKind::Promotion)
-                {
-                    cb.on_promotion(current);
-                }
-                else if (step.context != nullptr)
+                if (step.context != nullptr)
                 {
                     const auto& ctx = *step.context;
                     bool is_recursive = false;

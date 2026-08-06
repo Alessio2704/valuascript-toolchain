@@ -21,8 +21,6 @@ namespace valuascript::compiler::test
 
         cb.on_terminal = [&](WalkState s) { if (!s.is_skipped) count++; };
 
-        cb.on_promotion = [&](const WalkState& s) { if (!s.is_skipped) count++; };
-
         cb.on_normal_branch = [&skip_contexts](const WalkState& s, const Context& ctx, int) -> std::vector<WalkState>
         {
             bool skip = s.is_skipped || std::find(skip_contexts.begin(), skip_contexts.end(), ctx.name) != skip_contexts

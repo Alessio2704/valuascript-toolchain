@@ -88,8 +88,8 @@ namespace valuascript::compiler::test
                                                                ProgramSpec inner_spec,
                                                                size_t seed)
         {
-            bool is_top_level_promotion = (item.path_name.rfind("TopLevelPromotion") != std::string::npos);
-            const std::vector<SentinelKind>& top_level_accepted = is_top_level_promotion ? item.accepted_sentinels : std::vector<SentinelKind>{};
+            bool is_top_level = (item.type == InjectableType::TopLevel);
+            const std::vector<SentinelKind>& top_level_accepted = is_top_level ? item.accepted_sentinels : std::vector<SentinelKind>{};
             return BuildRecoveryProgram(item.code, std::move(inner_spec), item.cumulative_prefix, seed, item.excluded_sentinels, top_level_accepted);
         }
 
