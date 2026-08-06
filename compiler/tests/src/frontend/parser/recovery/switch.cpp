@@ -1,4 +1,6 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
+#include "frontend/parser/helpers/context_infrastructure.h"
 
 namespace valuascript::compiler::test
 {
@@ -172,6 +174,102 @@ namespace valuascript::compiler::test
                     IsIdentifier("v"),
                     SwitchCaseSpec{.labels = {"A", "<error>", "B"}, .result_v = IsNumber("1")}
                 )
+            });
+
+            reg({
+                .name = "SwitchTargetUnclosedParenRecoversAtBrace",
+                .code = "switch ( 1 {\n"
+                "    case A -> 1\n"
+                "}",
+                .errors = {
+                    PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                },
+                .verifier = IsSwitch(
+                    IsNull(),
+                    SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}
+                ),
+                .skip_contexts = {
+                    ContextNames::ExprModifierArg
+                },
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprGrouping,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprUnaryGrouping,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprFuncDefDefault,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprModifierArg,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ModDictItem,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ModBeforeLetMultipleWithInner,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ModBeforeLetMultipleWithBothInner,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                        },
+                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
+                    }
+                }
             });
 
             return true;

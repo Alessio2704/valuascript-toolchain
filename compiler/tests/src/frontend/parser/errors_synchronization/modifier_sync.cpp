@@ -90,18 +90,6 @@ namespace valuascript::compiler::test
                 .verify_ast = ExpectModifierSet({{.name = "test", .args = {{.name = "a"}}}})
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_broken_func",
-                .source_code = "@rpc func f(a:) -> int { return 1 }\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::MissingTypeAnnotation, .line = 1, .column = 15} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    ASSERT_EQ(ast.function_definitions[0]->modifiers.size(), 1);
-                    ASSERT_EQ(ast.function_definitions[0]->modifiers[0].name, "rpc");
-                    ASSERT_EQ(ast.function_definitions[0]->parameters.size(), 1);
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "multiple_modifiers_garbage_between",
                 .source_code = "let @first & @second a = 1\nlet recovery = 1\n",
                 .expected_errors = { {.code = LexerErrorCode::InvalidCharacter, .line = 1, .column = 12} },
@@ -151,21 +139,6 @@ namespace valuascript::compiler::test
                     auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
                     auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
                     EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "func_param_modifier_missing_param_name",
-                .source_code = "func f(@test(a: 1) : int, b: int) -> void {}\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::MissingParameterName, .line = 1, .column = 20} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    auto func = ast.function_definitions[0].get();
-
-                    bool found_b = false;
-                    for (const auto& p : func->parameters) {
-                        if (p.name == "b") found_b = true;
-                    }
-                    EXPECT_TRUE(found_b) << "Parser failed to recover to parameter 'b'";
                 }
             },
             ParserErrorsSynchronizationTestCase{

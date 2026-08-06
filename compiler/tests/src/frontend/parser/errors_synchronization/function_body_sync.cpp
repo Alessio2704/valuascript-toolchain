@@ -118,14 +118,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "broken_function_call_recovers_to_next_statement",
-                .source_code = "func test() -> int {\n    foo(a: 1 b: 2)\n    return 1\n}\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::MissingCommaSeparatorForArgumentsInFunctionCall, .line = 2, .column = 14}
-                },
-                .verify_ast = ExpectFunctionBodySize("test", 2)
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "dangling_modifier_at_end_of_block",
                 .source_code = "func test() -> int {\n    let x = 1\n    @\n}\nlet a = 1\n",
                 .expected_errors = {

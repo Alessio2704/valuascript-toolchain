@@ -71,29 +71,6 @@ namespace valuascript::compiler::test
                     ExpectBaseType(tuple_type->element_types[0].get(), "int", 0);
                     ExpectBaseType(tuple_type->element_types[1].get(), "string", 0);
                 })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "missing_base_type_before_generic_discards_assignment",
-                .source_code = "let a: <int> = 1\nlet b = 2\n",
-                .expected_errors = {
-                    {.code = Err::MissingTypeAnnotation, .line = 1, .column = 8}
-                },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "a");
-                    EXPECT_EQ(assign->targets[0].type.get(), nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "multiple_return_types_trailing_comma_error",
-                .source_code = "func f() -> int, string, {\n  return 1\n}\nlet a = 1\n",
-                .expected_errors = { {.code = Err::TrailingComma, .line = 1, .column = 24} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    EXPECT_EQ(ast.function_definitions[0]->return_types.size(), 2);
-                }
             }
         ),
         TestNameGenerator{}

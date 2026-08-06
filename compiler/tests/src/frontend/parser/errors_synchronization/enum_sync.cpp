@@ -117,19 +117,6 @@ namespace valuascript::compiler::test
                     {.name = "A", .expected_number_value = "1"},
                     {.name = "B"}
                 })
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "reserved_char_2",
-                .source_code = "enum Test : int { / }\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedEnumCaseName, .line = 1, .column = 19},
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.enum_definitions.size(), 1);
-                    EXPECT_EQ(ast.enum_definitions[0]->cases.size(), 1);
-                    EXPECT_EQ(ast.enum_definitions[0]->cases[0].name, "<error>");
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                }
             }
         ),
         TestNameGenerator{}

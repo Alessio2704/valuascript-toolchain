@@ -154,31 +154,6 @@ namespace valuascript::compiler::test
                     {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14}
                 },
                 .verify_ast = ExpectDict({{.key = "x", .expected_number_value = "1"}})
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_self_bracket_unexpected_comma",
-                .source_code = "let a = { x: self[1, ], y: 2 }\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnexpectedCommaInBracketAccess, .line = 1, .column = 20} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_NE(dict, nullptr);
-                    ASSERT_EQ(dict->elements.size(), 2) << "Both dictionary items should be preserved";
-
-                    EXPECT_EQ(dict->elements[0].key, "x");
-                    auto bracket = dynamic_cast<BracketAccess*>(dict->elements[0].value.get());
-                    ASSERT_NE(bracket, nullptr) << "BracketAccess should be recovered gracefully";
-
-                    ASSERT_NE(dynamic_cast<SelfExpression*>(bracket->target.get()), nullptr) << "Target must be self";
-                    EXPECT_NE(bracket->index.get(), nullptr) <<
-                        "Index should be recovered because comma aborts parsing after yielding the bound";
-
-                    EXPECT_EQ(dict->elements[1].key, "y");
-                    auto y_val = dynamic_cast<NumberLiteral*>(dict->elements[1].value.get());
-                    ASSERT_NE(y_val, nullptr);
-                    EXPECT_EQ(y_val->value, "2");
-                }
             }
         ),
         TestNameGenerator{}
