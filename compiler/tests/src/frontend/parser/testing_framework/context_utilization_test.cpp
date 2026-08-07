@@ -5,7 +5,6 @@
 
 #include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_calculator.h"
-#include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
 
 namespace valuascript::compiler::test
 {

@@ -4,7 +4,6 @@
 #include "declaration_parser.h"
 #include "type_parser.h"
 #include "error_recovery.h"
-#include "ast_factory.h"
 
 namespace valuascript::compiler
 {

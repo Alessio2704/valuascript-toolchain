@@ -1,7 +1,5 @@
 #include "parser.h"
-#include "token/reserved_keyword_lookup.h"
 #include "token/operator_lookup.h"
-#include <unordered_set>
 
 namespace valuascript::compiler
 {

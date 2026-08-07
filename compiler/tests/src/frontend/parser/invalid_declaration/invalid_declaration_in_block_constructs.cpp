@@ -3,7 +3,6 @@
 #include "frontend/parser/helpers/error_registry.h"
 #include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/helpers/deterministic_sampler.h"
-#include <algorithm>
 
 namespace valuascript::compiler::test
 {

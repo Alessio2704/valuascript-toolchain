@@ -1,5 +1,4 @@
 #include "compiler_stage_orchestrator.h"
-#include <algorithm>
 
 #include "internal_compiler_exception.h"
 

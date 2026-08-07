@@ -5,7 +5,6 @@
 #include "core/valuascript_exception.h"
 #include "project_resolver_error_code.h"
 #include "core/error_formatter.h"
-#include "frontend/parser/ast.h"
 
 namespace valuascript::compiler
 {

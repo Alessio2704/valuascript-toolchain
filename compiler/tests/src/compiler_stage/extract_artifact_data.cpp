@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 #include "core/compiler_stage.h"
-#include <stdexcept>
-#include <memory>
 
 using namespace valuascript::compiler;
 

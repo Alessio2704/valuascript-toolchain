@@ -2,7 +2,6 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
-#include "context_registry.h"
 #include "error_shifter.h"
 #include "recovery_sentinel.h"
 #include "frontend/lexer/lexer_stage.h"

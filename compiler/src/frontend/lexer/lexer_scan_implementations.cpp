@@ -1,5 +1,4 @@
 #include "lexer.h"
-#include "core/error_formatter.h"
 #include "token/reserved_keyword_lookup.h"
 #include "lexer_error_code.h"
 

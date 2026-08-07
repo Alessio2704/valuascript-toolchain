@@ -1,4 +1,3 @@
-#include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test

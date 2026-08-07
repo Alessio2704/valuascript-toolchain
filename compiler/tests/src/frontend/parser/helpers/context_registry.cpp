@@ -1,5 +1,4 @@
 #include "context_registry.h"
-#include <algorithm>
 #include <unordered_map>
 
 namespace valuascript::compiler::test

@@ -1,5 +1,4 @@
 #include "error_recovery.h"
-#include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler
 {

@@ -1,6 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "synthetic_generator.h"
-#include "utils/test_env_config.h"
 #include <string>
 
 namespace valuascript::compiler::test

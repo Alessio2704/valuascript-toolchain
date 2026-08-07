@@ -1,7 +1,6 @@
 #include "invalid_declaration_in_expression_constructs.h"
 #include "frontend/parser/helpers/construct_registry.h"
 #include "frontend/parser/helpers/error_registry.h"
-#include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/helpers/deterministic_sampler.h"
 #include <algorithm>
 

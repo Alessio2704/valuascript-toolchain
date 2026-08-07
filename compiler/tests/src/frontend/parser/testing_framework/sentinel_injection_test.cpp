@@ -1,7 +1,6 @@
 #include "testing_framework_helpers.h"
 #include <algorithm>
 #include <map>
-#include <cmath>
 #include <vector>
 #include <string>
 

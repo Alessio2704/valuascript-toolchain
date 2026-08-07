@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include "core/diagnostic_formatter.h"
 #include "core/valuascript_exception.h"
-#include "frontend/parser/ast.h"
 
 using namespace valuascript::compiler;
 

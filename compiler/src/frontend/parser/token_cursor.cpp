@@ -1,8 +1,5 @@
 #include "token_cursor.h"
-#include "parser.h"
 #include "token_traits.h"
-#include "core/error_formatter.h"
-#include <algorithm>
 
 namespace valuascript::compiler
 {

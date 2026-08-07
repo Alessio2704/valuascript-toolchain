@@ -2,8 +2,6 @@
 #include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
-#include "token/reserved_keyword_lookup.h"
-#include "frontend/parser/helpers/recovery_sentinel.h"
 #include "frontend/parser/helpers/error_shifter.h"
 
 namespace valuascript::compiler::test

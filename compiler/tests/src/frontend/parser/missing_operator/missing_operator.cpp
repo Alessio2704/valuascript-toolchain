@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "frontend/parser/helpers/context_registry.h"
 #include "missing_operator_shared.h"
 
 namespace valuascript::compiler::test

@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "parser_errors_synchronization_base.h"
-#include "frontend/parser/ast.h"
 
 namespace valuascript::compiler::test
 {

@@ -1,5 +1,4 @@
 #include "expansion_policy.h"
-#include "utils/test_env_config.h"
 
 namespace valuascript::compiler::test
 {

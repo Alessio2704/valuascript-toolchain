@@ -3,7 +3,6 @@
 #include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
-#include "frontend/parser/helpers/context_registry.h"
 #include "invalid_declaration_in_expression_constructs.h"
 
 namespace valuascript::compiler::test

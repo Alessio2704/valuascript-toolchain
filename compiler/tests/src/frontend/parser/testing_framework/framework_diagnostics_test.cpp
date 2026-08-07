@@ -4,14 +4,12 @@
 #include <vector>
 #include <utility>
 #include <iomanip>
-#include <algorithm>
 
 #include "testing_framework_helpers.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "frontend/parser/helpers/construct_registry.h"
 #include "frontend/parser/helpers/error_registry.h"
 #include "frontend/parser/helpers/context_registry.h"
-#include "frontend/parser/helpers/test_structures.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_calculator.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
 

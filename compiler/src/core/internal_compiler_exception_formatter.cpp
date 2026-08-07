@@ -1,4 +1,3 @@
-#include "error_formatter.h"
 #include "internal_compiler_exception.h"
 
 namespace valuascript::compiler {

@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include <unordered_set>
 #include <string>
-#include <functional>
-#include "utils/test_env_config.h"
 #include "synthetic_generator.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 

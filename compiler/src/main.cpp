@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include "core/compiler_context.h"
 #include "core/main_orchestrator.h"
 #include "core/diagnostic_formatter.h"
