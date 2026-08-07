@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frontend/parser/helpers/context_infrastructure.h"
+#include "frontend/parser/helpers/injectable_type.h"
 #include <vector>
 #include <string_view>
 

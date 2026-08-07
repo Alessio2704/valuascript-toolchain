@@ -1,5 +1,5 @@
 #pragma once
-#include "context_infrastructure.h"
+#include "context_definition.h"
 
 namespace valuascript::compiler::test
 {

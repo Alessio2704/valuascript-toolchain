@@ -6,7 +6,8 @@
 #include <functional>
 #include <optional>
 
-#include "context_infrastructure.h"
+#include "sentinel_kind.h"
+#include "universal_verifier.h"
 #include "node_matchers.h"
 #include "core/valuascript_exception.h"
 

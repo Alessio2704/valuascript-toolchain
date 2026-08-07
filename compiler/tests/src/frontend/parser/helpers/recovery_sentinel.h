@@ -4,6 +4,8 @@
 #include <vector>
 #include <random>
 #include <functional>
+#include "block_context.h"
+#include "sentinel_kind.h"
 #include "construct_registry.h"
 #include "spec_adder.h"
 #include "deterministic_sampler.h"
@@ -186,7 +188,8 @@ namespace valuascript::compiler::test
                 for (const auto& block : base_pool)
                 {
                     if (block.kind.has_value() &&
-                        std::find(accepted_kinds.begin(), accepted_kinds.end(), *block.kind) != accepted_kinds.end())
+                        std::find(accepted_kinds.begin(), accepted_kinds.end(), *block.kind) != accepted_kinds.end() &&
+                        std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) == excluded_kinds.end())
                     {
                         has_accepted_match = true;
                         break;
@@ -197,6 +200,12 @@ namespace valuascript::compiler::test
             std::vector<RecoveryBlock> filtered;
             for (const auto& block : base_pool)
             {
+                if (block.kind.has_value() &&
+                    std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) != excluded_kinds.end())
+                {
+                    continue;
+                }
+
                 if (has_accepted_match)
                 {
                     if (block.kind.has_value() &&
@@ -206,11 +215,8 @@ namespace valuascript::compiler::test
                     }
                     continue;
                 }
-                if (!block.kind.has_value() ||
-                    std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) == excluded_kinds.end())
-                {
-                    filtered.push_back(block);
-                }
+
+                filtered.push_back(block);
             }
             return filtered;
         }

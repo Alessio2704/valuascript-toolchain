@@ -7,24 +7,6 @@
 
 namespace valuascript::compiler::test
 {
-    inline bool is_terminal_type(InjectableType type)
-    {
-        switch (type)
-        {
-        case InjectableType::TopLevel:
-        case InjectableType::Import:
-        case InjectableType::Directive:
-        case InjectableType::Function:
-        case InjectableType::Extension:
-        case InjectableType::Struct:
-        case InjectableType::Enum:
-        case InjectableType::TypeAlias:
-            return true;
-        default:
-            return false;
-        }
-    }
-
     struct ContextOverrideAny
     {
         std::string_view context_name;
@@ -66,6 +48,12 @@ namespace valuascript::compiler::test
         return result;
     }
 
+    struct ContextStep
+    {
+        std::string_view context_name;
+        bool is_recursion = false;
+    };
+
     struct ProcessingItem
     {
         InjectableType type;
@@ -81,6 +69,20 @@ namespace valuascript::compiler::test
         std::optional<std::vector<ParserExpectedError>> custom_errors = std::nullopt;
         std::vector<SentinelKind> excluded_sentinels = {};
         std::vector<SentinelKind> accepted_sentinels = {};
+        std::vector<ContextStep> context_history = {};
+
+        [[nodiscard]] bool has_context(std::string_view name) const
+        {
+            return std::any_of(context_history.begin(), context_history.end(), [&](const ContextStep& step)
+            {
+                return step.context_name == name;
+            });
+        }
+
+        [[nodiscard]] size_t transition_count() const
+        {
+            return context_history.size();
+        }
     };
 
     struct RecoveryScenario

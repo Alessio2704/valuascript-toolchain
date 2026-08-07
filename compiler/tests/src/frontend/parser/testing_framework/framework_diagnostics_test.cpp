@@ -6,40 +6,17 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "parser_test_base.h"
-#include "dump_writer.h"
-#include "construct_registry.h"
-#include "error_registry.h"
-#include "context_registry.h"
-#include "test_structures.h"
+#include "testing_framework_helpers.h"
+#include "frontend/parser/helpers/dump_writer.h"
+#include "frontend/parser/helpers/construct_registry.h"
+#include "frontend/parser/helpers/error_registry.h"
+#include "frontend/parser/helpers/context_registry.h"
+#include "frontend/parser/helpers/test_structures.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_calculator.h"
 #include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
-#include "../expansion_and_sentinels/context_tree_walker.h"
 
 namespace valuascript::compiler::test
 {
-    static std::string injectable_to_string(InjectableType type)
-    {
-        switch (type)
-        {
-        case InjectableType::Identifier: return "Identifier";
-        case InjectableType::Import: return "Import";
-        case InjectableType::Directive: return "Directive";
-        case InjectableType::Function: return "Function";
-        case InjectableType::Extension: return "Extension";
-        case InjectableType::Struct: return "Struct";
-        case InjectableType::Enum: return "Enum";
-        case InjectableType::TypeAlias: return "TypeAlias";
-        case InjectableType::Expression: return "Expression";
-        case InjectableType::Modifier: return "Modifier";
-        case InjectableType::TypeAnnotation: return "TypeAnnotation";
-        case InjectableType::WeakStatement: return "WeakStatement";
-        case InjectableType::StrongStatement: return "StrongStatement";
-        case InjectableType::TopLevel: return "TopLevel";
-        default: return "Unknown";
-        }
-    }
-
     static std::pair<size_t, size_t> get_registry_counts(InjectableType type)
     {
         switch (type)
@@ -84,7 +61,7 @@ namespace valuascript::compiler::test
         return {0, 0};
     }
 
-    class ParserTestingFrameworkDetails : public ParserTestBase
+    class FrameworkDiagnosticsTest : public TestingFrameworkTestBase
     {
     protected:
         std::map<std::pair<InjectableType, std::vector<std::string_view>>, size_t> expansion_cache;
@@ -193,7 +170,7 @@ namespace valuascript::compiler::test
         }
     };
 
-    TEST_F(ParserTestingFrameworkDetails, OutputDiagnostics)
+    TEST_F(FrameworkDiagnosticsTest, OutputDiagnostics)
     {
         DumpWriter writer("framework_details.txt", "TestDiagnostics");
         ASSERT_TRUE(writer.is_open()) << "Could not open dump file!";
@@ -269,7 +246,7 @@ namespace valuascript::compiler::test
             std::string breakdown_str;
             for (auto it = output_breakdown.begin(); it != output_breakdown.end(); ++it)
             {
-                breakdown_str += injectable_to_string(it->first) + ": " + std::to_string(it->second);
+                breakdown_str += std::string(to_string(it->first)) + ": " + std::to_string(it->second);
                 if (std::next(it) != output_breakdown.end())
                 {
                     breakdown_str += ", ";
@@ -278,7 +255,7 @@ namespace valuascript::compiler::test
 
             if (breakdown_str.empty()) breakdown_str = "None";
 
-            out << std::left << std::setw(18) << injectable_to_string(type)
+            out << std::left << std::setw(18) << to_string(type)
                 << "| " << std::setw(16) << contexts.size()
                 << "| " << breakdown_str << "\n";
         }
@@ -292,7 +269,7 @@ namespace valuascript::compiler::test
         for (const auto& [type, dummy_verifier] : injectables_with_verifiers)
         {
             size_t variations = ParserTestBase::get_augmentation_count(type, "dummy_snippet", dummy_verifier, "test_group");
-            out << std::left << std::setw(18) << injectable_to_string(type)
+            out << std::left << std::setw(18) << to_string(type)
                 << "| " << variations << "\n";
         }
         out << "\n";
@@ -315,8 +292,7 @@ namespace valuascript::compiler::test
             ConstructRegistry::structs().size() +
             ConstructRegistry::enums().size() +
             ConstructRegistry::aliases().size() +
-            ConstructRegistry::directives().size() +
-            ConstructRegistry::structs().size();
+            ConstructRegistry::directives().size();
 
         out << std::left << std::setw(22) << "Pool Type"
             << "| " << "Available Snippets\n";
@@ -352,7 +328,7 @@ namespace valuascript::compiler::test
 
             grand_total_tests += run_total;
 
-            out << std::left << std::setw(16) << injectable_to_string(type)
+            out << std::left << std::setw(16) << to_string(type)
                 << "| " << std::setw(6) << happy_cnt
                 << "| " << std::setw(6) << sad_cnt
                 << "| " << std::setw(15) << aug_cnt

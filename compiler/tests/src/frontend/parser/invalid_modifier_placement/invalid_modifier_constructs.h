@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include <string_view>
-#include "frontend/parser/helpers/context_infrastructure.h"
+#include "frontend/parser/helpers/injectable_type.h"
+#include "frontend/parser/helpers/universal_verifier.h"
 #include "frontend/parser/helpers/node_matchers.h"
 
 namespace valuascript::compiler::test

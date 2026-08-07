@@ -100,20 +100,19 @@ namespace valuascript::compiler::test
                     != item.skip_contexts.end();
 
                 const ContextOverrideAny* match = nullptr;
-                if (item.depth == 0)
+                for (const auto& ov : item.context_overrides)
                 {
-                    for (const auto& ov : item.context_overrides)
+                    if (ov.context_name == ctx.name)
                     {
-                        if (ov.context_name == ctx.name)
-                        {
-                            match = &ov;
-                            break;
-                        }
+                        match = &ov;
+                        break;
                     }
                 }
 
-                UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
-                std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
+                const ContextOverrideAny* verifier_match = (item.depth == 0) ? match : nullptr;
+
+                UniversalVerifier inner_verifier = (verifier_match && verifier_match->verifier.has_value()) ? verifier_match->verifier.value() : item.verifier;
+                std::optional<std::vector<ParserExpectedError>> branch_errors = (verifier_match && verifier_match->errors.has_value()) ? verifier_match->errors : item.custom_errors;
 
                 std::vector<SentinelKind> combined_excluded = item.excluded_sentinels;
                 if (match && !match->excluded_sentinels.empty())
@@ -174,6 +173,8 @@ namespace valuascript::compiler::test
                 auto make_item = [&](const std::vector<SentinelKind>& accepted_for_item) -> ProcessingItem
                 {
                     std::string sentinel_tag = (accepted_for_item.size() == 1) ? (" [" + to_string(accepted_for_item[0]) + "]") : "";
+                    std::vector<ContextStep> next_history = item.context_history;
+                    next_history.push_back({.context_name = ctx.name, .is_recursion = (next_rec_depth > item.recursion_depth)});
                     return ProcessingItem{
                         ctx.output_type, ctx.prefix + item.code + ctx.suffix,
                         needs_transform ? ctx.transform_verifier(final_verifier) : final_verifier,
@@ -182,7 +183,7 @@ namespace valuascript::compiler::test
                                                        : std::string(ctx.name)) + sentinel_tag,
                         ctx.prefix + item.cumulative_prefix, item.depth + 1, next_rec_depth,
                         item.skip_contexts, skip, item.context_overrides, branch_errors,
-                        combined_excluded, accepted_for_item
+                        combined_excluded, accepted_for_item, std::move(next_history)
                     };
                 };
 
@@ -205,20 +206,19 @@ namespace valuascript::compiler::test
                     != item.skip_contexts.end();
 
                 const ContextOverrideAny* match = nullptr;
-                if (item.depth == 0)
+                for (const auto& ov : item.context_overrides)
                 {
-                    for (const auto& ov : item.context_overrides)
+                    if (ov.context_name == ctx.name)
                     {
-                        if (ov.context_name == ctx.name)
-                        {
-                            match = &ov;
-                            break;
-                        }
+                        match = &ov;
+                        break;
                     }
                 }
 
-                UniversalVerifier inner_verifier = (match && match->verifier.has_value()) ? match->verifier.value() : item.verifier;
-                std::optional<std::vector<ParserExpectedError>> branch_errors = (match && match->errors.has_value()) ? match->errors : item.custom_errors;
+                const ContextOverrideAny* verifier_match = (item.depth == 0) ? match : nullptr;
+
+                UniversalVerifier inner_verifier = (verifier_match && verifier_match->verifier.has_value()) ? verifier_match->verifier.value() : item.verifier;
+                std::optional<std::vector<ParserExpectedError>> branch_errors = (verifier_match && verifier_match->errors.has_value()) ? verifier_match->errors : item.custom_errors;
 
                 std::vector<SentinelKind> combined_excluded = item.excluded_sentinels;
                 if (match && !match->excluded_sentinels.empty())
@@ -270,6 +270,8 @@ namespace valuascript::compiler::test
                         inner_prefix = pre[0].source + "\n  " + inner_prefix;
                     }
 
+                    std::vector<ContextStep> next_history = item.context_history;
+                    next_history.push_back({.context_name = ctx.name, .is_recursion = (next_rec_depth > item.recursion_depth)});
                     return ProcessingItem{
                         ctx.output_type, ctx.prefix + inner_code + ctx.suffix,
                         (match && match->verifier.has_value() && !is_injectable_inner_verifier)
@@ -281,7 +283,7 @@ namespace valuascript::compiler::test
                                                        : std::string(ctx.name)),
                         ctx.prefix + inner_prefix, item.depth + 1, next_rec_depth,
                         item.skip_contexts, skip, item.context_overrides, branch_errors,
-                        excluded_for_gen, accepted_for_gen
+                        excluded_for_gen, accepted_for_gen, std::move(next_history)
                     };
                 };
 
