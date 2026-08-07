@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
                 .code = "obj.method(a: 1)",
                 .verifier = IsCall(
                     IsDot(IsIdentifier("obj"), "method"),
-                    {{"a", IsNumber("1")}}
+                    {{.label="a", .value_v=IsNumber("1")}}
                 )
             });
 
@@ -32,7 +32,7 @@ namespace valuascript::compiler::test
                 .code = "arr[0](x: 1)",
                 .verifier = IsCall(
                     IsBracket(IsIdentifier("arr"), IsNumber("0")),
-                    {{"x", IsNumber("1")}}
+                    {{.label="x", .value_v=IsNumber("1")}}
                 )
             });
 

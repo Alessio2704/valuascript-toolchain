@@ -51,8 +51,15 @@ namespace valuascript::compiler::test
         [[nodiscard]] size_t size() const { return get().size(); }
         [[nodiscard]] bool empty() const { return get().empty(); }
 
-        [[nodiscard]] friend bool operator==(const StringStorage& lhs, std::string_view rhs) { return lhs.get() == rhs; }
-        [[nodiscard]] friend std::strong_ordering operator<=>(const StringStorage& lhs, std::string_view rhs) { return lhs.get() <=> rhs; }
+        [[nodiscard]] friend bool operator==(const StringStorage& lhs, std::string_view rhs)
+        {
+            return lhs.get() == rhs;
+        }
+
+        [[nodiscard]] friend std::strong_ordering operator<=>(const StringStorage& lhs, std::string_view rhs)
+        {
+            return lhs.get() <=> rhs;
+        }
     };
 
     struct AnyMatcher;
@@ -72,7 +79,8 @@ namespace valuascript::compiler::test
     concept ASTNodeConcept = std::derived_from<std::decay_t<T>, AstNode>;
 
     template <typename M, typename NodeT>
-    concept ASTMatcher = requires(const std::decay_t<M>& m, NodeT* node) {
+    concept ASTMatcher = requires(const std::decay_t<M>& m, NodeT* node)
+    {
         { m(node) };
     };
 
@@ -699,7 +707,8 @@ namespace valuascript::compiler::test
             ASSERT_EQ(d->elements.size(), items.size()) << "Dictionary items count mismatch.";
             for (size_t i = 0; i < items.size(); i++)
             {
-                EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i << ".";
+                EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i <<
+ ".";
                 ExpectModifiers(d->elements[i].modifiers, items[i].modifiers);
                 if (items[i].value_v) items[i].value_v(d->elements[i].value.get());
             }
@@ -711,7 +720,8 @@ namespace valuascript::compiler::test
     {
         ASSERT_NE(node, nullptr) << "Expected TypeAnnotation node, but got nullptr.";
         EXPECT_EQ(node->name, name) << "TypeAnnotation name mismatch.";
-        ASSERT_EQ(node->generic_args.size(), generics.size()) << "Generic arg count mismatch for type '" << name << "'.";
+        ASSERT_EQ(node->generic_args.size(), generics.size()) << "Generic arg count mismatch for type '" << name <<
+ "'.";
         for (size_t i = 0; i < generics.size(); i++)
         {
             if (generics[i]) generics[i](node->generic_args[i].get());
@@ -740,7 +750,8 @@ namespace valuascript::compiler::test
             for (size_t i = 0; i < targets.size(); i++)
             {
                 ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
-                EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index " << i << ".";
+                EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index " << i
+ << ".";
                 if (targets[i].type_v) targets[i].type_v(a->targets[i].type.get());
             }
             if (val_v) val_v(a->value.get());
@@ -793,18 +804,21 @@ namespace valuascript::compiler::test
         ExpectModifiers(f->modifiers, modifiers);
         if (docstring.has_value())
         {
-            EXPECT_EQ(f->docstring, docstring->get()) << "FunctionDefinition docstring mismatch for function '" << name << "'.";
+            EXPECT_EQ(f->docstring, docstring->get()) << "FunctionDefinition docstring mismatch for function '" << name
+ << "'.";
         }
         else
         {
-            EXPECT_EQ(f->docstring, std::nullopt) << "FunctionDefinition docstring mismatch for function '" << name << "'.";
+            EXPECT_EQ(f->docstring, std::nullopt) << "FunctionDefinition docstring mismatch for function '" << name <<
+ "'.";
         }
 
         ASSERT_EQ(f->parameters.size(), params.size()) << "FunctionDefinition parameters count mismatch for function '"
             << name << "'.";
         for (size_t i = 0; i < params.size(); i++)
         {
-            EXPECT_EQ(f->parameters[i].name, params[i].name.get()) << "Function parameter name mismatch at index " << i << " for function '" << name << "'.";
+            EXPECT_EQ(f->parameters[i].name, params[i].name.get()) << "Function parameter name mismatch at index " << i
+ << " for function '" << name << "'.";
             ExpectModifiers(f->parameters[i].modifiers, params[i].modifiers);
             if (params[i].type_v) params[i].type_v(f->parameters[i].type.get());
             if (params[i].default_v) params[i].default_v(f->parameters[i].default_value.get());
@@ -834,7 +848,8 @@ namespace valuascript::compiler::test
         ExpectModifiers(e->modifiers, modifiers);
         if (target) target(e->target_type.get());
 
-        ASSERT_EQ(e->execution_steps.size(), spec.execution_steps.size()) << "Execution steps count mismatch in Extension.";
+        ASSERT_EQ(e->execution_steps.size(), spec.execution_steps.size()) <<
+ "Execution steps count mismatch in Extension.";
         for (size_t i = 0; i < spec.execution_steps.size(); i++)
             if (spec.execution_steps[i]) spec.execution_steps[i](e->execution_steps[i].get());
 
@@ -862,10 +877,12 @@ namespace valuascript::compiler::test
         ASSERT_NE(s, nullptr) << "Expected StructDefinition node, but got nullptr.";
         EXPECT_EQ(s->name, name) << "StructDefinition name mismatch.";
         ExpectModifiers(s->modifiers, modifiers);
-        ASSERT_EQ(s->fields.size(), fields.size()) << "StructDefinition fields count mismatch for struct '" << name << "'.";
+        ASSERT_EQ(s->fields.size(), fields.size()) << "StructDefinition fields count mismatch for struct '" << name <<
+ "'.";
         for (size_t i = 0; i < fields.size(); i++)
         {
-            EXPECT_EQ(s->fields[i].name, fields[i].name.get()) << "Struct field name mismatch at index " << i << " for struct '" << name << "'.";
+            EXPECT_EQ(s->fields[i].name, fields[i].name.get()) << "Struct field name mismatch at index " << i <<
+ " for struct '" << name << "'.";
             ExpectModifiers(s->fields[i].modifiers, fields[i].modifiers);
             if (fields[i].type_v) fields[i].type_v(s->fields[i].type.get());
         }
@@ -883,7 +900,8 @@ namespace valuascript::compiler::test
         ASSERT_EQ(e->cases.size(), cases.size()) << "EnumDefinition cases count mismatch for enum '" << name << "'.";
         for (size_t i = 0; i < cases.size(); i++)
         {
-            EXPECT_EQ(e->cases[i].name, cases[i].name.get()) << "Enum case name mismatch at index " << i << " for enum '" << name << "'.";
+            EXPECT_EQ(e->cases[i].name, cases[i].name.get()) << "Enum case name mismatch at index " << i <<
+ " for enum '" << name << "'.";
             ExpectModifiers(e->cases[i].modifiers, cases[i].modifiers);
             if (cases[i].value_v) cases[i].value_v(e->cases[i].value.get());
         }
@@ -1416,7 +1434,7 @@ namespace valuascript::compiler::test
 
     inline TypeVerifier IsType(StringStorage name, std::vector<TypeVerifier> generics = {})
     {
-        return TypeVerifier(TypeMatcher{std::move(name), std::move(generics)});
+        return TypeVerifier(TypeMatcher{.name = std::move(name), .generics = std::move(generics)});
     }
 
     template <typename... Matchers>
@@ -1442,7 +1460,8 @@ namespace valuascript::compiler::test
         {
             if (auto t = ExpectNode<TupleTypeAnnotation>(node))
             {
-                ASSERT_EQ(t->element_types.size(), sizeof...(Matchers)) << "TupleTypeAnnotation element count mismatch.";
+                ASSERT_EQ(t->element_types.size(), sizeof...(Matchers)) <<
+ "TupleTypeAnnotation element count mismatch.";
                 size_t idx = 0;
                 std::apply([&](const auto&... m)
                 {
@@ -1569,7 +1588,7 @@ namespace valuascript::compiler::test
 
     inline ReturnVerifier IsReturn(std::vector<ModifierSpec> modifiers, std::vector<ExprVerifier> values)
     {
-        return ReturnVerifier(ReturnMatcher{std::move(modifiers), std::move(values)});
+        return ReturnVerifier(ReturnMatcher{.modifiers = std::move(modifiers), .values = std::move(values)});
     }
 
     inline ReturnVerifier IsReturn(std::vector<ExprVerifier> values = {})
@@ -1632,8 +1651,8 @@ namespace valuascript::compiler::test
                                       std::optional<StringStorage> docstring = std::nullopt)
     {
         return FuncVerifier(FunctionDefMatcher{
-            std::move(name), std::move(modifiers), std::move(params),
-            std::move(returns), std::move(body), std::move(docstring)
+            .name = std::move(name), .modifiers = std::move(modifiers), .params = std::move(params),
+            .returns = std::move(returns), .body = std::move(body), .docstring = std::move(docstring)
         });
     }
 
@@ -1658,7 +1677,9 @@ namespace valuascript::compiler::test
     inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
                                       std::vector<FieldSpec> fields = {})
     {
-        return StructVerifier(StructDefMatcher{std::move(name), std::move(modifiers), std::move(fields)});
+        return StructVerifier(StructDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .fields = std::move(fields)
+        });
     }
 
     template <typename... FieldSpecs>
@@ -1667,7 +1688,9 @@ namespace valuascript::compiler::test
     inline StructVerifier IsStructDef(StringStorage name, FieldSpecs&&... fields)
     {
         std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
-        return StructVerifier(StructDefMatcher{std::move(name), {}, std::move(field_list)});
+        return StructVerifier(StructDefMatcher{
+            .name = std::move(name), .modifiers = {}, .fields = std::move(field_list)
+        });
     }
 
     template <typename... FieldSpecs>
@@ -1676,7 +1699,9 @@ namespace valuascript::compiler::test
     inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers, FieldSpecs&&... fields)
     {
         std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
-        return StructVerifier(StructDefMatcher{std::move(name), std::move(modifiers), std::move(field_list)});
+        return StructVerifier(StructDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .fields = std::move(field_list)
+        });
     }
 
     struct EnumDefMatcher
@@ -1702,7 +1727,10 @@ namespace valuascript::compiler::test
                                   TypeVerifier type = nullptr,
                                   std::vector<EnumCaseSpec> cases = {})
     {
-        return EnumVerifier(EnumDefMatcher{std::move(name), std::move(modifiers), std::move(type), std::move(cases)});
+        return EnumVerifier(EnumDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::move(type),
+            .cases = std::move(cases)
+        });
     }
 
     template <typename... EnumCaseSpecs>
@@ -1711,16 +1739,22 @@ namespace valuascript::compiler::test
     inline EnumVerifier IsEnumDef(StringStorage name, EnumCaseSpecs&&... cases)
     {
         std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
-        return EnumVerifier(EnumDefMatcher{std::move(name), {}, nullptr, std::move(case_list)});
+        return EnumVerifier(EnumDefMatcher{
+            .name = std::move(name), .modifiers = {}, .type = nullptr, .cases = std::move(case_list)
+        });
     }
 
     template <typename... EnumCaseSpecs>
         requires (sizeof...(EnumCaseSpecs) > 0 && !(sizeof...(EnumCaseSpecs) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>))
-    inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers, TypeVerifier type, EnumCaseSpecs&&... cases)
+    inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers, TypeVerifier type,
+                                  EnumCaseSpecs&&... cases)
     {
         std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
-        return EnumVerifier(EnumDefMatcher{std::move(name), std::move(modifiers), std::move(type), std::move(case_list)});
+        return EnumVerifier(EnumDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::move(type),
+            .cases = std::move(case_list)
+        });
     }
 
     struct TypeAliasMatcher
@@ -1739,7 +1773,9 @@ namespace valuascript::compiler::test
     inline AliasVerifier IsTypeAlias(StringStorage name, std::vector<ModifierSpec> modifiers = {},
                                      TypeVerifier target = nullptr)
     {
-        return AliasVerifier(TypeAliasMatcher{std::move(name), std::move(modifiers), std::move(target)});
+        return AliasVerifier(TypeAliasMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .target = std::move(target)
+        });
     }
 
     struct ExtensionDefMatcher
@@ -1759,7 +1795,9 @@ namespace valuascript::compiler::test
                                       TypeVerifier target = nullptr,
                                       ProgramSpec spec = {})
     {
-        return ExtVerifier(ExtensionDefMatcher{std::move(modifiers), std::move(target), std::move(spec)});
+        return ExtVerifier(ExtensionDefMatcher{
+            .modifiers = std::move(modifiers), .target = std::move(target), .spec = std::move(spec)
+        });
     }
 
     struct ImportMatcher
@@ -1776,7 +1814,7 @@ namespace valuascript::compiler::test
 
     inline ImportVerifier IsImport(StringStorage path, std::vector<ModifierSpec> modifiers = {})
     {
-        return ImportVerifier(ImportMatcher{std::move(path), std::move(modifiers)});
+        return ImportVerifier(ImportMatcher{.path = std::move(path), .modifiers = std::move(modifiers)});
     }
 
     template <typename V = AnyMatcher>

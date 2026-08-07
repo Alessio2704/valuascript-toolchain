@@ -29,35 +29,35 @@ namespace valuascript::compiler::test
                 .name = "MissingArrowInFunction",
                 .code = "func test(a: int) { return 1 }",
                 .errors = {PErr{.code = E::MissingArrowInFunction, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}}, {}, {IsReturn(IsNumber("1"))})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}}, {}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
                 .name = "MissingCommaInParamsRecoversAll",
                 .code = "func test(a: int b: string) -> int {}",
                 .errors = {PErr{.code = E::ExpectedCommaSeparatorInParameterList, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}, {"b", {}, IsType("string")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}, {.name="b", .modifiers={}, .type_v=IsType("string")}}, {IsType("int")})
             });
 
             reg({
                 .name = "MissingColonInParamsDiscardsParamAndRecovers",
                 .code = "func test(a int, b: string) -> int {}",
                 .errors = {PErr{.code = E::MissingColonAfterParameter, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 16}},
-                .verifier = IsFunctionDef("test", {}, {{"<error>", {}, IsNullType()}, {"b", {}, IsType("string")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="<error>", .modifiers={}, .type_v=IsNullType()}, {.name="b", .modifiers={}, .type_v=IsType("string")}}, {IsType("int")})
             });
 
             reg({
                 .name = "NoNameFuncEmptyAst",
                 .code = "func (a: int) -> int {}",
                 .errors = {PErr{.code = E::MissingFunctionName, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
-                .verifier = IsFunctionDef("<error>", {}, {{"a", {}, IsType("int")}}, {IsType("int")})
+                .verifier = IsFunctionDef("<error>", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}}, {IsType("int")})
             });
 
             reg({
                 .name = "GarbageInParamsDiscardsAndRecovers",
                 .code = "func test(a: int, *^, b: string) -> int {}",
                 .errors = {PErr{.code = E::MissingParameterName, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}, {"<error>", {}, IsNullType()}, {"b", {}, IsType("string")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}, {.name="<error>", .modifiers={}, .type_v=IsNullType()}, {.name="b", .modifiers={}, .type_v=IsType("string")}}, {IsType("int")})
             });
 
             reg({
@@ -75,7 +75,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingColonAfterParameter, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
                     PErr{.code = E::MissingColonAfterParameter, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsNullType()}, {.name="b", .modifiers={}, .type_v=IsNullType()}, {.name="c", .modifiers={}, .type_v=IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -86,7 +86,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20},
                     PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}, {"b", {}, IsNullType()}, {"c", {}, IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsNullType()}, {.name="b", .modifiers={}, .type_v=IsNullType()}, {.name="c", .modifiers={}, .type_v=IsNullType()}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -96,7 +96,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23},
                     PErr{.code = E::ExpectedCommaSeparatorInParameterList, .line_start = 1, .column_start = 34, .line_end = 1, .column_end = 35}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int")}, {"b", {}, IsNullType()}, {"c", {}, IsType("string")}, {"d", {}, IsType("decimal")}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}, {.name="b", .modifiers={}, .type_v=IsNullType()}, {.name="c", .modifiers={}, .type_v=IsType("string")}, {.name="d", .modifiers={}, .type_v=IsType("decimal")}}, {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             reg({
@@ -106,21 +106,21 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingDefaultParameterValue, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20},
                     PErr{.code = E::NonDefaultParameterAfterDefault, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int"), IsNull()}, {"b", {}, IsType("string")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int"), .default_v=IsNull()}, {.name="b", .modifiers={}, .type_v=IsType("string")}}, {IsType("int")})
             });
 
             reg({
                 .name = "MissingDefaultParameterValueSyncsToParen",
                 .code = "func test(a: int =) -> int {}",
                 .errors = {PErr{.code = E::MissingDefaultParameterValue, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int"), IsNull()}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int"), .default_v=IsNull()}}, {IsType("int")})
             });
 
             reg({
                 .name = "NonDefaultParameterAfterDefaultReportsError",
                 .code = "func test(a: int = 1, b: int) -> int {}",
                 .errors = {PErr{.code = E::NonDefaultParameterAfterDefault, .line_start = 1, .column_start = 23, .line_end = 1, .column_end = 24}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int"), IsNumber("1")}, {"b", {}, IsType("int")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int"), .default_v=IsNumber("1")}, {.name="b", .modifiers={}, .type_v=IsType("int")}}, {IsType("int")})
             });
 
             reg({
@@ -130,7 +130,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21},
                     PErr{.code = E::NonDefaultParameterAfterDefault, .line_start = 1, .column_start = 23, .line_end = 1, .column_end = 24}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int"), IsNull()}, {"b", {}, IsType("string")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int"), .default_v=IsNull()}, {.name="b", .modifiers={}, .type_v=IsType("string")}}, {IsType("int")})
             });
 
             reg({
@@ -140,14 +140,14 @@ namespace valuascript::compiler::test
                     PErr{.code = E::NonDefaultParameterAfterDefault, .line_start = 1, .column_start = 23, .line_end = 1, .column_end = 24},
                     PErr{.code = E::NonDefaultParameterAfterDefault, .line_start = 1, .column_start = 31, .line_end = 1, .column_end = 32}
                 },
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsType("int"), IsNumber("1")}, {"b", {}, IsType("int")}, {"c", {}, IsType("int")}}, {IsType("int")})
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsType("int"), .default_v=IsNumber("1")}, {.name="b", .modifiers={}, .type_v=IsType("int")}, {.name="c", .modifiers={}, .type_v=IsType("int")}}, {IsType("int")})
             });
 
             reg({
                 .name = "ErrorInParamsPreservesDocstring",
                 .code = R"(func test(a: ) -> int { """docs""" })",
                 .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}},
-                .verifier = IsFunctionDef("test", {}, {{"a", {}, IsNullType()}}, {IsType("int")}, {}, R"("""docs""")")
+                .verifier = IsFunctionDef("test", {}, {{.name="a", .modifiers={}, .type_v=IsNullType()}}, {IsType("int")}, {}, R"("""docs""")")
             });
 
             return true;

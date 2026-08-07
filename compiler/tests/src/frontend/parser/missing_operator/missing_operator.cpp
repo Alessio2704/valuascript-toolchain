@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
         auto req = IsBinary(TokenType::Error, a.verifier, b.verifier);
         std::vector<UniversalVerifier> multi = {a.verifier, b.verifier};
 
-        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
         ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                  "TwoLeaves_" + a.name + "_" + b.name);
     }
@@ -67,7 +67,7 @@ namespace valuascript::compiler::test
                     a.verifier, IsBinary(TokenType::Plus, b.verifier, c.verifier)
                 };
 
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                          tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name);
             }
@@ -84,7 +84,7 @@ namespace valuascript::compiler::test
                     IsBinary(TokenType::Plus, a.verifier, b.verifier), c.verifier
                 };
 
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                          tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name);
             }
@@ -115,7 +115,7 @@ namespace valuascript::compiler::test
                              d.verifier)
                 };
 
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                          tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
@@ -137,7 +137,7 @@ namespace valuascript::compiler::test
                     IsBinary(TokenType::Plus, c.verifier, d.verifier)
                 };
 
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                          tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
@@ -158,7 +158,7 @@ namespace valuascript::compiler::test
                     d.verifier
                 };
 
-                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{req, multi});
+                auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = req, .multi_element = multi});
                 ExpectParseErrorsUnified(InjectableType::Expression, snippet, errs, m_v,
                                          tc.test_name + "_" + a.name + "_" + b.name + "_" + c.name + "_" + d.name);
             }
@@ -181,7 +181,7 @@ namespace valuascript::compiler::test
     {
         const auto& special_case = GetParam();
         std::vector<ParserExpectedError> errs = {PErr{.code = E::MissingOperator, .line_start = 1, .column_start = special_case.start_col, .line_end = 1, .column_end = special_case.end_col}};
-        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{special_case.verifier, special_case.multi});
+        auto m_v = std::make_shared<MultiInjectVerifier>(MultiInjectVerifier{.binding_required = special_case.verifier, .multi_element = special_case.multi});
         ExpectParseErrorsUnified(InjectableType::Expression, special_case.snippet, errs, m_v,
                                  "SpecialCases_" + special_case.test_name);
     }

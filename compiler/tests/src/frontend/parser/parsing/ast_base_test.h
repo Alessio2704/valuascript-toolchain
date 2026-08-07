@@ -32,13 +32,13 @@ namespace valuascript::compiler::test
             context->settings.fail_fast = fail_fast;
             LexerStage lexer;
             auto lexer_result = lexer.run(*context, {
-                                              {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-                                              {CompilerStageArtifactCode::SourceCode, code}
+                                              {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
+                                              {.code = CompilerStageArtifactCode::SourceCode, .data = code}
                                           });
 
             ParserStage parser;
             auto parser_result = parser.run(*context, {
-                                                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+                                                {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
                                                 lexer_result
                                             });
 
@@ -52,13 +52,13 @@ namespace valuascript::compiler::test
             auto context = std::make_shared<CompilerContext>();
             LexerStage lexer;
             auto lexer_result = lexer.run(*context, {
-                                              {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-                                              {CompilerStageArtifactCode::SourceCode, code}
+                                              {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
+                                              {.code = CompilerStageArtifactCode::SourceCode, .data = code}
                                           });
 
             ParserStage parser;
             auto parser_result = parser.run(*context, {
-                                                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+                                                {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
                                                 lexer_result
                                             });
 
@@ -72,13 +72,13 @@ namespace valuascript::compiler::test
             auto context = std::make_shared<CompilerContext>();
             LexerStage lexer;
             auto lexer_result = lexer.run(*context, {
-                                              {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
-                                              {CompilerStageArtifactCode::SourceCode, code}
+                                              {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
+                                              {.code = CompilerStageArtifactCode::SourceCode, .data = code}
                                           });
 
             ParserStage parser;
             auto parser_result = parser.run(*context, {
-                                                {CompilerStageArtifactCode::FilePath, std::string("test.vs")},
+                                                {.code = CompilerStageArtifactCode::FilePath, .data = std::string("test.vs")},
                                                 lexer_result
                                             });
 

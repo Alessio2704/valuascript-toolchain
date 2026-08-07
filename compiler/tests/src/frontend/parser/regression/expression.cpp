@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({AssignmentTargetSpec{.modifiers = {{"mod2", {}}}, .name = "a_m2"}}, IsNumber("1")),
+                    IsAssignment({AssignmentTargetSpec{.modifiers = {{.name="mod2", .args={}}}, .name = "a_m2"}}, IsNumber("1")),
                     IsAssignment({AssignmentTargetSpec{.name = "_test_expr"}}),
                     IsExprStmt(IsCall(IsIdentifier("init"), {}))
                 }

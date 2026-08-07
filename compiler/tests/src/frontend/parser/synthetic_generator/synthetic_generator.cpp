@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
 
         while (result.first.empty())
         {
-            FuzzState current{start_type, atom_code, atom_verifier};
+            FuzzState current{.type=start_type, .code=atom_code, .verifier=atom_verifier};
 
             ContextTreeWalker<FuzzState>::Callbacks cb;
             cb.get_type = [](const FuzzState& s) { return s.type; };
@@ -96,9 +96,9 @@ namespace valuascript::compiler::test
             cb.on_normal_branch = [](const FuzzState& s, const Context& ctx, int) -> std::vector<FuzzState>
             {
                 return { FuzzState{
-                    ctx.output_type,
-                    ctx.prefix + s.code + ctx.suffix,
-                    ctx.transform_verifier(s.verifier)
+                    .type=ctx.output_type,
+                    .code=ctx.prefix + s.code + ctx.suffix,
+                    .verifier=ctx.transform_verifier(s.verifier)
                 } };
             };
 
@@ -106,9 +106,9 @@ namespace valuascript::compiler::test
             {
                 std::vector<RecoveryBlock> empty_blocks;
                 return { FuzzState{
-                    ctx.output_type,
-                    ctx.prefix + s.code + ctx.suffix,
-                    ctx.transform_verifier_block(s.verifier, empty_blocks, empty_blocks)
+                    .type=ctx.output_type,
+                    .code=ctx.prefix + s.code + ctx.suffix,
+                    .verifier=ctx.transform_verifier_block(s.verifier, empty_blocks, empty_blocks)
                 } };
             };
 
@@ -122,8 +122,8 @@ namespace valuascript::compiler::test
             ContextTreeWalker<FuzzState>::walk(
                 std::move(current), 0, 0, cb,
                 ExpansionPolicy{
-                    config_.sizes.expansion_policy_max_steps_retries.first,
-                    config_.sizes.expansion_policy_max_steps_retries.second
+                    .max_depth = config_.sizes.expansion_policy_max_steps_retries.first,
+                    .max_recursion = config_.sizes.expansion_policy_max_steps_retries.second
                 }
             );
         }

@@ -23,13 +23,13 @@ namespace valuascript::compiler::test
             reg({
                 .name = "ModifiedExtension",
                 .code = "@modifier extension TargetType {}",
-                .verifier = IsExtensionDef({{"modifier"}}, IsType("TargetType"), {})
+                .verifier = IsExtensionDef({{.name="modifier"}}, IsType("TargetType"), {})
             });
 
             reg({
                 .name = "ModifiedWithArgs",
                 .code = "@modifier(p: 1) extension TargetType {}",
-                .verifier = IsExtensionDef({{"modifier", {{"p", IsNumber("1")}}}}, IsType("TargetType"), {})
+                .verifier = IsExtensionDef({{.name="modifier", .args={{.label="p", .value_v=IsNumber("1")}}}}, IsType("TargetType"), {})
             });
 
             reg({

@@ -72,9 +72,9 @@ namespace valuascript::compiler::test
                 .name = "InterleavingModifiedCases",
                 .code = "enum E: int { @primary A, B, @deprecated C = 99 }",
                 .verifier = IsEnumDef("E", {}, IsType("int"),
-                    EnumCaseSpec{.name = "A", .modifiers = {{"primary"}}},
+                    EnumCaseSpec{.name = "A", .modifiers = {{.name="primary"}}},
                     EnumCaseSpec{.name = "B"},
-                    EnumCaseSpec{.name = "C", .modifiers = {{"deprecated"}}, .value_v = IsNumber("99")}
+                    EnumCaseSpec{.name = "C", .modifiers = {{.name="deprecated"}}, .value_v = IsNumber("99")}
                 )
             });
 
@@ -89,7 +89,7 @@ namespace valuascript::compiler::test
                 "  Closed = \"closed\"\n"
                 "}",
                 .verifier = IsEnumDef("State", {}, IsType("string"),
-                    EnumCaseSpec{.name = "Open", .modifiers = {{"init"}}, .value_v = IsString("\"open\"")},
+                    EnumCaseSpec{.name = "Open", .modifiers = {{.name="init"}}, .value_v = IsString("\"open\"")},
                     EnumCaseSpec{.name = "Closed", .value_v = IsString("\"closed\"")}
                 )
             });

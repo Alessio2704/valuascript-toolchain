@@ -44,7 +44,7 @@ namespace valuascript::compiler::test
                                    IsType("ctx_target"),
                                    ProgramSpec{
                                        .execution_steps = {
-                                           IsExprStmt(IsCall(IsIdentifier("my_function"), {{"arg", IsNumber("1")}})),
+                                           IsExprStmt(IsCall(IsIdentifier("my_function"), {{.label="arg", .value_v=IsNumber("1")}})),
                                            IsReassignment(IsDot(IsIdentifier("obj"), "prop"), IsNumber("1"))
                                        }
                                    }
@@ -79,7 +79,7 @@ namespace valuascript::compiler::test
                 },
                 .functions = {
                     IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {
-                                      IsReturn({{"mod2", {}}}, {IsNumber("1")}),
+                                      IsReturn({{.name="mod2", .args={}}}, {IsNumber("1")}),
                                       IsReassignment(IsIdentifier("a"), IsNull()),
                                       IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1"))
                                   })
@@ -116,7 +116,7 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .imports = {
-                    IsImport("\"lib\"", {{"mod2", {}}})
+                    IsImport("\"lib\"", {{.name="mod2", .args={}}})
                 },
                 .execution_steps = {
                     IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNumber("1"))
@@ -156,7 +156,7 @@ namespace valuascript::compiler::test
             },
             ProgramSpec{
                 .imports = {
-                    IsImport("\"lib\"", {{"mod2", {}}})
+                    IsImport("\"lib\"", {{.name="mod2", .args={}}})
                 },
                 .directives = {
                     IsDirective("value", IsNumber("1"))
@@ -165,7 +165,7 @@ namespace valuascript::compiler::test
                     IsFunctionDef("ctx_wrapper", {}, {}, {IsType("void")}, {
                                       IsReassignment(IsDot(IsSelf(), "field"), IsNumber("1")),
                                       IsReassignment(IsIdentifier("a"), IsNull()),
-                                      IsAssignment({AssignmentTargetSpec{.modifiers = {{"mod2", {}}}, .name = "a_m2"}},
+                                      IsAssignment({AssignmentTargetSpec{.modifiers = {{.name="mod2", .args={}}}, .name = "a_m2"}},
                                                    IsNumber("1"))
                                   })
                 }

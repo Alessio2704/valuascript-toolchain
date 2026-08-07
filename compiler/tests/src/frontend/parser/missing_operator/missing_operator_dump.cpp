@@ -149,8 +149,8 @@ namespace valuascript::compiler::test
     std::vector<MissingOperatorTemplateBase> missing_operator_dump_templates()
     {
         return {
-            {"ThreeLeaves", TemplateType::ThreeLeaves},
-            {"FourLeaves", TemplateType::FourLeaves}
+            {.test_name="ThreeLeaves", .type=TemplateType::ThreeLeaves},
+            {.test_name="FourLeaves", .type=TemplateType::FourLeaves}
         };
     }
 

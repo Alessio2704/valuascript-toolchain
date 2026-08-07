@@ -267,7 +267,7 @@ namespace valuascript::compiler::test
 
             if (pool.empty())
                 return {
-                    std::nullopt, "", [](ProgramSpec&)
+                    .kind=std::nullopt, .source="", .add_to_spec=[](ProgramSpec&)
                     {
                     }
                 };

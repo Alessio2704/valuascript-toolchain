@@ -138,7 +138,7 @@ namespace valuascript::compiler::test
                     {
                         env.stats().expressions.call++;
                         std::string fn_name = "call_" + env.next_id();
-                        return {fn_name + "(arg: " + inner_c + ")", IsCall(IsIdentifier(fn_name), {{"arg", inner_v}})};
+                        return {fn_name + "(arg: " + inner_c + ")", IsCall(IsIdentifier(fn_name), {{.label="arg", .value_v=inner_v}})};
                     }
                 case ExpressionType::Switch:
                     {
@@ -419,7 +419,7 @@ namespace valuascript::compiler::test
 
                 return {
                     stmt_m_code + "let " + target_code + " = " + e_c,
-                    IsAssignment({{combined_mods, var_name, tv}}, e_v)
+                    IsAssignment({{.modifiers=combined_mods, .name=var_name, .type_v=tv}}, e_v)
                 };
             }
             if (stmt_type == StatementType::MultiAssign)
@@ -466,7 +466,7 @@ namespace valuascript::compiler::test
             env.stats().statements.expression_statements++;
             auto [e_c, e_v] = this->rule_expression(env, depth);
             std::string fn_name = "stmt_call_" + env.next_id();
-            return {fn_name + "(arg: " + e_c + ")", IsExprStmt(IsCall(IsIdentifier(fn_name), {{"arg", e_v}}))};
+            return {fn_name + "(arg: " + e_c + ")", IsExprStmt(IsCall(IsIdentifier(fn_name), {{.label="arg", .value_v=e_v}}))};
         };
 
         rule_statement = [logic_stmt_rule](SyntheticGenerator& env,

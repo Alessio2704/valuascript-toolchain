@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
                 "  ( \n"
                 "    arg: 1 \n"
                 "  )",
-                .verifier = IsExprStmt(IsCall(IsIdentifier("my_function"), {{"arg", IsNumber("1")}}))
+                .verifier = IsExprStmt(IsCall(IsIdentifier("my_function"), {{.label="arg", .value_v=IsNumber("1")}}))
             });
 
             return true;

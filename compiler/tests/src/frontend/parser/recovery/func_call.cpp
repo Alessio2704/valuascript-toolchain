@@ -18,8 +18,8 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"b", IsNumber("2")}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -32,7 +32,7 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")}
+                        {.label="a", .value_v=IsNumber("1")}
                     }
                 )
             });
@@ -45,8 +45,8 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"<error>", IsNumber("1")},
-                        {"b", IsNumber("2")}
+                        {.label="<error>", .value_v=IsNumber("1")},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -59,8 +59,8 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"<error>", IsNull()},
-                        {"b", IsNumber("2")}
+                        {.label="<error>", .value_v=IsNull()},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -75,9 +75,9 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNull()},
-                        {"b", IsNull()},
-                        {"c", IsNull()}
+                        {.label="a", .value_v=IsNull()},
+                        {.label="b", .value_v=IsNull()},
+                        {.label="c", .value_v=IsNull()}
                     }
                 )
             });
@@ -91,9 +91,9 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"b", IsNull()},
-                        {"c", IsNull()}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="b", .value_v=IsNull()},
+                        {.label="c", .value_v=IsNull()}
                     }
                 )
             });
@@ -106,8 +106,8 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNull()},
-                        {"b", IsNumber("2")}
+                        {.label="a", .value_v=IsNull()},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -120,9 +120,9 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"<error>", IsNull()},
-                        {"b", IsNumber("2")}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="<error>", .value_v=IsNull()},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -137,7 +137,7 @@ namespace valuascript::compiler::test
                 .verifier = IsCall(
                     IsIdentifier("f"), {
                         {
-                            "a", IsBinary(
+                            .label="a", .value_v=IsBinary(
                                 TokenType::Error, IsNumber("1"),
                                 IsBinary(TokenType::Error, IsIdentifier("b"), IsNumber("2"))
                             )
@@ -154,8 +154,8 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"b", IsNull()}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="b", .value_v=IsNull()}
                     }
                 )
             });
@@ -168,9 +168,9 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"<error>", IsNull()},
-                        {"b", IsNumber("2")}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="<error>", .value_v=IsNull()},
+                        {.label="b", .value_v=IsNumber("2")}
                     }
                 )
             });
@@ -183,9 +183,9 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsCall(
                     IsIdentifier("f"), {
-                        {"a", IsNumber("1")},
-                        {"<error>", IsNumber("2")},
-                        {"b", IsNumber("3")}
+                        {.label="a", .value_v=IsNumber("1")},
+                        {.label="<error>", .value_v=IsNumber("2")},
+                        {.label="b", .value_v=IsNumber("3")}
                     }
                 )
             });

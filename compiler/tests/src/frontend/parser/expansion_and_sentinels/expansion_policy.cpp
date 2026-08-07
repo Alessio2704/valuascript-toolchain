@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
             constexpr int depth = EXPANSION_DEPTH;
             constexpr int recursion = EXPANSION_RECURSION;
 
-            return ExpansionPolicy{depth, recursion};
+            return ExpansionPolicy{.max_depth = depth, .max_recursion = recursion};
         }();
         return cached;
     }

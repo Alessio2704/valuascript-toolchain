@@ -58,9 +58,9 @@ namespace valuascript::compiler::test
                 .name = "MixedModifiedAndUnmodifiedKeys",
                 .code = "{ @sealed a: 1, b: 2, @hidden c: 3 }",
                 .verifier = IsDict(
-                    DictItemSpec{.key = "a", .modifiers = {{"sealed"}}, .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "a", .modifiers = {{.name="sealed"}}, .value_v = IsNumber("1")},
                     DictItemSpec{.key = "b", .value_v = IsNumber("2")},
-                    DictItemSpec{.key = "c", .modifiers = {{"hidden"}}, .value_v = IsNumber("3")}
+                    DictItemSpec{.key = "c", .modifiers = {{.name="hidden"}}, .value_v = IsNumber("3")}
                 )
             });
 

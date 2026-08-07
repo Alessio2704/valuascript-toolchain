@@ -27,7 +27,7 @@ namespace valuascript::compiler::test
                 .code = "struct { id: int }",
                 .errors = {PErr{.code = E::ExpectedStructName, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
                 .verifier = IsStructDef("<error>", {}, {
-                    {"id", {}, IsType("int")}
+                    {.name="id", .modifiers={}, .type_v=IsType("int")}
                 })
             });
 
@@ -36,7 +36,7 @@ namespace valuascript::compiler::test
                 .code = "struct Test { id int }",
                 .errors = {PErr{.code = E::ExpectedColonAfterStructFieldName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 21}},
                 .verifier = IsStructDef("Test", {}, {
-                    {"<error>", {}, IsNullType()}
+                    {.name="<error>", .modifiers={}, .type_v=IsNullType()}
                 })
             });
 
@@ -44,7 +44,7 @@ namespace valuascript::compiler::test
                 .name = "MissingStructFieldType",
                 .code = "struct Test { id: }",
                 .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}},
-                .verifier = IsStructDef("Test", {}, {{"id", {}, IsNullType()}})
+                .verifier = IsStructDef("Test", {}, {{.name="id", .modifiers={}, .type_v=IsNullType()}})
             });
 
             reg({
@@ -52,8 +52,8 @@ namespace valuascript::compiler::test
                 .code = "struct Test { id: int name: string }",
                 .errors = {PErr{.code = E::ExpectedCommaSeparatorInStruct, .line_start = 1, .column_start = 23, .line_end = 1, .column_end = 27}},
                 .verifier = IsStructDef("Test", {}, {
-                    {"id", {}, IsType("int")},
-                    {"name", {}, IsType("string")}
+                    {.name="id", .modifiers={}, .type_v=IsType("int")},
+                    {.name="name", .modifiers={}, .type_v=IsType("string")}
                 })
             });
 
@@ -73,9 +73,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedColonAfterStructFieldName, .line_start = 1, .column_start = 44, .line_end = 1, .column_end = 47}
                 },
                 .verifier = IsStructDef("Test", {}, {
-                    {"host", {}, IsType("string")},
-                    {"port", {}, IsType("int")},
-                    {"<error>", {}, IsNullType()}
+                    {.name="host", .modifiers={}, .type_v=IsType("string")},
+                    {.name="port", .modifiers={}, .type_v=IsType("int")},
+                    {.name="<error>", .modifiers={}, .type_v=IsNullType()}
                 })
             });
 
@@ -84,7 +84,7 @@ namespace valuascript::compiler::test
                 .code = "struct Test { id: int ",
                 .errors = {PErr{.code = E::ExpectedRightBraceAfterStructBody, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}},
                 .verifier = IsStructDef("Test", {}, {
-                    {"id", {}, IsType("int")}
+                    {.name="id", .modifiers={}, .type_v=IsType("int")}
                 })
             });
 
@@ -93,7 +93,7 @@ namespace valuascript::compiler::test
                 .code = "struct Test { : int }",
                 .errors = {PErr{.code = E::ExpectedStructFieldName, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}},
                 .verifier = IsStructDef("Test", {}, {
-                    {"<error>", {}, IsType("int")}
+                    {.name="<error>", .modifiers={}, .type_v=IsType("int")}
                 })
             });
 
@@ -107,10 +107,10 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 55, .line_end = 1, .column_end = 56}
                 },
                 .verifier = IsStructDef("Test", {}, {
-                    {"host", {}, IsType("string")},
-                    {"port", {}, IsType("int")},
-                    {"speed", {}, IsType("int")},
-                    {"mode", {}, IsNullType()}
+                    {.name="host", .modifiers={}, .type_v=IsType("string")},
+                    {.name="port", .modifiers={}, .type_v=IsType("int")},
+                    {.name="speed", .modifiers={}, .type_v=IsType("int")},
+                    {.name="mode", .modifiers={}, .type_v=IsNullType()}
                 })
             });
 

@@ -157,7 +157,7 @@ namespace valuascript::compiler::test
                     IsEnumDef("Status", {},
                                IsType("string"),
                                {
-                                   {"Error", {}, IsString("\"failure }")}
+                                   {.name="Error", .modifiers={}, .value_v=IsString("\"failure }")}
                                }
                     )
                 }
@@ -178,16 +178,16 @@ namespace valuascript::compiler::test
                 .execution_steps = {
                     IsAssignment({
                                      {
-                                         {
+                                         .modifiers={
                                              {
-                                                 "deprecated", {
+                                                 .name="deprecated", .args={
                                                      {
-                                                         "reason", IsString("\"not_safe)")
+                                                         .label="reason", .value_v=IsString("\"not_safe)")
                                                      }
                                                  }
                                              }
                                          },
-                                         "x"
+                                         .name="x"
                                      }
                                  },
                                  IsNumber("1")

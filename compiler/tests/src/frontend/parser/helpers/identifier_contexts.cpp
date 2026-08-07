@@ -91,7 +91,7 @@ namespace valuascript::compiler::test
                 .suffix = ": int, b: string, c: bool }\n",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{SpecAdder::get_id(v), {}, IsType("int")}, {"b", {}, IsType("string")}, {"c", {}, IsType("bool")}}));
+                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{.name=SpecAdder::get_id(v), .modifiers={}, .type_v=IsType("int")}, {.name="b", .modifiers={}, .type_v=IsType("string")}, {.name="c", .modifiers={}, .type_v=IsType("bool")}}));
                 }
             },
             {
@@ -102,7 +102,7 @@ namespace valuascript::compiler::test
                 .suffix = ": string, c: bool }\n",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{"a", {}, IsType("int")}, {SpecAdder::get_id(v), {}, IsType("string")}, {"c", {}, IsType("bool")}}));
+                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}, {.name=SpecAdder::get_id(v), .modifiers={}, .type_v=IsType("string")}, {.name="c", .modifiers={}, .type_v=IsType("bool")}}));
                 }
             },
             {
@@ -113,7 +113,7 @@ namespace valuascript::compiler::test
                 .suffix = ": bool }\n",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{"a", {}, IsType("int")}, {"b", {}, IsType("string")}, {SpecAdder::get_id(v), {}, IsType("bool")}}));
+                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{.name="a", .modifiers={}, .type_v=IsType("int")}, {.name="b", .modifiers={}, .type_v=IsType("string")}, {.name=SpecAdder::get_id(v), .modifiers={}, .type_v=IsType("bool")}}));
                 }
             },
             {
@@ -124,7 +124,7 @@ namespace valuascript::compiler::test
                 .suffix = ": int }\n",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{SpecAdder::get_id(v), {}, IsType("int")}}));
+                    return UniversalVerifier(IsStructDef("ctx_s", {}, {{.name=SpecAdder::get_id(v), .modifiers={}, .type_v=IsType("int")}}));
                 }
             },
             {
@@ -136,7 +136,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(IsEnumDef(SpecAdder::get_id(v), {}, IsType("int"),
-                                                       {{"A", {}, IsNumber("1")}}));
+                                                       {{.name="A", .modifiers={}, .value_v=IsNumber("1")}}));
                 }
             },
             {
@@ -148,9 +148,9 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
-                                                           {SpecAdder::get_id(v), {}, IsNumber("1")},
-                                                           {"B", {}, IsNumber("2")},
-                                                           {"C", {}, IsNumber("3")}
+                                                           {.name=SpecAdder::get_id(v), .modifiers={}, .value_v=IsNumber("1")},
+                                                           {.name="B", .modifiers={}, .value_v=IsNumber("2")},
+                                                           {.name="C", .modifiers={}, .value_v=IsNumber("3")}
                                                        }));
                 }
             },
@@ -163,9 +163,9 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
-                                                           {"A", {}, IsNumber("1")},
-                                                           {SpecAdder::get_id(v), {}, IsNumber("2")},
-                                                           {"C", {}, IsNumber("3")}
+                                                           {.name="A", .modifiers={}, .value_v=IsNumber("1")},
+                                                           {.name=SpecAdder::get_id(v), .modifiers={}, .value_v=IsNumber("2")},
+                                                           {.name="C", .modifiers={}, .value_v=IsNumber("3")}
                                                        }));
                 }
             },
@@ -178,9 +178,9 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
-                                                           {"A", {}, IsNumber("1")},
-                                                           {"B", {}, IsNumber("2")},
-                                                           {SpecAdder::get_id(v), {}, IsNumber("3")}
+                                                           {.name="A", .modifiers={}, .value_v=IsNumber("1")},
+                                                           {.name="B", .modifiers={}, .value_v=IsNumber("2")},
+                                                           {.name=SpecAdder::get_id(v), .modifiers={}, .value_v=IsNumber("3")}
                                                        }));
                 }
             },
@@ -193,7 +193,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(IsEnumDef("ctx_e", {}, IsType("int"), {
-                                                           {SpecAdder::get_id(v), {}, IsNumber("1")}
+                                                           {.name=SpecAdder::get_id(v), .modifiers={}, .value_v=IsNumber("1")}
                                                        }));
                 }
             },
@@ -346,7 +346,7 @@ namespace valuascript::compiler::test
                 .suffix = "() ",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(std::vector<ModifierSpec>{{SpecAdder::get_id(v), {}}});
+                    return UniversalVerifier(std::vector<ModifierSpec>{{.name=SpecAdder::get_id(v), .args={}}});
                 }
             },
             {
@@ -358,7 +358,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
                     return UniversalVerifier(std::vector<ModifierSpec>{
-                        {"ctx_mod", {{SpecAdder::get_id(v), IsNumber("1")}}}
+                        {.name="ctx_mod", .args={{.label=SpecAdder::get_id(v), .value_v=IsNumber("1")}}}
                     });
                 }
             },
@@ -370,7 +370,7 @@ namespace valuascript::compiler::test
                 .suffix = ": 1)",
                 .transform_verifier = [](const UniversalVerifier& v)
                 {
-                    return UniversalVerifier(IsCall(IsIdentifier("ctx_f"), {{SpecAdder::get_id(v), IsNumber("1")}}));
+                    return UniversalVerifier(IsCall(IsIdentifier("ctx_f"), {{.label=SpecAdder::get_id(v), .value_v=IsNumber("1")}}));
                 }
             }
         };

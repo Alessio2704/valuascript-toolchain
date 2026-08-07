@@ -71,7 +71,7 @@ namespace valuascript::compiler::test
                 "  return x\n"
                 "}",
                 .verifier = IsFunctionDef("f", {}, {}, {IsType("void")}, {
-                    IsAssignment({{{}, "x"}}, IsNumber("1")),
+                    IsAssignment({{.modifiers={}, .name="x"}}, IsNumber("1")),
                     IsReturn({}, {IsIdentifier("x")})
                 })
             });

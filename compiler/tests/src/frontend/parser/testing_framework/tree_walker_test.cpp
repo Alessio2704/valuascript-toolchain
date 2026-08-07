@@ -146,7 +146,7 @@ namespace valuascript::compiler::test
         for (int i = 0; i < 50; ++i)
         {
             reached_terminal = false;
-            ContextTreeWalker<WalkState>::walk(WalkState{.type = start_type, .depth = 0}, 0, 0, cb, ExpansionPolicy{20, 5});
+            ContextTreeWalker<WalkState>::walk(WalkState{.type = start_type, .depth = 0}, 0, 0, cb, ExpansionPolicy{.max_depth = 20, .max_recursion = 5});
             if (reached_terminal)
             {
                 ever_reached = true;

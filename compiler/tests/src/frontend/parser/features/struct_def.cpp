@@ -57,10 +57,10 @@ namespace valuascript::compiler::test
                 .name = "InterleavingModifiedFields",
                 .code = "struct User { @id id: int, username: string, @optional bio: string }",
                 .verifier = IsStructDef("User",
-                                        FieldSpec{.name = "id", .modifiers = {{"id"}}, .type_v = IsType("int")},
+                                        FieldSpec{.name = "id", .modifiers = {{.name="id"}}, .type_v = IsType("int")},
                                         FieldSpec{.name = "username", .type_v = IsType("string")},
                                         FieldSpec{
-                                            .name = "bio", .modifiers = {{"optional"}}, .type_v = IsType("string")
+                                            .name = "bio", .modifiers = {{.name="optional"}}, .type_v = IsType("string")
                                         }
                 )
             });
@@ -77,7 +77,7 @@ namespace valuascript::compiler::test
                 "}",
                 .verifier = IsStructDef("Config",
                                         FieldSpec{
-                                            .name = "secret", .modifiers = {{"internal"}}, .type_v = IsType("string")
+                                            .name = "secret", .modifiers = {{.name="internal"}}, .type_v = IsType("string")
                                         },
                                         FieldSpec{.name = "version", .type_v = IsType("int")}
                 )

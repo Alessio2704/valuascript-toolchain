@@ -19,7 +19,7 @@ namespace valuascript::compiler::test
                 .name = "SingleLabeledArgument",
                 .code = "f(x: 1)",
                 .verifier = IsCall(IsIdentifier("f"), {
-                    {"x", IsNumber("1")}
+                    {.label="x", .value_v=IsNumber("1")}
                 })
             });
 
@@ -27,9 +27,9 @@ namespace valuascript::compiler::test
                 .name = "MultipleLabeledArguments",
                 .code = "f(x: 1, y: true, z: \"hi\")",
                 .verifier = IsCall(IsIdentifier("f"), {
-                    {"x", IsNumber("1")},
-                    {"y", IsBoolean(true)},
-                    {"z", IsString("\"hi\"")}
+                    {.label="x", .value_v=IsNumber("1")},
+                    {.label="y", .value_v=IsBoolean(true)},
+                    {.label="z", .value_v=IsString("\"hi\"")}
                 })
             });
 
@@ -38,8 +38,8 @@ namespace valuascript::compiler::test
                 .code = "f(x: g(y: 1))",
                 .verifier = IsCall(IsIdentifier("f"), {
                     {
-                        "x", IsCall(IsIdentifier("g"), {
-                            {"y", IsNumber("1")}
+                        .label="x", .value_v=IsCall(IsIdentifier("g"), {
+                            {.label="y", .value_v=IsNumber("1")}
                         })
                     }
                 })
@@ -55,7 +55,7 @@ namespace valuascript::compiler::test
                 .name = "CallWithGroupingTarget",
                 .code = "(f)(x: 1)",
                 .verifier = IsCall(IsGrouping(IsIdentifier("f")), {
-                    {"x", IsNumber("1")}
+                    {.label="x", .value_v=IsNumber("1")}
                 })
             });
 

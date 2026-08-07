@@ -21,9 +21,9 @@ namespace valuascript::compiler::test
                 .errors = {PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}},
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"<error>", IsNull()},
-                            {"b", IsNumber("2")}
+                        .name="test", .args={
+                            {.label="<error>", .value_v=IsNull()},
+                            {.label="b", .value_v=IsNumber("2")}
                         }
                     }
                 }
@@ -35,9 +35,9 @@ namespace valuascript::compiler::test
                 .errors = {PErr{.code = E::MissingArgumentNameInModifier, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"<error>", IsNumber("1")},
-                            {"b", IsNumber("2")}
+                        .name="test", .args={
+                            {.label="<error>", .value_v=IsNumber("1")},
+                            {.label="b", .value_v=IsNumber("2")}
                         }
                     }
                 }
@@ -47,7 +47,7 @@ namespace valuascript::compiler::test
                 .name = "ModifierMissingName",
                 .code = "@*",
                 .errors = {PErr{.code = E::ExpectedModifierName, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}},
-                .verifier = std::vector<ModifierSpec>{{"<error>", {}}}
+                .verifier = std::vector<ModifierSpec>{{.name="<error>", .args={}}}
             });
 
             reg(RecoveryCase<ModifierVerifier>{
@@ -59,10 +59,10 @@ namespace valuascript::compiler::test
                 },
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"a", IsNumber("1")},
-                            {"<error>", IsNull()},
-                            {"b", IsNumber("2")}
+                        .name="test", .args={
+                            {.label="a", .value_v=IsNumber("1")},
+                            {.label="<error>", .value_v=IsNull()},
+                            {.label="b", .value_v=IsNumber("2")}
                         }
                     }
                 }
@@ -73,9 +73,9 @@ namespace valuascript::compiler::test
                 .code = "@valid @broken(missing_colon) @another",
                 .errors = {PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 29, .line_end = 1, .column_end = 30}},
                 .verifier = std::vector<ModifierSpec>{
-                    {"valid", {}},
-                    {"broken", {{"missing_colon", IsNull()}}},
-                    {"another", {}}
+                    {.name="valid", .args={}},
+                    {.name="broken", .args={{.label="missing_colon", .value_v=IsNull()}}},
+                    {.name="another", .args={}}
                 }
             });
 
@@ -85,10 +85,10 @@ namespace valuascript::compiler::test
                 .errors = {PErr{.code = E::MissingColonAfterArgument, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}},
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"a", IsNumber("1")},
-                            {"b", IsNull()},
-                            {"c", IsNumber("3")}
+                        .name="test", .args={
+                            {.label="a", .value_v=IsNumber("1")},
+                            {.label="b", .value_v=IsNull()},
+                            {.label="c", .value_v=IsNumber("3")}
                         }
                     }
                 }
@@ -100,9 +100,9 @@ namespace valuascript::compiler::test
                 .errors = {PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}},
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"a", IsNull()},
-                            {"b", IsNumber("2")}
+                        .name="test", .args={
+                            {.label="a", .value_v=IsNull()},
+                            {.label="b", .value_v=IsNumber("2")}
                         }
                     }
                 }
@@ -114,10 +114,10 @@ namespace valuascript::compiler::test
                 .errors = {PErr{.code = E::MissingArgumentNameInModifier, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}},
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"a", IsNumber("1")},
-                            {"<error>", IsNull()},
-                            {"b", IsNumber("2")}
+                        .name="test", .args={
+                            {.label="a", .value_v=IsNumber("1")},
+                            {.label="<error>", .value_v=IsNull()},
+                            {.label="b", .value_v=IsNumber("2")}
                         }
                     }
                 }
@@ -128,7 +128,7 @@ namespace valuascript::compiler::test
                 .code = "@test(a: 1,)",
                 .errors = {PErr{.code = E::TrailingCommaInModifier, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}},
                 .verifier = std::vector<ModifierSpec>{
-                    {"test", {{"a", IsNumber("1")}}}
+                    {.name="test", .args={{.label="a", .value_v=IsNumber("1")}}}
                 }
             });
 
@@ -137,7 +137,7 @@ namespace valuascript::compiler::test
                 .code = "@test(123: 1)",
                 .errors = {PErr{.code = E::MissingArgumentNameInModifier, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 10}},
                 .verifier = std::vector<ModifierSpec>{
-                    {"test", {{"<error>", IsNumber("1")}}}
+                    {.name="test", .args={{.label="<error>", .value_v=IsNumber("1")}}}
                 }
             });
 
@@ -150,10 +150,10 @@ namespace valuascript::compiler::test
                 },
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "test", {
-                            {"a", IsNumber("1")},
-                            {"b", IsNumber("2")},
-                            {"c", IsNumber("3")}
+                        .name="test", .args={
+                            {.label="a", .value_v=IsNumber("1")},
+                            {.label="b", .value_v=IsNumber("2")},
+                            {.label="c", .value_v=IsNumber("3")}
                         }
                     }
                 }

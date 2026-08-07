@@ -64,8 +64,8 @@ namespace valuascript::compiler::test
                     return UniversalVerifier(IsFunctionDef("ctx_func", {},
                                                            {
                                                                ParamSpec{
-                                                                   "arg", {}, IsType("int"),
-                                                                   SpecAdder::get_v<ExprVerifier>(v)
+                                                                   .name="arg", .modifiers={}, .type_v=IsType("int"),
+                                                                   .default_v=SpecAdder::get_v<ExprVerifier>(v)
                                                                }
                                                            }, {IsType("void")}));
                 }
@@ -103,7 +103,7 @@ namespace valuascript::compiler::test
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(IsEnumDef("CtxEnum", {}, IsType("int"),
-                                                       {{"A", {}, SpecAdder::get_v<ExprVerifier>(v)}}));
+                                                       {{.name="A", .modifiers={}, .value_v=SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
             {
@@ -116,7 +116,7 @@ namespace valuascript::compiler::test
                 ](const UniversalVerifier& v) -> UniversalVerifier
                 {
                     return UniversalVerifier(std::vector<ModifierSpec>{
-                        {"ctx_mod", {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}}
+                        {.name="ctx_mod", .args={{.label="arg", .value_v=SpecAdder::get_v<ExprVerifier>(v)}}}
                     });
                 }
             },
@@ -335,7 +335,7 @@ namespace valuascript::compiler::test
                 .suffix = ", b: 2, c: 3)",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"arg", SpecAdder::get_v<ExprVerifier>(v)}, {"b", IsNumber("2")}, {"c", IsNumber("3")}}));
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{.label="arg", .value_v=SpecAdder::get_v<ExprVerifier>(v)}, {.label="b", .value_v=IsNumber("2")}, {.label="c", .value_v=IsNumber("3")}}));
                 }
             },
             {
@@ -346,7 +346,7 @@ namespace valuascript::compiler::test
                 .suffix = ", c: 3)",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"a", IsNumber("1")}, {"arg", SpecAdder::get_v<ExprVerifier>(v)}, {"c", IsNumber("3")}}));
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{.label="a", .value_v=IsNumber("1")}, {.label="arg", .value_v=SpecAdder::get_v<ExprVerifier>(v)}, {.label="c", .value_v=IsNumber("3")}}));
                 }
             },
             {
@@ -357,7 +357,7 @@ namespace valuascript::compiler::test
                 .suffix = ")",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"a", IsNumber("1")}, {"b", IsNumber("2")}, {"arg", SpecAdder::get_v<ExprVerifier>(v)}}));
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{.label="a", .value_v=IsNumber("1")}, {.label="b", .value_v=IsNumber("2")}, {.label="arg", .value_v=SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
             {
@@ -368,7 +368,7 @@ namespace valuascript::compiler::test
                 .suffix = ")",
                 .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{"arg", SpecAdder::get_v<ExprVerifier>(v)}}));
+                    return UniversalVerifier(IsCall(IsIdentifier("f"), {{.label="arg", .value_v=SpecAdder::get_v<ExprVerifier>(v)}}));
                 }
             },
             {

@@ -18,7 +18,7 @@ namespace valuascript::compiler::test
                 .name = "SingleModifier",
                 .code = "@simple",
                 .verifier = std::vector<ModifierSpec>{
-                    {"simple"}
+                    {.name="simple"}
                 }
             });
 
@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
                 .name = "SingleModifierWithEmptyParens",
                 .code = "@simple()",
                 .verifier = std::vector<ModifierSpec>{
-                    {"simple"}
+                    {.name="simple"}
                 }
             });
 
@@ -34,8 +34,8 @@ namespace valuascript::compiler::test
                 .name = "MultipleModifiers",
                 .code = "@first @second",
                 .verifier = std::vector<ModifierSpec>{
-                    {"first"},
-                    {"second"}
+                    {.name="first"},
+                    {.name="second"}
                 }
             });
 
@@ -44,8 +44,8 @@ namespace valuascript::compiler::test
                 .code = "@meta(version: 1)",
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "meta", {
-                            {"version", IsNumber("1")}
+                        .name="meta", .args={
+                            {.label="version", .value_v=IsNumber("1")}
                         }
                     }
                 }
@@ -56,10 +56,10 @@ namespace valuascript::compiler::test
                 .code = "@config(active: true, retries: 3, strategy: \"fast\")",
                 .verifier = std::vector<ModifierSpec>{
                     {
-                        "config", {
-                            {"active", IsBoolean(true)},
-                            {"retries", IsNumber("3")},
-                            {"strategy", IsString("\"fast\"")}
+                        .name="config", .args={
+                            {.label="active", .value_v=IsBoolean(true)},
+                            {.label="retries", .value_v=IsNumber("3")},
+                            {.label="strategy", .value_v=IsString("\"fast\"")}
                         }
                     }
                 }
@@ -69,13 +69,13 @@ namespace valuascript::compiler::test
                 .name = "MixedModifiers",
                 .code = "@inline @deprecated(msg: \"old\") @export",
                 .verifier = std::vector<ModifierSpec>{
-                    {"inline"},
+                    {.name="inline"},
                     {
-                        "deprecated", {
-                            {"msg", IsString("\"old\"")}
+                        .name="deprecated", .args={
+                            {.label="msg", .value_v=IsString("\"old\"")}
                         }
                     },
-                    {"export"}
+                    {.name="export"}
                 }
             });
 
@@ -86,9 +86,9 @@ namespace valuascript::compiler::test
                 "@\n test2(b: 2) "
                 "@test3\n\n\n(c: 3) ",
                 .verifier = std::vector<ModifierSpec>{
-                    {"test1", {{"a", IsNumber("1")}}},
-                    {"test2", {{"b", IsNumber("2")}}},
-                    {"test3", {{"c", IsNumber("3")}}}
+                    {.name="test1", .args={{.label="a", .value_v=IsNumber("1")}}},
+                    {.name="test2", .args={{.label="b", .value_v=IsNumber("2")}}},
+                    {.name="test3", .args={{.label="c", .value_v=IsNumber("3")}}}
                 }
             });
 

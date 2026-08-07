@@ -22,7 +22,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumName, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
                 },
                 .verifier = IsEnumDef("<error>", {}, IsType("int"), {
-                    {"A"}
+                    {.name="A"}
                 })
             });
 
@@ -33,7 +33,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
                 },
                 .verifier = IsEnumDef("Test", {}, IsNullType(), {
-                    {"A"}
+                    {.name="A"}
                 })
             });
 
@@ -45,9 +45,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"B"},
-                    {"C"}
+                    {.name="A"},
+                    {.name="B"},
+                    {.name="C"}
                 })
             });
 
@@ -59,9 +59,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedCommaSeparatorInEnum, .line_start = 1, .column_start = 32, .line_end = 1, .column_end = 33}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A", {}, IsNumber("1")},
-                    {"B", {}, IsCall(IsIdentifier("a"))},
-                    {"C", {}, IsNumber("2")}
+                    {.name="A", .modifiers={}, .value_v=IsNumber("1")},
+                    {.name="B", .modifiers={}, .value_v=IsCall(IsIdentifier("a"))},
+                    {.name="C", .modifiers={}, .value_v=IsNumber("2")}
                 })
             });
 
@@ -72,7 +72,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"<error>"}
+                    {.name="<error>"}
                 })
             });
 
@@ -83,7 +83,7 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 21}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"<error>"}
+                    {.name="<error>"}
                 })
             });
 
@@ -94,9 +94,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"<error>"},
-                    {"B"},
-                    {"C"}
+                    {.name="<error>"},
+                    {.name="B"},
+                    {.name="C"}
                 })
             });
 
@@ -107,9 +107,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"<error>"},
-                    {"C"}
+                    {.name="A"},
+                    {.name="<error>"},
+                    {.name="C"}
                 })
             });
 
@@ -120,9 +120,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"B"},
-                    {"<error>"}
+                    {.name="A"},
+                    {.name="B"},
+                    {.name="<error>"}
                 })
             });
 
@@ -133,9 +133,9 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedEnumCaseName, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"<error>"},
-                    {"C"}
+                    {.name="A"},
+                    {.name="<error>"},
+                    {.name="C"}
                 })
             });
 
@@ -146,8 +146,8 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"B"}
+                    {.name="A"},
+                    {.name="B"}
                 })
             });
 
@@ -158,8 +158,8 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 26}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"B"}
+                    {.name="A"},
+                    {.name="B"}
                 })
             });
 
@@ -172,12 +172,12 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 45, .line_end = 1, .column_end = 46}
                 },
                 .verifier = IsEnumDef("Test", {}, IsType("int"), {
-                    {"A"},
-                    {"B", {}, IsNumber("1")},
-                    {"C"},
-                    {"D", {}, IsNumber("1")},
-                    {"E"},
-                    {"F", {}, IsNumber("1")}
+                    {.name="A"},
+                    {.name="B", .modifiers={}, .value_v=IsNumber("1")},
+                    {.name="C"},
+                    {.name="D", .modifiers={}, .value_v=IsNumber("1")},
+                    {.name="E"},
+                    {.name="F", .modifiers={}, .value_v=IsNumber("1")}
                 })
             });
 
