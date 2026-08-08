@@ -4,38 +4,13 @@
 #include <string_view>
 #include <vector>
 #include <functional>
-#include <optional>
-
 #include "sentinel_kind.h"
 #include "universal_verifier.h"
 #include "node_matchers.h"
-#include "core/valuascript_exception.h"
+#include "context_override.h"
 
 namespace valuascript::compiler::test
 {
-    struct ParserExpectedError
-    {
-        ValuascriptErrorCode code;
-        size_t line_start = 0;
-        size_t column_start = 0;
-        size_t line_end = 0;
-        size_t column_end = 0;
-        bool skip_span_check = false;
-    };
-
-    using PErr = ParserExpectedError;
-
-    template <typename T = NullVerifier>
-    struct ContextOverride
-    {
-        std::string_view context_name;
-        std::optional<std::vector<ParserExpectedError>> errors = std::nullopt;
-        std::optional<OneOf<T>> verifier = std::nullopt;
-        std::vector<SentinelKind> excluded_sentinels = {};
-        std::vector<SentinelKind> accepted_sentinels = {};
-        bool skip_after_depth_0 = false;
-        bool skip_transform = false;
-    };
 
     template <typename T>
     struct ErrorRegistryEntry

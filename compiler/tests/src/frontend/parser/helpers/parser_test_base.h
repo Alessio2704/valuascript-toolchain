@@ -5,6 +5,7 @@
 #include "deterministic_sampler.h"
 #include "recovery_sentinel.h"
 #include "test_structures.h"
+#include "error_registry.h"
 #include "core/compiler_context.h"
 #include "../expansion_and_sentinels/expansion_calculator.h"
 
