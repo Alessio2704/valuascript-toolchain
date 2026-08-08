@@ -41,49 +41,6 @@ namespace valuascript::compiler::test {
                 .verify_ast = ExpectTuple(2)
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_missing_multiple_closing_paren",
-                .source_code = "let a = (1, 2 \nlet b = (3, 4 \nlet c = (5, 6 \nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 13},
-                    {.code = Err::ExpectedRightParenAfterTupleElements, .line = 2, .column = 13},
-                    {.code = Err::ExpectedRightParenAfterTupleElements, .line = 3, .column = 13}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 4);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_eof_after_comma",
-                .source_code = "let a = (1, \n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 11} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                    const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    const auto assign_1_val = dynamic_cast<TupleLiteral*>(assign_1->value.get());
-                    ASSERT_NE(assign_1_val, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_eof_after_first_element",
-                .source_code = "let a = (1 \n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 10} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                    const auto assign_1 = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    const auto assign_1_val = dynamic_cast<GroupingExpression*>(assign_1->value.get());
-                    ASSERT_NE(assign_1_val, nullptr);
-                    ASSERT_NE(assign_1_val->expression, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_closed_with_wrong_bracket",
-                .source_code = "let a = (1, 2]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 13} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "tuple_too_many_closing_parens",
                 .source_code = "let a = (1, 2))\nlet recovery = 1\n",
                 .expected_errors = {

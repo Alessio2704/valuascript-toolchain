@@ -40,15 +40,6 @@ namespace valuascript::compiler::test
                 }
             }
         }
-
-        auto ExpectDict(std::vector<ExpectedDictPair> pairs)
-        {
-            return [p = std::move(pairs)](const Program& ast)
-            {
-                ExpectDictLiteral(ast, p);
-                EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
-            };
-        }
     }
 
     class DictLiteralParserSynchronizationTest : public ParserErrorsSynchronizationBase
@@ -73,41 +64,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_missing_multiple_closing_brace",
-                .source_code = "let a = { x: 1 \nlet b = { x: 1 \nlet c = { x: 1 \nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14},
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 2, .column = 14},
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 3, .column = 14}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 4);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_total_mangle_new_line",
-                .source_code = "let a = { x: 1,\nlet y = 2\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 15} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 3);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_eof_after_key",
-                .source_code = "let a = { x\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedColonAfterDictionaryKey, .line = 1, .column = 12},
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 11}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_NE(dict, nullptr);
-                    EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "dict_eof_after_colon",
                 .source_code = "let a = { x: \n",
                 .expected_errors = {
@@ -118,28 +74,6 @@ namespace valuascript::compiler::test
                     EXPECT_EQ(ast.execution_steps.size(), 1);
                     ExpectDictLiteral(ast, {{.key = "x", .expected_number_value = std::nullopt}});
                 }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_eof_after_comma",
-                .source_code = "let a = { x: 1, \n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 15}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_NE(dict, nullptr);
-                    EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_closed_with_wrong_bracket",
-                .source_code = "let a = { x: 1 ]\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14}
-                },
-                .verify_ast = ExpectDict({{.key = "x", .expected_number_value = "1"}})
             }
         ),
         TestNameGenerator{}

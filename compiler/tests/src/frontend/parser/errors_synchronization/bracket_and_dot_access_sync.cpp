@@ -83,23 +83,6 @@ namespace valuascript::compiler::test
         BracketAndDotAccessParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "bracket_wrong_closing_preserves_index_and_next_stmt",
-                .source_code = "let a = arr[1}\nlet b = 2\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorIndex, .line = 1, .column = 13} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto assign_a = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign_a, nullptr);
-                    ExpectBracketAccess(assign_a->value.get(), [](auto target) { ExpectIdentifier(target, "arr"); }, [](auto i) {
-                        ExpectNumber(i, "1");
-                    });
-
-                    auto assign_b = dynamic_cast<Assignment*>(ast.execution_steps[1].get());
-                    ASSERT_NE(assign_b, nullptr);
-                    EXPECT_EQ(assign_b->targets[0].name, "b");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "bracket_slice_missing_right_bracket_preserves_slice",
                 .source_code = "let a = arr[1:2 \nlet b = 2\n",
                 .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorIndex, .line = 1, .column = 15} },

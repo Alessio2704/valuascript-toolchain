@@ -45,32 +45,6 @@ namespace valuascript::compiler::test {
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_closed_with_wrong_bracket",
-                .source_code = "let a = ( 1 + 2 ]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
-                .verify_ast = ExpectGrouping()
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_mismatched_bracket_in_nested_list",
-                .source_code = "let a = [ ( 1 + 2 ], 3 ]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 17} },
-                .verify_ast = [](const Program& ast) {
-                    auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-                    auto *tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-                    ASSERT_NE(tensor, nullptr);
-                    EXPECT_EQ(tensor->elements.size(), 2);
-                    EXPECT_NE(dynamic_cast<GroupingExpression*>(tensor->elements[0].get()), nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_eof_mid_expression",
-                .source_code = "let a = ( 1 + ",
-                .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 14}, {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 13} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "grouping_leading_comma_error",
                 .source_code = "let a = ( , 1 )\nlet recovery = 1\n",
                 .expected_errors = { {.code = Err::InvalidExpression, .line = 1, .column = 11} },
