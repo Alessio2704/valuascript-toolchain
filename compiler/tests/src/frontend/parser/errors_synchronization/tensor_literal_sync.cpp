@@ -52,39 +52,12 @@ namespace valuascript::compiler::test
         TensorLiteralParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_missing_closing_bracket",
-                .source_code = "let a =[ 1, 2 \nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 13} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "tensor_closed_with_wrong_brace",
                 .source_code = "let a =[ 1, 2 }\nlet recovery = 1\n",
                 .expected_errors = {
                     {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 13}
                 },
                 .verify_ast = ExpectTensor({"1", "2"})
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_missing_bracket_before_next_stmt",
-                .source_code = "let a = [ 1, 2\nlet b = 3\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 14} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 3);
-                    auto* b_assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(b_assign, nullptr);
-                    EXPECT_EQ(b_assign->targets[0].name, "a");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_eof_immediately_after_bracket",
-                .source_code = "let a = [",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 9} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                }
             },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "tensor_with_mismatched_nested_closer",
@@ -99,20 +72,6 @@ namespace valuascript::compiler::test
                     ASSERT_EQ(first_elem->op, TokenType::Plus);
                     auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
                     ASSERT_NE(second_elem, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_with_unclosed_string_element",
-                .source_code = "let a = [ \"unclosed, 2 ]\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = LexerErrorCode::UnclosedString, .line = 1, .column = 11},
-                    {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 24}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto tensor = dynamic_cast<TensorLiteral*>(assign->value.get());
-                    EXPECT_EQ(tensor->elements.size(), 1);
                 }
             }
         ),

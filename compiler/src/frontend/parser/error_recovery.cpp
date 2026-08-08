@@ -96,15 +96,19 @@ namespace valuascript::compiler
             if (depth == 0)
             {
                 if (t == closing_token) return true;
-                if (TokenTraits::is_grouping_closer(t))
+            if (TokenTraits::is_identifier_start(ctx.cursor.peek()) &&
+                (ctx.cursor.peek(1).type == TokenType::Colon || ctx.cursor.peek(1).type == TokenType::Assign || ctx.cursor.peek(1).type == TokenType::Arrow))
+                return true;
+            if (t == TokenType::Comma && TokenTraits::is_identifier_start(ctx.cursor.peek(1)) &&
+                (ctx.cursor.peek(2).type == TokenType::Colon || ctx.cursor.peek(2).type == TokenType::Assign || ctx.cursor.peek(2).type == TokenType::Arrow))
+                return true;
+            if (TokenTraits::is_grouping_closer(t))
                 {
                     if (ctx.cursor.peek(1).type == TokenType::Comma) ctx.cursor.advance();
                     return true;
                 }
                 if (TokenTraits::is_statement_start(ctx.cursor.peek(), ctx.cursor.peek(1).type)) return true;
-                if (ctx.cursor.peek().line > ctx.cursor.previous().line && TokenTraits::is_expression_statement_start(
-                    ctx.cursor.peek(), ctx.cursor.peek(1).type))
-                    return true;
+                if (TokenTraits::is_newline_statement_boundary(ctx.cursor.previous(), ctx.cursor.peek(), ctx.cursor.peek(1).type)) return true;
                 if (t == TokenType::Then || t == TokenType::Else || t == TokenType::Case || t == TokenType::Default)
                     return true;
             }

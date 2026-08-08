@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -133,6 +134,202 @@ namespace valuascript::compiler::test
                 .verifier = IsTensor(
                     IsNumber("1")
                 )
+            });
+
+            reg({
+                .name = "UnclosedTensorLiteral",
+                .code = "[1, 2, 3",
+                .errors = {
+                    PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                },
+                .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprBracketAccessIndex,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                        },
+                        .verifier = IsTensor(IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}
+                        },
+                        .verifier = IsTensor(IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprGrouping,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsGrouping(IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprUnaryGrouping,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsUnary(TokenType::Minus, IsGrouping(IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3")))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                        },
+                        .verifier = IsGrouping(IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsTuple(IsNumber("1"), IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                        },
+                        .verifier = IsTuple(IsNumber("1"), IsNumber("2"), IsTensor(IsNumber("1"), IsNumber("2"), IsNumber("3"))),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    }
+                }
             });
 
             return true;

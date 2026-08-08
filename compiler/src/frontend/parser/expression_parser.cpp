@@ -591,6 +591,18 @@ namespace valuascript::compiler
         CloserTracker tracker(ctx, TokenType::RightBracket);
         auto elements = parse_expression_list(TokenType::RightBracket);
 
+        if (cursor.check(TokenType::RightBracket))
+        {
+            const Token& end = cursor.advance();
+            return AstFactory::make_node_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
+        }
+
+        if (cursor.check(TokenType::Comma))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorElements);
+            return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
+        }
+
         try
         {
             const Token& end = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorElements);

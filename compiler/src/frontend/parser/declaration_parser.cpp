@@ -529,7 +529,8 @@ namespace valuascript::compiler
                                     cursor.report_error(
                                         cursor.peek(), E::MissingOperator);
                             }
-                        }, RecoveryConfig::StopAtBoundary({TokenType::Comma})
+                        },
+                        RecoveryConfig::StopAtBoundary({TokenType::Comma})
                     );
                 }
             }

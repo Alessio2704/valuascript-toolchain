@@ -75,7 +75,8 @@ namespace valuascript::compiler::test
                 .verifier = IsStructDef("Test", {}, {
                     {.name="host", .modifiers={}, .type_v=IsType("string")},
                     {.name="port", .modifiers={}, .type_v=IsType("int")},
-                    {.name="<error>", .modifiers={}, .type_v=IsNullType()}
+                    {.name="<error>", .modifiers={}, .type_v=IsNullType()},
+                    {.name="mode", .modifiers={}, .type_v=IsType("string")}
                 })
             });
 

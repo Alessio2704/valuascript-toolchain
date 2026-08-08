@@ -178,6 +178,35 @@ namespace valuascript::compiler::test
                 ContextOverride{.context_name = ContextNames::ExprSwitchCaseSingle}
             }
         );
+
+        DumpRecoveryExpansion(
+            InjectableType::Expression,
+            "[1, 2, 3",
+            "UnclosedTensorLiteral",
+            {
+            },
+            {
+                ContextOverride{.context_name = ContextNames::ExprBracketAccessIndex, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTensorStart, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTensorMiddle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTensorEnd, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTensorSingle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprDictValueStart},
+                ContextOverride{.context_name = ContextNames::ExprDictValueMiddle},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseMiddle},
+                ContextOverride{.context_name = ContextNames::ExprDictValueEnd, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprDictValueSingle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprCallArgEnd, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprCallArgSingle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseEnd, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprSwitchCaseSingle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprGrouping, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprUnaryGrouping, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTupleStart, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTupleMiddle, .skip_after_depth_0 = true},
+                ContextOverride{.context_name = ContextNames::ExprTupleEnd, .skip_after_depth_0 = true}
+            }
+        );
     }
 #endif
 }

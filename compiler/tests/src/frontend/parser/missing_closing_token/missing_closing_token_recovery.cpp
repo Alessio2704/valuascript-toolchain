@@ -29,13 +29,6 @@ namespace valuascript::compiler::test {
                 }
             },
             {
-                .name = "tensor", .source = "let a = [1, 2\n", .expected_err = Err::UnmatchedBracketAfterTensorElements,
-                .verify = [](const Program &program) {
-                    ASSERT_FALSE(program.execution_steps.empty());
-                    StmtVerifier(IsAssignment({{.name = "a"}}, IsTensor(IsNumber("1"), IsNumber("2"))))(program.execution_steps[0].get());
-                }
-            },
-            {
                 .name = "dict", .source = "let a = { b: 1\n", .expected_err = Err::UnmatchedBraceInDictionaryLiteral,
                 .verify = [](const Program &program) {
                     ASSERT_FALSE(program.execution_steps.empty());

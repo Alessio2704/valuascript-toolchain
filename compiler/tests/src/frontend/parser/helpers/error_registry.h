@@ -33,6 +33,8 @@ namespace valuascript::compiler::test
         std::optional<OneOf<T>> verifier = std::nullopt;
         std::vector<SentinelKind> excluded_sentinels = {};
         std::vector<SentinelKind> accepted_sentinels = {};
+        bool skip_after_depth_0 = false;
+        bool skip_transform = false;
     };
 
     template <typename T>

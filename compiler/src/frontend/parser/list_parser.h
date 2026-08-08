@@ -2,6 +2,7 @@
 #include <vector>
 #include <optional>
 #include <functional>
+#include <iostream>
 #include "parser_context.h"
 #include "error_recovery.h"
 
@@ -126,6 +127,12 @@ namespace valuascript::compiler
                     bool is_reassign = false;
                     if constexpr (std::is_same_v<ElementType, ExprPtr>)
                     {
+                        if (closing_token_ == TokenType::RightBracket &&
+                            TokenTraits::is_identifier_start(tok) &&
+                            (next == TokenType::Colon || next == TokenType::Arrow))
+                        {
+                            break;
+                        }
                         is_reassign = ctx_.looks_like_reassignment();
                     }
                     bool is_stmt = TokenTraits::is_statement_start(tok, next) ||
@@ -156,6 +163,12 @@ namespace valuascript::compiler
                     if (ctx_.cursor.check(TokenType::Comma))
                     {
                         if (is_at_parent_boundary_ && is_at_parent_boundary_(1)) break;
+                        if (closing_token_ == TokenType::RightBracket &&
+                            TokenTraits::is_identifier_start(ctx_.cursor.peek(1)) &&
+                            (ctx_.cursor.peek(2).type == TokenType::Colon || ctx_.cursor.peek(2).type == TokenType::Arrow))
+                        {
+                            break;
+                        }
                         ctx_.cursor.advance();
                         if (ctx_.cursor.check(closing_token_) && trailing_comma_err_)
                             ctx_.cursor.report_error(ctx_.cursor.previous(), *trailing_comma_err_);
@@ -187,14 +200,24 @@ namespace valuascript::compiler
                             .options = DefaultRecoveryOptions |
                             RecoveryOptions::StopAtBoundaryRespectingDanglingOp |
                             RecoveryOptions::IgnoreStandaloneModifiersAsBoundaries,
-                            .custom_stop_predicate = [&](const Token&, TokenType)
+                            .custom_stop_predicate = [&](const Token& tok, TokenType next)
                             {
-                                return is_at_parent_boundary_ && is_at_parent_boundary_(0);
+                                if (is_at_parent_boundary_ && is_at_parent_boundary_(0)) return true;
+                                if (TokenTraits::is_identifier_start(tok) &&
+                                    (next == TokenType::Colon || next == TokenType::Assign || next == TokenType::Arrow))
+                                    return true;
+                                return false;
                             }
                         });
                     if (ctx_.cursor.check(TokenType::Comma))
                     {
                         if (is_at_parent_boundary_ && is_at_parent_boundary_(1)) break;
+                        if (closing_token_ == TokenType::RightBracket &&
+                            TokenTraits::is_identifier_start(ctx_.cursor.peek(1)) &&
+                            (ctx_.cursor.peek(2).type == TokenType::Colon || ctx_.cursor.peek(2).type == TokenType::Arrow))
+                        {
+                            break;
+                        }
                         ctx_.cursor.advance();
                     }
                 }

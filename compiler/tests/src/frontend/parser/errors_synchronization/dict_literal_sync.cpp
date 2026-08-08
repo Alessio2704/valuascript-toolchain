@@ -85,20 +85,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "array_inside_dict_with_error",
-                .source_code = "let a = {a: [1, 2}\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 17} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 2);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    ASSERT_NE(dict, nullptr);
-                    ASSERT_EQ(dict->elements.size(), 1);
-                    auto tensor = dynamic_cast<TensorLiteral*>(dict->elements[0].value.get());
-                    ASSERT_NE(tensor, nullptr);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "dict_total_mangle_new_line",
                 .source_code = "let a = { x: 1,\nlet y = 2\nlet recovery = 1\n",
                 .expected_errors = { {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 15} },

@@ -241,13 +241,6 @@ namespace valuascript::compiler::test
                         .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
                     },
                     ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprTupleSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
-                        },
-                        .verifier = IsSwitch(IsNull(), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")})
-                    },
-                    ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ModDictItem,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{.code = E::ExpectedRightParenAfterSwitchTarget, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}

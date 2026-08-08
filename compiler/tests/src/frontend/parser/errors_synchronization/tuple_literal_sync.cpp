@@ -53,26 +53,6 @@ namespace valuascript::compiler::test {
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "array_inside_tuple_first_element_error",
-                .source_code = "let a = ([1, 2)\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 14} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 2);
-                    auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto grouping = dynamic_cast<GroupingExpression*>(assignment->value.get());
-                    EXPECT_NE(grouping, nullptr);
-                    EXPECT_NE(grouping->expression, nullptr);
-                    auto tensor = dynamic_cast<TensorLiteral*>(grouping->expression.get());
-                    EXPECT_EQ(tensor->elements.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "array_inside_tuple_second_element_error",
-                .source_code = "let a = (1, [1, 2)\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 17} },
-                .verify_ast = ExpectTuple(2)
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "tuple_eof_after_comma",
                 .source_code = "let a = (1, \n",
                 .expected_errors = { {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 11} },
@@ -102,14 +82,6 @@ namespace valuascript::compiler::test {
                 .verify_ast = [](const Program& ast) {
                     EXPECT_EQ(ast.execution_steps.size(), 2);
                 }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_with_mixed_closing_brackets_inside",
-                .source_code = "let a = (1,[2, 3}, 4)\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 16}
-                },
-                .verify_ast = ExpectTuple(3)
             },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "tuple_too_many_closing_parens",

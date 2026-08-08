@@ -115,6 +115,85 @@ namespace valuascript::compiler::test
         }
     }
 
+    TEST_P(ContextUtilizationTest, ContextOverrideDefaultFalseAllowsRecursion)
+    {
+        const auto& [start_type, snippet, test_name] = GetParam();
+
+        auto available_contexts = ContextRegistry::get_all_for(start_type);
+        if (available_contexts.empty()) return;
+
+        for (const auto& target_ctx : available_contexts)
+        {
+            std::string_view target_context_name = target_ctx.name;
+
+            ContextOverrideAny override_item(target_context_name,
+                                             std::nullopt,
+                                             std::nullopt,
+                                             {},
+                                             {},
+                                             /* skip_after_d0 = */ false);
+
+            std::vector<ProcessingItem> results;
+            expand_to_top_level_stream(start_type, snippet, NullVerifier{}, test_name, [&](ProcessingItem&& item)
+            {
+                results.push_back(std::move(item));
+            }, false, {}, { override_item });
+
+            size_t aug_count = get_augmentation_count(start_type, snippet, NullVerifier{}, test_name, {});
+            size_t expected_count = ExpansionCalculator::compute_expected_expansions(start_type, {}) * aug_count;
+            EXPECT_EQ(results.size(), expected_count)
+                << "Expansion count mismatch for skip_after_depth_0 = false on context '" << target_context_name << "'";
+
+            bool context_used = std::any_of(results.begin(), results.end(), [&](const auto& item) {
+                return has_context_segment(item, target_context_name);
+            });
+            EXPECT_TRUE(context_used) << "Context '" << target_context_name
+                                      << "' was not used when skip_after_depth_0 = false";
+        }
+    }
+
+    TEST_P(ContextUtilizationTest, ContextOverrideSkipAfterDepth0BehavesLikeSkipContexts)
+    {
+        const auto& [start_type, snippet, test_name] = GetParam();
+
+        auto available_contexts = ContextRegistry::get_all_for(start_type);
+        if (available_contexts.empty()) return;
+
+        for (const auto& target_ctx : available_contexts)
+        {
+            std::string_view target_context_name = target_ctx.name;
+
+            ContextOverrideAny override_item(target_context_name,
+                                             std::nullopt,
+                                             std::nullopt,
+                                             {},
+                                             {},
+                                             /* skip_after_d0 = */ true);
+
+            std::vector<ProcessingItem> override_results;
+            expand_to_top_level_stream(start_type, snippet, NullVerifier{}, test_name, [&](ProcessingItem&& item)
+            {
+                override_results.push_back(std::move(item));
+            }, false, {}, { override_item });
+
+            bool used_at_depth_0 = false;
+            bool used_at_depth_gt_0 = false;
+            for (const auto& item : override_results)
+            {
+                for (size_t i = 0; i < item.context_history.size(); ++i)
+                {
+                    if (item.context_history[i].context_name == target_context_name)
+                    {
+                        if (i == 0) used_at_depth_0 = true;
+                        else used_at_depth_gt_0 = true;
+                    }
+                }
+            }
+            EXPECT_TRUE(used_at_depth_0) << "Target override context '" << target_context_name << "' was not exercised at depth 0.";
+            EXPECT_FALSE(used_at_depth_gt_0) << "Target override context '" << target_context_name << "' appeared at depth > 0 even though skip_after_depth_0 = true.";
+        }
+    }
+
     INSTANTIATE_TEST_SUITE_P(
         ContextUtilizationTests,
         ContextUtilizationTest,

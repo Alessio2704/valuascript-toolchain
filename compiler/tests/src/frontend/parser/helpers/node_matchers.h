@@ -704,7 +704,9 @@ namespace valuascript::compiler::test
     {
         if (auto d = ExpectNode<DictLiteral>(node))
         {
-            ASSERT_EQ(d->elements.size(), items.size()) << "Dictionary items count mismatch.";
+            std::string keys;
+            for (auto& el : d->elements) keys += "'" + el.key + "', ";
+            ASSERT_EQ(d->elements.size(), items.size()) << "Dictionary items count mismatch. Got keys: " << keys;
             for (size_t i = 0; i < items.size(); i++)
             {
                 EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i <<

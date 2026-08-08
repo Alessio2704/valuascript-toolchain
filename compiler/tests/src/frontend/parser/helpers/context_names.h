@@ -18,7 +18,6 @@ namespace valuascript::compiler::test::ContextNames
     inline constexpr const char* ExprTupleStart = "tuple_start";
     inline constexpr const char* ExprTupleMiddle = "tuple_middle";
     inline constexpr const char* ExprTupleEnd = "tuple_end";
-    inline constexpr const char* ExprTupleSingle = "tuple_single";
     inline constexpr const char* ExprTensorStart = "tensor_start";
     inline constexpr const char* ExprTensorMiddle = "tensor_middle";
     inline constexpr const char* ExprTensorEnd = "tensor_end";

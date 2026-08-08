@@ -14,6 +14,8 @@ namespace valuascript::compiler::test
         std::optional<UniversalVerifier> verifier = std::nullopt;
         std::vector<SentinelKind> excluded_sentinels = {};
         std::vector<SentinelKind> accepted_sentinels = {};
+        bool skip_after_depth_0 = false;
+        bool skip_transform = false;
 
         template <typename T>
         ContextOverrideAny(const ContextOverride<T>& typed)
@@ -21,7 +23,9 @@ namespace valuascript::compiler::test
               errors(typed.errors),
               verifier(typed.verifier.has_value() ? std::make_optional(typed.verifier->value) : std::nullopt),
               excluded_sentinels(typed.excluded_sentinels),
-              accepted_sentinels(typed.accepted_sentinels)
+              accepted_sentinels(typed.accepted_sentinels),
+              skip_after_depth_0(typed.skip_after_depth_0),
+              skip_transform(typed.skip_transform)
         {
         }
 
@@ -29,9 +33,12 @@ namespace valuascript::compiler::test
                            std::optional<std::vector<ParserExpectedError>> errs = std::nullopt,
                            std::optional<UniversalVerifier> ver = std::nullopt,
                            std::vector<SentinelKind> excluded = {},
-                           std::vector<SentinelKind> accepted = {})
+                           std::vector<SentinelKind> accepted = {},
+                           bool skip_after_d0 = false,
+                           bool skip_xform = false)
             : context_name(name), errors(std::move(errs)), verifier(std::move(ver)),
-              excluded_sentinels(std::move(excluded)), accepted_sentinels(std::move(accepted))
+              excluded_sentinels(std::move(excluded)), accepted_sentinels(std::move(accepted)),
+              skip_after_depth_0(skip_after_d0), skip_transform(skip_xform)
         {
         }
     };

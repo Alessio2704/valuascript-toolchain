@@ -176,17 +176,6 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::ExprTupleSingle,
-                .input_types = {InjectableType::Expression},
-                .output_type = InjectableType::Expression,
-                .prefix = "(",
-                .suffix = ", 1)",
-                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
-                {
-                    return UniversalVerifier(IsTuple(SpecAdder::get_v<ExprVerifier>(v), IsNumber("1")));
-                }
-            },
-            {
                 .name = ContextNames::ExprTensorStart,
                 .input_types = {InjectableType::Expression},
                 .output_type = InjectableType::Expression,

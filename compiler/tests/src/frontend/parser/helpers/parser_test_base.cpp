@@ -100,10 +100,6 @@ namespace valuascript::compiler::test
             cb.on_normal_branch = [](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
                 -> std::vector<ProcessingItem>
                 {
-                    bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(),
-                                                             ctx.name)
-                        != item.skip_contexts.end();
-
                     const ContextOverrideAny* match = nullptr;
                     for (const auto& ov : item.context_overrides)
                     {
@@ -113,6 +109,11 @@ namespace valuascript::compiler::test
                             break;
                         }
                     }
+
+                    bool skip_by_override = (item.depth > 0) && match && match->skip_after_depth_0;
+                    bool skip = item.is_skipped || skip_by_override || std::find(item.skip_contexts.begin(), item.skip_contexts.end(),
+                                                             ctx.name)
+                        != item.skip_contexts.end();
 
                     const ContextOverrideAny* verifier_match = (item.depth == 0) ? match : nullptr;
 
@@ -163,9 +164,9 @@ namespace valuascript::compiler::test
                     bool is_injectable_inner_verifier = is_injectable_payload_for_context(
                         inner_verifier, ctx.input_types);
 
-                    if (match && match->verifier.has_value())
+                    if (match && match->verifier.has_value() && (!is_injectable_inner_verifier || match->skip_transform))
                     {
-                        needs_transform = is_injectable_inner_verifier && (ctx.transform_verifier != nullptr);
+                        needs_transform = false;
                     }
                     else if (auto* m_v_ptr = std::get_if<std::shared_ptr<MultiInjectVerifier>>(&inner_verifier))
                     {
@@ -227,10 +228,6 @@ namespace valuascript::compiler::test
             cb.on_block_branch = [inject_sentinels](const ProcessingItem& item, const Context& ctx, int next_rec_depth)
                 -> std::vector<ProcessingItem>
                 {
-                    bool skip = item.is_skipped || std::find(item.skip_contexts.begin(), item.skip_contexts.end(),
-                                                             ctx.name)
-                        != item.skip_contexts.end();
-
                     const ContextOverrideAny* match = nullptr;
                     for (const auto& ov : item.context_overrides)
                     {
@@ -240,6 +237,11 @@ namespace valuascript::compiler::test
                             break;
                         }
                     }
+
+                    bool skip_by_override = (item.depth > 0) && match && match->skip_after_depth_0;
+                    bool skip = item.is_skipped || skip_by_override || std::find(item.skip_contexts.begin(), item.skip_contexts.end(),
+                                                             ctx.name)
+                        != item.skip_contexts.end();
 
                     const ContextOverrideAny* verifier_match = (item.depth == 0) ? match : nullptr;
 
