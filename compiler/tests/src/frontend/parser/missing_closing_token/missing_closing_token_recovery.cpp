@@ -17,69 +17,52 @@ namespace valuascript::compiler::test {
             {
                 .name = "grouping", .source = "let a = (1 + 2\n", .expected_err = Err::ExpectedRightParenAfterExpression,
                 .verify = [](const Program &program) {
-                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
-                        auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
-                               dynamic_cast<GroupingExpression *>(assignment->value.get()) != nullptr;
-                    });
-                    EXPECT_NE(target_stmt, nullptr) << "Failed to recover grouping assignment 'a'";
+                    ASSERT_FALSE(program.execution_steps.empty());
+                    StmtVerifier(IsAssignment({{.name = "a"}}, IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2")))))(program.execution_steps[0].get());
                 }
             },
             {
                 .name = "tuple", .source = "let a = (1, 2\n", .expected_err = Err::ExpectedRightParenAfterTupleElements,
                 .verify = [](const Program &program) {
-                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
-                        auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
-                               dynamic_cast<TupleLiteral *>(assignment->value.get()) != nullptr;
-                    });
-                    EXPECT_NE(target_stmt, nullptr) << "Failed to recover tuple assignment 'a'";
+                    ASSERT_FALSE(program.execution_steps.empty());
+                    StmtVerifier(IsAssignment({{.name = "a"}}, IsTuple(IsNumber("1"), IsNumber("2"))))(program.execution_steps[0].get());
                 }
             },
             {
                 .name = "tensor", .source = "let a = [1, 2\n", .expected_err = Err::UnmatchedBracketAfterTensorElements,
                 .verify = [](const Program &program) {
-                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
-                        auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
-                               dynamic_cast<TensorLiteral *>(assignment->value.get()) != nullptr;
-                    });
-                    EXPECT_NE(target_stmt, nullptr) << "Failed to recover tensor assignment 'a'";
+                    ASSERT_FALSE(program.execution_steps.empty());
+                    StmtVerifier(IsAssignment({{.name = "a"}}, IsTensor(IsNumber("1"), IsNumber("2"))))(program.execution_steps[0].get());
                 }
             },
             {
                 .name = "dict", .source = "let a = { b: 1\n", .expected_err = Err::UnmatchedBraceInDictionaryLiteral,
                 .verify = [](const Program &program) {
-                    auto target_stmt = find_statement(program, [](const Statement *stmt) {
-                        auto assignment = dynamic_cast<const Assignment *>(stmt);
-                        return assignment && !assignment->targets.empty() && assignment->targets[0].name == "a" &&
-                               dynamic_cast<DictLiteral *>(assignment->value.get()) != nullptr;
-                    });
-                    EXPECT_NE(target_stmt, nullptr) << "Failed to recover dict assignment 'a'";
+                    ASSERT_FALSE(program.execution_steps.empty());
+                    StmtVerifier(IsAssignment({{.name = "a"}}, IsDict(DictItemSpec{.key = "b", .value_v = IsNumber("1")})))(program.execution_steps[0].get());
                 }
             },
             {
                 .name = "func", .source = "func f() -> int { let x = 1\n", .expected_err = Err::ExpectedRightBraceAfterFunctionBody,
                 .verify = [](const Program &program) {
-                    bool found = std::any_of(program.function_definitions.begin(), program.function_definitions.end(),
-                                             [](const auto &func_def) { return func_def->name == "f"; });
-                    EXPECT_TRUE(found) << "Failed to recover unclosed func 'f'";
+                    ASSERT_FALSE(program.function_definitions.empty());
+                    if (auto f = ExpectNode<FunctionDefinition>(program.function_definitions[0].get())) {
+                        EXPECT_EQ(f->name, "f");
+                    }
                 }
             },
             {
                 .name = "struct", .source = "struct S { x: int\n", .expected_err = Err::ExpectedRightBraceAfterStructBody,
                 .verify = [](const Program &program) {
-                    bool found = std::any_of(program.struct_definitions.begin(), program.struct_definitions.end(),
-                                             [](const auto &struct_def) { return struct_def->name == "S"; });
-                    EXPECT_TRUE(found) << "Failed to recover unclosed struct 'S'";
+                    ASSERT_FALSE(program.struct_definitions.empty());
+                    IsStructDef("S", {}, FieldSpec{.name = "x", .type_v = IsType("int")})(program.struct_definitions[0].get());
                 }
             },
             {
                 .name = "enum", .source = "enum E: int { A\n", .expected_err = Err::ExpectedRightBraceAfterEnumBody,
                 .verify = [](const Program &program) {
-                    bool found = std::any_of(program.enum_definitions.begin(), program.enum_definitions.end(),
-                                             [](const auto &enum_def) { return enum_def->name == "E"; });
-                    EXPECT_TRUE(found) << "Failed to recover unclosed enum 'E'";
+                    ASSERT_FALSE(program.enum_definitions.empty());
+                    IsEnumDef("E", {}, IsType("int"), EnumCaseSpec{.name = "A"})(program.enum_definitions[0].get());
                 }
             }
         };
