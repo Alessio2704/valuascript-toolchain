@@ -138,7 +138,7 @@ namespace valuascript::compiler
                     bool is_stmt = TokenTraits::is_statement_start(tok, next) ||
                                    tok.type == TokenType::Return ||
                                    is_reassign;
-                    if (tok.type == TokenType::At && !ctx_.is_at_any_declaration()) is_stmt = false;
+                    if (tok.type == TokenType::At) is_stmt = false;
 
                     if (is_stmt && (!is_element_start_() || is_reassign))
                     {

@@ -17,6 +17,8 @@ namespace valuascript::compiler
         bool is_consuming_unexpected = false;
         bool is_parsing_expression_statement = false;
         bool is_parsing_list_element = false;
+        size_t conditional_else_depth = 0;
+        size_t conditional_else_closers_size = 0;
 
         explicit ParserContext(TokenCursor c);
 

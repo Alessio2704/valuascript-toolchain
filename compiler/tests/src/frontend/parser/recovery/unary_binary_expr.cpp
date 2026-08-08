@@ -171,11 +171,6 @@ namespace valuascript::compiler::test
                 .code = "1\n* 2\n",
                 .errors = {},
                 .verifier = IsBinary(TokenType::Star, IsNumber("1"), IsNumber("2")),
-                .skip_contexts = {
-                    ContextNames::ExprIfCond,
-                    ContextNames::ExprIfThen,
-                    ContextNames::ExprIfElse
-                },
                 .context_overrides = {
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprSingleAssignment,
@@ -339,11 +334,6 @@ namespace valuascript::compiler::test
                     IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))),
                     IsNumber("3")
                 ),
-                .skip_contexts = {
-                    ContextNames::ExprIfCond,
-                    ContextNames::ExprIfThen,
-                    ContextNames::ExprIfElse
-                },
                 .context_overrides = {
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprSingleAssignment,
@@ -460,12 +450,28 @@ namespace valuascript::compiler::test
                     PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 2, .line_end = 2, .column_end = 3}
                 },
                 .verifier = IsBinary(TokenType::Star, IsNumber("1")),
-                .skip_contexts = {
-                    ContextNames::ExprIfCond,
-                    ContextNames::ExprIfThen,
-                    ContextNames::ExprIfElse
-                },
                 .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprIfCond,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 3, .line_end = 2, .column_end = 7}
+                        },
+                        .verifier = IsBinary(TokenType::Star, IsNumber("1"))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprIfThen,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 3, .line_end = 2, .column_end = 7}
+                        },
+                        .verifier = IsBinary(TokenType::Star, IsNumber("1"))
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprIfElse,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::InvalidExpression, .line_start = 2, .column_start = 1, .line_end = 2, .column_end = 2, .skip_span_check = true}
+                        },
+                        .verifier = IsBinary(TokenType::Star, IsNumber("1"))
+                    },
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprSingleAssignment,
                         .errors = std::vector<ParserExpectedError>{

@@ -18,8 +18,15 @@ namespace valuascript::compiler
     bool ExpressionParser::is_inside_expr_grouping() const
     {
         if (ctx.active_closers.empty()) return false;
-        TokenType top = ctx.active_closers.back();
-        return top == TokenType::RightParen || top == TokenType::RightBracket;
+        for (auto it = ctx.active_closers.rbegin(); it != ctx.active_closers.rend(); ++it)
+        {
+            TokenType t = *it;
+            if (t == TokenType::RightBrace) return false;
+            if (t == TokenType::RightParen || t == TokenType::RightBracket ||
+                t == TokenType::Then || t == TokenType::Else)
+                return true;
+        }
+        return false;
     }
 
     bool ExpressionParser::can_continue_expression(const Token& op_tok, const ParseRule& rule, Precedence min_prec,
@@ -28,8 +35,16 @@ namespace valuascript::compiler
         if (rule.precedence < min_prec || rule.precedence == Precedence::None || rule.infix == nullptr) return false;
         if (op_tok.line > cursor.previous().line && !inside_grouping)
         {
-            if (is_reassignment_start_lookahead()) return false;
-            if (!TokenTraits::is_postfix_operator(op_tok.type)) return false;
+            bool in_nested_container = ctx.active_closers.size() > ctx.conditional_else_closers_size;
+            if (ctx.conditional_else_depth > 0 && rule.infix != nullptr && !in_nested_container)
+            {
+                // In else branch (not inside a nested brace/dict/tuple container), allow multiline binary infix operators
+            }
+            else
+            {
+                if (is_reassignment_start_lookahead()) return false;
+                if (!TokenTraits::is_postfix_operator(op_tok.type)) return false;
+            }
         }
         return true;
     }
@@ -632,7 +647,7 @@ namespace valuascript::compiler
                          .is_element_start([this]()
                          {
                              const Token& tok = cursor.peek();
-                             if (tok.type == TokenType::At) return !ctx.is_at_any_declaration();
+                             if (tok.type == TokenType::At) return true;
                              if (tok.type == TokenType::Identifier) return true;
                              return is_reserved_keyword(tok) && (cursor.peek(1).type == TokenType::Colon);
                          })
@@ -668,7 +683,11 @@ namespace valuascript::compiler
                 RecoveryOptions::StopEarlyIfUnbalancedBlocks
         };
 
-        auto condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        ExprPtr condition = nullptr;
+        {
+            CloserTracker condition_tracker(ctx, TokenType::Then);
+            condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
+        }
 
         bool has_then = cursor.match(TokenType::Then);
         if (!has_then) cursor.report_error_no_panic(cursor.peek(), E::MissingThenToken);
@@ -691,6 +710,7 @@ namespace valuascript::compiler
 
         if (!skip_then)
         {
+            CloserTracker then_tracker(ctx, TokenType::Else);
             then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
@@ -715,6 +735,24 @@ namespace valuascript::compiler
 
         if (!skip_else)
         {
+            struct ElseDepthGuard
+            {
+                ParserContext& ctx;
+                size_t prev_depth;
+                size_t prev_closers_size;
+                explicit ElseDepthGuard(ParserContext& c)
+                    : ctx(c), prev_depth(c.conditional_else_depth), prev_closers_size(c.conditional_else_closers_size)
+                {
+                    ctx.conditional_else_depth++;
+                    ctx.conditional_else_closers_size = ctx.active_closers.size();
+                }
+                ~ElseDepthGuard()
+                {
+                    ctx.conditional_else_depth = prev_depth;
+                    ctx.conditional_else_closers_size = prev_closers_size;
+                }
+            } guard(ctx);
+
             else_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
