@@ -3,7 +3,8 @@
 #include "frontend/parser/helpers/deterministic_sampler.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
-#include "frontend/parser/helpers/context_names.h"
+#include "frontend/parser/helpers/error_registry.h"
+#include "frontend/parser/helpers/construct_registry.h"
 #include <string>
 #include <vector>
 #include <string_view>
@@ -13,6 +14,40 @@ namespace valuascript::compiler::test
     class ExpansionDebugHelper : public ParserTestBase
     {
     public:
+        static void DebugRecovery(std::string_view test_name)
+        {
+            bool found = ErrorRegistry::find(test_name, [](InjectableType type, const auto& entry) {
+                DumpRecoveryExpansion(
+                    type,
+                    entry.code,
+                    entry.test_name,
+                    entry.skip_contexts,
+                    to_any_overrides(entry.context_overrides),
+                    entry.excluded_sentinels,
+                    entry.accepted_sentinels
+                );
+            });
+            if (!found)
+            {
+                ADD_FAILURE() << "DebugRecovery failed: Test case '" << test_name << "' not found in ErrorRegistry.";
+            }
+        }
+
+        static void DebugFeature(std::string_view test_name)
+        {
+            bool found = ConstructRegistry::find(test_name, [](InjectableType type, const auto& entry) {
+                DumpFeatureExpansion(
+                    type,
+                    entry.code,
+                    entry.test_name,
+                    entry.skip_contexts
+                );
+            });
+            if (!found)
+            {
+                ADD_FAILURE() << "DebugFeature failed: Test case '" << test_name << "' not found in ConstructRegistry.";
+            }
+        }
         static void DumpFeatureExpansion(InjectableType type,
                                          const std::string& snippet,
                                          const std::string& label,
@@ -52,7 +87,7 @@ namespace valuascript::compiler::test
                                           const std::vector<SentinelKind>& excluded_sentinels = {},
                                           const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            DumpWriter writer("expansion_sentinel_recovery_debug_" + label + ".txt", "expansion_dumps");
+            DumpWriter writer("expansion_recovery_debug_" + label + ".txt", "expansion_dumps");
             if (!writer.is_open()) return;
 
             auto& out = writer.out();

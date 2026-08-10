@@ -4,6 +4,8 @@
 #include <string_view>
 #include <vector>
 #include <functional>
+#include <optional>
+#include "injectable_type.h"
 #include "sentinel_kind.h"
 #include "universal_verifier.h"
 #include "node_matchers.h"
@@ -11,7 +13,6 @@
 
 namespace valuascript::compiler::test
 {
-
     template <typename T>
     struct ErrorRegistryEntry
     {
@@ -55,7 +56,42 @@ namespace valuascript::compiler::test
 
     class ErrorRegistry
     {
+    private:
+        template <typename T, typename Fn>
+        static bool search_category(InjectableType type, const std::vector<ErrorRegistryEntry<T>>& entries, std::string_view test_name, Fn&& fn)
+        {
+            for (const auto& entry : entries)
+            {
+                if (entry.test_name == test_name)
+                {
+                    fn(type, entry);
+                    return true;
+                }
+            }
+            return false;
+        }
+
     public:
+        template <typename Fn>
+        static bool find(std::string_view test_name, Fn&& fn)
+        {
+            if (search_category(InjectableType::Import, imports(), test_name, fn)) return true;
+            if (search_category(InjectableType::Directive, directives(), test_name, fn)) return true;
+            if (search_category(InjectableType::Function, functions(), test_name, fn)) return true;
+            if (search_category(InjectableType::Extension, extensions(), test_name, fn)) return true;
+            if (search_category(InjectableType::Struct, structs(), test_name, fn)) return true;
+            if (search_category(InjectableType::Enum, enums(), test_name, fn)) return true;
+            if (search_category(InjectableType::TypeAlias, aliases(), test_name, fn)) return true;
+            if (search_category(InjectableType::StrongStatement, assignments(), test_name, fn)) return true;
+            if (search_category(InjectableType::StrongStatement, reassignments(), test_name, fn)) return true;
+            if (search_category(InjectableType::WeakStatement, returns(), test_name, fn)) return true;
+            if (search_category(InjectableType::WeakStatement, expr_stmts(), test_name, fn)) return true;
+            if (search_category(InjectableType::Expression, expressions(), test_name, fn)) return true;
+            if (search_category(InjectableType::Modifier, modifiers(), test_name, fn)) return true;
+            if (search_category(InjectableType::TypeAnnotation, type_annotations(), test_name, fn)) return true;
+            return false;
+        }
+
         template <typename T>
         static void add(const RecoveryCase<T>& spec)
         {
