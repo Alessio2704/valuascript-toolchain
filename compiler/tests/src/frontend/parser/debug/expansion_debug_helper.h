@@ -11,6 +11,11 @@
 
 namespace valuascript::compiler::test
 {
+    struct DumpTest
+    {
+        std::string_view name;
+    };
+
     class ExpansionDebugHelper : public ParserTestBase
     {
     public:

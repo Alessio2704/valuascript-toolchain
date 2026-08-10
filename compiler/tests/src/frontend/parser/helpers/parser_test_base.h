@@ -14,17 +14,13 @@
 
 #include "frontend/parser/expansion_and_sentinels/expansion_policy.h"
 
+#include "parser_runner.h"
+#include "stream_expander.h"
+#include "recovery_program_builder.h"
+
 namespace valuascript::compiler::test
 {
-    struct ConstructedRecoveryProgram
-    {
-        std::string full_code;
-        ProgramSpec full_spec;
-        std::string prefix_for_shifting;
-        std::string path_name = "";
-    };
 
-    using ExpansionCallback = std::function<void(ProcessingItem&&)>;
 
     class ParserTestBase : public testing::Test
     {

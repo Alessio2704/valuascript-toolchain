@@ -1,25 +1,37 @@
 #include "expansion_debug_helper.h"
+#include "utils/parametrised_test_name_helper.h"
 
 namespace valuascript::compiler::test
 {
-    class ExpansionRecoveryDebugger : public ExpansionDebugHelper
+    class ExpansionRecoveryDebugger : public ExpansionDebugHelper,
+                                      public testing::WithParamInterface<DumpTest>
     {
     };
 
 #if defined(ENABLE_DEBUG_DUMPS) && ENABLE_DEBUG_DUMPS
-    TEST_F(ExpansionRecoveryDebugger, GenerateRecoveryReport)
+    TEST_P(ExpansionRecoveryDebugger, GenerateRecoveryDump)
     {
-        DebugRecovery("MissingDotAccessProperty");
-        DebugRecovery("MissingValueAfterEquals");
-        DebugRecovery("BinaryMissingRight");
-        DebugRecovery("TupleTypeBrokenElement");
-        DebugRecovery("ModifierMissingArgColon");
-        DebugRecovery("GenericMissingClosingBracket");
-        DebugRecovery("TupleMissingClosingParen");
-        DebugRecovery("MultilineBinary");
-        DebugRecovery("MultilineBinaryRejectedAfterGroupingCloses");
-        DebugRecovery("DanglingBinaryOperatorAtNewline");
-        DebugRecovery("UnclosedTensorLiteral");
+        DebugRecovery(GetParam().name);
     }
+
+    INSTANTIATE_TEST_SUITE_P(
+        RecoveryDumps,
+        ExpansionRecoveryDebugger,
+        testing::Values(
+            DumpTest{.name = "MissingDotAccessProperty"},
+            DumpTest{.name = "MissingValueAfterEquals"},
+            DumpTest{.name = "BinaryMissingRight"},
+            DumpTest{.name = "TupleTypeBrokenElement"},
+            DumpTest{.name = "ModifierMissingArgColon"},
+            DumpTest{.name = "GenericMissingClosingBracket"},
+            DumpTest{.name = "TupleMissingClosingParen"},
+            DumpTest{.name = "MultilineBinary"},
+            DumpTest{.name = "MultilineBinaryRejectedAfterGroupingCloses"},
+            DumpTest{.name = "DanglingBinaryOperatorAtNewline"},
+            DumpTest{.name = "UnclosedTensorLiteral"}
+        ),
+        TestNameGenerator{}
+    );
 #endif
 }
+
