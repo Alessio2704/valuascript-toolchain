@@ -421,14 +421,6 @@ namespace valuascript::compiler
                 TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
-        if (!TokenTraits::is_identifier_start(cursor.peek()) && !cursor.check(TokenType::LeftParen) && !is_reserved_keyword(cursor.peek()) && !cursor.check(TokenType::At))
-        {
-            cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, true);
-            cursor.advance();
-            return AstFactory::make_node<
-                TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
-        }
-
         auto target_type = ErrorRecovery::attempt_parse<TypeAnnPtr>(
             ctx, [&]() { return parser.parse_type_annotation(); },
             RecoveryConfig::StopAtNewline(),

@@ -54,8 +54,19 @@ namespace valuascript::compiler
                                                                         std::move(elements));
         }
 
-        Token name_token = ctx.consume_identifier(E::MissingTypeAnnotation, false);
+        Token name_token;
         std::vector<TypeAnnPtr> generic_args;
+        bool missing_base_type = false;
+        if (cursor.check(TokenType::Less))
+        {
+            missing_base_type = true;
+            cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation);
+            name_token = Token(TokenType::Identifier, "", start.line, start.column);
+        }
+        else
+        {
+            name_token = ctx.consume_identifier(E::MissingTypeAnnotation, false);
+        }
 
         if (cursor.match(TokenType::Less))
         {
@@ -79,6 +90,17 @@ namespace valuascript::compiler
                     cursor.advance();
             }
         }
+        else if (name_token.type != TokenType::Identifier && !is_reserved_keyword(name_token))
+        {
+            if (!cursor.is_at_end() && &cursor.peek() == &start)
+            {
+                cursor.advance();
+            }
+            return nullptr;
+        }
+
+        if (missing_base_type) return nullptr;
+
         return AstFactory::make_node<TypeAnnotation>(cursor, start, name_token.lexeme, std::move(generic_args));
     }
 }

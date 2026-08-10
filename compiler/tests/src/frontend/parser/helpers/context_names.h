@@ -2,128 +2,144 @@
 
 namespace valuascript::compiler::test::ContextNames
 {
-    inline constexpr const char* FunctionBodyWrapper = "function_body_wrapper";
-    inline constexpr const char* ExtensionBodyWrapper = "extension_body_wrapper";
-    inline constexpr const char* TopLevelWrapper = "top_level";
+#define VALUASCRIPT_WRAPPER_CONTEXTS(X) \
+    X(FunctionBodyWrapper, "function_body_wrapper") \
+    X(ExtensionBodyWrapper, "extension_body_wrapper") \
+    X(TopLevelWrapper, "top_level")
 
-    inline constexpr const char* ExprSingleAssignment = "single_assignment";
-    inline constexpr const char* ExprMultiAssignment = "multi_assignment";
-    inline constexpr const char* ExprReassignment = "reassignment";
-    inline constexpr const char* ExprReturnStmt = "return_stmt";
-    inline constexpr const char* ExprFuncDefDefault = "func_def_default";
-    inline constexpr const char* ExprDirectiveNoEq = "directive_no_eq";
-    inline constexpr const char* ExprDirectiveEq = "directive_eq";
-    inline constexpr const char* ExprEnumCase = "enum_case";
-    inline constexpr const char* ExprModifierArg = "modifier_arg";
-    inline constexpr const char* ExprTupleStart = "tuple_start";
-    inline constexpr const char* ExprTupleMiddle = "tuple_middle";
-    inline constexpr const char* ExprTupleEnd = "tuple_end";
-    inline constexpr const char* ExprTensorStart = "tensor_start";
-    inline constexpr const char* ExprTensorMiddle = "tensor_middle";
-    inline constexpr const char* ExprTensorEnd = "tensor_end";
-    inline constexpr const char* ExprTensorSingle = "tensor_single";
-    inline constexpr const char* ExprDictValueStart = "dict_value_start";
-    inline constexpr const char* ExprDictValueMiddle = "dict_value_middle";
-    inline constexpr const char* ExprDictValueEnd = "dict_value_end";
-    inline constexpr const char* ExprDictValueSingle = "dict_value_single";
-    inline constexpr const char* ExprBracketAccessIndex = "bracket_access_index";
-    inline constexpr const char* ExprCallArgStart = "call_arg_start";
-    inline constexpr const char* ExprCallArgMiddle = "call_arg_middle";
-    inline constexpr const char* ExprCallArgEnd = "call_arg_end";
-    inline constexpr const char* ExprCallArgSingle = "call_arg_single";
-    inline constexpr const char* ExprBinaryLhs = "binary_lhs";
-    inline constexpr const char* ExprBinaryRhs = "binary_rhs";
-    inline constexpr const char* ExprGrouping = "grouping";
-    inline constexpr const char* ExprUnaryGrouping = "unary_grouping";
-    inline constexpr const char* ExprAsCallTarget = "as_call_target";
-    inline constexpr const char* ExprAsDotTarget = "as_dot_target";
-    inline constexpr const char* ExprAsBracketTarget = "as_bracket_target";
-    inline constexpr const char* ExprAsSliceTarget = "as_slice_target";
-    inline constexpr const char* ExprSwitchCond = "switch_cond";
-    inline constexpr const char* ExprSwitchCaseStart = "switch_case_start";
-    inline constexpr const char* ExprSwitchCaseMiddle = "switch_case_middle";
-    inline constexpr const char* ExprSwitchCaseEnd = "switch_case_end";
-    inline constexpr const char* ExprSwitchCaseSingle = "switch_case_single";
-    inline constexpr const char* ExprIfCond = "if_cond";
-    inline constexpr const char* ExprIfThen = "if_then";
-    inline constexpr const char* ExprIfElse = "if_else";
+#define VALUASCRIPT_EXPRESSION_CONTEXTS(X) \
+    X(ExprSingleAssignment, "single_assignment") \
+    X(ExprMultiAssignment, "multi_assignment") \
+    X(ExprReassignment, "reassignment") \
+    X(ExprReturnStmt, "return_stmt") \
+    X(ExprFuncDefDefault, "func_def_default") \
+    X(ExprDirectiveNoEq, "directive_no_eq") \
+    X(ExprDirectiveEq, "directive_eq") \
+    X(ExprEnumCase, "enum_case") \
+    X(ExprModifierArg, "modifier_arg") \
+    X(ExprTupleStart, "tuple_start") \
+    X(ExprTupleMiddle, "tuple_middle") \
+    X(ExprTupleEnd, "tuple_end") \
+    X(ExprTensorStart, "tensor_start") \
+    X(ExprTensorMiddle, "tensor_middle") \
+    X(ExprTensorEnd, "tensor_end") \
+    X(ExprTensorSingle, "tensor_single") \
+    X(ExprDictValueStart, "dict_value_start") \
+    X(ExprDictValueMiddle, "dict_value_middle") \
+    X(ExprDictValueEnd, "dict_value_end") \
+    X(ExprDictValueSingle, "dict_value_single") \
+    X(ExprBracketAccessIndex, "bracket_access_index") \
+    X(ExprCallArgStart, "call_arg_start") \
+    X(ExprCallArgMiddle, "call_arg_middle") \
+    X(ExprCallArgEnd, "call_arg_end") \
+    X(ExprCallArgSingle, "call_arg_single") \
+    X(ExprBinaryLhs, "binary_lhs") \
+    X(ExprBinaryRhs, "binary_rhs") \
+    X(ExprGrouping, "grouping") \
+    X(ExprUnaryGrouping, "unary_grouping") \
+    X(ExprAsCallTarget, "as_call_target") \
+    X(ExprAsDotTarget, "as_dot_target") \
+    X(ExprAsBracketTarget, "as_bracket_target") \
+    X(ExprAsSliceTarget, "as_slice_target") \
+    X(ExprSwitchCond, "switch_cond") \
+    X(ExprSwitchCaseStart, "switch_case_start") \
+    X(ExprSwitchCaseMiddle, "switch_case_middle") \
+    X(ExprSwitchCaseEnd, "switch_case_end") \
+    X(ExprSwitchCaseSingle, "switch_case_single") \
+    X(ExprIfCond, "if_cond") \
+    X(ExprIfThen, "if_then") \
+    X(ExprIfElse, "if_else")
 
-    inline constexpr const char* ModBeforeLetSingle = "modifier_before_let_single";
-    inline constexpr const char* ModBeforeLetMultiple = "modifier_before_let_multiple";
-    inline constexpr const char* ModBeforeLetMultipleWithInner = "modifier_before_let_multiple_with_inner";
-    inline constexpr const char* ModBeforeLetMultipleWithBothInner = "modifier_before_let_multiple_with_both_inner";
-    inline constexpr const char* ModAssignment = "assignment";
-    inline constexpr const char* ModMultiAssignment = "multi_assignment";
-    inline constexpr const char* ModImportStatement = "import_statement";
-    inline constexpr const char* ModReturnStatement = "return_statement";
-    inline constexpr const char* ModSwitchCase = "switch_case";
-    inline constexpr const char* ModSwitchDefault = "switch_default";
-    inline constexpr const char* ModFunctionDefinition = "function_definition";
-    inline constexpr const char* ModFunctionParameter = "function_parameter";
-    inline constexpr const char* ModFunctionParameterWithDefault = "function_parameter_with_default";
-    inline constexpr const char* ModStructDefinition = "struct_definition";
-    inline constexpr const char* ModStructField = "struct_field";
-    inline constexpr const char* ModEnumDefinition = "enum_definition";
-    inline constexpr const char* ModEnumCase = "enum_case";
-    inline constexpr const char* ModTypealiasDefinition = "typealias_definition";
-    inline constexpr const char* ModExtensionDefinition = "extension_definition";
-    inline constexpr const char* ModDictItem = "dict_item";
+#define VALUASCRIPT_MODIFIER_CONTEXTS(X) \
+    X(ModBeforeLetSingle, "modifier_before_let_single") \
+    X(ModBeforeLetMultiple, "modifier_before_let_multiple") \
+    X(ModBeforeLetMultipleWithInner, "modifier_before_let_multiple_with_inner") \
+    X(ModBeforeLetMultipleWithBothInner, "modifier_before_let_multiple_with_both_inner") \
+    X(ModAssignment, "assignment") \
+    X(ModMultiAssignment, "multi_assignment") \
+    X(ModImportStatement, "import_statement") \
+    X(ModReturnStatement, "return_statement") \
+    X(ModSwitchCase, "switch_case") \
+    X(ModSwitchDefault, "switch_default") \
+    X(ModFunctionDefinition, "function_definition") \
+    X(ModFunctionParameter, "function_parameter") \
+    X(ModFunctionParameterWithDefault, "function_parameter_with_default") \
+    X(ModStructDefinition, "struct_definition") \
+    X(ModStructField, "struct_field") \
+    X(ModEnumDefinition, "enum_definition") \
+    X(ModEnumCase, "enum_case") \
+    X(ModTypealiasDefinition, "typealias_definition") \
+    X(ModExtensionDefinition, "extension_definition") \
+    X(ModDictItem, "dict_item")
 
-    inline constexpr const char* TypeAssignmentTarget = "assignment_target";
-    inline constexpr const char* TypeMultiAssignmentTarget1 = "multi_assignment_target_1";
-    inline constexpr const char* TypeMultiAssignmentTarget2 = "multi_assignment_target_2";
-    inline constexpr const char* TypeTypealiasTarget = "typealias_target";
-    inline constexpr const char* TypeExtensionTarget = "extension_target";
-    inline constexpr const char* TypeFunctionParamStart = "function_param_start";
-    inline constexpr const char* TypeFunctionParamMiddle = "function_param_middle";
-    inline constexpr const char* TypeFunctionParamEnd = "function_param_end";
-    inline constexpr const char* TypeFunctionParamSingle = "function_param_single";
-    inline constexpr const char* TypeFunctionReturnStart = "function_return_start";
-    inline constexpr const char* TypeFunctionReturnMiddle = "function_return_middle";
-    inline constexpr const char* TypeFunctionReturnEnd = "function_return_end";
-    inline constexpr const char* TypeFunctionReturnSingle = "function_return_single";
-    inline constexpr const char* TypeStructField = "struct_field";
-    inline constexpr const char* TypeStructMultipleFields = "struct_multiple_fields";
-    inline constexpr const char* TypeEnumUnderlyingType = "enum_underlying_type";
-    inline constexpr const char* TypeTupleTypeStart = "tuple_type_start";
-    inline constexpr const char* TypeTupleTypeMiddle = "tuple_type_middle";
-    inline constexpr const char* TypeTupleTypeEnd = "tuple_type_end";
-    inline constexpr const char* TypeTupleTypeSingle = "tuple_type_single";
-    inline constexpr const char* TypeGenericTypeStart = "generic_type_start";
-    inline constexpr const char* TypeGenericTypeMiddle = "generic_type_middle";
-    inline constexpr const char* TypeGenericTypeEnd = "generic_type_end";
-    inline constexpr const char* TypeGenericTypeSingle = "generic_type_single";
+#define VALUASCRIPT_TYPE_CONTEXTS(X) \
+    X(TypeAssignmentTarget, "assignment_target") \
+    X(TypeMultiAssignmentTarget1, "multi_assignment_target_1") \
+    X(TypeMultiAssignmentTarget2, "multi_assignment_target_2") \
+    X(TypeTypealiasTarget, "typealias_target") \
+    X(TypeExtensionTarget, "extension_target") \
+    X(TypeFunctionParamStart, "function_param_start") \
+    X(TypeFunctionParamMiddle, "function_param_middle") \
+    X(TypeFunctionParamEnd, "function_param_end") \
+    X(TypeFunctionParamSingle, "function_param_single") \
+    X(TypeFunctionReturnStart, "function_return_start") \
+    X(TypeFunctionReturnMiddle, "function_return_middle") \
+    X(TypeFunctionReturnEnd, "function_return_end") \
+    X(TypeFunctionReturnSingle, "function_return_single") \
+    X(TypeStructField, "struct_field") \
+    X(TypeStructMultipleFields, "struct_multiple_fields") \
+    X(TypeEnumUnderlyingType, "enum_underlying_type") \
+    X(TypeTupleTypeStart, "tuple_type_start") \
+    X(TypeTupleTypeMiddle, "tuple_type_middle") \
+    X(TypeTupleTypeEnd, "tuple_type_end") \
+    X(TypeTupleTypeSingle, "tuple_type_single") \
+    X(TypeGenericTypeStart, "generic_type_start") \
+    X(TypeGenericTypeMiddle, "generic_type_middle") \
+    X(TypeGenericTypeEnd, "generic_type_end") \
+    X(TypeGenericTypeSingle, "generic_type_single")
 
-    inline constexpr const char* IdLetTarget = "id_let_target";
-    inline constexpr const char* IdMultiLetTarget1 = "id_multi_let_target1";
-    inline constexpr const char* IdMultiLetTarget2 = "id_multi_let_target2";
-    inline constexpr const char* IdReassignmentTarget = "id_reassignment_target";
-    inline constexpr const char* IdFuncDefName = "id_func_def_name";
-    inline constexpr const char* IdFuncParamName = "id_func_param_name";
-    inline constexpr const char* IdStructDefName = "id_struct_def_name";
-    inline constexpr const char* IdStructFieldNameStart = "id_struct_field_name_start";
-    inline constexpr const char* IdStructFieldNameMiddle = "id_struct_field_name_middle";
-    inline constexpr const char* IdStructFieldNameEnd = "id_struct_field_name_end";
-    inline constexpr const char* IdStructFieldNameSingle = "id_struct_field_name_single";
-    inline constexpr const char* IdEnumDefName = "id_enum_def_name";
-    inline constexpr const char* IdEnumCaseStart = "id_enum_case_start";
-    inline constexpr const char* IdEnumCaseMiddle = "id_enum_case_middle";
-    inline constexpr const char* IdEnumCaseEnd = "id_enum_case_end";
-    inline constexpr const char* IdEnumCaseSingle = "id_enum_case_single";
-    inline constexpr const char* IdTypeAliasName = "id_typealias_name";
-    inline constexpr const char* IdDirectiveName = "id_directive_name";
-    inline constexpr const char* IdTypeAnnotation = "id_type_annotation";
-    inline constexpr const char* IdDotAccessProperty = "id_dot_access_property";
-    inline constexpr const char* IdDictKeyStart = "id_dict_key_start";
-    inline constexpr const char* IdDictKeyMiddle = "id_dict_key_middle";
-    inline constexpr const char* IdDictKeyEnd = "id_dict_key_end";
-    inline constexpr const char* IdDictKeySingle = "id_dict_key_single";
-    inline constexpr const char* IdSwitchCaseLabelStart = "id_switch_case_label_start";
-    inline constexpr const char* IdSwitchCaseLabelMiddle = "id_switch_case_label_middle";
-    inline constexpr const char* IdSwitchCaseLabelEnd = "id_switch_case_label_end";
-    inline constexpr const char* IdSwitchCaseLabelSingle = "id_switch_case_label_single";
-    inline constexpr const char* IdModifierName = "id_modifier_name";
-    inline constexpr const char* IdModifierArgLabel = "id_modifier_arg_label";
-    inline constexpr const char* IdCallArgLabel = "id_call_arg_label";
-    inline constexpr const char* IdStandaloneExpr = "id_standalone_expr";
+#define VALUASCRIPT_IDENTIFIER_CONTEXTS(X) \
+    X(IdLetTarget, "id_let_target") \
+    X(IdMultiLetTarget1, "id_multi_let_target1") \
+    X(IdMultiLetTarget2, "id_multi_let_target2") \
+    X(IdReassignmentTarget, "id_reassignment_target") \
+    X(IdFuncDefName, "id_func_def_name") \
+    X(IdFuncParamName, "id_func_param_name") \
+    X(IdStructDefName, "id_struct_def_name") \
+    X(IdStructFieldNameStart, "id_struct_field_name_start") \
+    X(IdStructFieldNameMiddle, "id_struct_field_name_middle") \
+    X(IdStructFieldNameEnd, "id_struct_field_name_end") \
+    X(IdStructFieldNameSingle, "id_struct_field_name_single") \
+    X(IdEnumDefName, "id_enum_def_name") \
+    X(IdEnumCaseStart, "id_enum_case_start") \
+    X(IdEnumCaseMiddle, "id_enum_case_middle") \
+    X(IdEnumCaseEnd, "id_enum_case_end") \
+    X(IdEnumCaseSingle, "id_enum_case_single") \
+    X(IdTypeAliasName, "id_typealias_name") \
+    X(IdDirectiveName, "id_directive_name") \
+    X(IdTypeAnnotation, "id_type_annotation") \
+    X(IdDotAccessProperty, "id_dot_access_property") \
+    X(IdDictKeyStart, "id_dict_key_start") \
+    X(IdDictKeyMiddle, "id_dict_key_middle") \
+    X(IdDictKeyEnd, "id_dict_key_end") \
+    X(IdDictKeySingle, "id_dict_key_single") \
+    X(IdSwitchCaseLabelStart, "id_switch_case_label_start") \
+    X(IdSwitchCaseLabelMiddle, "id_switch_case_label_middle") \
+    X(IdSwitchCaseLabelEnd, "id_switch_case_label_end") \
+    X(IdSwitchCaseLabelSingle, "id_switch_case_label_single") \
+    X(IdModifierName, "id_modifier_name") \
+    X(IdModifierArgLabel, "id_modifier_arg_label") \
+    X(IdCallArgLabel, "id_call_arg_label") \
+    X(IdStandaloneExpr, "id_standalone_expr")
+
+#define VALUASCRIPT_ALL_CONTEXTS(X) \
+    VALUASCRIPT_WRAPPER_CONTEXTS(X) \
+    VALUASCRIPT_EXPRESSION_CONTEXTS(X) \
+    VALUASCRIPT_MODIFIER_CONTEXTS(X) \
+    VALUASCRIPT_TYPE_CONTEXTS(X) \
+    VALUASCRIPT_IDENTIFIER_CONTEXTS(X)
+
+#define VALUASCRIPT_DECLARE_CONTEXT_NAME(name, str) inline constexpr const char* name = str;
+    VALUASCRIPT_ALL_CONTEXTS(VALUASCRIPT_DECLARE_CONTEXT_NAME)
+#undef VALUASCRIPT_DECLARE_CONTEXT_NAME
 }
