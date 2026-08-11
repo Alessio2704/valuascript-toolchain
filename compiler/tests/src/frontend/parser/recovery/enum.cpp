@@ -27,6 +27,34 @@ namespace valuascript::compiler::test
             });
 
             reg({
+                .name = "EnumMissingColon",
+                .code = "enum Test int { A }",
+                .errors = {
+                    PErr{.code = E::ExpectedColonAfterEnumName, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                },
+                .verifier = IsEnumDef("Test", {}, IsType("int"), {{.name = "A"}})
+            });
+
+            reg({
+                .name = "EnumMissingLeftBrace",
+                .code = "enum Test: int",
+                .errors = {
+                    PErr{.code = E::ExpectedLeftBraceBeforeEnumBody, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                },
+                .verifier = IsEnumDef("Test", {}, IsType("int"))
+            });
+
+            reg({
+                .name = "EnumMissingRightBrace",
+                .code = "enum Test: int { A ",
+                .errors = {
+                    PErr{.code = E::ExpectedRightBraceAfterEnumBody, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
+                },
+                .verifier = IsEnumDef("Test", {}, IsType("int"), {{.name="A"}}),
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
+            reg({
                 .name = "EnumMissingTypeAnnotation",
                 .code = "enum Test: { A }",
                 .errors = {

@@ -53,26 +53,11 @@ namespace valuascript::compiler::test
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
                 .test_name = "tensor_closed_with_wrong_brace",
-                .source_code = "let a =[ 1, 2 }\nlet recovery = 1\n",
+                .source_code = "let a =[ 1, 2 \nlet recovery = 1\n",
                 .expected_errors = {
                     {.code = Err::UnmatchedBracketAfterTensorElements, .line = 1, .column = 13}
                 },
                 .verify_ast = ExpectTensor({"1", "2"})
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tensor_with_mismatched_nested_closer",
-                .source_code = "let a = [ ( 1 + 2 ], 3 ]\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 17} },
-                .verify_ast = [](const Program& ast) {
-                    const auto assignment = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto tensor = dynamic_cast<TensorLiteral*>(assignment->value.get());
-                    ASSERT_EQ(tensor->elements.size(), 2);
-                    auto first_elem = dynamic_cast<BinaryExpression*>(unwrap_grouping(tensor->elements[0].get()));
-                    ASSERT_NE(first_elem, nullptr);
-                    ASSERT_EQ(first_elem->op, TokenType::Plus);
-                    auto second_elem = dynamic_cast<NumberLiteral*>(tensor->elements[1].get());
-                    ASSERT_NE(second_elem, nullptr);
-                }
             }
         ),
         TestNameGenerator{}

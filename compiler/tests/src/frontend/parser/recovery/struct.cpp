@@ -59,9 +59,9 @@ namespace valuascript::compiler::test
 
             reg({
                 .name = "MissingStructLeftBrace",
-                .code = "struct Test id: int }",
-                .errors = {PErr{.code = E::ExpectedBraceInStructDefinition, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 15}},
-                .verifier = IsNull()
+                .code = "struct Test",
+                .errors = {PErr{.code = E::ExpectedBraceInStructDefinition, .line_start = 1, .column_start = 12, .line_end = 1, .column_end = 13}},
+                .verifier = IsStructDef("Test", {}, {})
             });
 
             reg({

@@ -132,4 +132,23 @@ namespace valuascript::compiler
             return false;
         }
     }
+
+    bool TokenTraits::is_shifted_error(const ParserErrorCode code)
+    {
+        if (is_missing_closing_delimiter_error(code)) return true;
+        switch (code)
+        {
+        case ParserErrorCode::MissingThenToken:
+        case ParserErrorCode::MissingElseToken:
+        case ParserErrorCode::ExpectedPropertyName:
+        case ParserErrorCode::ExpectedAssignAfterTypeAliasName:
+        case ParserErrorCode::IncompleteAssignment:
+        case ParserErrorCode::ExpectedBraceInStructDefinition:
+        case ParserErrorCode::ExpectedLeftBraceBeforeEnumBody:
+        case ParserErrorCode::ExpectedColonAfterEnumName:
+            return true;
+        default:
+            return false;
+        }
+    }
 }

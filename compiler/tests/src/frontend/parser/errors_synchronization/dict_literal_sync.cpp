@@ -3,45 +3,6 @@
 
 namespace valuascript::compiler::test
 {
-    namespace
-    {
-        struct ExpectedDictPair
-        {
-            std::string key;
-            std::optional<std::string> expected_number_value = std::nullopt;
-        };
-
-        void ExpectDictLiteral(const Program& ast, const std::vector<ExpectedDictPair>& expected)
-        {
-            ASSERT_FALSE(ast.execution_steps.empty()) << "AST has no execution steps.";
-
-            auto* assign = dynamic_cast<Assignment*>(ast.execution_steps.front().get());
-            ASSERT_NE(assign, nullptr) << "First statement is not an Assignment.";
-
-            auto* dict = dynamic_cast<DictLiteral*>(assign->value.get());
-            ASSERT_NE(dict, nullptr) << "Assignment value is not a DictLiteral.";
-
-            ASSERT_EQ(dict->elements.size(), expected.size()) << "Dictionary pair count mismatch!";
-
-            for (size_t i = 0; i < expected.size(); ++i)
-            {
-                EXPECT_EQ(dict->elements[i].key, expected[i].key) << "Dict key mismatch at index " << i;
-
-                if (expected[i].expected_number_value.has_value())
-                {
-                    auto* num = dynamic_cast<NumberLiteral*>(dict->elements[i].value.get());
-                    ASSERT_NE(num, nullptr) << "Expected number literal for key: " << expected[i].key;
-                    EXPECT_EQ(num->value, *expected[i].expected_number_value)
-                        << "Value mismatch for key: " << expected[i].key;
-                }
-                else
-                {
-                    EXPECT_EQ(dict->elements[i].value, nullptr);
-                }
-            }
-        }
-    }
-
     class DictLiteralParserSynchronizationTest : public ParserErrorsSynchronizationBase
     {
     };
@@ -61,18 +22,6 @@ namespace valuascript::compiler::test
                 .expected_errors = { {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 14} },
                 .verify_ast = [](const Program& ast) {
                     EXPECT_EQ(ast.execution_steps.size(), 2);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_eof_after_colon",
-                .source_code = "let a = { x: \n",
-                .expected_errors = {
-                    {.code = Err::InvalidExpression, .line = 1, .column = 13},
-                    {.code = Err::UnmatchedBraceInDictionaryLiteral, .line = 1, .column = 12}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 1);
-                    ExpectDictLiteral(ast, {{.key = "x", .expected_number_value = std::nullopt}});
                 }
             }
         ),

@@ -172,7 +172,17 @@ namespace valuascript::compiler
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::ExpectedStructName, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}), false);
 
-        cursor.consume(TokenType::LeftBrace, E::ExpectedBraceInStructDefinition);
+        if (cursor.check(TokenType::LeftBrace))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedBraceInStructDefinition);
+            return AstFactory::make_node_with_span<StructDefinition>(
+                cursor.make_span(start, cursor.previous()), std::move(modifiers), name.lexeme, std::vector<StructField>{}
+            );
+        }
         CloserTracker tracker(ctx, TokenType::RightBrace);
 
         auto is_at_parent_boundary = [this](size_t offset = 0)
@@ -233,13 +243,35 @@ namespace valuascript::compiler
                 ctx, [&]() { return parser.parse_type_annotation(); },
                 RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}));
         }
-        else if (cursor.check(TokenType::LeftBrace))
+        else
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedColonAfterEnumName);
+            if (!cursor.check(TokenType::LeftBrace))
+            {
+                bool failed = false;
+                underlying_type = ErrorRecovery::try_parse<TypeAnnPtr>(
+                    ctx, [&]() { return parser.parse_type_annotation(); },
+                    RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}),
+                    &failed);
+                if (failed)
+                {
+                    underlying_type = nullptr;
+                }
+            }
         }
-        else { cursor.consume(TokenType::Colon, E::ExpectedColonAfterEnumName); }
 
-        cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeEnumBody);
+        if (cursor.check(TokenType::LeftBrace))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftBraceBeforeEnumBody);
+            return AstFactory::make_node_with_span<EnumDefinition>(
+                cursor.make_span(start, cursor.previous()), std::move(modifiers),
+                name.lexeme, std::move(underlying_type), std::vector<EnumCase>{}
+            );
+        }
         CloserTracker tracker(ctx, TokenType::RightBrace);
 
         ParameterRuleSpec case_spec{
@@ -408,7 +440,7 @@ namespace valuascript::compiler
             ctx, E::ExpectedTypeAliasName, RecoveryConfig::StopAtBoundary({TokenType::Assign, TokenType::Comma}), false);
 
         if (cursor.check(TokenType::Assign)) cursor.advance();
-        else cursor.consume(TokenType::Assign, E::ExpectedAssignAfterTypeAliasName);
+        else cursor.report_error_no_panic(cursor.peek(), E::ExpectedAssignAfterTypeAliasName);
 
         bool next_is_newline_stmt = cursor.peek().line > cursor.previous().line && (
             TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||

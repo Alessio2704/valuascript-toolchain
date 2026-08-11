@@ -33,6 +33,15 @@ namespace valuascript::compiler::test
             });
 
             reg({
+                .name = "MissingRightBraceInFunctionBody",
+                .code = "func test() -> int { return 1 ",
+                .errors = {PErr{.code = E::ExpectedRightBraceAfterFunctionBody, .line_start = 1, .column_start = 29, .line_end = 1, .column_end = 30}},
+                .verifier = IsFunctionDef("test", {}, {}, {IsType("int")}, {IsReturn(IsNumber("1"))}),
+                .excluded_sentinels = {SentinelKind::Assignment, SentinelKind::Reassignment, SentinelKind::ExprStmt},
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
+            reg({
                 .name = "MissingCommaInParamsRecoversAll",
                 .code = "func test(a: int b: string) -> int {}",
                 .errors = {PErr{.code = E::ExpectedCommaSeparatorInParameterList, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}},

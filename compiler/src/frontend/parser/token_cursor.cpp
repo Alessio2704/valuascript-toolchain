@@ -83,28 +83,17 @@ namespace valuascript::compiler
 
             bool should_shift = token.type == TokenType::EndOfFile;
 
-            if (!should_shift && (code == E::MissingThenToken || code == E::MissingElseToken ||
-                                  code == E::ExpectedPropertyName ||
-                                  TokenTraits::is_missing_closing_delimiter_error(code)))
+            if (!should_shift && TokenTraits::is_shifted_error(code))
             {
                 should_shift = true;
             }
 
             if (!should_shift && token.line > prev.line)
             {
-                if (TokenTraits::is_newline_statement_boundary(prev, token, peek(1).type))
-                {
-                    should_shift = true;
-                }
-                else if (TokenTraits::is_dangling_operator(prev.type) && prev.type != TokenType::Comma)
-                {
-                    should_shift = true;
-                }
-                else if (prev.type == TokenType::At || prev.type == TokenType::Hash)
-                {
-                    should_shift = true;
-                }
-                else if (code == E::MissingOperator)
+                if (TokenTraits::is_newline_statement_boundary(prev, token, peek(1).type) ||
+                    (TokenTraits::is_dangling_operator(prev.type) && prev.type != TokenType::Comma) ||
+                    prev.type == TokenType::At || prev.type == TokenType::Hash ||
+                    code == E::MissingOperator)
                 {
                     should_shift = true;
                 }

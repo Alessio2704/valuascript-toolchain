@@ -28,7 +28,9 @@ namespace valuascript::compiler::test
             DumpTest{.name = "MultilineBinary"},
             DumpTest{.name = "MultilineBinaryRejectedAfterGroupingCloses"},
             DumpTest{.name = "DanglingBinaryOperatorAtNewline"},
-            DumpTest{.name = "UnclosedTensorLiteral"}
+            DumpTest{.name = "UnclosedTensorLiteral"},
+            DumpTest{.name = "EnumMissingRightBrace"},
+            DumpTest{.name = "MissingRightBraceInFunctionBody"}
         ),
         TestNameGenerator{}
     );

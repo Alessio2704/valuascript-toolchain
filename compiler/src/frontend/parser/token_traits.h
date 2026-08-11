@@ -41,5 +41,7 @@ namespace valuascript::compiler
         static bool is_grouping_closer(TokenType type);
 
         static bool is_missing_closing_delimiter_error(ParserErrorCode code);
+
+        static bool is_shifted_error(ParserErrorCode code);
     };
 }

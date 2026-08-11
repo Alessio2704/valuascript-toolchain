@@ -46,14 +46,14 @@ namespace valuascript::compiler::test
             reg({
                 .name = "IncompleteAssignmentMissingEquals",
                 .code = "let a 1",
-                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
                 .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
             });
 
             reg({
                 .name = "IncompleteMultipleAssignmentMissingEquals",
                 .code = "let a, b 1",
-                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}},
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}},
                 .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
             });
 
@@ -74,7 +74,7 @@ namespace valuascript::compiler::test
             reg({
                 .name = "IncompleteAssignmentAtEOF",
                 .code = "let a",
-                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
                 .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull())
             });
 

@@ -30,7 +30,7 @@ namespace valuascript::compiler
         case ParserErrorCode::ExpectedRightBraceAfterStructBody: return "Expected '}' after struct body.";
         case ParserErrorCode::ExpectedEnumToken: return "Expected 'enum' keyword.";
         case ParserErrorCode::ExpectedEnumName: return "Expected enum name.";
-        case ParserErrorCode::ExpectedColonAfterEnumName: return "Expected ':' and underlying type after enum name.";
+        case ParserErrorCode::ExpectedColonAfterEnumName: return "Expected ':' after enum name.";
         case ParserErrorCode::ExpectedLeftBraceBeforeEnumBody: return "Expected '{' before enum body.";
         case ParserErrorCode::ExpectedEnumCaseName: return "Expected enum case identifier.";
         case ParserErrorCode::ExpectedCommaSeparatorInEnum: return

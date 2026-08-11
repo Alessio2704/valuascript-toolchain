@@ -61,7 +61,7 @@ namespace valuascript::compiler::test
                                          const std::vector<SentinelKind>& excluded_sentinels = {},
                                          const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            DumpWriter writer("expansion_features_debug_" + label + ".txt", "expansion_dumps");
+            DumpWriter writer("expansion_features_debug_" + label + ".txt", "framework_debug");
             if (!writer.is_open()) return;
             auto& out = writer.out();
 
@@ -92,7 +92,7 @@ namespace valuascript::compiler::test
                                           const std::vector<SentinelKind>& excluded_sentinels = {},
                                           const std::vector<SentinelKind>& accepted_sentinels = {})
         {
-            DumpWriter writer("expansion_recovery_debug_" + label + ".txt", "expansion_dumps");
+            DumpWriter writer("expansion_recovery_debug_" + label + ".txt", "framework_debug");
             if (!writer.is_open()) return;
 
             auto& out = writer.out();
