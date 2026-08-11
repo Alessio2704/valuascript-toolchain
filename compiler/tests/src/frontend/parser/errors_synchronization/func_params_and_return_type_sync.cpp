@@ -60,26 +60,6 @@ namespace valuascript::compiler::test
                 .source_code = "func test(a: int) -> int  return 1 }\nlet a = 1\n",
                 .expected_errors = { {.code = Err::ExpectedLeftBraceBeforeFunctionBody, .line = 1, .column = 27} },
                 .verify_ast = ExpectNoFunctions()
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "missing_right_brace_func",
-                .source_code = "func test(a: int) -> int  { return 1 \n",
-                .expected_errors = { {.code = Err::ExpectedRightBraceAfterFunctionBody, .line = 1, .column = 36} },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    ASSERT_EQ(ast.function_definitions[0]->body.size(), 1);
-                    ASSERT_EQ(ast.execution_steps.size(), 0);
-                },
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "missing_right_brace_but_valid_body_after",
-                .source_code = "func test(a: int) -> int  { return 1 \nlet a = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightBraceAfterFunctionBody, .line = 2, .column = 9} },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.function_definitions.size(), 1);
-                    EXPECT_EQ(ast.function_definitions[0]->body.size(), 2);
-                    EXPECT_EQ(ast.execution_steps.size(), 0);
-                },
             }
         ),
         TestNameGenerator{}

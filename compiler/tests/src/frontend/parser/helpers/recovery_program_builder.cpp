@@ -15,6 +15,19 @@ namespace valuascript::compiler::test
         const std::vector<SentinelKind>& accepted_sentinels,
         const std::string& path_name)
     {
+        std::vector<SentinelKind> effective_accepted;
+        if (!accepted_sentinels.empty())
+        {
+            effective_accepted.reserve(accepted_sentinels.size());
+            for (auto kind : accepted_sentinels)
+            {
+                if (std::find(excluded_sentinels.begin(), excluded_sentinels.end(), kind) == excluded_sentinels.end())
+                {
+                    effective_accepted.push_back(kind);
+                }
+            }
+        }
+
         auto build_single = [&](size_t s, const std::vector<SentinelKind>& acc,
                                 const std::string& path_suffix) -> ConstructedRecoveryProgram
         {
@@ -46,19 +59,19 @@ namespace valuascript::compiler::test
             };
         };
 
-        if (accepted_sentinels.size() > 1)
+        if (effective_accepted.size() > 1)
         {
             std::vector<ConstructedRecoveryProgram> results;
-            results.reserve(accepted_sentinels.size());
-            for (size_t i = 0; i < accepted_sentinels.size(); ++i)
+            results.reserve(effective_accepted.size());
+            for (size_t i = 0; i < effective_accepted.size(); ++i)
             {
-                std::string tag = " [" + to_string(accepted_sentinels[i]) + "]";
-                results.push_back(build_single(seed + (i * 2), {accepted_sentinels[i]}, tag));
+                std::string tag = " [" + to_string(effective_accepted[i]) + "]";
+                results.push_back(build_single(seed + (i * 2), {effective_accepted[i]}, tag));
             }
             return results;
         }
 
-        return {build_single(seed, accepted_sentinels, "")};
+        return {build_single(seed, effective_accepted, "")};
     }
 
     std::vector<ConstructedRecoveryProgram> RecoveryProgramBuilder::BuildRecoveryPrograms(

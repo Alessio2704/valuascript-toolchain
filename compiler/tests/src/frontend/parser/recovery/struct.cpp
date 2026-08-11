@@ -16,10 +16,11 @@ namespace valuascript::compiler::test
             auto reg = [](const RecoveryCase<StructVerifier>& spec) { ErrorRegistry::add(spec); };
 
             reg({
-                .name = "MissingStructClosingBrace",
+                .name = "StructMissingClosingBrace",
                 .code = "struct Test {",
                 .errors = {PErr{.code = E::ExpectedRightBraceAfterStructBody, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}},
-                .verifier = IsStructDef("Test", {}, {})
+                .verifier = IsStructDef("Test", {}, {}),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({

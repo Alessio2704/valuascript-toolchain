@@ -7,6 +7,8 @@
 #include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/helpers/recovery_sentinel.h"
 
+#include "frontend/parser/helpers/recovery_program_builder.h"
+
 namespace valuascript::compiler::test
 {
     class SentinelInjectionTest : public TestingFrameworkTestBase,
@@ -136,6 +138,57 @@ namespace valuascript::compiler::test
         for (size_t i = 0; i < progs.size(); ++i)
         {
             EXPECT_NE(progs[i].path_name.find(to_string(accepted[i])), std::string::npos);
+        }
+    }
+
+    TEST_F(SentinelInjectionTest, EffectiveAcceptedSentinelsExcludesForbiddenKindsAndProducesCorrectVariationCount)
+    {
+        std::vector<SentinelKind> accepted = SentinelKinds::all();
+        std::vector<SentinelKind> excluded = {
+            SentinelKind::Assignment,
+            SentinelKind::Reassignment,
+            SentinelKind::ExprStmt
+        };
+
+        std::vector<SentinelKind> expected_effective = {
+            SentinelKind::Return,
+            SentinelKind::Import,
+            SentinelKind::Function,
+            SentinelKind::Enum,
+            SentinelKind::Alias,
+            SentinelKind::Directive,
+            SentinelKind::Struct
+        };
+
+        std::string snippet = "enum Test: int { A }";
+        ProgramSpec spec;
+
+        auto progs = RecoveryProgramBuilder::BuildRecoveryPrograms(
+            snippet,
+            spec,
+            "",
+            0x1234,
+            excluded,
+            accepted,
+            "TestEnumPath"
+        );
+
+        ASSERT_EQ(progs.size(), expected_effective.size());
+
+        for (size_t i = 0; i < progs.size(); ++i)
+        {
+            std::string expected_suffix = "[" + to_string(expected_effective[i]) + "]";
+            EXPECT_TRUE(progs[i].path_name.ends_with(expected_suffix))
+                << "Variation index " << i << " path name '" << progs[i].path_name
+                << "' should end with '" << expected_suffix << "'";
+
+            for (auto exc : excluded)
+            {
+                std::string forbidden_suffix = "[" + to_string(exc) + "]";
+                EXPECT_FALSE(progs[i].path_name.ends_with(forbidden_suffix))
+                    << "Variation index " << i << " path name '" << progs[i].path_name
+                    << "' must not end with forbidden sentinel suffix '" << forbidden_suffix << "'";
+            }
         }
     }
 

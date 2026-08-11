@@ -97,8 +97,11 @@ namespace valuascript::compiler
             {
                 if (t == closing_token) return true;
             if (TokenTraits::is_identifier_start(ctx.cursor.peek()) &&
-                (ctx.cursor.peek(1).type == TokenType::Colon || ctx.cursor.peek(1).type == TokenType::Assign || ctx.cursor.peek(1).type == TokenType::Arrow))
+                (ctx.cursor.peek(1).type == TokenType::Colon || ctx.cursor.peek(1).type == TokenType::Assign ||
+                 ctx.cursor.peek(1).type == TokenType::Arrow || ctx.cursor.peek(1).type == TokenType::Dot ||
+                 ctx.cursor.peek(1).type == TokenType::LeftParen || ctx.cursor.peek(1).type == TokenType::LeftBracket))
                 return true;
+            if (ctx.looks_like_reassignment()) return true;
             if (t == TokenType::Comma && TokenTraits::is_identifier_start(ctx.cursor.peek(1)) &&
                 (ctx.cursor.peek(2).type == TokenType::Colon || ctx.cursor.peek(2).type == TokenType::Assign || ctx.cursor.peek(2).type == TokenType::Arrow))
                 return true;

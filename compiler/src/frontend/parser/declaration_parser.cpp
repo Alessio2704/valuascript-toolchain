@@ -202,6 +202,7 @@ namespace valuascript::compiler
         auto fields_gen = ListParser<GenericParameter>(ctx)
                           .stop_at(TokenType::RightBrace)
                           .on_missing_comma(E::ExpectedCommaSeparatorInStruct)
+                          .break_on_reassignment()
                           .is_element_start([this]()
                           {
                               const Token& tok = cursor.peek();

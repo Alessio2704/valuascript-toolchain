@@ -20,9 +20,17 @@ namespace valuascript::compiler
         std::function<bool()> is_element_start_ = nullptr;
         std::function<bool(int)> is_at_parent_boundary_ = nullptr;
 
+        bool break_on_reassignment_ = false;
+
     public:
         explicit ListParser(ParserContext& ctx) : ctx_(ctx)
         {
+        }
+
+        ListParser& break_on_reassignment(bool enable = true)
+        {
+            break_on_reassignment_ = enable;
+            return *this;
         }
 
         ListParser& stop_at(TokenType closing_token)
@@ -122,6 +130,14 @@ namespace valuascript::compiler
                         {
                             break;
                         }
+                    }
+
+                    if (tok.line > ctx_.cursor.previous().line &&
+                        ((break_on_reassignment_ && (ctx_.looks_like_reassignment() || TokenTraits::is_expression_statement_start(tok, next))) ||
+                         std::is_same_v<ElementType, ExprPtr>) &&
+                        (ctx_.looks_like_reassignment() || TokenTraits::is_expression_statement_start(tok, next)))
+                    {
+                        break;
                     }
 
                     bool is_reassign = false;

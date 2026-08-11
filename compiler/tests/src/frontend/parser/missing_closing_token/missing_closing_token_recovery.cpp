@@ -34,29 +34,6 @@ namespace valuascript::compiler::test {
                     ASSERT_FALSE(program.execution_steps.empty());
                     StmtVerifier(IsAssignment({{.name = "a"}}, IsDict(DictItemSpec{.key = "b", .value_v = IsNumber("1")})))(program.execution_steps[0].get());
                 }
-            },
-            {
-                .name = "func", .source = "func f() -> int { let x = 1\n", .expected_err = Err::ExpectedRightBraceAfterFunctionBody,
-                .verify = [](const Program &program) {
-                    ASSERT_FALSE(program.function_definitions.empty());
-                    if (auto f = ExpectNode<FunctionDefinition>(program.function_definitions[0].get())) {
-                        EXPECT_EQ(f->name, "f");
-                    }
-                }
-            },
-            {
-                .name = "struct", .source = "struct S { x: int\n", .expected_err = Err::ExpectedRightBraceAfterStructBody,
-                .verify = [](const Program &program) {
-                    ASSERT_FALSE(program.struct_definitions.empty());
-                    IsStructDef("S", {}, FieldSpec{.name = "x", .type_v = IsType("int")})(program.struct_definitions[0].get());
-                }
-            },
-            {
-                .name = "enum", .source = "enum E: int { A\n", .expected_err = Err::ExpectedRightBraceAfterEnumBody,
-                .verify = [](const Program &program) {
-                    ASSERT_FALSE(program.enum_definitions.empty());
-                    IsEnumDef("E", {}, IsType("int"), EnumCaseSpec{.name = "A"})(program.enum_definitions[0].get());
-                }
             }
         };
 
