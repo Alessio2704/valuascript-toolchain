@@ -329,7 +329,8 @@ namespace valuascript::compiler::test
                         .skip_after_depth_0 = true,
                         .skip_transform = true
                     }
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             return true;

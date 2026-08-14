@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -9,6 +10,216 @@ namespace valuascript::compiler::test
         const bool _ = []()
         {
             auto reg = [](const RecoveryCase<ExprVerifier>& spec) { ErrorRegistry::add(spec); };
+
+            reg({
+                .name = "DictMissingClosingBrace",
+                .code = "{x: 1, y: 2 ",
+                .errors = {
+                    PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                },
+                .verifier = IsDict(
+                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                ),
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprEnumCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightBraceAfterEnumBody, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                        ),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 29}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "k1", .value_v = IsDict(
+                                DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                DictItemSpec{.key = "y", .value_v = IsNumber("2")},
+                                DictItemSpec{.key = "k2", .value_v = IsNumber("2")},
+                                DictItemSpec{.key = "k3", .value_v = IsNumber("3")}
+                            )}
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "k1", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "k2", .value_v = IsDict(
+                                DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                DictItemSpec{.key = "y", .value_v = IsNumber("2")},
+                                DictItemSpec{.key = "k3", .value_v = IsNumber("3")}
+                            )}
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "k1", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "k2", .value_v = IsNumber("2")},
+                            DictItemSpec{.key = "k3", .value_v = IsDict(
+                                DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                            )}
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprDictValueSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "k1", .value_v = IsDict(
+                                DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                            )}
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25}
+                        },
+                        .verifier = IsCall(
+                            IsIdentifier("f"),
+                            ArgSpec{
+                                .label = "arg",
+                                .value_v = IsDict(
+                                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                    DictItemSpec{.key = "y", .value_v = IsNumber("2")},
+                                    DictItemSpec{.key = "b", .value_v = IsNumber("2")},
+                                    DictItemSpec{.key = "c", .value_v = IsNumber("3")}
+                                )
+                            }
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 18, .line_end = 1, .column_end = 19}
+                        },
+                        .verifier = IsCall(
+                            IsIdentifier("f"),
+                            ArgSpec{.label = "a", .value_v = IsNumber("1")},
+                            ArgSpec{
+                                .label = "arg",
+                                .value_v = IsDict(
+                                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                    DictItemSpec{.key = "y", .value_v = IsNumber("2")},
+                                    DictItemSpec{.key = "c", .value_v = IsNumber("3")}
+                                )
+                            }
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsCall(
+                            IsIdentifier("f"),
+                            ArgSpec{.label = "a", .value_v = IsNumber("1")},
+                            ArgSpec{.label = "b", .value_v = IsNumber("2")},
+                            ArgSpec{
+                                .label = "arg",
+                                .value_v = IsDict(
+                                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                                )
+                            }
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprCallArgSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsCall(
+                            IsIdentifier("f"),
+                            ArgSpec{
+                                .label = "arg",
+                                .value_v = IsDict(
+                                    DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                                    DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                                )
+                            }
+                        ),
+                        .skip_after_depth_0 = true,
+                        .skip_transform = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                        ),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                        ),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                        ),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprSwitchCaseSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
+                        },
+                        .verifier = IsDict(
+                            DictItemSpec{.key = "x", .value_v = IsNumber("1")},
+                            DictItemSpec{.key = "y", .value_v = IsNumber("2")}
+                        ),
+                        .skip_after_depth_0 = true
+                    }
+                },
+                .accepted_sentinels = SentinelKinds::all()
+            });
 
             reg({
                 .name = "DictMissingKey",

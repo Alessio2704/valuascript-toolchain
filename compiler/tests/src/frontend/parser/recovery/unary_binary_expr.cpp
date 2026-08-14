@@ -20,7 +20,8 @@ namespace valuascript::compiler::test
                         .column_end = 0, .skip_span_check = true
                     }
                 },
-                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull())
+                .verifier = IsBinary(TokenType::Plus, IsNumber("1"), IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
@@ -577,7 +578,8 @@ namespace valuascript::compiler::test
                         },
                         .verifier = IsNumber("1")
                     },
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             return true;

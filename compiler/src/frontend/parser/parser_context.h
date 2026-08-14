@@ -19,6 +19,10 @@ namespace valuascript::compiler
         bool is_parsing_list_element = false;
         size_t conditional_else_depth = 0;
         size_t conditional_else_closers_size = 0;
+        size_t expr_depth = 0;
+        size_t expr_closers_baseline = 0;
+        std::vector<size_t> parameter_list_closer_indices;
+        std::vector<size_t> switch_target_closer_indices;
 
         explicit ParserContext(TokenCursor c);
 

@@ -339,6 +339,13 @@ namespace valuascript::compiler
         std::vector<FunctionParameter> params;
         {
             CloserTracker param_tracker(ctx, TokenType::RightParen);
+            ctx.parameter_list_closer_indices.push_back(ctx.active_closers.size() - 1);
+            struct ParamScopeGuard
+            {
+                ParserContext& ctx;
+                ~ParamScopeGuard() { ctx.parameter_list_closer_indices.pop_back(); }
+            } param_guard{ctx};
+
             ParameterRuleSpec param_spec{
                 .allow_modifiers = true, .allow_type = true, .require_type = true, .allow_value = true,
                 .require_value = false, .value_separator = TokenType::Assign,
@@ -583,6 +590,10 @@ namespace valuascript::compiler
             .on_missing_close_brace(E::ExpectedRightBraceAfterExtensionBody)
             .with_recovery_config(RecoveryConfig{
                 .options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp
+            })
+            .terminates_on_declaration([&]() {
+                TokenType t = ctx.peek_past_modifiers();
+                return t == TokenType::Import || t == TokenType::Hash || t == TokenType::Extension;
             })
             .parse_body([&]() {
                 std::vector<StmtPtr> dummy_block;

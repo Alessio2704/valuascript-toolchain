@@ -30,7 +30,9 @@ namespace valuascript::compiler::test
             DumpTest{.name = "DanglingBinaryOperatorAtNewline"},
             DumpTest{.name = "UnclosedTensorLiteral"},
             DumpTest{.name = "EnumMissingRightBrace"},
-            DumpTest{.name = "MissingRightBraceInFunctionBody"}
+            DumpTest{.name = "MissingRightBraceInFunctionBody"},
+            DumpTest{.name = "BracketAccessMissingClosingBracket"},
+            DumpTest{.name = "BracketSliceMissingClosingBracket"}
         ),
         TestNameGenerator{}
     );

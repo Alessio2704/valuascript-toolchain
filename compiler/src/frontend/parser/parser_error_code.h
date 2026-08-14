@@ -72,6 +72,7 @@ namespace valuascript::compiler
         UnexpectedCommaInBracketAccess,
         EmptyBracketAccess,
         UnmatchedBracketAfterTensorIndex,
+        TooManyColonsInBracketSlice,
         ExpectedPropertyName,
         InvalidExpression,
         SingleElementTuplesNotAllowed,

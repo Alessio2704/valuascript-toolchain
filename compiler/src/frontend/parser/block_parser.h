@@ -29,6 +29,7 @@ namespace valuascript::compiler
         };
 
         std::function<void()> on_enter_block_ = nullptr;
+        std::function<bool()> is_at_terminating_declaration_ = nullptr;
 
     public:
         explicit BlockParser(Parser& parser)
@@ -51,6 +52,12 @@ namespace valuascript::compiler
         BlockParser& with_recovery_config(RecoveryConfig config)
         {
             body_recovery_config_ = std::move(config);
+            return *this;
+        }
+
+        BlockParser& terminates_on_declaration(std::function<bool()> predicate)
+        {
+            is_at_terminating_declaration_ = std::move(predicate);
             return *this;
         }
 
@@ -83,9 +90,16 @@ namespace valuascript::compiler
                 on_enter_block_();
             }
 
+            auto should_break_early = [&]()
+            {
+                if (!ctx_.is_missing_closing_brace()) return false;
+                if (is_at_terminating_declaration_) return is_at_terminating_declaration_();
+                return ctx_.is_at_top_level_declaration();
+            };
+
             while (!cursor_.check(close_token_) && !cursor_.is_at_end())
             {
-                if (ctx_.is_at_top_level_declaration() && ctx_.is_missing_closing_brace())
+                if (should_break_early())
                 {
                     break;
                 }

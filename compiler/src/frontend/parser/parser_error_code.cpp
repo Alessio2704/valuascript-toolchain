@@ -98,6 +98,8 @@ namespace valuascript::compiler
                 "Syntax Error: Unexpected ',' inside bracket access. If you meant to write a second tensor, you are missing an operator (like '+') between them.";
         case ParserErrorCode::EmptyBracketAccess: return "Expected an index or slice inside '[]'.";
         case ParserErrorCode::UnmatchedBracketAfterTensorIndex: return "Expected ']' after tensor index.";
+        case ParserErrorCode::TooManyColonsInBracketSlice: return
+                "Syntax Error: Slices cannot have more than two bounds (start:end).";
         case ParserErrorCode::ExpectedPropertyName: return "Expected property name after '.'.";
         case ParserErrorCode::InvalidExpression: return "Syntax Error: Invalid expression.";
         case ParserErrorCode::SingleElementTuplesNotAllowed: return

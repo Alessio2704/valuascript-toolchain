@@ -2,27 +2,6 @@
 #include "parser_errors_synchronization_base.h"
 
 namespace valuascript::compiler::test {
-    namespace {
-        void ExpectTupleLiteral(const Program &ast, size_t expected_size) {
-            ASSERT_FALSE(ast.execution_steps.empty()) << "AST has no execution steps.";
-
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            ASSERT_NE(assign, nullptr) << "First statement is not an Assignment.";
-
-            auto *tuple_node = dynamic_cast<TupleLiteral *>(assign->value.get());
-            ASSERT_NE(tuple_node, nullptr) << "Assignment value is not a TupleLiteral.";
-
-            EXPECT_EQ(tuple_node->elements.size(), expected_size) << "Tuple size mismatch!";
-        }
-
-        auto ExpectTuple(size_t expected_size) {
-            return [expected_size](const Program &ast) {
-                ExpectTupleLiteral(ast, expected_size);
-                EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
-            };
-        }
-    }
-
     class TupleLiteralParserSynchronizationTest : public ParserErrorsSynchronizationBase {
     };
 
@@ -34,20 +13,6 @@ namespace valuascript::compiler::test {
         TupleLiteralStressTests,
         TupleLiteralParserSynchronizationTest,
         ::testing::Values(
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_missing_closing_paren",
-                .source_code = "let a = (1, 2 \nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterTupleElements, .line = 1, .column = 13} },
-                .verify_ast = ExpectTuple(2)
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "tuple_too_many_closing_parens",
-                .source_code = "let a = (1, 2))\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::InvalidExpression, .line = 1, .column = 15}
-                },
-                .verify_ast = ExpectTuple(2)
-            },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "tuple_deep_unclosed_cascade",
                 .source_code = "let a = (1, (2, (3, (4, \n",

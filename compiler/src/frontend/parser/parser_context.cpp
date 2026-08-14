@@ -204,7 +204,7 @@ namespace valuascript::compiler
     bool ParserContext::is_at_any_declaration() const
     {
         TokenType t = peek_past_modifiers();
-        if (t == TokenType::Let) return true;
+        if (t == TokenType::Let || t == TokenType::Return) return true;
         return TokenTraits::is_top_level_only_declaration(t);
     }
 

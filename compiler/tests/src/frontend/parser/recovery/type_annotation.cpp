@@ -407,7 +407,8 @@ namespace valuascript::compiler::test
                         .skip_after_depth_0 = true,
                         .skip_transform = true
                     }
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
@@ -550,7 +551,8 @@ namespace valuascript::compiler::test
                         .verifier = IsType("vector", IsType("string"), IsType("string"),
                                            IsTupleType(IsType("int"), IsType("string")))
                     }
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
@@ -701,7 +703,8 @@ namespace valuascript::compiler::test
                             }
                         }
                     }
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
@@ -723,7 +726,8 @@ namespace valuascript::compiler::test
                     ContextNames::TypeGenericTypeMiddle,
                     ContextNames::TypeGenericTypeEnd,
                     ContextNames::TypeGenericTypeSingle
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
@@ -781,7 +785,8 @@ namespace valuascript::compiler::test
                                                                               IsType("string")), IsType("int"))
                                                                       }))
                     }
-                }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             return true;
