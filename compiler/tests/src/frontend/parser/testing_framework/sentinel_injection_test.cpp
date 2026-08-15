@@ -5,6 +5,7 @@
 #include <string>
 
 #include "frontend/parser/helpers/context_registry.h"
+#include "frontend/parser/helpers/context_names.h"
 #include "frontend/parser/helpers/recovery_sentinel.h"
 
 #include "frontend/parser/helpers/recovery_program_builder.h"
@@ -55,7 +56,7 @@ namespace valuascript::compiler::test
                     EXPECT_EQ(total_top_level_items, 3)
                         << "Top-level sentinel injection missing in path: " << item.path_name;
 
-                    if (item.path_name.find("function_body_wrapper") != std::string::npos)
+                    if (item.has_context(ContextNames::FunctionBodyWrapper))
                     {
                         bool wrapper_found = false;
                         for (const auto& f : ast->function_definitions)
@@ -70,7 +71,7 @@ namespace valuascript::compiler::test
                         }
                         EXPECT_TRUE(wrapper_found) << "Path indicated a function wrapper, but ctx_wrapper not found in AST.";
                     }
-                    else if (item.path_name.find("extension_body_wrapper") != std::string::npos)
+                    else if (item.has_context(ContextNames::ExtensionBodyWrapper))
                     {
                         bool wrapper_found = false;
                         for (const auto& e : ast->extension_definitions)
@@ -132,13 +133,18 @@ namespace valuascript::compiler::test
             progs.push_back(prog);
         });
 
-        EXPECT_EQ(progs.size(), accepted.size())
-            << "Accepted sentinels expansion should consecutively produce exactly " << accepted.size() << " variations.";
+        // Assignment produces unmodified + modified; Reassignment produces unmodified
+        ASSERT_EQ(progs.size(), 3)
+            << "Accepted sentinels expansion should consecutively produce 3 variations (including modifier variants).";
 
-        for (size_t i = 0; i < progs.size(); ++i)
-        {
-            EXPECT_NE(progs[i].path_name.find(to_string(accepted[i])), std::string::npos);
-        }
+        EXPECT_EQ(progs[0].post_kind, SentinelKind::Assignment);
+        EXPECT_FALSE(progs[0].is_post_modified);
+
+        EXPECT_EQ(progs[1].post_kind, SentinelKind::Assignment);
+        EXPECT_TRUE(progs[1].is_post_modified);
+
+        EXPECT_EQ(progs[2].post_kind, SentinelKind::Reassignment);
+        EXPECT_FALSE(progs[2].is_post_modified);
     }
 
     TEST_F(SentinelInjectionTest, EffectiveAcceptedSentinelsExcludesForbiddenKindsAndProducesCorrectVariationCount)
@@ -150,15 +156,34 @@ namespace valuascript::compiler::test
             SentinelKind::ExprStmt
         };
 
-        std::vector<SentinelKind> expected_effective = {
-            SentinelKind::Return,
-            SentinelKind::Import,
-            SentinelKind::Function,
-            SentinelKind::Enum,
-            SentinelKind::Alias,
-            SentinelKind::Directive,
-            SentinelKind::Struct
+        struct ExpectedVariation
+        {
+            SentinelKind kind;
+            bool is_modified;
+            bool is_supported;
         };
+
+        std::vector<ExpectedVariation> expected_variations;
+        for (auto kind : accepted)
+        {
+            if (std::find(excluded.begin(), excluded.end(), kind) != excluded.end()) continue;
+
+            bool is_supported = RecoverySentinel::is_sentinel_supported_in_block(BlockContext::TopLevel, kind);
+            expected_variations.push_back({
+                .kind = kind,
+                .is_modified = false,
+                .is_supported = is_supported
+            });
+
+            if (RecoverySentinel::has_sentinel_with_modifier(BlockContext::TopLevel, kind))
+            {
+                expected_variations.push_back({
+                    .kind = kind,
+                    .is_modified = true,
+                    .is_supported = true
+                });
+            }
+        }
 
         std::string snippet = "enum Test: int { A }";
         ProgramSpec spec;
@@ -173,21 +198,31 @@ namespace valuascript::compiler::test
             "TestEnumPath"
         );
 
-        ASSERT_EQ(progs.size(), expected_effective.size());
+        ASSERT_EQ(progs.size(), expected_variations.size());
 
         for (size_t i = 0; i < progs.size(); ++i)
         {
-            std::string expected_suffix = "[" + to_string(expected_effective[i]) + "]";
-            EXPECT_TRUE(progs[i].path_name.ends_with(expected_suffix))
-                << "Variation index " << i << " path name '" << progs[i].path_name
-                << "' should end with '" << expected_suffix << "'";
+            if (expected_variations[i].is_supported)
+            {
+                EXPECT_EQ(progs[i].post_kind, expected_variations[i].kind)
+                    << "Variation index " << i << " sentinel kind mismatch";
+            }
+            else
+            {
+                EXPECT_TRUE(progs[i].post_kind.has_value())
+                    << "Variation index " << i << " expected a valid sampled fallback sentinel";
+            }
+
+            EXPECT_EQ(progs[i].is_post_modified, expected_variations[i].is_modified)
+                << "Variation index " << i << " modifier flag mismatch";
 
             for (auto exc : excluded)
             {
-                std::string forbidden_suffix = "[" + to_string(exc) + "]";
-                EXPECT_FALSE(progs[i].path_name.ends_with(forbidden_suffix))
-                    << "Variation index " << i << " path name '" << progs[i].path_name
-                    << "' must not end with forbidden sentinel suffix '" << forbidden_suffix << "'";
+                if (progs[i].post_kind.has_value())
+                {
+                    EXPECT_NE(*progs[i].post_kind, exc)
+                        << "Variation index " << i << " contains excluded sentinel kind " << to_string(exc);
+                }
             }
         }
     }

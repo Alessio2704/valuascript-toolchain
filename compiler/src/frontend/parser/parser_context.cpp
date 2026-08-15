@@ -66,10 +66,15 @@ namespace valuascript::compiler
                     break;
                 }
 
-                if (tok.line > cursor.peek(offset - 1).line &&
-                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type))
+                if (tok.line > cursor.peek(offset - 1).line)
                 {
-                    break;
+                    if (TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type) ||
+                        tok.type == TokenType::LeftBracket || tok.type == TokenType::LeftParen ||
+                        tok.type == TokenType::Return ||
+                        (tok.type == TokenType::At && is_at_any_declaration()))
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -219,7 +224,8 @@ namespace valuascript::compiler
     bool ParserContext::is_at_any_declaration() const
     {
         TokenType t = peek_past_modifiers();
-        if (t == TokenType::Let || t == TokenType::Return) return true;
+        if (t == TokenType::Let) return true;
+        if (t == TokenType::Return && is_active_closer(TokenType::RightBrace)) return true;
         return TokenTraits::is_top_level_only_declaration(t);
     }
 

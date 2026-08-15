@@ -73,9 +73,12 @@ namespace valuascript::compiler::test
             std::vector<std::string_view> result;
             for (const auto& ctx : get_expression_contexts())
             {
-                if (ctx.output_type != InjectableType::StrongStatement &&
-                    ctx.output_type != InjectableType::WeakStatement &&
-                    ctx.output_type != InjectableType::TopLevel)
+                bool has_trailing_suffix = !ctx.suffix.empty() &&
+                    ctx.suffix.find_first_not_of(" \t\r\n") != std::string_view::npos;
+                if (has_trailing_suffix ||
+                    (ctx.output_type != InjectableType::StrongStatement &&
+                     ctx.output_type != InjectableType::WeakStatement &&
+                     ctx.output_type != InjectableType::TopLevel))
                 {
                     result.push_back(ctx.name);
                 }

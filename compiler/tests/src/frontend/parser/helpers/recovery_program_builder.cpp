@@ -29,12 +29,13 @@ namespace valuascript::compiler::test
         }
 
         auto build_single = [&](size_t s, const std::vector<SentinelKind>& acc,
+                                ModifierFilterMode post_mod_mode,
                                 const std::string& path_suffix) -> ConstructedRecoveryProgram
         {
             RecoveryBlock pre = RecoverySentinel::generate_block_sentinel(
                 s, BlockContext::TopLevel, excluded_sentinels, {});
             RecoveryBlock post = RecoverySentinel::generate_block_sentinel(
-                s + 1, BlockContext::TopLevel, excluded_sentinels, acc);
+                s + 1, BlockContext::TopLevel, excluded_sentinels, acc, post_mod_mode);
 
             std::string code = inner_code;
             while (!code.empty() && (code.back() == '\n' || code.back() == '\r'))
@@ -55,23 +56,39 @@ namespace valuascript::compiler::test
                 .full_code = std::move(full_code),
                 .full_spec = std::move(full_spec),
                 .prefix_for_shifting = std::move(prefix_for_shifting),
-                .path_name = std::move(full_path)
+                .path_name = std::move(full_path),
+                .post_kind = post.kind,
+                .is_post_modified = post.is_modified,
+                .pre_kind = pre.kind,
+                .is_pre_modified = pre.is_modified
             };
         };
 
-        if (effective_accepted.size() > 1)
+        std::vector<ConstructedRecoveryProgram> results;
+        if (!effective_accepted.empty())
         {
-            std::vector<ConstructedRecoveryProgram> results;
-            results.reserve(effective_accepted.size());
+            size_t step = 0;
             for (size_t i = 0; i < effective_accepted.size(); ++i)
             {
-                std::string tag = " [" + to_string(effective_accepted[i]) + "]";
-                results.push_back(build_single(seed + (i * 2), {effective_accepted[i]}, tag));
+                SentinelKind k = effective_accepted[i];
+                std::string tag = " [" + to_string(k) + "]";
+                results.push_back(build_single(seed + (step++ * 2), {k}, ModifierFilterMode::UnmodifiedOnly, tag));
+
+                if (RecoverySentinel::has_sentinel_with_modifier(BlockContext::TopLevel, k))
+                {
+                    std::string mod_tag = " [" + to_string(k) + " with_modifier]";
+                    results.push_back(build_single(seed + (step++ * 2), {k}, ModifierFilterMode::ModifiedOnly, mod_tag));
+                }
             }
             return results;
         }
 
-        return {build_single(seed, effective_accepted, "")};
+        results.push_back(build_single(seed, {}, ModifierFilterMode::UnmodifiedOnly, ""));
+        if (RecoverySentinel::has_any_sentinel_with_modifier(BlockContext::TopLevel, excluded_sentinels))
+        {
+            results.push_back(build_single(seed + 2, {}, ModifierFilterMode::ModifiedOnly, " [with_modifier]"));
+        }
+        return results;
     }
 
     std::vector<ConstructedRecoveryProgram> RecoveryProgramBuilder::BuildRecoveryPrograms(

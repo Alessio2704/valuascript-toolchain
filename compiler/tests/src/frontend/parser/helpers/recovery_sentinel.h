@@ -12,9 +12,17 @@
 
 namespace valuascript::compiler::test
 {
+    enum class ModifierFilterMode
+    {
+        Any,
+        UnmodifiedOnly,
+        ModifiedOnly
+    };
+
     struct RecoveryBlock
     {
         std::optional<SentinelKind> kind = std::nullopt;
+        bool is_modified = false;
         std::string source;
         std::function<void(ProgramSpec&)> add_to_spec;
     };
@@ -25,12 +33,13 @@ namespace valuascript::compiler::test
         template <typename T, typename AdderFunc>
         static void add_if_not_empty(std::vector<RecoveryBlock>& blocks, SentinelKind kind,
                                      const std::vector<RegistryEntry<T>>& registry,
-                                     AdderFunc adder)
+                                     AdderFunc adder, bool is_modified = false)
         {
             for (const auto& entry : registry)
             {
                 blocks.push_back({
                     kind,
+                    is_modified,
                     entry.code,
                     [adder, verifier = entry.verifier](ProgramSpec& spec)
                     {
@@ -46,28 +55,28 @@ namespace valuascript::compiler::test
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Reassignment, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::ExprStmt, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Return, ConstructRegistry::returns(), [](ProgramSpec& s, const ReturnVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
 
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Return, ConstructRegistry::modified_returns(), [](ProgramSpec& s, const ReturnVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, true);
 
             return pool;
         }
@@ -78,33 +87,33 @@ namespace valuascript::compiler::test
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Reassignment, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::ExprStmt, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
 
             add_if_not_empty(pool, SentinelKind::Function, ConstructRegistry::functions(), [](ProgramSpec& s, const FuncVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Struct, ConstructRegistry::structs(), [](ProgramSpec& s, const StructVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Enum, ConstructRegistry::enums(), [](ProgramSpec& s, const EnumVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
 
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, true);
 
             return pool;
         }
@@ -115,78 +124,82 @@ namespace valuascript::compiler::test
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Reassignment, ConstructRegistry::reassignments(), [](ProgramSpec& s, const ReassignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::ExprStmt, ConstructRegistry::expr_stmts(), [](ProgramSpec& s, const ExprStmtVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, false);
 
             add_if_not_empty(pool, SentinelKind::Import, ConstructRegistry::imports(), [](ProgramSpec& s, const ImportVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Function, ConstructRegistry::functions(), [](ProgramSpec& s, const FuncVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Enum, ConstructRegistry::enums(), [](ProgramSpec& s, const EnumVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Alias, ConstructRegistry::aliases(), [](ProgramSpec& s, const AliasVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Directive, ConstructRegistry::directives(), [](ProgramSpec& s, const DirectiveVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
             add_if_not_empty(pool, SentinelKind::Struct, ConstructRegistry::structs(), [](ProgramSpec& s, const StructVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, false);
 
             add_if_not_empty(pool, SentinelKind::Import, ConstructRegistry::modified_imports(), [](ProgramSpec& s, const ImportVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Function, ConstructRegistry::modified_functions(), [](ProgramSpec& s, const FuncVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Struct, ConstructRegistry::modified_structs(), [](ProgramSpec& s, const StructVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Enum, ConstructRegistry::modified_enums(), [](ProgramSpec& s, const EnumVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Alias, ConstructRegistry::modified_aliases(), [](ProgramSpec& s, const AliasVerifier& v)
             {
                 SpecAdder::add(s, v);
-            });
+            }, true);
             add_if_not_empty(pool, SentinelKind::Assignment, ConstructRegistry::modified_assignments(), [](ProgramSpec& s, const AssignmentVerifier& v)
             {
                 SpecAdder::add(s, StmtVerifier(v));
-            });
+            }, true);
 
             return pool;
         }
 
         static std::vector<RecoveryBlock> filter_pool(const std::vector<RecoveryBlock>& base_pool,
                                                      const std::vector<SentinelKind>& excluded_kinds,
-                                                     const std::vector<SentinelKind>& accepted_kinds = {})
+                                                     const std::vector<SentinelKind>& accepted_kinds = {},
+                                                     ModifierFilterMode modifier_mode = ModifierFilterMode::Any)
         {
             bool has_accepted_match = false;
             if (!accepted_kinds.empty())
             {
                 for (const auto& block : base_pool)
                 {
+                    if (modifier_mode == ModifierFilterMode::UnmodifiedOnly && block.is_modified) continue;
+                    if (modifier_mode == ModifierFilterMode::ModifiedOnly && !block.is_modified) continue;
+
                     if (block.kind.has_value() &&
                         std::find(accepted_kinds.begin(), accepted_kinds.end(), *block.kind) != accepted_kinds.end() &&
                         std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) == excluded_kinds.end())
@@ -200,6 +213,9 @@ namespace valuascript::compiler::test
             std::vector<RecoveryBlock> filtered;
             for (const auto& block : base_pool)
             {
+                if (modifier_mode == ModifierFilterMode::UnmodifiedOnly && block.is_modified) continue;
+                if (modifier_mode == ModifierFilterMode::ModifiedOnly && !block.is_modified) continue;
+
                 if (block.kind.has_value() &&
                     std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) != excluded_kinds.end())
                 {
@@ -258,16 +274,44 @@ namespace valuascript::compiler::test
             return false;
         }
 
-        static RecoveryBlock generate_block_sentinel(size_t seed, BlockContext ctx_type,
-                                                     const std::vector<SentinelKind>& excluded_kinds = {},
-                                                     const std::vector<SentinelKind>& accepted_kinds = {})
+        static bool has_sentinel_with_modifier(BlockContext ctx_type, SentinelKind kind)
         {
             const auto& base_pool = get_block_pool(ctx_type);
-            std::vector<RecoveryBlock> pool = filter_pool(base_pool, excluded_kinds, accepted_kinds);
+            for (const auto& block : base_pool)
+            {
+                if (block.is_modified && block.kind.has_value() && *block.kind == kind)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static bool has_any_sentinel_with_modifier(BlockContext ctx_type, const std::vector<SentinelKind>& excluded_kinds = {})
+        {
+            const auto& base_pool = get_block_pool(ctx_type);
+            for (const auto& block : base_pool)
+            {
+                if (block.is_modified && block.kind.has_value() &&
+                    std::find(excluded_kinds.begin(), excluded_kinds.end(), *block.kind) == excluded_kinds.end())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static RecoveryBlock generate_block_sentinel(size_t seed, BlockContext ctx_type,
+                                                     const std::vector<SentinelKind>& excluded_kinds = {},
+                                                     const std::vector<SentinelKind>& accepted_kinds = {},
+                                                     ModifierFilterMode modifier_mode = ModifierFilterMode::Any)
+        {
+            const auto& base_pool = get_block_pool(ctx_type);
+            std::vector<RecoveryBlock> pool = filter_pool(base_pool, excluded_kinds, accepted_kinds, modifier_mode);
 
             if (pool.empty())
                 return {
-                    .kind=std::nullopt, .source="", .add_to_spec=[](ProgramSpec&)
+                    .kind=std::nullopt, .is_modified=false, .source="", .add_to_spec=[](ProgramSpec&)
                     {
                     }
                 };

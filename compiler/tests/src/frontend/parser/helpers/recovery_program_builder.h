@@ -16,6 +16,10 @@ namespace valuascript::compiler::test
         ProgramSpec full_spec;
         std::string prefix_for_shifting;
         std::string path_name = "";
+        std::optional<SentinelKind> post_kind = std::nullopt;
+        bool is_post_modified = false;
+        std::optional<SentinelKind> pre_kind = std::nullopt;
+        bool is_pre_modified = false;
     };
 
     class RecoveryProgramBuilder

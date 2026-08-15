@@ -452,29 +452,7 @@ namespace valuascript::compiler::test
                         )
                     )
                 ),
-                .skip_contexts = ContextNames::all_nested_expressions(),
-                .context_overrides = {
-                    ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprFuncDefDefault,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
-                        }
-                    },
-                    ContextOverride<ExprVerifier>{
-                        .context_name = ContextNames::ExprModifierArg,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
-                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
-                        }
-                    }
-                }
+                .skip_contexts = ContextNames::all_nested_expressions()
             });
 
             return true;

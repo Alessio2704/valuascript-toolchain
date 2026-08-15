@@ -256,7 +256,7 @@ namespace valuascript::compiler
                                 TokenTraits::is_statement_start(op_tok, cursor.peek(1).type) ||
                                 op_tok.type == TokenType::Return ||
                                 ctx.looks_like_reassignment() ||
-                                ctx.is_at_top_level_declaration())
+                                ctx.is_at_any_declaration())
                             {
                                 break;
                             }
@@ -384,8 +384,7 @@ namespace valuascript::compiler
             }
 
             if (!cursor.is_at_end() &&
-                !(cursor.peek().line > cursor.previous().line &&
-                  TokenTraits::is_newline_statement_boundary(cursor.previous(), cursor.peek(), cursor.peek(1).type)) &&
+                cursor.peek().line == cursor.previous().line &&
                 TokenTraits::is_expression_start(cursor.peek().type))
             {
                 return parse_expression();
@@ -661,6 +660,11 @@ namespace valuascript::compiler
             if (tok.type == TokenType::Comma || tok.type == TokenType::RightParen) return false;
             if (tok.type != TokenType::RightParen && ctx.is_active_closer(tok.type)) return true;
             if (tok.type == TokenType::Assign || (tok.type == TokenType::Identifier && next == TokenType::Assign)) return true;
+            if (tok.line > cursor.previous().line)
+            {
+                if (offset == 0 && (ctx.looks_like_reassignment() || ctx.is_at_any_declaration())) return true;
+                if (tok.type != TokenType::At && (TokenTraits::is_statement_start(tok, next) || tok.type == TokenType::Return)) return true;
+            }
             if (offset > 0 && ctx.active_closers.size() > 1)
             {
                 if (tok.type == TokenType::Identifier && next == TokenType::Colon)

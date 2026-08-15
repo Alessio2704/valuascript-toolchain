@@ -219,7 +219,9 @@ namespace valuascript::compiler::test
 
                     auto make_item = [&](const std::vector<SentinelKind>& excluded_for_gen,
                                          const std::vector<SentinelKind>& accepted_for_gen,
-                                         size_t seed_offset) -> ProcessingItem
+                                         ModifierFilterMode post_mod_mode,
+                                         size_t seed_offset,
+                                         const std::string& path_suffix = "") -> ProcessingItem
                     {
                         std::vector<RecoveryBlock> pre, post;
                         std::string inner_code = item.code;
@@ -233,7 +235,7 @@ namespace valuascript::compiler::test
                                 RecoverySentinel::generate_block_sentinel(
                                     seed, ctx.block_context, excluded_for_gen, {}));
                             post.push_back(RecoverySentinel::generate_block_sentinel(
-                                seed + 1, ctx.block_context, excluded_for_gen, accepted_for_gen));
+                                seed + 1, ctx.block_context, excluded_for_gen, accepted_for_gen, post_mod_mode));
                             inner_code = pre[0].source + "\n  " + inner_code + "\n  " + post[0].source;
                             inner_prefix = pre[0].source + "\n  " + inner_prefix;
                         }
@@ -254,7 +256,7 @@ namespace valuascript::compiler::test
                                                           : branch.inner_verifier)),
                             .path_name = item.path_name + " -> " + (next_rec_depth > item.recursion_depth
                                                                         ? std::string(ctx.name) + "(Recurse)"
-                                                                        : std::string(ctx.name)),
+                                                                        : std::string(ctx.name)) + path_suffix,
                             .cumulative_prefix = ctx.prefix + inner_prefix,
                             .depth = item.depth + 1,
                             .recursion_depth = next_rec_depth,
@@ -268,18 +270,28 @@ namespace valuascript::compiler::test
                         };
                     };
 
+                    std::vector<ProcessingItem> results;
                     if (branch.combined_accepted.empty())
                     {
-                        return {make_item(branch.combined_excluded, {}, 0)};
+                        results.push_back(make_item(branch.combined_excluded, {}, ModifierFilterMode::UnmodifiedOnly, 0, ""));
+                        if (inject_sentinels && RecoverySentinel::has_any_sentinel_with_modifier(ctx.block_context, branch.combined_excluded))
+                        {
+                            results.push_back(make_item(branch.combined_excluded, {}, ModifierFilterMode::ModifiedOnly, 13, " [with_modifier]"));
+                        }
+                        return results;
                     }
 
-                    std::vector<ProcessingItem> results;
+                    size_t step = 0;
                     for (size_t i = 0; i < branch.combined_accepted.size(); ++i)
                     {
                         SentinelKind k = branch.combined_accepted[i];
                         if (RecoverySentinel::is_sentinel_supported_in_block(ctx.block_context, k))
                         {
-                            results.push_back(make_item(branch.combined_excluded, {k}, i * 31));
+                            results.push_back(make_item(branch.combined_excluded, {k}, ModifierFilterMode::UnmodifiedOnly, (step++) * 31, ""));
+                            if (inject_sentinels && RecoverySentinel::has_sentinel_with_modifier(ctx.block_context, k))
+                            {
+                                results.push_back(make_item(branch.combined_excluded, {k}, ModifierFilterMode::ModifiedOnly, (step++) * 31, " [with_modifier]"));
+                            }
                         }
                     }
 

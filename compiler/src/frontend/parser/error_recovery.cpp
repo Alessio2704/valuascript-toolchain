@@ -56,14 +56,14 @@ namespace valuascript::compiler
 
             if (config.has(RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp))
             {
-                if (TokenTraits::is_statement_start(tok, next) || (tok.line > ctx.cursor.previous().line &&
+                if (ctx.is_at_any_declaration() || TokenTraits::is_statement_start(tok, next) || (tok.line > ctx.cursor.previous().line &&
                     TokenTraits::is_expression_statement_start(tok, next)))
                     return true;
             }
 
             if (config.has(RecoveryOptions::StopAtBoundaryRespectingDanglingOp))
             {
-                bool is_boundary = TokenTraits::is_statement_start(tok, next) ||
+                bool is_boundary = ctx.is_at_any_declaration() || TokenTraits::is_statement_start(tok, next) ||
                     TokenTraits::is_newline_statement_boundary(ctx.cursor.previous(), tok, next);
                 if (config.has(RecoveryOptions::IgnoreStandaloneModifiersAsBoundaries) && type == TokenType::At)
                 {
@@ -79,7 +79,7 @@ namespace valuascript::compiler
 
             if (config.has(RecoveryOptions::StopEarlyIfUnbalancedBlocks))
             {
-                if (ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || tok.type ==
+                if (ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || ctx.is_at_any_declaration() || tok.type ==
                     TokenType::Return ||
                     TokenTraits::is_statement_start(tok, next) || (tok.line > ctx.cursor.previous().line &&
                         TokenTraits::is_expression_statement_start(tok, next))))
