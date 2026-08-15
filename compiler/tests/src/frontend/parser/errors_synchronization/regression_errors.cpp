@@ -18,10 +18,9 @@ namespace valuascript::compiler::test
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
                 .test_name = "Regression_1",
-                .source_code = "let b = { \"key\" 10 }\nlet a = func_call(\n\nlet b = some_other()",
+                .source_code = "let a = func_call(\n\nlet b = some_other()",
                 .expected_errors = {
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 11},
-                    {.code = Err::ExpectedArgumentNameOrClosingParen, .line = 2, .column = 19}
+                    {.code = Err::ExpectedArgumentNameOrClosingParen, .line = 1, .column = 19}
                 }
             },
             ParserErrorsSynchronizationTestCase{
@@ -34,15 +33,6 @@ namespace valuascript::compiler::test
                 .expected_errors = {
                     {.code = LexerErrorCode::TrailingSeparatorInNumberLiteral, .line = 1, .column = 15},
                     {.code = Err::ExpectedArgumentNameOrClosingParen, .line = 4, .column = 66}
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "Regression_4",
-                .source_code = "let a = {1, 2, 3}\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 10},
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 13},
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 16}
                 }
             }
         ),

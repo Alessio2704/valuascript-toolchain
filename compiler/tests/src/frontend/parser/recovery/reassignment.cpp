@@ -155,6 +155,20 @@ namespace valuascript::compiler::test
                 .verifier = IsReassignment(IsIdentifier("a"), IsNull())
             });
 
+            reg({
+                .name = "MissingPropertyNameInReassignment",
+                .code = "self. = 1",
+                .errors = {PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
+                .verifier = IsReassignment(IsDot(IsSelf(), "<error>"), IsNumber("1"))
+            });
+
+            reg({
+                .name = "MissingClosingBracketInTensorAccessReassignment",
+                .code = "arr[0 = 1",
+                .errors = {PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
+                .verifier = IsReassignment(IsBracket(IsIdentifier("arr"), IsNumber("0")), IsNumber("1"))
+            });
+
             return true;
         }();
     }

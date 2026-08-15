@@ -1,5 +1,6 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/context_names.h"
+#include "frontend/parser/helpers/context_names_helpers.h"
 
 namespace valuascript::compiler::test
 {
@@ -428,6 +429,52 @@ namespace valuascript::compiler::test
                     }
                 },
                 .verifier = IsTuple(IsNull())
+            });
+
+            reg({
+                .name = "MultipleNestedUnclosedTuples",
+                .code = "(1, (2, (3, (4,",
+                .errors = {
+                    PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                    PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                    PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                    PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                },
+                .verifier = IsTuple(
+                    IsNumber("1"),
+                    IsTuple(
+                        IsNumber("2"),
+                        IsTuple(
+                            IsNumber("3"),
+                            IsTuple(
+                                IsNumber("4")
+                            )
+                        )
+                    )
+                ),
+                .skip_contexts = ContextNames::all_nested_expressions(),
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprFuncDefDefault,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                        }
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprModifierArg,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::SingleElementTuplesNotAllowed, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16},
+                            PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 15, .line_end = 1, .column_end = 16}
+                        }
+                    }
+                }
             });
 
             return true;

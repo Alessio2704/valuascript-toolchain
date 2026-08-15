@@ -10,6 +10,7 @@ namespace valuascript::compiler::test
         static const std::vector<Context>& get_container_contexts_for(InjectableType type);
         static const std::vector<Context>& get_block_contexts();
         static const std::vector<Context>& get_top_level_contexts();
+        static const std::vector<std::string_view>& get_nested_expression_context_names();
 
     private:
         static const std::vector<Context>& aggregate_all();

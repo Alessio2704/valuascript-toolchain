@@ -191,9 +191,15 @@ namespace valuascript::compiler
                     }
                     else if (!ctx_.cursor.check(closing_token_))
                     {
-                        bool is_boundary = TokenTraits::is_newline_statement_boundary(
-                            ctx_.cursor.previous(), ctx_.cursor.peek(), ctx_.cursor.peek(1).type, is_greater_container_closer);
-                        if (is_boundary && ctx_.cursor.peek().type == TokenType::At)
+                        const Token& peek_tok = ctx_.cursor.peek();
+                        TokenType next_type = ctx_.cursor.peek(1).type;
+                        bool is_boundary = (peek_tok.line > ctx_.cursor.previous().line) &&
+                            (TokenTraits::is_newline_statement_boundary(ctx_.cursor.previous(), peek_tok, next_type, is_greater_container_closer) ||
+                             ctx_.looks_like_reassignment() ||
+                             TokenTraits::is_expression_statement_start(peek_tok, next_type) ||
+                             TokenTraits::is_statement_start(peek_tok, next_type) ||
+                             peek_tok.type == TokenType::Return);
+                        if (is_boundary && peek_tok.type == TokenType::At)
                         {
                             if (!ctx_.is_at_any_declaration()) is_boundary = false;
                         }

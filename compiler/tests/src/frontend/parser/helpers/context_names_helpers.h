@@ -1,8 +1,10 @@
 #pragma once
 
 #include "context_names.h"
+#include "context_registry.h"
 #include <array>
 #include <string_view>
+#include <vector>
 
 namespace valuascript::compiler::test::ContextNames
 {
@@ -16,5 +18,10 @@ namespace valuascript::compiler::test::ContextNames
     inline std::vector<std::string_view> all()
     {
         return {AllContexts.begin(), AllContexts.end()};
+    }
+
+    inline const std::vector<std::string_view>& all_nested_expressions()
+    {
+        return ContextRegistry::get_nested_expression_context_names();
     }
 }

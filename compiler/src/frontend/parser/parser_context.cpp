@@ -58,6 +58,21 @@ namespace valuascript::compiler
             const Token& tok = cursor.peek(offset);
             if (tok.type == TokenType::EndOfFile) break;
 
+            if (offset > 0)
+            {
+                if (tok.type == TokenType::Case || tok.type == TokenType::Default ||
+                    TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type))
+                {
+                    break;
+                }
+
+                if (tok.line > cursor.peek(offset - 1).line &&
+                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type))
+                {
+                    break;
+                }
+            }
+
             if (TokenTraits::is_grouping_opener(tok.type)) depth++;
             else if (TokenTraits::is_grouping_closer(tok.type))
             {
@@ -65,23 +80,23 @@ namespace valuascript::compiler
                 if (depth < 0) break;
                 if (depth == 0 && tok.type == TokenType::RightBrace) break;
             }
-            else if (depth == 0)
+
+            if (tok.type == TokenType::Assign)
             {
-                if (tok.type == TokenType::Assign) return true;
+                return true;
+            }
+
+            if (offset > 0 && (tok.type == TokenType::Identifier || TokenTraits::is_identifier_start(tok)) &&
+                can_end_expression(cursor.peek(offset - 1).type))
+            {
+                break;
+            }
+
+            if (depth == 0)
+            {
                 if (tok.type == TokenType::Comma || tok.type == TokenType::Colon ||
-                    tok.type == TokenType::At || tok.type == TokenType::RightBrace ||
-                    TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type))
+                    tok.type == TokenType::At || tok.type == TokenType::RightBrace)
                     break;
-
-                if (offset > 0 && tok.line > cursor.peek(offset - 1).line &&
-                    TokenTraits::is_expression_statement_start(tok, cursor.peek(offset + 1).type))
-                    break;
-
-                if (offset > 0 && (tok.type == TokenType::Identifier || TokenTraits::is_identifier_start(tok)) &&
-                    can_end_expression(cursor.peek(offset - 1).type))
-                {
-                    break;
-                }
             }
 
             offset++;

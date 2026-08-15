@@ -250,9 +250,13 @@ namespace valuascript::compiler
                             }
                         }
 
-                        if (physical_newline && inside_expr_grouping)
+                        if (physical_newline)
                         {
-                            if (TokenTraits::is_expression_statement_start(op_tok, cursor.peek(1).type))
+                            if (TokenTraits::is_expression_statement_start(op_tok, cursor.peek(1).type) ||
+                                TokenTraits::is_statement_start(op_tok, cursor.peek(1).type) ||
+                                op_tok.type == TokenType::Return ||
+                                ctx.looks_like_reassignment() ||
+                                ctx.is_at_top_level_declaration())
                             {
                                 break;
                             }
@@ -577,7 +581,8 @@ namespace valuascript::compiler
             }
 
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBracket) ||
-                (!cursor.check(TokenType::RightBracket) && ctx.is_active_closer(cursor.peek().type)))
+                (!cursor.check(TokenType::RightBracket) && ctx.is_active_closer(cursor.peek().type)) ||
+                cursor.check(TokenType::Assign))
             {
                 cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorIndex);
                 return AstFactory::make_node_with_span<BracketAccess>(
@@ -655,6 +660,7 @@ namespace valuascript::compiler
             if (tok.type == TokenType::EndOfFile) return true;
             if (tok.type == TokenType::Comma || tok.type == TokenType::RightParen) return false;
             if (tok.type != TokenType::RightParen && ctx.is_active_closer(tok.type)) return true;
+            if (tok.type == TokenType::Assign || (tok.type == TokenType::Identifier && next == TokenType::Assign)) return true;
             if (offset > 0 && ctx.active_closers.size() > 1)
             {
                 if (tok.type == TokenType::Identifier && next == TokenType::Colon)

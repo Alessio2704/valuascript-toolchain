@@ -66,6 +66,23 @@ namespace valuascript::compiler::test
         return cached;
     }
 
+    const std::vector<std::string_view>& ContextRegistry::get_nested_expression_context_names()
+    {
+        static const std::vector<std::string_view> cached = []()
+        {
+            std::vector<std::string_view> result;
+            for (const auto& ctx : get_expression_contexts())
+            {
+                if (ctx.output_type == InjectableType::Expression)
+                {
+                    result.push_back(ctx.name);
+                }
+            }
+            return result;
+        }();
+        return cached;
+    }
+
     const std::vector<Context>& ContextRegistry::aggregate_all()
     {
         static const std::vector<Context> all = []()
