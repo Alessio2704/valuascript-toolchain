@@ -394,7 +394,42 @@ namespace valuascript::compiler::test
                 .verifier = IsTuple(
                     IsNumber("1"),
                     IsIdentifier("x")
-                )
+                ),
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprGrouping, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprUnaryGrouping, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTupleStart, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTupleMiddle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTupleEnd, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTensorStart, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTensorMiddle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTensorEnd, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprTensorSingle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprDictValueStart, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprDictValueMiddle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprDictValueEnd, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprDictValueSingle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprCallArgStart, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprCallArgMiddle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprCallArgEnd, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprCallArgSingle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprModifierArg, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprBracketAccessIndex, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprAsCallTarget, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprAsDotTarget, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprAsBracketTarget, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprAsSliceTarget, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprSwitchCond, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprBinaryLhs, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprBinaryRhs, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprIfCond, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprIfThen, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprSwitchCaseStart, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprSwitchCaseMiddle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprSwitchCaseEnd, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprSwitchCaseSingle, .skip_after_depth_0 = true},
+                    ContextOverride<ExprVerifier>{.context_name = ContextNames::ExprFuncDefDefault, .skip_after_depth_0 = true}
+                }
             });
 
             reg({

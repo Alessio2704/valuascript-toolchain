@@ -21,6 +21,7 @@ namespace valuascript::compiler
         size_t conditional_else_closers_size = 0;
         size_t expr_depth = 0;
         size_t expr_closers_baseline = 0;
+        size_t key_value_container_depth = 0;
         std::vector<size_t> parameter_list_closer_indices;
         std::vector<size_t> switch_target_closer_indices;
 

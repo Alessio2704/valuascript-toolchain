@@ -39,6 +39,7 @@ namespace valuascript::compiler
         ExprPtr parse_prefix_unary();
         ExprPtr parse_infix_binary(ExprPtr left, const Token& op);
         ExprPtr parse_tuple_or_grouping();
+        bool is_unclosed_before_parent_boundary() const;
         ExprPtr complete_tuple(ExprPtr first_expr, const Token& start_token);
         ExprPtr complete_grouping(ExprPtr first_expr, bool first_expr_failed, const Token& start_token);
         ExprPtr parse_tensor_literal();

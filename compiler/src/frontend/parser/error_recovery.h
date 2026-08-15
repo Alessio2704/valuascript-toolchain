@@ -90,6 +90,13 @@ namespace valuascript::compiler
         ~SyncSetTracker();
     };
 
+    struct KeyValueContainerGuard
+    {
+        ParserContext& ctx;
+        explicit KeyValueContainerGuard(ParserContext& c) : ctx(c) { ctx.key_value_container_depth++; }
+        ~KeyValueContainerGuard() { ctx.key_value_container_depth--; }
+    };
+
     class ErrorRecovery
     {
     public:

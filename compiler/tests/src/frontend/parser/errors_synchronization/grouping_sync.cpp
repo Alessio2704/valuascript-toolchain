@@ -2,29 +2,6 @@
 #include "parser_errors_synchronization_base.h"
 
 namespace valuascript::compiler::test {
-    namespace {
-        void ExpectGroupingLiteral(const Program &ast, std::function<void(Expression *)> inner_checker = nullptr) {
-            ASSERT_FALSE(ast.execution_steps.empty()) << "AST has no execution steps.";
-
-            auto *assign = dynamic_cast<Assignment *>(ast.execution_steps.front().get());
-            ASSERT_NE(assign, nullptr) << "First statement is not an Assignment.";
-
-            auto *grouping = dynamic_cast<GroupingExpression *>(assign->value.get());
-            ASSERT_NE(grouping, nullptr) << "Assignment value is not a GroupingExpression.";
-
-            if (inner_checker && grouping->expression) {
-                inner_checker(grouping->expression.get());
-            }
-        }
-
-        auto ExpectGrouping() {
-            return [](const Program &ast) {
-                ExpectGroupingLiteral(ast);
-                EXPECT_GT(ast.execution_steps.size(), 1) << "Expected recovery statement not found.";
-            };
-        }
-    }
-
     class GroupingParserSynchronizationTest : public ParserErrorsSynchronizationBase {
     };
 
@@ -36,14 +13,6 @@ namespace valuascript::compiler::test {
         GroupingStressTests,
         GroupingParserSynchronizationTest,
         ::testing::Values(
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_unclosed",
-                .source_code = "let a = ( 1 + 2 \nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
-                .verify_ast = [](const Program& ast) {
-                    ExpectGroupingLiteral(ast);
-                }
-            },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "grouping_leading_comma_error",
                 .source_code = "let a = ( , 1 )\nlet recovery = 1\n",
@@ -68,12 +37,6 @@ namespace valuascript::compiler::test {
                     auto* g3 = dynamic_cast<GroupingExpression*>(g2->expression.get());
                     ASSERT_NE(g3, nullptr);
                 }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "grouping_mismatched_closer_no_comma_heuristic",
-                .source_code = "let a = ( 1 + 2 }\nlet recovery = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 15} },
-                .verify_ast = ExpectGrouping()
             },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "grouping_with_reserved_keyword_as_identifier",

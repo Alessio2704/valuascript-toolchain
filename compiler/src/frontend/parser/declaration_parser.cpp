@@ -102,6 +102,7 @@ namespace valuascript::compiler
                 if (cursor.match(TokenType::LeftParen))
                 {
                     CloserTracker tracker(ctx, TokenType::RightParen);
+                    KeyValueContainerGuard kv_guard(ctx);
                     ParameterRuleSpec arg_spec{
                         .allow_value = true, .require_value = true, .value_separator = TokenType::Colon,
                         .missing_name_err = E::MissingArgumentNameInModifier,
