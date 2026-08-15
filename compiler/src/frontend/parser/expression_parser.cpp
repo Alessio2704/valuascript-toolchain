@@ -646,7 +646,7 @@ namespace valuascript::compiler
             const TokenType next_type = cursor.peek(2).type;
 
             bool is_parent_boundary =
-                (ctx.key_value_container_depth > 0 && TokenTraits::is_identifier_start(next_tok) && (next_type == TokenType::Colon || next_type == TokenType::Assign || next_type == TokenType::Arrow) && is_unclosed_before_parent_boundary()) ||
+                (ctx.key_value_container_depth > 0 && TokenTraits::is_identifier_start(next_tok) && (next_type == TokenType::Colon || next_type == TokenType::Assign || next_type == TokenType::Arrow) && ErrorRecovery::is_unclosed_before_parent_boundary(ctx)) ||
                 (next_tok.type != TokenType::RightParen && ctx.is_active_closer(next_tok.type));
 
             if (!is_parent_boundary)
@@ -656,60 +656,6 @@ namespace valuascript::compiler
             }
         }
         return complete_grouping(std::move(first_expr), failed, start);
-    }
-
-    bool ExpressionParser::is_unclosed_before_parent_boundary() const
-    {
-        size_t start_idx = 0;
-        for (size_t i = ctx.active_closers.size(); i > 0; --i)
-        {
-            if (ctx.active_closers[i - 1] != TokenType::RightParen)
-            {
-                start_idx = i;
-                break;
-            }
-        }
-
-        size_t active_paren_count = 0;
-        for (size_t i = start_idx; i < ctx.active_closers.size(); ++i)
-        {
-            if (ctx.active_closers[i] == TokenType::RightParen)
-                active_paren_count++;
-        }
-
-        size_t available_parens = 0;
-        size_t paren_nesting = 0;
-        size_t offset = 0;
-        while (true)
-        {
-            const Token& tok = cursor.peek(offset);
-            if (tok.type == TokenType::EndOfFile)
-                break;
-
-            if (tok.type == TokenType::LeftParen)
-            {
-                paren_nesting++;
-            }
-            else if (tok.type == TokenType::RightParen)
-            {
-                if (paren_nesting > 0)
-                    paren_nesting--;
-                else
-                    available_parens++;
-            }
-            else if (paren_nesting == 0)
-            {
-                if (tok.type == TokenType::RightBrace && ctx.is_active_closer(TokenType::RightBrace))
-                    break;
-                if (tok.type == TokenType::RightBracket && ctx.is_active_closer(TokenType::RightBracket))
-                    break;
-                if (tok.line > cursor.peek().line && (TokenTraits::is_statement_start(tok, cursor.peek(offset + 1).type) || ctx.is_at_any_declaration() || ctx.looks_like_reassignment()))
-                    break;
-            }
-            offset++;
-        }
-
-        return available_parens < active_paren_count;
     }
 
     ExprPtr ExpressionParser::complete_tuple(ExprPtr first_expr, const Token& start)

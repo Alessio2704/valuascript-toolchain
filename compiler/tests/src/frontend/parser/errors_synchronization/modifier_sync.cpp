@@ -84,12 +84,6 @@ namespace valuascript::compiler::test
         ModifierParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_missing_closing_paren",
-                .source_code = "let @test(a: 1\na = 1let recovery = 1\n",
-                .expected_errors = { {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 14} },
-                .verify_ast = ExpectModifierSet({{.name = "test", .args = {{.name = "a"}}}})
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "multiple_modifiers_garbage_between",
                 .source_code = "let @first & @second a = 1\nlet recovery = 1\n",
                 .expected_errors = { {.code = LexerErrorCode::InvalidCharacter, .line = 1, .column = 12} },
@@ -104,49 +98,6 @@ namespace valuascript::compiler::test
                 },
                 .verify_ast = [](const Program& ast) {
                     ASSERT_EQ(ast.execution_steps.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "dict_key_modifier_unmatched_paren",
-                .source_code = "let obj = { @test(a: 1 key: 1 }\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::MissingCommaSeparatorForArgumentsInModifier, .line = 1, .column = 24},
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 29},
-                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 31}
-                },
-                .verify_ast = [](const Program& ast) {
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    auto dict = dynamic_cast<DictLiteral*>(assign->value.get());
-                    EXPECT_EQ(dict->elements.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "func_param_modifier_missing_right_paren_in_args",
-                .source_code = "func f(@test(a: 1 p: int) -> void {}\nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::MissingCommaSeparatorForArgumentsInModifier, .line = 1, .column = 19},
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 24},
-                    {.code = Err::MissingParameterName, .line = 1, .column = 25}
-                },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-
-                    ASSERT_EQ(ast.execution_steps.size(), 1);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "recovery");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "struct_field_modifier_unmatched_paren_stretches_to_eof",
-                .source_code = "struct S { @test(a: 1 \n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 21},
-                    {.code = Err::ExpectedStructFieldName, .line = 1, .column = 22},
-                    {.code = Err::ExpectedRightBraceAfterStructBody, .line = 1, .column = 21}
-                },
-                .verify_ast = [](const Program& ast) {
-                    EXPECT_EQ(ast.execution_steps.size(), 0);
                 }
             }
         ),

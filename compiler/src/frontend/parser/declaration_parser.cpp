@@ -116,6 +116,8 @@ namespace valuascript::compiler
                                     .on_missing_comma(E::MissingCommaSeparatorForArgumentsInModifier)
                                     .is_element_start([this]()
                                     {
+                                        if (ErrorRecovery::is_unclosed_before_parent_boundary(ctx))
+                                            return false;
                                         const Token& tok = cursor.peek();
                                         return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
                                             tok, cursor.peek(1).type)) && cursor.peek(1).type == TokenType::Colon;
@@ -124,8 +126,16 @@ namespace valuascript::compiler
 
                     for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
  
-                    if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
-                        (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
+                    bool is_at_boundary =
+                        ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+                        (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)) ||
+                        ctx.is_at_any_declaration() ||
+                        TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                        cursor.peek().type == TokenType::Return ||
+                        cursor.peek(1).type == TokenType::Assign ||
+                        ctx.looks_like_reassignment();
+
+                    if (is_at_boundary)
                     {
                         cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisAfterModifierArgs);
                         modifiers.push_back(Modifier{
@@ -569,7 +579,14 @@ namespace valuascript::compiler
                             ctx.is_parsing_list_element = true;
                             result.value = parser.parse_expression();
                             ctx.is_parsing_list_element = prev_list;
-                            if ((TokenTraits::is_expression_start(cursor.peek().type) ||
+                            bool is_boundary =
+                                ctx.is_active_closer(cursor.peek().type) ||
+                                ctx.is_at_any_declaration() ||
+                                TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                                cursor.peek(1).type == TokenType::Assign ||
+                                ctx.looks_like_reassignment();
+
+                            if (!is_boundary && (TokenTraits::is_expression_start(cursor.peek().type) ||
                                     TokenTraits::is_binary_operator(cursor.peek().type))
                                 &&
                                 cursor.peek(1).type != spec.value_separator && cursor.

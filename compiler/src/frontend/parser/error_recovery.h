@@ -106,6 +106,7 @@ namespace valuascript::compiler
         static void synchronize_to_closer(ParserContext& ctx, TokenType closing_token);
         static void synchronize_and_consume_closer(ParserContext& ctx, TokenType expected_closer);
         static bool should_yield_closer_to_parent(ParserContext& ctx, TokenType closer_type);
+        static bool is_unclosed_before_parent_boundary(ParserContext& ctx);
 
         template <typename ReturnType, typename ParseFunc>
         static ReturnType attempt_parse(ParserContext& ctx, ParseFunc parse_func, const RecoveryConfig& config,

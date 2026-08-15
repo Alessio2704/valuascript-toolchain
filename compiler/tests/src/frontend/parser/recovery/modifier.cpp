@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -154,6 +155,22 @@ namespace valuascript::compiler::test
                             {.label="a", .value_v=IsNumber("1")},
                             {.label="b", .value_v=IsNumber("2")},
                             {.label="c", .value_v=IsNumber("3")}
+                        }
+                    }
+                }
+            });
+
+            reg(RecoveryCase<ModifierVerifier>{
+                .name = "ModifierMissingClosingParen",
+                .code = "@test(a: 1",
+                .errors = {
+                    PErr{.code = E::UnmatchedParenthesisAfterModifierArgs, .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 11}
+                },
+                .verifier = std::vector<ModifierSpec>{
+                    {
+                        .name = "test",
+                        .args = {
+                            {.label = "a", .value_v = IsNumber("1")}
                         }
                     }
                 }
