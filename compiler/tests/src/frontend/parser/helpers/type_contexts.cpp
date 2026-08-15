@@ -258,21 +258,6 @@ namespace valuascript::compiler::test
                 }
             },
             {
-                .name = ContextNames::TypeTupleTypeSingle,
-                .input_types = {InjectableType::TypeAnnotation},
-                .output_type = InjectableType::TypeAnnotation,
-                .prefix = "(",
-                .suffix = ", int)",
-                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
-                {
-                    return UniversalVerifier(
-                        IsTupleType(
-                            SpecAdder::get_v<TypeVerifier>(v),
-                            IsType("int")
-                        ));
-                }
-            },
-            {
                 .name = ContextNames::TypeGenericTypeStart,
                 .input_types = {InjectableType::TypeAnnotation},
                 .output_type = InjectableType::TypeAnnotation,

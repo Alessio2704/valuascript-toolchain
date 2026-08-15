@@ -189,10 +189,32 @@ namespace valuascript::compiler
                     {
                         const Token& after_comma = cursor.peek(offset + 1);
                         const TokenType after_comma_next = cursor.peek(offset + 2).type;
-                        if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) &&
-                            after_comma_next == TokenType::Colon)
+                        if (after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next))
                         {
-                            return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen);
+                            if (after_comma_next == TokenType::Colon)
+                            {
+                                return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen) ||
+                                       ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::Greater);
+                            }
+                            if (after_comma_next == TokenType::Assign)
+                            {
+                                if (ctx.is_active_closer(TokenType::Greater))
+                                {
+                                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::Greater);
+                                }
+                                if (ctx.is_active_closer(TokenType::RightParen))
+                                {
+                                    // In a tuple type (e.g. (int, string, ctx_m2 = 1) or ((int, string), ctx_m2 = 1), yield
+                                    if (offset == 0 && cursor.current() >= 1)
+                                    {
+                                        if (cursor.previous().type == TokenType::RightParen ||
+                                            (cursor.current() >= 2 && cursor.previous(2).type == TokenType::Comma))
+                                        {
+                                            return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     return false;

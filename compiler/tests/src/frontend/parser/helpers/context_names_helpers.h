@@ -24,4 +24,14 @@ namespace valuascript::compiler::test::ContextNames
     {
         return ContextRegistry::get_nested_expression_context_names();
     }
+
+    inline std::vector<std::string_view> all_nested_swallowing_type_contexts()
+    {
+        return {
+            TypeTupleTypeStart,
+            TypeTupleTypeMiddle,
+            TypeGenericTypeStart,
+            TypeGenericTypeMiddle
+        };
+    }
 }

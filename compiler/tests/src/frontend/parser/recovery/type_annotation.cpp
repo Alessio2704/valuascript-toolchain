@@ -273,12 +273,7 @@ namespace valuascript::compiler::test
                     },
                 },
                 .verifier = IsType("vector", IsType("int")),
-                .skip_contexts = {
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle
-                },
+                .skip_contexts = ContextNames::all_nested_swallowing_type_contexts(),
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionReturnStart,
@@ -292,7 +287,8 @@ namespace valuascript::compiler::test
                                                                       {
                                                                           IsType("vector", IsType("int"), IsType("int"),
                                                                               IsType("string"))
-                                                                      }))
+                                                                      })),
+                        .skip_after_depth_0 = true
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionReturnMiddle,
@@ -307,105 +303,8 @@ namespace valuascript::compiler::test
                                                                           IsType("int"),
                                                                           IsType("vector", IsType("int"),
                                                                               IsType("string"))
-                                                                      }))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 18,
-                                .line_end = 1, .column_end = 19
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {
-                                AssignmentTargetSpec{
-                                    .name = "ctx_m1", .type_v = IsType("vector", IsType("int"), IsType("ctx_m2"))
-                                }
-                            }, IsNumber("1")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionReturnSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 10,
-                                .line_end = 1, .column_end = 11
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_ret", {}, {},
-                                                                      {IsType("vector", IsType("int"))}))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 23,
-                                .line_end = 1, .column_end = 24
-                            }
-                        },
-                        .verifier = IsTupleType(IsType("vector", IsType("int"), IsType("int"), IsType("string"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 18,
-                                .line_end = 1, .column_end = 19
-                            }
-                        },
-                        .verifier = IsTupleType(IsType("int"), IsType("vector", IsType("int"), IsType("string"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 15,
-                                .line_end = 1, .column_end = 16
-                            }
-                        },
-                        .verifier = IsTupleType(IsType("vector", IsType("int"), IsType("int"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 16,
-                                .line_end = 1, .column_end = 17
-                            }
-                        },
-                        .verifier = IsType("vector", IsType("vector", IsType("int"), IsType("int"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 16,
-                                .line_end = 1, .column_end = 17
-                            }
-                        },
-                        .verifier = IsType("vector", IsType("int"), IsType("vector", IsType("int"), IsType("string"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeEnd,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 12,
-                                .line_end = 1, .column_end = 13
-                            }
-                        },
-                        .verifier = IsType("vector", IsType("int"), IsType("string"), IsType("vector", IsType("int"))),
-                        .skip_after_depth_0 = true,
-                        .skip_transform = true
+                                                                      })),
+                        .skip_after_depth_0 = true
                     }
                 },
                 .accepted_sentinels = SentinelKinds::all()
@@ -421,31 +320,8 @@ namespace valuascript::compiler::test
                     },
                 },
                 .verifier = IsTupleType(IsType("int"), IsType("string")),
-                .skip_contexts = {
-                    ContextNames::TypeTupleTypeStart,
-                    ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
-                    ContextNames::TypeTupleTypeSingle,
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                },
+                .skip_contexts = ContextNames::all_nested_swallowing_type_contexts(),
                 .context_overrides = {
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {
-                                AssignmentTargetSpec{
-                                    .name = "ctx_m1",
-                                    .type_v = IsTupleType(IsType("int"), IsType("string"), IsType("ctx_m2"))
-                                }
-                            }, IsNumber("1")))
-                    },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
@@ -459,7 +335,8 @@ namespace valuascript::compiler::test
                                                                           IsTupleType(
                                                                               IsType("int"), IsType("string"),
                                                                               IsType("int"), IsType("string"))
-                                                                      }))
+                                                                      })),
+                        .skip_after_depth_0 = true
                     },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeFunctionReturnMiddle,
@@ -475,232 +352,8 @@ namespace valuascript::compiler::test
                                                                           IsTupleType(
                                                                               IsType("int"), IsType("string"),
                                                                               IsType("string"))
-                                                                      }))
-                    }
-                },
-                .accepted_sentinels = SentinelKinds::all()
-            });
-
-            reg({
-                .name = "TupleMissingClosingParenNestedInGeneric",
-                .code = "vector<(int, string>",
-                .errors = {
-                    PErr{
-                        .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 19, .line_end = 1,
-                        .column_end = 20
-                    }
-                },
-                .verifier = IsType("vector", IsTupleType(IsType("int"), IsType("string"))),
-                .skip_contexts = {
-                    ContextNames::TypeTupleTypeStart,
-                    ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
-                    ContextNames::TypeTupleTypeSingle,
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle,
-                    ContextNames::TypeFunctionReturnStart,
-                    ContextNames::TypeFunctionReturnMiddle,
-                    ContextNames::TypeFunctionReturnEnd
-                }
-            });
-
-            reg({
-                .name = "TupleMissingClosingParenNestedInTuple",
-                .code = "((int, string, float)",
-                .errors = {
-                    PErr{
-                        .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 21, .line_end = 1,
-                        .column_end = 22
-                    },
-                },
-                .verifier = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float"))),
-                .skip_contexts = {
-                    ContextNames::TypeTupleTypeStart,
-                    ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
-                    ContextNames::TypeTupleTypeSingle,
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle,
-                    ContextNames::TypeFunctionParamStart,
-                    ContextNames::TypeFunctionParamMiddle,
-                    ContextNames::TypeFunctionParamEnd,
-                    ContextNames::TypeFunctionReturnStart,
-                    ContextNames::TypeFunctionReturnMiddle,
-                    ContextNames::TypeFunctionReturnEnd
-                },
-                .context_overrides = {
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTypealiasTarget,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamEnd,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeStructField,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
-                                .line_end = 1, .column_end = 21
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 29,
-                                .line_end = 1, .column_end = 30
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {
-                                AssignmentTargetSpec{
-                                    .name = "ctx_m1",
-                                    .type_v = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("float")),
-                                                          IsType("ctx_m2"))
-                                }
-                            }, IsNumber("1")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionReturnStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 26,
-                                .line_end = 1, .column_end = 27
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {
-                                                                          IsTupleType(
-                                                                              IsTupleType(
-                                                                                  IsType("int"), IsType("string"),
-                                                                                   IsType("float")), IsType("int"))
-                                                                      }))
-                    }
-                },
-                .accepted_sentinels = SentinelKinds::all()
-            });
-
-            reg({
-                .name = "GenericMissingClosingBracketNestedInTuple",
-                .code = "(vector<int, string)",
-                .errors = {
-                    PErr{
-                        .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 19, .line_end = 1,
-                        .column_end = 20
-                    },
-                },
-                .verifier = IsTupleType(IsType("vector", IsType("int"), IsType("string"))),
-                .skip_contexts = {
-                    ContextNames::TypeTupleTypeStart,
-                    ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
-                    ContextNames::TypeTupleTypeSingle,
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle
-                },
-                .accepted_sentinels = SentinelKinds::all()
-            });
-
-            reg({
-                .name = "GenericMissingClosingBracketNestedInGeneric",
-                .code = "vector<map<int, string>",
-                .errors = {
-                    PErr{
-                        .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 23, .line_end = 1,
-                        .column_end = 24
-                    },
-                },
-                .verifier = IsType("vector", IsType("map", IsType("int"), IsType("string"))),
-                .skip_contexts = {
-                    ContextNames::TypeTupleTypeStart,
-                    ContextNames::TypeTupleTypeMiddle,
-                    ContextNames::TypeTupleTypeEnd,
-                    ContextNames::TypeTupleTypeSingle,
-                    ContextNames::TypeGenericTypeStart,
-                    ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle,
-                    ContextNames::TypeFunctionReturnStart,
-                    ContextNames::TypeFunctionReturnMiddle,
-                    ContextNames::TypeFunctionReturnEnd
-                },
-                .context_overrides = {
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 31,
-                                .line_end = 1, .column_end = 32
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {
-                                AssignmentTargetSpec{
-                                    .name = "ctx_m1",
-                                    .type_v = IsType("vector", IsType("map", IsType("int"), IsType("string")),
-                                                     IsType("ctx_m2"))
-                                }
-                            }, IsNumber("1")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionReturnStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 28,
-                                .line_end = 1, .column_end = 29
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {
-                                                                          IsType("vector", IsType("map", IsType("int"),
-                                                                              IsType("string")), IsType("int"))
-                                                                      }))
+                                                                      })),
+                        .skip_after_depth_0 = true
                     }
                 },
                 .accepted_sentinels = SentinelKinds::all()

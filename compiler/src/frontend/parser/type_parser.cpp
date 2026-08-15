@@ -39,9 +39,10 @@ namespace valuascript::compiler
 
             Token end_token = cursor.previous();
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
-                (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
+                (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)) ||
+                (is_at_parent_boundary && is_at_parent_boundary(0)))
             {
-                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisInTuple);
+                cursor.report_error_no_panic(cursor.previous(), E::UnmatchedParenthesisInTuple);
                 end_token = cursor.previous();
             }
             else if (cursor.check(TokenType::RightParen))
@@ -50,7 +51,7 @@ namespace valuascript::compiler
             }
             else
             {
-                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisInTuple);
+                cursor.report_error_no_panic(cursor.previous(), E::UnmatchedParenthesisInTuple);
                 TokenType peek_type = cursor.peek().type;
                 if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.is_active_closer(peek_type))
                     end_token = cursor.advance();
@@ -86,13 +87,20 @@ namespace valuascript::compiler
                            .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             if (generic_args.empty()) cursor.report_error_no_panic(cursor.peek(), E::EmptyGenericTypeAnnotation);
-            if (cursor.check(TokenType::Greater))
+
+            if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::Greater) ||
+                (!cursor.check(TokenType::Greater) && ctx.is_active_closer(cursor.peek().type)) ||
+                (is_at_parent_boundary && is_at_parent_boundary(0)))
+            {
+                cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBracketAfterGenericArgs);
+            }
+            else if (cursor.check(TokenType::Greater))
             {
                 cursor.advance();
             }
             else
             {
-                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterGenericArgs);
+                cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBracketAfterGenericArgs);
                 TokenType peek_type = cursor.peek().type;
                 if ((TokenTraits::is_grouping_closer(peek_type) || peek_type == TokenType::Greater) && !ctx.is_active_closer(peek_type))
                     cursor.advance();

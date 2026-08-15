@@ -142,13 +142,18 @@ namespace valuascript::compiler
 
         bool is_stmt_boundary =
             boundary.type == TokenType::Arrow ||
+            boundary.type == TokenType::Assign ||
+            (boundary.type == TokenType::LeftBrace && ctx.expr_depth == 0 && ctx.key_value_container_depth == 0) ||
             boundary.type == TokenType::Case ||
             boundary.type == TokenType::Default ||
             boundary.type == TokenType::Return ||
             boundary.type == TokenType::EndOfFile ||
             TokenTraits::is_statement_start(boundary, after_boundary.type) ||
             (boundary.type == TokenType::Identifier && (after_boundary.type == TokenType::Assign || after_boundary.type == TokenType::Colon)) ||
-            TokenTraits::is_newline_statement_boundary(last_closer, boundary, after_boundary.type);
+            (boundary.type == TokenType::Comma && after_boundary.type == TokenType::Identifier &&
+             (ctx.cursor.peek(available_closers + 2).type == TokenType::Assign ||
+              (ctx.key_value_container_depth == 0 && ctx.cursor.peek(available_closers + 2).type == TokenType::Colon))) ||
+            TokenTraits::is_newline_statement_boundary(last_closer, boundary, after_boundary.type, closer_type == TokenType::Greater);
 
         bool is_switch_brace = boundary.type == TokenType::LeftBrace &&
                                !ctx.switch_target_closer_indices.empty() &&

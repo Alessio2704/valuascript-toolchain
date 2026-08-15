@@ -217,7 +217,7 @@ namespace valuascript::compiler
                 const TokenType after_comma_next = cursor.peek(offset + 2).type;
                 if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
                 {
-                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightBrace);
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, !ctx.active_closers.empty() ? ctx.active_closers.back() : TokenType::RightBrace);
                 }
             }
             return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
@@ -267,12 +267,16 @@ namespace valuascript::compiler
                 TokenType::Colon, TokenType::LeftBrace, TokenType::Comma
             }), false);
 
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            return cursor.peek(offset).type == TokenType::LeftBrace;
+        };
+
         TypeAnnPtr underlying_type = nullptr;
         if (cursor.check(TokenType::Colon))
         {
             cursor.advance();
             underlying_type = ErrorRecovery::try_parse<TypeAnnPtr>(
-                ctx, [&]() { return parser.parse_type_annotation(); },
+                ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
                 RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}));
         }
         else
@@ -282,7 +286,7 @@ namespace valuascript::compiler
             {
                 bool failed = false;
                 underlying_type = ErrorRecovery::try_parse<TypeAnnPtr>(
-                    ctx, [&]() { return parser.parse_type_annotation(); },
+                    ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
                     RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}),
                     &failed);
                 if (failed)
@@ -369,7 +373,7 @@ namespace valuascript::compiler
                 const TokenType after_comma_next = cursor.peek(offset + 2).type;
                 if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
                 {
-                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen);
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, !ctx.active_closers.empty() ? ctx.active_closers.back() : TokenType::RightParen);
                 }
             }
             return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
@@ -444,6 +448,9 @@ namespace valuascript::compiler
         if (cursor.check(TokenType::Arrow))
         {
             cursor.advance();
+            auto is_at_return_boundary = [this](size_t offset = 0) {
+                return cursor.peek(offset).type == TokenType::LeftBrace;
+            };
             ErrorRecovery::attempt_parse_void(
                 ctx, [&]()
                 {
@@ -452,9 +459,10 @@ namespace valuascript::compiler
                                    .on_trailing_comma(E::TrailingComma)
                                    .on_missing_comma(
                                        E::ExpectedCommaSeparatorInReturnTypeList)
+                                   .is_at_parent_boundary(is_at_return_boundary)
                                    .parse_elements([&]()
                                    {
-                                       return parser.parse_type_annotation();
+                                       return parser.parse_type_annotation(is_at_return_boundary);
                                    });
 
                     if (return_types.empty())
@@ -509,8 +517,17 @@ namespace valuascript::compiler
                 TypeAliasDefinition>(cursor, start, std::move(modifiers), name.lexeme, nullptr);
         }
 
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            const Token& peek = cursor.peek(offset);
+            const Token& prev = offset > 0 ? cursor.peek(offset - 1) : cursor.previous();
+            return cursor.is_at_end() ||
+                   (peek.line > prev.line &&
+                    (TokenTraits::is_statement_start(peek, cursor.peek(offset + 1).type) ||
+                     TokenTraits::is_expression_statement_start(peek, cursor.peek(offset + 1).type)));
+        };
+
         auto target_type = ErrorRecovery::attempt_parse<TypeAnnPtr>(
-            ctx, [&]() { return parser.parse_type_annotation(); },
+            ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
             RecoveryConfig::StopAtNewline(),
             nullptr
         );
@@ -631,10 +648,14 @@ namespace valuascript::compiler
     {
         const Token& start = cursor.consume(TokenType::Extension, E::ExpectedExtensionToken);
 
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            return cursor.peek(offset).type == TokenType::LeftBrace;
+        };
+
         TypeAnnPtr target_type = nullptr;
         ErrorRecovery::attempt_parse_void(
             ctx,
-            [&]() { target_type = parser.parse_type_annotation(); },
+            [&]() { target_type = parser.parse_type_annotation(is_at_parent_boundary); },
             RecoveryConfig::ForceStopAtBoundary({TokenType::LeftBrace})
         );
 

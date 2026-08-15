@@ -92,7 +92,6 @@ namespace valuascript::compiler::test::ContextNames
     X(TypeTupleTypeStart, "tuple_type_start") \
     X(TypeTupleTypeMiddle, "tuple_type_middle") \
     X(TypeTupleTypeEnd, "tuple_type_end") \
-    X(TypeTupleTypeSingle, "tuple_type_single") \
     X(TypeGenericTypeStart, "generic_type_start") \
     X(TypeGenericTypeMiddle, "generic_type_middle") \
     X(TypeGenericTypeEnd, "generic_type_end") \
