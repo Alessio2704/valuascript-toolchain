@@ -36,7 +36,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprDictValueStart,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 29}
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 26, .line_end = 1, .column_end = 27}
                         },
                         .verifier = IsDict(
                             DictItemSpec{.key = "k1", .value_v = IsDict(
@@ -52,7 +52,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprDictValueMiddle,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 21, .line_end = 1, .column_end = 22}
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 20}
                         },
                         .verifier = IsDict(
                             DictItemSpec{.key = "k1", .value_v = IsNumber("1")},
@@ -68,7 +68,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprDictValueEnd,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                         },
                         .verifier = IsDict(
                             DictItemSpec{.key = "k1", .value_v = IsNumber("1")},
@@ -84,7 +84,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprDictValueSingle,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 14, .line_end = 1, .column_end = 15}
+                            PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}
                         },
                         .verifier = IsDict(
                             DictItemSpec{.key = "k1", .value_v = IsDict(
@@ -215,6 +215,46 @@ namespace valuascript::compiler::test
                             DictItemSpec{.key = "x", .value_v = IsNumber("1")},
                             DictItemSpec{.key = "y", .value_v = IsNumber("2")}
                         ),
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprGrouping,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprUnaryGrouping,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleStart,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleMiddle,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTupleEnd,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorStart,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorMiddle,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorEnd,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprTensorSingle,
+                        .skip_after_depth_0 = true
+                    },
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprBracketAccessIndex,
                         .skip_after_depth_0 = true
                     }
                 },

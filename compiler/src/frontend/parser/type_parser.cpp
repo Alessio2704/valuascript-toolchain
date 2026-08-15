@@ -38,7 +38,13 @@ namespace valuascript::compiler
                             .parse_elements([&]() { return parse_type_annotation(is_at_parent_boundary); });
 
             Token end_token = cursor.previous();
-            if (cursor.check(TokenType::RightParen))
+            if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+                (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisInTuple);
+                end_token = cursor.previous();
+            }
+            else if (cursor.check(TokenType::RightParen))
             {
                 end_token = cursor.advance();
             }

@@ -126,4 +126,64 @@ namespace valuascript::compiler
             ctx.is_active_closer(ctx.cursor.peek().type)))
             ctx.cursor.advance();
     }
+
+    bool ErrorRecovery::should_yield_closer_to_parent(ParserContext& ctx, TokenType closer_type)
+    {
+        if (!ctx.cursor.check(closer_type))
+            return false;
+
+        size_t available_closers = 0;
+        while (ctx.cursor.peek(available_closers).type == closer_type)
+            available_closers++;
+
+        const Token& boundary = ctx.cursor.peek(available_closers);
+        const Token& after_boundary = ctx.cursor.peek(available_closers + 1);
+        const Token& last_closer = ctx.cursor.peek(available_closers - 1);
+
+        bool is_stmt_boundary =
+            boundary.type == TokenType::Arrow ||
+            boundary.type == TokenType::Case ||
+            boundary.type == TokenType::Default ||
+            boundary.type == TokenType::Return ||
+            boundary.type == TokenType::EndOfFile ||
+            TokenTraits::is_statement_start(boundary, after_boundary.type) ||
+            (boundary.type == TokenType::Identifier && (after_boundary.type == TokenType::Assign || after_boundary.type == TokenType::Colon)) ||
+            TokenTraits::is_newline_statement_boundary(last_closer, boundary, after_boundary.type);
+
+        bool is_switch_brace = boundary.type == TokenType::LeftBrace &&
+                               !ctx.switch_target_closer_indices.empty() &&
+                               (after_boundary.type == TokenType::Case ||
+                                after_boundary.type == TokenType::Default ||
+                                after_boundary.type == TokenType::At);
+
+        size_t min_idx = ctx.expr_closers_baseline;
+        if (is_stmt_boundary && closer_type == TokenType::RightParen)
+            min_idx = 0;
+        else if (is_switch_brace)
+            min_idx = ctx.switch_target_closer_indices.back();
+
+        size_t active_closers = 0;
+        for (size_t i = ctx.active_closers.size(); i > min_idx; --i)
+        {
+            size_t idx = i - 1;
+            TokenType closer = ctx.active_closers[idx];
+            if (closer != closer_type)
+                break;
+            if (closer_type == TokenType::RightParen && boundary.type != TokenType::Arrow &&
+                std::find(ctx.parameter_list_closer_indices.begin(), ctx.parameter_list_closer_indices.end(), idx) != ctx.parameter_list_closer_indices.end())
+                continue;
+            active_closers++;
+        }
+
+        if (active_closers > 1)
+        {
+            if (available_closers < active_closers)
+            {
+                if (is_stmt_boundary || is_switch_brace || ctx.is_active_closer(boundary.type))
+                    return true;
+            }
+        }
+
+        return false;
+    }
 }

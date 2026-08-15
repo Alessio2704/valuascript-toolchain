@@ -95,7 +95,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprBracketAccessIndex,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                         },
                         .verifier = IsBracket(IsIdentifier("arr"), IsNumber("0")),
                         .skip_after_depth_0 = true
@@ -123,7 +123,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprTensorEnd,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                         },
                         .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsBracket(IsIdentifier("arr"), IsNumber("0"))),
                         .skip_after_depth_0 = true,
@@ -132,7 +132,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprTensorSingle,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                         },
                         .verifier = IsTensor(IsBracket(IsIdentifier("arr"), IsNumber("0"))),
                         .skip_after_depth_0 = true,
@@ -294,7 +294,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprBracketAccessIndex,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         },
                         .verifier = IsBracket(IsIdentifier("arr"), IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2"))),
                         .skip_after_depth_0 = true
@@ -322,7 +322,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprTensorEnd,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         },
                         .verifier = IsTensor(IsNumber("1"), IsNumber("2"), IsBracket(IsIdentifier("arr"), IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2")))),
                         .skip_after_depth_0 = true,
@@ -331,7 +331,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprTensorSingle,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                            PErr{.code = E::UnmatchedBracketAfterTensorIndex, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         },
                         .verifier = IsTensor(IsBracket(IsIdentifier("arr"), IsBinary(TokenType::Colon, IsNumber("1"), IsNumber("2")))),
                         .skip_after_depth_0 = true,

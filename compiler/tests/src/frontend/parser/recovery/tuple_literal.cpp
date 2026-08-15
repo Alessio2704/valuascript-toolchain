@@ -286,7 +286,7 @@ namespace valuascript::compiler::test
                     ContextOverride<ExprVerifier>{
                         .context_name = ContextNames::ExprAsCallTarget,
                         .errors = std::vector<ParserExpectedError>{
-                            PErr{.code = E::ExpectedRightParenAfterExpression, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                            PErr{.code = E::ExpectedRightParenAfterArguments, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}
                         },
                         .verifier = IsGrouping(IsCall(IsTuple(IsNumber("1"), IsNumber("2")))),
                         .skip_after_depth_0 = true,

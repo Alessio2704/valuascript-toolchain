@@ -439,24 +439,6 @@ namespace valuascript::compiler::test
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13,
-                                .line_end = 1, .column_end = 14
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 13,
-                                .line_end = 1, .column_end = 14
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeTupleTypeEnd,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
@@ -653,6 +635,60 @@ namespace valuascript::compiler::test
                 },
                 .context_overrides = {
                     ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeTypealiasTarget,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeFunctionParamSingle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeFunctionParamStart,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeFunctionParamMiddle,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeFunctionParamEnd,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
+                        .context_name = ContextNames::TypeStructField,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
+                                .line_end = 1, .column_end = 21
+                            }
+                        }
+                    },
+                    ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
@@ -682,26 +718,8 @@ namespace valuascript::compiler::test
                                                                           IsTupleType(
                                                                               IsTupleType(
                                                                                   IsType("int"), IsType("string"),
-                                                                                  IsType("float")), IsType("int"))
+                                                                                   IsType("float")), IsType("int"))
                                                                       }))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamSingle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22,
-                                .line_end = 1, .column_end = 23
-                            }
-                        }
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionParamMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 22,
-                                .line_end = 1, .column_end = 23
-                            }
-                        }
                     }
                 },
                 .accepted_sentinels = SentinelKinds::all()

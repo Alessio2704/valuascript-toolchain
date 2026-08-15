@@ -468,6 +468,15 @@ namespace valuascript::compiler
 
             for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
 
+            if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+                (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterArguments);
+                return AstFactory::make_node_with_span<FunctionCall>(
+                    cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
+                    std::move(target), std::move(arguments));
+            }
+
             const Token& end_token = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterArguments);
             return AstFactory::make_node_with_span<FunctionCall>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
@@ -475,7 +484,8 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
+            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
+                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
             return AstFactory::make_node_with_span<FunctionCall>(
                 cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                 std::move(target), std::move(arguments));
@@ -566,6 +576,15 @@ namespace valuascript::compiler
                 cursor.report_error(cursor.previous(), E::EmptyBracketAccess);
             }
 
+            if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBracket) ||
+                (!cursor.check(TokenType::RightBracket) && ctx.is_active_closer(cursor.peek().type)))
+            {
+                cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorIndex);
+                return AstFactory::make_node_with_span<BracketAccess>(
+                    cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
+                    std::move(target), std::move(index_expr));
+            }
+
             const Token& end_token = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorIndex);
             return AstFactory::make_node_with_span<BracketAccess>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
@@ -573,7 +592,8 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
+            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBracket))
+                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
             return AstFactory::make_node_with_span<BracketAccess>(
                 cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                 std::move(target), std::move(index_expr));
@@ -654,60 +674,10 @@ namespace valuascript::compiler
         elements.insert(elements.end(), std::make_move_iterator(remaining.begin()),
                         std::make_move_iterator(remaining.end()));
 
-        if (cursor.check(TokenType::RightParen))
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen))
         {
-            size_t available_parens = 0;
-            while (cursor.peek(available_parens).type == TokenType::RightParen)
-                available_parens++;
-
-            const Token& boundary = cursor.peek(available_parens);
-            const Token& after_boundary = cursor.peek(available_parens + 1);
-            const Token& last_paren = cursor.peek(available_parens - 1);
-
-            bool is_stmt_boundary =
-                boundary.type == TokenType::Arrow ||
-                boundary.type == TokenType::Case ||
-                boundary.type == TokenType::Default ||
-                boundary.type == TokenType::Return ||
-                boundary.type == TokenType::EndOfFile ||
-                TokenTraits::is_statement_start(boundary, after_boundary.type) ||
-                (boundary.type == TokenType::Identifier && (after_boundary.type == TokenType::Assign || after_boundary.type == TokenType::Colon)) ||
-                TokenTraits::is_newline_statement_boundary(last_paren, boundary, after_boundary.type);
-
-            size_t min_idx = ctx.expr_closers_baseline;
-            if (is_stmt_boundary)
-                min_idx = 0;
-            else if (boundary.type == TokenType::LeftBrace && !ctx.switch_target_closer_indices.empty())
-                min_idx = ctx.switch_target_closer_indices.back();
-
-            size_t active_parens = 0;
-            for (size_t i = ctx.active_closers.size(); i > min_idx; --i)
-            {
-                size_t idx = i - 1;
-                TokenType closer = ctx.active_closers[idx];
-                if (closer != TokenType::RightParen)
-                    break;
-                if (boundary.type != TokenType::Arrow &&
-                    std::find(ctx.parameter_list_closer_indices.begin(), ctx.parameter_list_closer_indices.end(), idx) != ctx.parameter_list_closer_indices.end())
-                    continue;
-                active_parens++;
-            }
-
-            if (active_parens > 1)
-            {
-                bool is_parent_closer = false;
-                if (available_parens < active_parens)
-                {
-                    if (is_stmt_boundary || boundary.type == TokenType::LeftBrace || boundary.type == TokenType::RightBrace || boundary.type == TokenType::RightBracket || ctx.is_active_closer(boundary.type))
-                        is_parent_closer = true;
-                }
-
-                if (is_parent_closer)
-                {
-                    cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterTupleElements);
-                    return AstFactory::make_node<TupleLiteral>(cursor, start, std::move(elements));
-                }
-            }
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterTupleElements);
+            return AstFactory::make_node<TupleLiteral>(cursor, start, std::move(elements));
         }
 
         try
@@ -725,60 +695,10 @@ namespace valuascript::compiler
 
     ExprPtr ExpressionParser::complete_grouping(ExprPtr first_expr, bool failed, const Token& start)
     {
-        if (cursor.check(TokenType::RightParen))
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen))
         {
-            size_t available_parens = 0;
-            while (cursor.peek(available_parens).type == TokenType::RightParen)
-                available_parens++;
-
-            const Token& boundary = cursor.peek(available_parens);
-            const Token& after_boundary = cursor.peek(available_parens + 1);
-            const Token& last_paren = cursor.peek(available_parens - 1);
-
-            bool is_stmt_boundary =
-                boundary.type == TokenType::Arrow ||
-                boundary.type == TokenType::Case ||
-                boundary.type == TokenType::Default ||
-                boundary.type == TokenType::Return ||
-                boundary.type == TokenType::EndOfFile ||
-                TokenTraits::is_statement_start(boundary, after_boundary.type) ||
-                (boundary.type == TokenType::Identifier && (after_boundary.type == TokenType::Assign || after_boundary.type == TokenType::Colon)) ||
-                TokenTraits::is_newline_statement_boundary(last_paren, boundary, after_boundary.type);
-
-            size_t min_idx = ctx.expr_closers_baseline;
-            if (is_stmt_boundary)
-                min_idx = 0;
-            else if (boundary.type == TokenType::LeftBrace && !ctx.switch_target_closer_indices.empty())
-                min_idx = ctx.switch_target_closer_indices.back();
-
-            size_t active_parens = 0;
-            for (size_t i = ctx.active_closers.size(); i > min_idx; --i)
-            {
-                size_t idx = i - 1;
-                TokenType closer = ctx.active_closers[idx];
-                if (closer != TokenType::RightParen)
-                    break;
-                if (boundary.type != TokenType::Arrow &&
-                    std::find(ctx.parameter_list_closer_indices.begin(), ctx.parameter_list_closer_indices.end(), idx) != ctx.parameter_list_closer_indices.end())
-                    continue;
-                active_parens++;
-            }
-
-            if (active_parens > 1)
-            {
-                bool is_parent_closer = false;
-                if (available_parens < active_parens)
-                {
-                    if (is_stmt_boundary || boundary.type == TokenType::LeftBrace || boundary.type == TokenType::RightBrace || boundary.type == TokenType::RightBracket || ctx.is_active_closer(boundary.type))
-                        is_parent_closer = true;
-                }
-
-                if (is_parent_closer)
-                {
-                    cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterExpression);
-                    return AstFactory::make_node<GroupingExpression>(cursor, start, std::move(first_expr));
-                }
-            }
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterExpression);
+            return AstFactory::make_node<GroupingExpression>(cursor, start, std::move(first_expr));
         }
 
         try
@@ -805,6 +725,13 @@ namespace valuascript::compiler
         CloserTracker tracker(ctx, TokenType::RightBracket);
         auto elements = parse_expression_list(TokenType::RightBracket);
 
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBracket) ||
+            (!cursor.check(TokenType::RightBracket) && ctx.is_active_closer(cursor.peek().type)))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorElements);
+            return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
+        }
+
         if (cursor.check(TokenType::RightBracket))
         {
             const Token& end = cursor.advance();
@@ -824,7 +751,8 @@ namespace valuascript::compiler
         }
         catch (const ParseSyncException&)
         {
-            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
+            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBracket))
+                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
             return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
         }
     }
@@ -901,6 +829,13 @@ namespace valuascript::compiler
         elements.reserve(items_gen.size());
         for (auto& g : items_gen) elements.push_back({.modifiers = std::move(g.modifiers), .key = std::string(g.name.lexeme), .value = std::move(g.value)});
 
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBrace) ||
+            (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type)))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBraceInDictionaryLiteral);
+            return AstFactory::make_node<DictLiteral>(cursor, start, std::move(elements));
+        }
+
         if (cursor.check(TokenType::RightBrace))
         {
             const Token& end = cursor.advance();
@@ -910,7 +845,8 @@ namespace valuascript::compiler
         cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBraceInDictionaryLiteral);
         if (!cursor.check(TokenType::Comma) && !is_at_parent_boundary(0))
         {
-            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
+            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBrace))
+                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
         }
         return AstFactory::make_node<DictLiteral>(cursor, start, std::move(elements));
     }
@@ -1013,11 +949,14 @@ namespace valuascript::compiler
 
         cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeSwitchBody);
         CloserTracker tracker(ctx, TokenType::RightBrace);
+        size_t prev_baseline = ctx.expr_closers_baseline;
+        ctx.expr_closers_baseline = ctx.active_closers.size();
 
         std::vector<SwitchCase> cases;
         std::vector<Modifier> default_mods;
         ExprPtr default_case = nullptr;
         parse_switch_body(cases, default_mods, default_case);
+        ctx.expr_closers_baseline = prev_baseline;
 
         try
         {
@@ -1097,7 +1036,10 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_switch_result()
     {
         cursor.consume(TokenType::Arrow, E::ExpectedRightArrowAfterSwitchCaseIdentifier);
+        size_t prev_baseline = ctx.expr_closers_baseline;
+        ctx.expr_closers_baseline = ctx.active_closers.size();
         auto expr = parse_expression();
+        ctx.expr_closers_baseline = prev_baseline;
 
         bool should_break_out = ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || cursor.peek().
             type == TokenType::Return ||

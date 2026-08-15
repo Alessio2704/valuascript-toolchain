@@ -133,7 +133,8 @@ namespace valuascript::compiler::test
                 .source_code = "let obj = { @test(a: 1 key: 1 }\nlet recovery = 1\n",
                 .expected_errors = {
                     {.code = Err::MissingCommaSeparatorForArgumentsInModifier, .line = 1, .column = 24},
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 29}
+                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 29},
+                    {.code = Err::ExpectedDictionaryKey, .line = 1, .column = 31}
                 },
                 .verify_ast = [](const Program& ast) {
                     auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
@@ -146,11 +147,11 @@ namespace valuascript::compiler::test
                 .source_code = "func f(@test(a: 1 p: int) -> void {}\nlet recovery = 1\n",
                 .expected_errors = {
                     {.code = Err::MissingCommaSeparatorForArgumentsInModifier, .line = 1, .column = 19},
-                    {.code = Err::MissingParameterName, .line = 1, .column = 27},
-                    {.code = Err::ExpectedRightParenAfterParameters, .line = 1, .column = 36}
+                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 24},
+                    {.code = Err::MissingParameterName, .line = 1, .column = 25}
                 },
                 .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.function_definitions.size(), 0);
+                    ASSERT_EQ(ast.function_definitions.size(), 1);
 
                     ASSERT_EQ(ast.execution_steps.size(), 1);
                     auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());

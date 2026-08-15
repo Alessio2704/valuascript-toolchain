@@ -122,27 +122,38 @@ namespace valuascript::compiler
                                     .parse_elements([&]() { return parse_generic_parameter(arg_spec); });
 
                     for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
-
-                    try { cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisAfterModifierArgs); }
-                    catch (const ParseSyncException&)
+ 
+                    if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+                        (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
                     {
-                        ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
+                        cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisAfterModifierArgs);
                         modifiers.push_back(Modifier{
-                            .name = std::string(name_token.lexeme),
-                            .arguments = std::move(arguments),
+                            .name = std::string(name_token.lexeme), .arguments = std::move(arguments),
                             .span = cursor.make_span(start_token, cursor.previous())
                         });
-                        if (ctx.is_active_closer(cursor.peek().type) && cursor.peek().type != TokenType::RightParen)
-                            throw ParseSyncException();
-                        continue;
+                    }
+                    else
+                    {
+                        try { cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisAfterModifierArgs); }
+                        catch (const ParseSyncException&)
+                        {
+                            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
+                                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
+                        }
+                        modifiers.push_back(Modifier{
+                            .name = std::string(name_token.lexeme), .arguments = std::move(arguments),
+                            .span = cursor.make_span(start_token, cursor.previous())
+                        });
                     }
                 }
-
-                modifiers.push_back(Modifier{
-                    .name = std::string(name_token.lexeme),
-                    .arguments = std::move(arguments),
-                    .span = cursor.make_span(start_token, cursor.previous())
-                });
+                else
+                {
+                    modifiers.push_back(Modifier{
+                        .name = std::string(name_token.lexeme),
+                        .arguments = std::move(arguments),
+                        .span = cursor.make_span(start_token, cursor.previous())
+                    });
+                }
             }
             catch (const ParseSyncException&)
             {
@@ -379,16 +390,24 @@ namespace valuascript::compiler
             }
         }
 
-        try
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+            (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
         {
-            cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterParameters);
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterParameters);
         }
-        catch (const ParseSyncException&)
+        else
         {
-            TokenType peek = cursor.peek().type;
-            if (peek != TokenType::Arrow && peek != TokenType::LeftBrace && peek != TokenType::EndOfFile)
+            try
             {
-                throw;
+                cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterParameters);
+            }
+            catch (const ParseSyncException&)
+            {
+                TokenType peek = cursor.peek().type;
+                if (peek != TokenType::Arrow && peek != TokenType::LeftBrace && peek != TokenType::EndOfFile)
+                {
+                    throw;
+                }
             }
         }
 
