@@ -182,9 +182,25 @@ namespace valuascript::compiler
             TypeAnnPtr type_annotation = nullptr;
             if (cursor.match(TokenType::Colon))
             {
+                auto is_at_parent_boundary = [this](size_t offset = 0)
+                {
+                    const Token& tok = cursor.peek(offset);
+                    if (tok.type == TokenType::Comma)
+                    {
+                        const Token& after_comma = cursor.peek(offset + 1);
+                        const TokenType after_comma_next = cursor.peek(offset + 2).type;
+                        if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) &&
+                            after_comma_next == TokenType::Colon)
+                        {
+                            return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen);
+                        }
+                    }
+                    return false;
+                };
+
                 type_annotation = ErrorRecovery::try_parse<TypeAnnPtr>(
                     ctx,
-                    [&]() { return parser.parse_type_annotation(); },
+                    [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }

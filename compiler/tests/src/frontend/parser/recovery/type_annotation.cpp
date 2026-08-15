@@ -428,27 +428,8 @@ namespace valuascript::compiler::test
                     ContextNames::TypeTupleTypeSingle,
                     ContextNames::TypeGenericTypeStart,
                     ContextNames::TypeGenericTypeMiddle,
-                    ContextNames::TypeGenericTypeEnd,
-                    ContextNames::TypeGenericTypeSingle,
-                    ContextNames::TypeFunctionParamStart,
-                    ContextNames::TypeFunctionParamMiddle,
-                    ContextNames::TypeFunctionParamEnd,
-                    ContextNames::TypeFunctionReturnStart,
-                    ContextNames::TypeFunctionReturnMiddle,
-                    ContextNames::TypeFunctionReturnEnd
                 },
                 .context_overrides = {
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeEnd,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 13,
-                                .line_end = 1, .column_end = 14
-                            }
-                        },
-                        .verifier = IsTupleType(IsType("int"), IsType("string"),
-                                                IsTupleType(IsType("int"), IsType("string")))
-                    },
                     ContextOverride<TypeVerifier>{
                         .context_name = ContextNames::TypeMultiAssignmentTarget1,
                         .errors = std::vector<ParserExpectedError>{
@@ -469,69 +450,32 @@ namespace valuascript::compiler::test
                         .context_name = ContextNames::TypeFunctionReturnStart,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17,
-                                .line_end = 1, .column_end = 18
+                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 25,
+                                .line_end = 1, .column_end = 26
                             }
                         },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
+                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_ret", {}, {},
                                                                       {
                                                                           IsTupleType(
                                                                               IsType("int"), IsType("string"),
-                                                                              IsType("int"))
+                                                                              IsType("int"), IsType("string"))
                                                                       }))
                     },
                     ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 17,
-                                .line_end = 1, .column_end = 18
-                            }
-                        },
-                        .verifier = IsTupleType(IsTupleType(IsType("int"), IsType("string"), IsType("int")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeTupleTypeMiddle,
+                        .context_name = ContextNames::TypeFunctionReturnMiddle,
                         .errors = std::vector<ParserExpectedError>{
                             PErr{
                                 .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 20,
                                 .line_end = 1, .column_end = 21
                             }
                         },
-                        .verifier = IsTupleType(IsType("int"),
-                                                IsTupleType(IsType("int"), IsType("string"), IsType("string")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 18,
-                                .line_end = 1, .column_end = 19
-                            }
-                        },
-                        .verifier = IsType("vector", IsTupleType(IsType("int"), IsType("string"), IsType("int")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeMiddle,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 18,
-                                .line_end = 1, .column_end = 19
-                            }
-                        },
-                        .verifier = IsType("vector", IsType("int"),
-                                           IsTupleType(IsType("int"), IsType("string"), IsType("string")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeGenericTypeEnd,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 14,
-                                .line_end = 1, .column_end = 15
-                            }
-                        },
-                        .verifier = IsType("vector", IsType("string"), IsType("string"),
-                                           IsTupleType(IsType("int"), IsType("string")))
+                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_ret", {}, {},
+                                                                      {
+                                                                          IsType("int"),
+                                                                          IsTupleType(
+                                                                              IsType("int"), IsType("string"),
+                                                                              IsType("string"))
+                                                                      }))
                     }
                 },
                 .accepted_sentinels = SentinelKinds::all()
@@ -544,11 +488,7 @@ namespace valuascript::compiler::test
                     PErr{
                         .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 19, .line_end = 1,
                         .column_end = 20
-                    },
-                    PErr{
-                        .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 20, .line_end = 1,
-                        .column_end = 21
-                    },
+                    }
                 },
                 .verifier = IsType("vector", IsTupleType(IsType("int"), IsType("string"))),
                 .skip_contexts = {
@@ -563,47 +503,6 @@ namespace valuascript::compiler::test
                     ContextNames::TypeFunctionReturnStart,
                     ContextNames::TypeFunctionReturnMiddle,
                     ContextNames::TypeFunctionReturnEnd
-                },
-                .context_overrides = {
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeMultiAssignmentTarget1,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 19,
-                                .line_end = 1, .column_end = 20
-                            },
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 28,
-                                .line_end = 1, .column_end = 29
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsAssignment(
-                            {
-                                AssignmentTargetSpec{
-                                    .name = "ctx_m1",
-                                    .type_v = IsType("vector", IsTupleType(IsType("int"), IsType("string")),
-                                                     IsType("ctx_m2"))
-                                }
-                            }, IsNumber("1")))
-                    },
-                    ContextOverride<TypeVerifier>{
-                        .context_name = ContextNames::TypeFunctionReturnStart,
-                        .errors = std::vector<ParserExpectedError>{
-                            PErr{
-                                .code = E::UnmatchedParenthesisInTuple, .line_start = 1, .column_start = 19,
-                                .line_end = 1, .column_end = 20
-                            },
-                            PErr{
-                                .code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 25,
-                                .line_end = 1, .column_end = 26
-                            }
-                        },
-                        .verifier = OneOf<TypeVerifier>(IsFunctionDef("ctx_func_multi_ret", {}, {},
-                                                                      {
-                                                                          IsType("vector", IsTupleType(IsType("int"),
-                                                                              IsType("string")), IsType("int"))
-                                                                      }))
-                    }
                 }
             });
 

@@ -76,6 +76,8 @@ namespace valuascript::compiler
 
         if (cursor.match(TokenType::Less))
         {
+            CloserTracker tracker(ctx, TokenType::Greater);
+
             generic_args = ListParser<TypeAnnPtr>(ctx)
                            .stop_at(TokenType::Greater)
                            .on_trailing_comma(E::TrailingCommaInGenericArgument)

@@ -211,6 +211,15 @@ namespace valuascript::compiler
         {
             const Token& tok = cursor.peek(offset);
             const TokenType next = cursor.peek(offset + 1).type;
+            if (tok.type == TokenType::Comma)
+            {
+                const Token& after_comma = cursor.peek(offset + 1);
+                const TokenType after_comma_next = cursor.peek(offset + 2).type;
+                if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
+                {
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightBrace);
+                }
+            }
             return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
                 TokenType::Colon;
         };
@@ -354,6 +363,15 @@ namespace valuascript::compiler
         {
             const Token& tok = cursor.peek(offset);
             const TokenType next = cursor.peek(offset + 1).type;
+            if (tok.type == TokenType::Comma)
+            {
+                const Token& after_comma = cursor.peek(offset + 1);
+                const TokenType after_comma_next = cursor.peek(offset + 2).type;
+                if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
+                {
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, TokenType::RightParen);
+                }
+            }
             return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
                 TokenType::Colon;
         };

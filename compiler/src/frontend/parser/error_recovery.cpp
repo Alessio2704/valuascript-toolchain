@@ -187,27 +187,45 @@ namespace valuascript::compiler
         return false;
     }
 
-    bool ErrorRecovery::is_unclosed_before_parent_boundary(ParserContext& ctx)
+    namespace
+    {
+        TokenType get_matching_opener(TokenType closer)
+        {
+            switch (closer)
+            {
+                case TokenType::RightParen: return TokenType::LeftParen;
+                case TokenType::RightBracket: return TokenType::LeftBracket;
+                case TokenType::RightBrace: return TokenType::LeftBrace;
+                case TokenType::Greater: return TokenType::Less;
+                default: return TokenType::EndOfFile;
+            }
+        }
+    }
+
+    bool ErrorRecovery::is_unclosed_before_parent_boundary(ParserContext& ctx, TokenType closer_type)
     {
         size_t start_idx = 0;
         for (size_t i = ctx.active_closers.size(); i > 0; --i)
         {
-            if (ctx.active_closers[i - 1] != TokenType::RightParen)
+            if (ctx.active_closers[i - 1] != closer_type)
             {
                 start_idx = i;
                 break;
             }
         }
 
-        size_t active_paren_count = 0;
+        size_t active_closer_count = 0;
         for (size_t i = start_idx; i < ctx.active_closers.size(); ++i)
         {
-            if (ctx.active_closers[i] == TokenType::RightParen)
-                active_paren_count++;
+            if (ctx.active_closers[i] == closer_type)
+                active_closer_count++;
         }
 
-        size_t available_parens = 0;
-        size_t paren_nesting = 0;
+        if (active_closer_count == 0) return false;
+
+        TokenType opener_type = get_matching_opener(closer_type);
+        size_t available_closers = 0;
+        size_t nesting = 0;
         size_t offset = 0;
         while (true)
         {
@@ -215,22 +233,20 @@ namespace valuascript::compiler
             if (tok.type == TokenType::EndOfFile)
                 break;
 
-            if (tok.type == TokenType::LeftParen)
+            if (opener_type != TokenType::EndOfFile && tok.type == opener_type)
             {
-                paren_nesting++;
+                nesting++;
             }
-            else if (tok.type == TokenType::RightParen)
+            else if (tok.type == closer_type)
             {
-                if (paren_nesting > 0)
-                    paren_nesting--;
+                if (nesting > 0)
+                    nesting--;
                 else
-                    available_parens++;
+                    available_closers++;
             }
-            else if (paren_nesting == 0)
+            else if (nesting == 0)
             {
-                if (tok.type == TokenType::RightBrace && ctx.is_active_closer(TokenType::RightBrace))
-                    break;
-                if (tok.type == TokenType::RightBracket && ctx.is_active_closer(TokenType::RightBracket))
+                if (tok.type != closer_type && ctx.is_active_closer(tok.type))
                     break;
                 if (tok.line > ctx.cursor.peek().line && (TokenTraits::is_statement_start(tok, ctx.cursor.peek(offset + 1).type) || ctx.is_at_any_declaration() || ctx.looks_like_reassignment()))
                     break;
@@ -238,6 +254,6 @@ namespace valuascript::compiler
             offset++;
         }
 
-        return available_parens < active_paren_count;
+        return available_closers < active_closer_count;
     }
 }
