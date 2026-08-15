@@ -1,5 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
-#include "frontend/parser/helpers/context_names.h"
+#include "frontend/parser/helpers/context_names_helpers.h"
 
 namespace valuascript::compiler::test
 {
@@ -187,6 +187,27 @@ namespace valuascript::compiler::test
                     IsNull(),
                     SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}
                 )
+            });
+
+            reg({
+                .name = "SwitchMissingClosingBrace",
+                .code = "switch (v) { case A -> 1 ",
+                .errors = {
+                    PErr{.code = E::ExpectedRightBraceAfterSwitchBody, .line_start = 1, .column_start = 24, .line_end = 1, .column_end = 25}
+                },
+                .verifier = IsSwitch(IsIdentifier("v"), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}),
+                .skip_contexts = ContextNames::all_nested_expressions(),
+                .context_overrides = {
+                    ContextOverride<ExprVerifier>{
+                        .context_name = ContextNames::ExprEnumCase,
+                        .errors = std::vector<ParserExpectedError>{
+                            PErr{.code = E::ExpectedRightBraceAfterEnumBody, .line_start = 1, .column_start = 27, .line_end = 1, .column_end = 28}
+                        },
+                        .verifier = IsSwitch(IsIdentifier("v"), SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}),
+                        .skip_after_depth_0 = true
+                    }
+                },
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             return true;

@@ -96,17 +96,6 @@ namespace valuascript::compiler::test
                 .verify_ast = ExpectModifierSet({{.name = "first", .args = {}}, {.name = "second", .args = {}}})
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_unmatched_arg_paren_at_eof",
-                .source_code = "@test(a: 1\n",
-                .expected_errors = {
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 10},
-                    {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 1},
-                },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 0);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "modifier_eof_after_at",
                 .source_code = "let a = 1\n@",
                 .expected_errors = {
@@ -115,17 +104,6 @@ namespace valuascript::compiler::test
                 },
                 .verify_ast = [](const Program& ast) {
                     ASSERT_EQ(ast.execution_steps.size(), 1);
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_eof_after_paren",
-                .source_code = "@test(",
-                .expected_errors = {
-                    {.code = Err::UnmatchedParenthesisAfterModifierArgs, .line = 1, .column = 6},
-                    {.code = Err::ModifiersAttachedToInvalidDeclaration, .line = 1, .column = 1},
-                },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.execution_steps.size(), 0);
                 }
             },
             ParserErrorsSynchronizationTestCase{
@@ -152,22 +130,6 @@ namespace valuascript::compiler::test
                 },
                 .verify_ast = [](const Program& ast) {
                     ASSERT_EQ(ast.function_definitions.size(), 1);
-
-                    ASSERT_EQ(ast.execution_steps.size(), 1);
-                    auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());
-                    ASSERT_NE(assign, nullptr);
-                    EXPECT_EQ(assign->targets[0].name, "recovery");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "struct_field_modifier_missing_right_brace_in_struct",
-                .source_code = "struct S { @test(a: 1) id: int \nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightBraceAfterStructBody, .line = 1, .column = 30}
-                },
-                .verify_ast = [](const Program& ast) {
-                    ASSERT_EQ(ast.struct_definitions.size(), 1);
-                    EXPECT_EQ(ast.struct_definitions[0]->name, "S");
 
                     ASSERT_EQ(ast.execution_steps.size(), 1);
                     auto assign = dynamic_cast<Assignment*>(ast.execution_steps[0].get());

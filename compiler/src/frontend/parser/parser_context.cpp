@@ -225,7 +225,8 @@ namespace valuascript::compiler
 
     bool ParserContext::is_missing_closing_brace() const
     {
-        int depth = 1;
+        int active_braces = static_cast<int>(std::count(active_closers.begin(), active_closers.end(), TokenType::RightBrace));
+        int depth = active_braces > 0 ? active_braces : 1;
         size_t offset = 0;
         while (true)
         {

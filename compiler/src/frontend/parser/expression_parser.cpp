@@ -964,6 +964,14 @@ namespace valuascript::compiler
         parse_switch_body(cases, default_mods, default_case);
         ctx.expr_closers_baseline = prev_baseline;
 
+        if (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightBraceAfterSwitchBody);
+            return AstFactory::make_node<SwitchExpression>(cursor, start, std::move(target),
+                                                           std::move(cases), std::move(default_mods),
+                                                           std::move(default_case));
+        }
+
         try
         {
             const Token& end = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterSwitchBody);
@@ -1047,11 +1055,10 @@ namespace valuascript::compiler
         auto expr = parse_expression();
         ctx.expr_closers_baseline = prev_baseline;
 
-        bool should_break_out = ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || cursor.peek().
-            type == TokenType::Return ||
-            (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) || (cursor.peek().line > cursor.
-                previous().line &&
-                TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)));
+        bool should_break_out = (cursor.peek().type != TokenType::RightBrace && ctx.is_active_closer(cursor.peek().type)) ||
+            (ctx.is_missing_closing_brace() && (ctx.is_at_any_declaration() || cursor.peek().type == TokenType::Return ||
+            (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
+            (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type))));
 
         if (!should_break_out && !cursor.check(TokenType::Case) && !cursor.check(TokenType::Default) && !cursor.
             check(TokenType::RightBrace) && !cursor.is_at_end())
@@ -1110,11 +1117,10 @@ namespace valuascript::compiler
         SyncSetTracker tracker(ctx, {TokenType::Case, TokenType::Default});
         while (!cursor.check(TokenType::RightBrace) && !cursor.is_at_end())
         {
-            bool should_break_out = ctx.is_missing_closing_brace() && (ctx.is_at_top_level_declaration() || cursor.
-                peek().type == TokenType::Return ||
-                (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) || (cursor.peek().line > cursor.
-                    previous().line &&
-                    TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)));
+            bool should_break_out = (cursor.peek().type != TokenType::RightBrace && ctx.is_active_closer(cursor.peek().type)) ||
+                (ctx.is_missing_closing_brace() && (ctx.is_at_any_declaration() || cursor.peek().type == TokenType::Return ||
+                (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
+                (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type))));
             if (should_break_out) break;
 
             RecoveryConfig conf{

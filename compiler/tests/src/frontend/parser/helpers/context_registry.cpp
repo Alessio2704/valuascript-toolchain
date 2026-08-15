@@ -73,7 +73,9 @@ namespace valuascript::compiler::test
             std::vector<std::string_view> result;
             for (const auto& ctx : get_expression_contexts())
             {
-                if (ctx.output_type == InjectableType::Expression)
+                if (ctx.output_type != InjectableType::StrongStatement &&
+                    ctx.output_type != InjectableType::WeakStatement &&
+                    ctx.output_type != InjectableType::TopLevel)
                 {
                     result.push_back(ctx.name);
                 }

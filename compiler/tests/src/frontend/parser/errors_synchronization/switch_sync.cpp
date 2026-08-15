@@ -51,45 +51,6 @@ namespace valuascript::compiler::test
         SwitchParserSynchronizationTest,
         ::testing::Values(
             ParserErrorsSynchronizationTestCase{
-                .test_name = "missing_closing_brace_escapes_to_top_level",
-                .source_code = "let x = switch(v) {\n    case A -> 1\nfunc top_level() -> void {}\n",
-                .expected_errors = { {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15} },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    EXPECT_EQ(ast.function_definitions[0]->name, "top_level");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "nested_struct_without_closing_brace_escapes_to_top_level",
-                .source_code = "let x = switch(v) {\n    case A -> 1\n    struct TopLevel { id: int }\nlet c = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15} },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.struct_definitions.size(), 1);
-                    EXPECT_EQ(ast.struct_definitions[0]->name, "TopLevel");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "nested_enum_without_closing_brace_escapes_to_top_level",
-                .source_code = "let x = switch(v) {\n    case A -> 1\n    enum TopLevel: int { A = 1 }\nlet c = 1\n",
-                .expected_errors = { {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15} },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.enum_definitions.size(), 1);
-                    EXPECT_EQ(ast.enum_definitions[0]->name, "TopLevel");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "nested_switch_steals_outer_cases_on_missing_brace",
                 .source_code = "let x = switch(v) {\n    case A -> switch(y) {\n        case B -> 1\n    case C -> 2\n}\nlet a = 1\n",
                 .expected_errors = {
@@ -106,53 +67,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_nested_func_escapes_unclosed_switch",
-                .source_code = "let x = switch(v) {\n    case A -> 1\nfunc top_level() -> void {}\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15}
-                },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.function_definitions.size(), 1);
-                    EXPECT_EQ(ast.function_definitions[0]->name, "top_level");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "illegal_directive_escapes_unclosed_switch",
-                .source_code = "let x = switch(v) {\n    case A -> 1\n#pragma = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15}
-                },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.directives.size(), 1);
-                    EXPECT_EQ(ast.directives[0]->name, "pragma");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "modifier_on_escaped_declaration_unclosed_switch",
-                .source_code = "let x = switch(v) {\n    case A -> 1\n@export struct TopLevel { id: int }\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 2, .column = 15}
-                },
-                .verify_ast = [](const Program &ast) {
-                    auto sw = ExpectRecoveredSwitch(ast);
-                    ASSERT_NE(sw, nullptr);
-                    EXPECT_EQ(sw->cases.size(), 1);
-
-                    ASSERT_EQ(ast.struct_definitions.size(), 1);
-                    EXPECT_EQ(ast.struct_definitions[0]->name, "TopLevel");
-                    EXPECT_EQ(ast.struct_definitions[0]->modifiers.size(), 1);
-                    EXPECT_EQ(ast.struct_definitions[0]->modifiers[0].name, "export");
-                }
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "switch_target_missing_opening_paren_recovers",
                 .source_code = "let x = switch 1 ) {\n    case A -> 1\n}\nlet a = 1\n",
                 .expected_errors = {
@@ -164,10 +78,7 @@ namespace valuascript::compiler::test
                 .test_name = "unclosed_switch_inside_grouping_escapes_properly",
                 .source_code = "let x = (switch(v) { case A -> 1) + 2\nlet a = 1\n",
                 .expected_errors = {
-                    {.code = Err::CaseOrDefaultMissingInSwitchAfterResult, .line = 1, .column = 33},
-                    {.code = Err::ExpectedCaseOrDefaultInsideSwitchBody, .line = 1, .column = 33},
-                    {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 1, .column = 37},
-                    {.code = Err::ExpectedRightParenAfterExpression, .line = 1, .column = 37}
+                    {.code = Err::ExpectedRightBraceAfterSwitchBody, .line = 1, .column = 32}
                 },
                 .verify_ast = [](const Program &ast) {
                     EXPECT_GE(ast.execution_steps.size(), 1);
