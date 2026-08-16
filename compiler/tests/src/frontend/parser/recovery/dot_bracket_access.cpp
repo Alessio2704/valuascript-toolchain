@@ -131,15 +131,8 @@ namespace valuascript::compiler::test
                     PErr{.code = E::ExpectedPropertyName, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}
                 },
                 .verifier = IsDot(IsIdentifier("obj"), "<error>"),
-                .context_overrides = {
-                    {
-                        .context_name = ContextNames::ExprSingleAssignment,
-                        .accepted_sentinels = SentinelKinds::all()
-                    }
-                },
-                .excluded_sentinels = {
-                    SentinelKind::ExprStmt
-                }
+                .excluded_sentinels = { SentinelKind::ExprStmt },
+                .accepted_sentinels = SentinelKinds::all(),
             });
 
             reg({
