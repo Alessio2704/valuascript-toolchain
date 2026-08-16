@@ -116,4 +116,25 @@ namespace valuascript::compiler::test::ContextNames
             ExprAsSliceTarget
         };
     }
+
+    inline std::vector<std::string_view> all_nested_swallowing_switch_contexts()
+    {
+        return {
+            ExprEnumCase,
+            ExprDictValueStart,
+            ExprDictValueMiddle,
+            ExprDictValueEnd,
+            ExprDictValueSingle,
+            ExprTupleStart,
+            ExprTupleMiddle,
+            ExprTensorStart,
+            ExprTensorMiddle,
+            ExprCallArgStart,
+            ExprCallArgMiddle,
+            ExprSwitchCaseStart,
+            ExprSwitchCaseMiddle,
+            ExprSwitchCaseEnd,
+            ExprSwitchCaseSingle
+        };
+    }
 }
