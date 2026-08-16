@@ -110,14 +110,6 @@ namespace valuascript::compiler::test
                 }
             },
             ParserErrorsSynchronizationTestCase{
-                .test_name = "missing_closing_parenthesis",
-                .source_code = "f(a: 1 \nlet recovery = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedRightParenAfterArguments, .line = 1, .column = 6}
-                },
-                .verify_ast = ExpectFunctionCall("f", {{.name = "a", .expected_number_value = "1"}})
-            },
-            ParserErrorsSynchronizationTestCase{
                 .test_name = "reserved_keyword_as_value",
                 .source_code = "f(a: 1, b: struct, c: 3)\nlet recovery = 1\n",
                 .expected_errors = { {.code = Err::ReservedKeywordAsIdentifier, .line = 1, .column = 12} },

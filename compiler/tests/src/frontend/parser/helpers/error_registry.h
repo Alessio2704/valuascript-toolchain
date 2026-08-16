@@ -85,7 +85,7 @@ namespace valuascript::compiler::test
             if (search_category(InjectableType::StrongStatement, assignments(), test_name, fn)) return true;
             if (search_category(InjectableType::StrongStatement, reassignments(), test_name, fn)) return true;
             if (search_category(InjectableType::WeakStatement, returns(), test_name, fn)) return true;
-            if (search_category(InjectableType::WeakStatement, expr_stmts(), test_name, fn)) return true;
+            if (search_category(InjectableType::StrongStatement, expr_stmts(), test_name, fn)) return true;
             if (search_category(InjectableType::Expression, expressions(), test_name, fn)) return true;
             if (search_category(InjectableType::Modifier, modifiers(), test_name, fn)) return true;
             if (search_category(InjectableType::TypeAnnotation, type_annotations(), test_name, fn)) return true;

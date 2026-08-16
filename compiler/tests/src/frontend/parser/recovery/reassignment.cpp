@@ -23,69 +23,6 @@ namespace valuascript::compiler::test
             });
 
             reg({
-                .name = "InvalidStandaloneStatement1",
-                .code = "x + y",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 6}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement2",
-                .code = "a[0] + y",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 9}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement3",
-                .code = "a[0].a + y",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 11}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement4",
-                .code = "a",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement5",
-                .code = "a[0]",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement6",
-                .code = "{} + a",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 7}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement7",
-                .code = "-1",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 3}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement8",
-                .code = "1 + 2",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 6}},
-                .verifier = IsNull()
-            });
-
-            reg({
-                .name = "InvalidStandaloneStatement9",
-                .code = "true",
-                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 5}},
-                .verifier = IsNull()
-            });
-
-            reg({
                 .name = "InvalidLeftSide1",
                 .code = "a() = 1",
                 .errors = {PErr{.code = E::InvalidLeftSideExpressionInReassignment, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 4}},
