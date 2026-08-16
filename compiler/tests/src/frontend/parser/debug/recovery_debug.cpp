@@ -35,7 +35,8 @@ namespace valuascript::compiler::test
             DumpTest{.name = "BracketSliceMissingClosingBracket"},
             DumpTest{.name = "SwitchMissingClosingBrace"},
             DumpTest{.name = "GroupingMissingClosingParen"},
-            DumpTest{.name = "ModifierMissingClosingParen"}
+            DumpTest{.name = "ModifierMissingClosingParen"},
+            DumpTest{.name = "DictMissingClosingBrace"}
         ),
         TestNameGenerator{}
     );

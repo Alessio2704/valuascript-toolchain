@@ -28,7 +28,7 @@ namespace valuascript::compiler
 
         if (cursor.match(TokenType::LeftParen))
         {
-            CloserTracker tracker(ctx, TokenType::RightParen);
+            CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::TypeTuple);
 
             auto elements = ListParser<TypeAnnPtr>(ctx)
                             .stop_at(TokenType::RightParen)
@@ -39,8 +39,8 @@ namespace valuascript::compiler
 
             Token end_token = cursor.previous();
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
-                (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)) ||
-                (is_at_parent_boundary && is_at_parent_boundary(0)))
+                (!cursor.check(TokenType::RightParen) &&
+                 (ctx.is_active_closer(cursor.peek().type) || (is_at_parent_boundary && is_at_parent_boundary(0)))))
             {
                 cursor.report_error_no_panic(cursor.previous(), E::UnmatchedParenthesisInTuple);
                 end_token = cursor.previous();
@@ -61,10 +61,15 @@ namespace valuascript::compiler
                                                                         std::move(elements));
         }
 
-        Token name_token;
         std::vector<TypeAnnPtr> generic_args;
+        Token name_token;
         bool missing_base_type = false;
-        if (cursor.check(TokenType::Less))
+
+        if (cursor.check(TokenType::Identifier))
+        {
+            name_token = cursor.advance();
+        }
+        else if (cursor.check(TokenType::Less))
         {
             missing_base_type = true;
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation);
@@ -77,7 +82,7 @@ namespace valuascript::compiler
 
         if (cursor.match(TokenType::Less))
         {
-            CloserTracker tracker(ctx, TokenType::Greater);
+            CloserTracker tracker(ctx, TokenType::Greater, ContainerKind::TypeGeneric);
 
             generic_args = ListParser<TypeAnnPtr>(ctx)
                            .stop_at(TokenType::Greater)
@@ -89,8 +94,8 @@ namespace valuascript::compiler
             if (generic_args.empty()) cursor.report_error_no_panic(cursor.peek(), E::EmptyGenericTypeAnnotation);
 
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::Greater) ||
-                (!cursor.check(TokenType::Greater) && ctx.is_active_closer(cursor.peek().type)) ||
-                (is_at_parent_boundary && is_at_parent_boundary(0)))
+                (!cursor.check(TokenType::Greater) &&
+                 (ctx.is_active_closer(cursor.peek().type) || (is_at_parent_boundary && is_at_parent_boundary(0)))))
             {
                 cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBracketAfterGenericArgs);
             }

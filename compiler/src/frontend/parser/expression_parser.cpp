@@ -418,7 +418,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_function_call(ExprPtr target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
-        CloserTracker tracker(ctx, TokenType::RightParen);
+        CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::CallArguments);
         std::vector<std::pair<std::string, ExprPtr>> arguments;
 
         try
@@ -499,7 +499,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_tensor_access(ExprPtr target, const Token& /*op*/)
     {
         const SourceSpan target_span = target->span;
-        CloserTracker tracker(ctx, TokenType::RightBracket);
+        CloserTracker tracker(ctx, TokenType::RightBracket, ContainerKind::BracketAccess);
         ExprPtr index_expr = nullptr;
         bool had_start_error = false;
 
@@ -626,7 +626,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_tuple_or_grouping()
     {
         const Token& start = cursor.advance();
-        CloserTracker tracker(ctx, TokenType::RightParen);
+        CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::TupleLiteral);
 
         if (cursor.match(TokenType::RightParen))
             return AstFactory::make_node<TupleLiteral>(
@@ -747,7 +747,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_tensor_literal()
     {
         const Token& start = cursor.advance();
-        CloserTracker tracker(ctx, TokenType::RightBracket);
+        CloserTracker tracker(ctx, TokenType::RightBracket, ContainerKind::TensorLiteral);
         auto elements = parse_expression_list(TokenType::RightBracket);
 
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBracket) ||
@@ -785,7 +785,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::parse_dict_literal()
     {
         const Token& start = cursor.advance();
-        CloserTracker tracker(ctx, TokenType::RightBrace);
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::DictionaryLiteral);
         KeyValueContainerGuard kv_guard(ctx);
 
         ParameterRuleSpec dict_spec{
@@ -858,7 +858,7 @@ namespace valuascript::compiler
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBrace) ||
             (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type)))
         {
-            cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBraceInDictionaryLiteral);
+            cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBraceInDictionaryLiteral);
             return AstFactory::make_node<DictLiteral>(cursor, start, std::move(elements));
         }
 
@@ -893,7 +893,7 @@ namespace valuascript::compiler
 
         ExprPtr condition = nullptr;
         {
-            CloserTracker condition_tracker(ctx, TokenType::Then);
+            CloserTracker condition_tracker(ctx, TokenType::Then, ContainerKind::IfCondition);
             condition = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
@@ -918,7 +918,7 @@ namespace valuascript::compiler
 
         if (!skip_then)
         {
-            CloserTracker then_tracker(ctx, TokenType::Else);
+            CloserTracker then_tracker(ctx, TokenType::Else, ContainerKind::ThenBranch);
             then_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
@@ -974,7 +974,7 @@ namespace valuascript::compiler
         auto target = parse_switch_target();
 
         cursor.consume(TokenType::LeftBrace, E::ExpectedLeftBraceBeforeSwitchBody);
-        CloserTracker tracker(ctx, TokenType::RightBrace);
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::SwitchBody);
         size_t prev_baseline = ctx.expr_closers_baseline;
         ctx.expr_closers_baseline = ctx.active_closers.size();
 
@@ -1106,13 +1106,7 @@ namespace valuascript::compiler
             ctx, [&]()
             {
                 cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterSwitch);
-                CloserTracker tracker(ctx, TokenType::RightParen);
-                ctx.switch_target_closer_indices.push_back(ctx.active_closers.size() - 1);
-                struct SwitchScopeGuard
-                {
-                    ParserContext& ctx;
-                    ~SwitchScopeGuard() { ctx.switch_target_closer_indices.pop_back(); }
-                } switch_guard{ctx};
+                CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::SwitchTarget);
                 auto t = parse_expression();
                 cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterSwitchTarget);
                 return t;

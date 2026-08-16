@@ -78,7 +78,7 @@ namespace valuascript::compiler
     struct CloserTracker
     {
         ParserContext& ctx;
-        CloserTracker(ParserContext& c, TokenType t);
+        CloserTracker(ParserContext& c, TokenType t, ContainerKind k = ContainerKind::Generic);
         ~CloserTracker();
     };
 

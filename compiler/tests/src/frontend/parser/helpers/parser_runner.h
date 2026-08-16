@@ -19,6 +19,7 @@ namespace valuascript::compiler::test
     {
     public:
         static std::string format_source_with_lines(const std::string& code);
+        static std::string format_affected_source_snippet(const std::string& code, const std::vector<size_t>& error_lines, int context_lines = 8);
         static std::shared_ptr<Program> run_parser(const std::string& code, CompilerContext& context);
 
         static void ExpectValidParse(const std::string& code, const ProgramSpec& spec);

@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <set>
 #include "frontend/lexer/lexer_stage.h"
 #include "frontend/parser/parser_stage.h"
 #include "error_shifter.h"
@@ -26,6 +27,58 @@ namespace valuascript::compiler::test
         return oss.str();
     }
 
+    std::string ParserRunner::format_affected_source_snippet(const std::string& code, const std::vector<size_t>& error_lines, int context_lines)
+    {
+        std::istringstream stream(code);
+        std::vector<std::string> lines;
+        std::string line;
+        while (std::getline(stream, line))
+        {
+            lines.push_back(line);
+        }
+
+        if (lines.size() <= 40)
+        {
+            return format_source_with_lines(code);
+        }
+
+        std::set<int> lines_to_show;
+        if (error_lines.empty())
+        {
+            for (size_t i = 1; i <= std::min<size_t>(lines.size(), 30); ++i)
+                lines_to_show.insert(static_cast<int>(i));
+        }
+        else
+        {
+            for (size_t err_line : error_lines)
+            {
+                int start = std::max(1, static_cast<int>(err_line) - context_lines);
+                int end = std::min(static_cast<int>(lines.size()), static_cast<int>(err_line) + context_lines);
+                for (int l = start; l <= end; ++l)
+                {
+                    lines_to_show.insert(l);
+                }
+            }
+        }
+
+        std::set<size_t> err_set(error_lines.begin(), error_lines.end());
+        std::ostringstream oss;
+        oss << "\n--- Affected Source Code Snippet ---\n";
+        int prev_line = 0;
+        for (int l : lines_to_show)
+        {
+            if (prev_line != 0 && l > prev_line + 1)
+            {
+                oss << "...\n";
+            }
+            prev_line = l;
+            bool is_err = err_set.count(static_cast<size_t>(l)) > 0;
+            oss << (is_err ? ">>> " : "    ") << std::setw(3) << l << " | " << lines[static_cast<size_t>(l - 1)] << "\n";
+        }
+        oss << "------------------------------------\n";
+        return oss.str();
+    }
+
     std::shared_ptr<Program> ParserRunner::run_parser(const std::string& code, CompilerContext& context)
     {
         thread_local LexerStage lexer;
@@ -44,7 +97,6 @@ namespace valuascript::compiler::test
 
     void ParserRunner::ExpectValidParse(const std::string& code, const ProgramSpec& spec)
     {
-        SCOPED_TRACE(format_source_with_lines(code));
         CompilerContext context;
         context.settings.fail_fast = false;
         std::shared_ptr<Program> ast = run_parser(code, context);
@@ -52,6 +104,12 @@ namespace valuascript::compiler::test
         const auto& errors = context.diagnostics.get_errors();
         if (!errors.empty())
         {
+            std::vector<size_t> error_lines;
+            for (const auto& err : errors)
+            {
+                error_lines.push_back(err.get_span().line_start);
+            }
+            SCOPED_TRACE(format_affected_source_snippet(code, error_lines, 8));
             ADD_FAILURE() << "Expected no errors, but got " << errors.size() << ". First: " << errors[0].what();
         }
 

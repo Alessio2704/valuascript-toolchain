@@ -7,11 +7,42 @@
 
 namespace valuascript::compiler
 {
+    enum class ContainerKind
+    {
+        Generic,
+        Block,
+        FunctionParameters,
+        CallArguments,
+        ModifierArguments,
+        DictionaryLiteral,
+        TensorLiteral,
+        TupleLiteral,
+        BracketAccess,
+        SwitchBody,
+        SwitchTarget,
+        IfCondition,
+        ThenBranch,
+        TypeTuple,
+        TypeGeneric,
+        EnumBody,
+        StructBody
+    };
+
+    struct CloserFrame
+    {
+        TokenType type;
+        ContainerKind kind = ContainerKind::Generic;
+
+        bool operator==(TokenType t) const { return type == t; }
+        bool operator!=(TokenType t) const { return type != t; }
+        operator TokenType() const { return type; }
+    };
+
     class ParserContext
     {
     public:
         TokenCursor cursor;
-        std::vector<TokenType> active_closers;
+        std::vector<CloserFrame> active_closers;
         std::vector<TokenType> sync_set;
         std::function<void()> on_unexpected_statement;
         bool is_consuming_unexpected = false;
@@ -22,8 +53,6 @@ namespace valuascript::compiler
         size_t expr_depth = 0;
         size_t expr_closers_baseline = 0;
         size_t key_value_container_depth = 0;
-        std::vector<size_t> parameter_list_closer_indices;
-        std::vector<size_t> switch_target_closer_indices;
 
         explicit ParserContext(TokenCursor c);
 

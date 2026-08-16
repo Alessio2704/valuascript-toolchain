@@ -2,14 +2,15 @@
 
 namespace valuascript::compiler
 {
-    CloserTracker::CloserTracker(ParserContext& c, TokenType t) : ctx(c)
+    CloserTracker::CloserTracker(ParserContext& c, TokenType t, ContainerKind k) : ctx(c)
     {
-        ctx.active_closers.push_back(t);
+        ctx.active_closers.push_back(CloserFrame{.type = t, .kind = k});
     }
 
     CloserTracker::~CloserTracker()
     {
-        ctx.active_closers.pop_back();
+        if (!ctx.active_closers.empty())
+            ctx.active_closers.pop_back();
     }
 
     SyncSetTracker::SyncSetTracker(ParserContext& c, const std::vector<TokenType>& tokens) : ctx(c)
@@ -140,6 +141,87 @@ namespace valuascript::compiler
         const Token& after_boundary = ctx.cursor.peek(available_closers + 1);
         const Token& last_closer = ctx.cursor.peek(available_closers - 1);
 
+        bool in_param_or_dict = false;
+        bool has_switch_target = false;
+        size_t switch_target_idx = 0;
+        bool has_switch_body = false;
+        size_t switch_body_idx = 0;
+        size_t sibling_container_idx = 0;
+        bool has_sibling_container = false;
+        for (size_t i = ctx.active_closers.size(); i > 0; --i)
+        {
+            auto kind = ctx.active_closers[i - 1].kind;
+            if (kind == ContainerKind::FunctionParameters ||
+                kind == ContainerKind::DictionaryLiteral)
+                in_param_or_dict = true;
+            if (!has_switch_target && kind == ContainerKind::SwitchTarget)
+            {
+                has_switch_target = true;
+                switch_target_idx = i - 1;
+            }
+            if (!has_switch_body && kind == ContainerKind::SwitchBody)
+            {
+                has_switch_body = true;
+                switch_body_idx = i - 1;
+            }
+            if (!has_sibling_container &&
+                (kind == ContainerKind::CallArguments ||
+                 kind == ContainerKind::ModifierArguments ||
+                 kind == ContainerKind::FunctionParameters ||
+                 kind == ContainerKind::DictionaryLiteral))
+            {
+                has_sibling_container = true;
+                sibling_container_idx = i - 1;
+            }
+        }
+
+        auto scan_past_modifiers = [&](size_t offset) -> size_t
+        {
+            size_t mod_offset = offset;
+            while (ctx.cursor.peek(mod_offset).type == TokenType::At)
+            {
+                mod_offset++;
+                if (ctx.cursor.peek(mod_offset).type == TokenType::EndOfFile) break;
+                mod_offset++;
+                if (ctx.cursor.peek(mod_offset).type == TokenType::LeftParen)
+                {
+                    int paren_depth = 1;
+                    mod_offset++;
+                    while (paren_depth > 0 && ctx.cursor.peek(mod_offset).type != TokenType::EndOfFile)
+                    {
+                        if (ctx.cursor.peek(mod_offset).type == TokenType::LeftParen) paren_depth++;
+                        else if (ctx.cursor.peek(mod_offset).type == TokenType::RightParen) paren_depth--;
+                        mod_offset++;
+                    }
+                }
+            }
+            return mod_offset;
+        };
+
+        size_t after_sibling_offset = available_closers + 1;
+        if (boundary.type == TokenType::Comma && after_boundary.type == TokenType::At)
+        {
+            after_sibling_offset = scan_past_modifiers(available_closers + 1);
+        }
+        TokenType after_mods_type = ctx.cursor.peek(after_sibling_offset).type;
+        TokenType after_mods_next_type = ctx.cursor.peek(after_sibling_offset + 1).type;
+
+        bool is_sibling_boundary =
+            boundary.type == TokenType::Comma &&
+            (after_mods_type == TokenType::Identifier || TokenTraits::acts_like_identifier(ctx.cursor.peek(after_sibling_offset), after_mods_next_type)) &&
+            (after_mods_next_type == TokenType::Assign || after_mods_next_type == TokenType::Colon);
+
+        bool is_switch_case_modifier = false;
+        if (has_switch_body && boundary.type == TokenType::At)
+        {
+            size_t past_mod = scan_past_modifiers(available_closers);
+            TokenType past_type = ctx.cursor.peek(past_mod).type;
+            if (past_type == TokenType::Case || past_type == TokenType::Default)
+            {
+                is_switch_case_modifier = true;
+            }
+        }
+
         bool is_stmt_boundary =
             boundary.type == TokenType::Arrow ||
             boundary.type == TokenType::Assign ||
@@ -148,35 +230,53 @@ namespace valuascript::compiler
             boundary.type == TokenType::Default ||
             boundary.type == TokenType::Return ||
             boundary.type == TokenType::EndOfFile ||
-            TokenTraits::is_statement_start(boundary, after_boundary.type) ||
-            (boundary.type == TokenType::Identifier && (after_boundary.type == TokenType::Assign || after_boundary.type == TokenType::Colon)) ||
-            (boundary.type == TokenType::Comma && after_boundary.type == TokenType::Identifier &&
-             (ctx.cursor.peek(available_closers + 2).type == TokenType::Assign ||
-              (ctx.key_value_container_depth == 0 && ctx.cursor.peek(available_closers + 2).type == TokenType::Colon))) ||
+            (boundary.type != TokenType::At && TokenTraits::is_statement_start(boundary, after_boundary.type)) ||
+            (boundary.type == TokenType::At && !in_param_or_dict && TokenTraits::is_statement_start(boundary, after_boundary.type)) ||
+            (boundary.type == TokenType::Identifier && after_boundary.type == TokenType::Assign) ||
             TokenTraits::is_newline_statement_boundary(last_closer, boundary, after_boundary.type, closer_type == TokenType::Greater);
 
         bool is_switch_brace = boundary.type == TokenType::LeftBrace &&
-                               !ctx.switch_target_closer_indices.empty() &&
+                               has_switch_target &&
                                (after_boundary.type == TokenType::Case ||
                                 after_boundary.type == TokenType::Default ||
                                 after_boundary.type == TokenType::At);
 
+        bool is_target_boundary =
+            (closer_type == TokenType::RightParen &&
+             boundary.type == TokenType::Identifier &&
+             after_boundary.type == TokenType::Colon);
+
         size_t min_idx = ctx.expr_closers_baseline;
-        if (is_stmt_boundary && closer_type == TokenType::RightParen)
+        if (is_sibling_boundary && has_sibling_container)
+            min_idx = sibling_container_idx + 1;
+        else if (has_switch_body && (boundary.type == TokenType::Case || boundary.type == TokenType::Default || is_switch_case_modifier))
+            min_idx = switch_body_idx + 1;
+        else if (boundary.type == TokenType::Arrow || boundary.type == TokenType::EndOfFile || is_stmt_boundary)
+            min_idx = 0;
+        else if (is_target_boundary)
             min_idx = 0;
         else if (is_switch_brace)
-            min_idx = ctx.switch_target_closer_indices.back();
+            min_idx = switch_target_idx;
 
         size_t active_closers = 0;
         for (size_t i = ctx.active_closers.size(); i > min_idx; --i)
         {
             size_t idx = i - 1;
-            TokenType closer = ctx.active_closers[idx];
-            if (closer != closer_type)
+            const CloserFrame& frame = ctx.active_closers[idx];
+            if (frame.type != closer_type)
                 break;
-            if (closer_type == TokenType::RightParen && boundary.type != TokenType::Arrow &&
-                std::find(ctx.parameter_list_closer_indices.begin(), ctx.parameter_list_closer_indices.end(), idx) != ctx.parameter_list_closer_indices.end())
-                continue;
+            if (closer_type == TokenType::RightParen)
+            {
+                if (frame.kind == ContainerKind::FunctionParameters &&
+                    !(boundary.type == TokenType::Arrow ||
+                      (boundary.type == TokenType::LeftBrace && ctx.expr_depth == 0 && ctx.key_value_container_depth == 0)))
+                    continue;
+            }
+            if (closer_type == TokenType::RightBrace)
+            {
+                if (frame.kind == ContainerKind::Block && is_stmt_boundary && boundary.type != TokenType::EndOfFile)
+                    continue;
+            }
             active_closers++;
         }
 
@@ -184,7 +284,9 @@ namespace valuascript::compiler
         {
             if (available_closers < active_closers)
             {
-                if (is_stmt_boundary || is_switch_brace || ctx.is_active_closer(boundary.type))
+                if (is_stmt_boundary || is_sibling_boundary || is_target_boundary || is_switch_brace ||
+                    (closer_type == TokenType::RightBrace && boundary.type == TokenType::Comma) ||
+                    ctx.is_active_closer(boundary.type))
                     return true;
             }
         }

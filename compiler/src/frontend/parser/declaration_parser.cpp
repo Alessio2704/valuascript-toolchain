@@ -101,7 +101,7 @@ namespace valuascript::compiler
 
                 if (cursor.match(TokenType::LeftParen))
                 {
-                    CloserTracker tracker(ctx, TokenType::RightParen);
+                    CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::ModifierArguments);
                     KeyValueContainerGuard kv_guard(ctx);
                     ParameterRuleSpec arg_spec{
                         .allow_value = true, .require_value = true, .value_separator = TokenType::Colon,
@@ -128,12 +128,13 @@ namespace valuascript::compiler
  
                     bool is_at_boundary =
                         ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
-                        (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)) ||
-                        ctx.is_at_any_declaration() ||
-                        TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
-                        cursor.peek().type == TokenType::Return ||
-                        cursor.peek(1).type == TokenType::Assign ||
-                        ctx.looks_like_reassignment();
+                        (!cursor.check(TokenType::RightParen) &&
+                         (ctx.is_active_closer(cursor.peek().type) ||
+                          ctx.is_at_any_declaration() ||
+                          TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                          cursor.peek().type == TokenType::Return ||
+                          cursor.peek(1).type == TokenType::Assign ||
+                          ctx.looks_like_reassignment()));
 
                     if (is_at_boundary)
                     {
@@ -205,7 +206,7 @@ namespace valuascript::compiler
                 cursor.make_span(start, cursor.previous()), std::move(modifiers), name.lexeme, std::vector<StructField>{}
             );
         }
-        CloserTracker tracker(ctx, TokenType::RightBrace);
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::StructBody);
 
         auto is_at_parent_boundary = [this](size_t offset = 0)
         {
@@ -308,7 +309,7 @@ namespace valuascript::compiler
                 name.lexeme, std::move(underlying_type), std::vector<EnumCase>{}
             );
         }
-        CloserTracker tracker(ctx, TokenType::RightBrace);
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::EnumBody);
 
         ParameterRuleSpec case_spec{
             .allow_modifiers = true, .allow_value = true, .value_separator = TokenType::Assign,
@@ -382,13 +383,7 @@ namespace valuascript::compiler
 
         std::vector<FunctionParameter> params;
         {
-            CloserTracker param_tracker(ctx, TokenType::RightParen);
-            ctx.parameter_list_closer_indices.push_back(ctx.active_closers.size() - 1);
-            struct ParamScopeGuard
-            {
-                ParserContext& ctx;
-                ~ParamScopeGuard() { ctx.parameter_list_closer_indices.pop_back(); }
-            } param_guard{ctx};
+            CloserTracker param_tracker(ctx, TokenType::RightParen, ContainerKind::FunctionParameters);
 
             ParameterRuleSpec param_spec{
                 .allow_modifiers = true, .allow_type = true, .require_type = true, .allow_value = true,

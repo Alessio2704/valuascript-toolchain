@@ -83,7 +83,7 @@ namespace valuascript::compiler
         SourceSpan parse_body(ItemParser parse_item)
         {
             const Token& start = cursor_.consume(open_token_, open_brace_err_);
-            CloserTracker tracker(ctx_, close_token_);
+            CloserTracker tracker(ctx_, close_token_, ContainerKind::Block);
 
             if (on_enter_block_)
             {
