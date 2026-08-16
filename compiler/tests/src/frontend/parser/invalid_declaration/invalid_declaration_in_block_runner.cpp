@@ -27,7 +27,7 @@ namespace valuascript::compiler::test
 
             const auto& diagnostics = context.diagnostics.get_errors();
 
-            SourceSpan expected_span = compute_expected_span(prog.full_code, test_case.construct_case.code, test_case.context.prefix.length());
+            SourceSpan expected_span = compute_expected_span(prog.full_code, test_case.construct_case.code, prog.prefix_for_shifting.length());
 
             const ValuaScriptException* target_diag = nullptr;
             for (const auto& err : diagnostics)

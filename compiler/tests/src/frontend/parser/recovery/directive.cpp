@@ -26,7 +26,8 @@ namespace valuascript::compiler::test
                 .name = "MissingValueAfterEquals",
                 .code = "#dir = ",
                 .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
-                .verifier = IsDirective("dir", IsNull())
+                .verifier = IsDirective("dir", IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({

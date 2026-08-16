@@ -46,7 +46,9 @@ namespace valuascript::compiler::test
                         auto shifted_errors = ErrorShifter::shift_errors(prog.prefix_for_shifting, {base_error});
 
                         out << "--- VARIATION " << count << " ---\n";
-                        out << "PATH:  " << (prog.path_name.empty() ? item.path_name : prog.path_name) << "\n";
+                        out << "PATH:           " << (prog.path_name.empty() ? item.path_name : prog.path_name) << "\n";
+                        print_sentinel_debug_info(out, prog.pre_kind, prog.is_pre_modified, prog.post_kind, prog.is_post_modified,
+                                                  prog.inner_pre_kind, prog.is_inner_pre_modified, prog.inner_post_kind, prog.is_inner_post_modified);
                         out << "CODE:\n" << prog.full_code << "\n";
                         out << "EXPECTED ERRORS:\n";
                         for (const auto& err : shifted_errors)

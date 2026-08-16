@@ -123,6 +123,20 @@ namespace valuascript::compiler::test
             });
 
             reg({
+                .name = "SwitchTargetMissingOpeningParenRecovers",
+                .code = "switch 1 ) {\n"
+                "    case A -> 1\n"
+                "}",
+                .errors = {
+                    PErr{.code = E::ExpectedLeftParenAfterSwitch, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}
+                },
+                .verifier = IsSwitch(
+                    IsNumber("1"),
+                    SwitchCaseSpec{.labels = {"A"}, .result_v = IsNumber("1")}
+                )
+            });
+
+            reg({
                 .name = "SwitchTargetCompletelyEmptyParens",
                 .code = "switch() {\n"
                 "    case A -> 1\n"

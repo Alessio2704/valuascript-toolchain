@@ -61,14 +61,16 @@ namespace valuascript::compiler::test
                 .name = "MissingValueAfterEquals",
                 .code = "let a = ",
                 .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull())
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({
                 .name = "MissingValueAfterEqualsWithTypeAnnotation",
                 .code = "let a: int =",
                 .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNull())
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({

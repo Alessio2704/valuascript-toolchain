@@ -45,15 +45,16 @@ namespace valuascript::compiler::test
 
             reg({
                 .name = "MissingRightBraceInFunctionBody",
-                .code = "func test() -> int { return 1 ",
+                .code = "func test() -> int {\n"
+                        "return 1 \n",
                 .errors = {
                     PErr{
-                        .code = E::ExpectedRightBraceAfterFunctionBody, .line_start = 1, .column_start = 29,
-                        .line_end = 1, .column_end = 30
+                        .code = E::ExpectedRightBraceAfterFunctionBody, .line_start = 2, .column_start = 8,
+                        .line_end = 2, .column_end = 9
                     }
                 },
                 .verifier = IsFunctionDef("test", {}, {}, {IsType("int")}, {IsReturn(IsNumber("1"))}),
-                .excluded_sentinels = {SentinelKind::Assignment, SentinelKind::Reassignment, SentinelKind::ExprStmt},
+                .excluded_sentinels = { SentinelKind::Assignment, SentinelKind::Reassignment, SentinelKind::ExprStmt },
                 .accepted_sentinels = SentinelKinds::all()
             });
 
@@ -328,6 +329,62 @@ namespace valuascript::compiler::test
                 },
                 .verifier = IsFunctionDef("test", {}, {{.name = "a", .modifiers = {}, .type_v = IsNullType()}},
                                           {IsType("int")}, {}, R"("""docs""")")
+            });
+
+            reg({
+                .name = "MissingLeftParenInParamsRecovers",
+                .code = "func test a: int) -> int {}",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedLeftParenAfterFunctionName, .line_start = 1, .column_start = 11,
+                        .line_end = 1, .column_end = 12
+                    }
+                },
+                .verifier = IsFunctionDef("test", {}, {{.name = "a", .modifiers = {}, .type_v = IsType("int")}},
+                                          {IsType("int")})
+            });
+
+            reg({
+                .name = "MissingRightParenInParamsRecovers",
+                .code = "func test(a: int -> int {}",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 16,
+                        .line_end = 1, .column_end = 17
+                    }
+                },
+                .verifier = IsFunctionDef("test", {}, {{.name = "a", .modifiers = {}, .type_v = IsType("int")}},
+                                          {IsType("int")})
+            });
+
+            reg({
+                .name = "MissingRightParenAndArrowInFunction",
+                .code = "func test(a: int { return 1 }",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedRightParenAfterParameters, .line_start = 1, .column_start = 16,
+                        .line_end = 1, .column_end = 17
+                    },
+                    PErr{
+                        .code = E::MissingArrowInFunction, .line_start = 1, .column_start = 18,
+                        .line_end = 1, .column_end = 19
+                    }
+                },
+                .verifier = IsFunctionDef("test", {}, {{.name = "a", .modifiers = {}, .type_v = IsType("int")}}, {},
+                                          {IsReturn(IsNumber("1"))})
+            });
+
+            reg({
+                .name = "MissingLeftBraceBeforeFunctionBodyRecovers",
+                .code = "func test(a: int) -> int return 1 }",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedLeftBraceBeforeFunctionBody, .line_start = 1, .column_start = 26,
+                        .line_end = 1, .column_end = 32
+                    }
+                },
+                .verifier = IsFunctionDef("test", {}, {{.name = "a", .modifiers = {}, .type_v = IsType("int")}},
+                                          {IsType("int")}, {IsReturn(IsNumber("1"))})
             });
 
             return true;

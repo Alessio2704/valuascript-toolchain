@@ -82,7 +82,35 @@ namespace valuascript::compiler
         template <typename ItemParser>
         SourceSpan parse_body(ItemParser parse_item)
         {
-            const Token& start = cursor_.consume(open_token_, open_brace_err_);
+            Token start = cursor_.peek();
+            bool has_open_brace = cursor_.check(open_token_);
+            if (has_open_brace)
+            {
+                start = cursor_.advance();
+            }
+            else
+            {
+                cursor_.report_error_no_panic(cursor_.peek(), open_brace_err_);
+            }
+
+            auto active_closers_count = std::count(ctx_.active_closers.begin(), ctx_.active_closers.end(), close_token_);
+            int64_t net_closers_ahead = 0;
+            size_t offset = 0;
+            while (true)
+            {
+                TokenType t = cursor_.peek(offset).type;
+                if (t == TokenType::EndOfFile) break;
+                if (t == open_token_) net_closers_ahead--;
+                else if (t == close_token_) net_closers_ahead++;
+                offset++;
+            }
+            bool has_matching_closer_ahead = net_closers_ahead > active_closers_count;
+
+            if (!has_open_brace && !has_matching_closer_ahead)
+            {
+                return cursor_.make_span(start, cursor_.previous());
+            }
+
             CloserTracker tracker(ctx_, close_token_, ContainerKind::Block);
 
             if (on_enter_block_)

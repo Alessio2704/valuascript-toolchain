@@ -266,7 +266,12 @@ namespace valuascript::compiler::test
                             .custom_errors = branch.branch_errors,
                             .excluded_sentinels = excluded_for_gen,
                             .accepted_sentinels = accepted_for_gen,
-                            .context_history = std::move(next_history)
+                            .context_history = std::move(next_history),
+                            .has_nested_block_sentinels = inject_sentinels,
+                            .inner_pre_kind = pre.empty() ? std::nullopt : pre[0].kind,
+                            .is_inner_pre_modified = pre.empty() ? false : pre[0].is_modified,
+                            .inner_post_kind = post.empty() ? std::nullopt : post[0].kind,
+                            .is_inner_post_modified = post.empty() ? false : post[0].is_modified
                         };
                     };
 

@@ -29,6 +29,11 @@ namespace valuascript::compiler::test
         std::vector<SentinelKind> excluded_sentinels = {};
         std::vector<SentinelKind> accepted_sentinels = {};
         std::vector<ContextStep> context_history = {};
+        bool has_nested_block_sentinels = false;
+        std::optional<SentinelKind> inner_pre_kind = std::nullopt;
+        bool is_inner_pre_modified = false;
+        std::optional<SentinelKind> inner_post_kind = std::nullopt;
+        bool is_inner_post_modified = false;
 
         [[nodiscard]] bool has_context(std::string_view name) const
         {

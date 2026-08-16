@@ -46,8 +46,10 @@ namespace valuascript::compiler::test
                 {
                     variation_index++;
                     out << "--- VARIATION " << variation_index << " ---\n";
-                    out << "PATH:  " << (prog.path_name.empty() ? processed.path_name : prog.path_name) << "\n";
-                    out << "DEPTH: " << processed.depth << "\n";
+                    out << "PATH:           " << (prog.path_name.empty() ? processed.path_name : prog.path_name) << "\n";
+                    out << "DEPTH:          " << processed.depth << "\n";
+                    print_sentinel_debug_info(out, prog.pre_kind, prog.is_pre_modified, prog.post_kind, prog.is_post_modified,
+                                              prog.inner_pre_kind, prog.is_inner_pre_modified, prog.inner_post_kind, prog.is_inner_post_modified);
                     out << "FULL CODE:\n";
                     out << prog.full_code;
                     out << "------------------------------------------------------------\n\n";

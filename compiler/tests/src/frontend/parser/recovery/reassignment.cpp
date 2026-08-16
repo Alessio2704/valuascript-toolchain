@@ -89,7 +89,8 @@ namespace valuascript::compiler::test
                 .name = "MissingValueAfterEqualsReassignment",
                 .code = "a = ",
                 .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 4}},
-                .verifier = IsReassignment(IsIdentifier("a"), IsNull())
+                .verifier = IsReassignment(IsIdentifier("a"), IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             reg({

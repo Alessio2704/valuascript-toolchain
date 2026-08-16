@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -58,4 +60,34 @@ namespace valuascript::compiler::test
         }
         return "Unknown";
     }
+
+    inline std::string format_sentinel_description(std::optional<SentinelKind> kind, bool is_modified)
+    {
+        if (!kind.has_value()) return "None";
+        std::string res = to_string(*kind);
+        res += is_modified ? " (Modified)" : " (Unmodified)";
+        return res;
+    }
+
+    inline void print_sentinel_debug_info(std::ostream& out,
+                                          std::optional<SentinelKind> pre_kind, bool is_pre_modified,
+                                          std::optional<SentinelKind> post_kind, bool is_post_modified,
+                                          std::optional<SentinelKind> inner_pre_kind = std::nullopt, bool is_inner_pre_modified = false,
+                                          std::optional<SentinelKind> inner_post_kind = std::nullopt, bool is_inner_post_modified = false)
+    {
+        if (inner_pre_kind.has_value() || inner_post_kind.has_value())
+        {
+            out << "OUTER PRE-SENTINEL:  " << format_sentinel_description(pre_kind, is_pre_modified) << "\n";
+            out << "INNER PRE-SENTINEL:  " << format_sentinel_description(inner_pre_kind, is_inner_pre_modified) << "\n";
+            out << "INNER POST-SENTINEL: " << format_sentinel_description(inner_post_kind, is_inner_post_modified) << "\n";
+            out << "OUTER POST-SENTINEL: " << format_sentinel_description(post_kind, is_post_modified) << "\n";
+        }
+        else
+        {
+            out << "OUTER PRE-SENTINEL:  " << format_sentinel_description(pre_kind, is_pre_modified) << "\n";
+            out << "OUTER POST-SENTINEL: " << format_sentinel_description(post_kind, is_post_modified) << "\n";
+        }
+    }
 }
+
+

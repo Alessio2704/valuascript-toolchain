@@ -1102,24 +1102,61 @@ namespace valuascript::compiler
             .options = RecoveryOptions::SkipNestedGroupings
         };
 
+        if (cursor.check(TokenType::LeftParen))
+        {
+            auto target = ErrorRecovery::try_parse<ExprPtr>(
+                ctx, [&]()
+                {
+                    cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterSwitch);
+                    CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::SwitchTarget);
+                    auto t = parse_expression();
+                    cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterSwitchTarget);
+                    return t;
+                }, conf, &failed
+            );
+
+            if (failed)
+            {
+                if (cursor.check(TokenType::RightParen)) cursor.advance();
+                else if (TokenTraits::is_grouping_closer(cursor.peek().type))
+                {
+                    if (!ctx.is_active_closer(cursor.peek().type)) cursor.advance();
+                }
+            }
+            return target;
+        }
+
+        cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftParenAfterSwitch);
+        if (cursor.check(TokenType::LeftBrace) || cursor.check(TokenType::RightParen))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::InvalidExpression);
+            if (cursor.check(TokenType::RightParen)) cursor.advance();
+            return nullptr;
+        }
+
+        bool has_closing_paren = false;
         auto target = ErrorRecovery::try_parse<ExprPtr>(
             ctx, [&]()
             {
-                cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterSwitch);
                 CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::SwitchTarget);
                 auto t = parse_expression();
-                cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterSwitchTarget);
+                if (cursor.check(TokenType::RightParen))
+                {
+                    has_closing_paren = true;
+                    cursor.advance();
+                }
                 return t;
             }, conf, &failed
         );
 
-        if (failed)
+        if (!has_closing_paren || failed)
         {
             if (cursor.check(TokenType::RightParen)) cursor.advance();
             else if (TokenTraits::is_grouping_closer(cursor.peek().type))
             {
                 if (!ctx.is_active_closer(cursor.peek().type)) cursor.advance();
             }
+            return nullptr;
         }
         return target;
     }

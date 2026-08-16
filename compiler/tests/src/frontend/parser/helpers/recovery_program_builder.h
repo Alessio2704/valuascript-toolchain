@@ -20,6 +20,10 @@ namespace valuascript::compiler::test
         bool is_post_modified = false;
         std::optional<SentinelKind> pre_kind = std::nullopt;
         bool is_pre_modified = false;
+        std::optional<SentinelKind> inner_pre_kind = std::nullopt;
+        bool is_inner_pre_modified = false;
+        std::optional<SentinelKind> inner_post_kind = std::nullopt;
+        bool is_inner_post_modified = false;
     };
 
     class RecoveryProgramBuilder

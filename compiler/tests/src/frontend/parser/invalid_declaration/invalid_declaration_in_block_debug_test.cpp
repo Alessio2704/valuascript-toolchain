@@ -35,19 +35,28 @@ namespace valuascript::compiler::test
         out << "============================================================\n\n";
 
         const auto constructs = InvalidDeclarationConstructRegistry::cases_for_context(ctx);
+        size_t construct_index = 0;
         size_t variation_index = 0;
 
         for (const auto& construct : constructs)
         {
             if (should_test_construct_in_context(ctx, construct))
             {
-                variation_index++;
+                construct_index++;
                 size_t base_seed = DeterministicSampler::make_seed(ctx.name, construct.name);
+                size_t sub_index = 0;
 
                 for_each_invalid_declaration_program(ctx, construct, base_seed, [&](const ConstructedRecoveryProgram& prog)
                 {
-                    out << "--- VARIATION " << variation_index << " (" << construct.name << ") ---\n";
+                    sub_index++;
+                    variation_index++;
+
+                    out << "--- VARIATION " << construct_index << "." << sub_index
+                        << " (" << construct.name << ")"
+                        << (prog.path_name.empty() ? "" : prog.path_name) << " ---\n";
                     out << "TYPE:           " << (construct.is_broken ? "Broken" : "Clean") << "\n";
+                    print_sentinel_debug_info(out, prog.pre_kind, prog.is_pre_modified, prog.post_kind, prog.is_post_modified,
+                                              prog.inner_pre_kind, prog.is_inner_pre_modified, prog.inner_post_kind, prog.is_inner_post_modified);
 
                     if (construct.is_broken && !construct.suppressed_errors.empty())
                     {
@@ -74,7 +83,7 @@ namespace valuascript::compiler::test
             }
         }
 
-        out << "[DEBUG] Recovery expansion dump finished (" << variation_index << " variations)\n";
+        out << "[DEBUG] Recovery expansion dump finished (" << construct_index << " constructs, " << variation_index << " variations)\n";
     }
 
     inline std::vector<InvalidDeclarationContextDebugParam> GetContextDebugParams()

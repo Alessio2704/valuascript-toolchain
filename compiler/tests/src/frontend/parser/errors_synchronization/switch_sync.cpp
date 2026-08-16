@@ -16,25 +16,6 @@ namespace valuascript::compiler::test
             auto switch_expr = dynamic_cast<const SwitchExpression*>(assign->value.get());
             return switch_expr;
         }
-
-        auto ExpectSwitchCases(size_t expected_cases, bool expected_has_default)
-        {
-            return [expected_cases, expected_has_default](const Program& ast)
-            {
-                auto sw = ExpectRecoveredSwitch(ast);
-                ASSERT_NE(sw, nullptr) << "Switch expression not found in the first statement!";
-                EXPECT_EQ(sw->cases.size(), expected_cases) << "Switch case count mismatch!";
-
-                if (expected_has_default)
-                {
-                    EXPECT_NE(sw->default_case, nullptr) << "Expected default case, but got nullptr!";
-                }
-                else
-                {
-                    EXPECT_EQ(sw->default_case, nullptr) << "Expected no default case, but got one!";
-                }
-            };
-        }
     }
 
     class SwitchParserSynchronizationTest : public ParserErrorsSynchronizationBase
@@ -65,14 +46,6 @@ namespace valuascript::compiler::test
                     ASSERT_NE(inner_sw, nullptr);
                     EXPECT_EQ(inner_sw->cases.size(), 2) << "Inner switch should have stolen the second case.";
                 }
-            },
-            ParserErrorsSynchronizationTestCase{
-                .test_name = "switch_target_missing_opening_paren_recovers",
-                .source_code = "let x = switch 1 ) {\n    case A -> 1\n}\nlet a = 1\n",
-                .expected_errors = {
-                    {.code = Err::ExpectedLeftParenAfterSwitch, .line = 1, .column = 16}
-                },
-                .verify_ast = ExpectSwitchCases(1, false)
             },
             ParserErrorsSynchronizationTestCase{
                 .test_name = "unclosed_switch_inside_grouping_escapes_properly",

@@ -362,7 +362,14 @@ namespace valuascript::compiler
                 TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma
             }), false);
 
-        cursor.consume(TokenType::LeftParen, E::ExpectedLeftParenAfterFunctionName);
+        if (cursor.check(TokenType::LeftParen))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftParenAfterFunctionName);
+        }
 
         auto is_at_parent_boundary = [this](size_t offset = 0)
         {

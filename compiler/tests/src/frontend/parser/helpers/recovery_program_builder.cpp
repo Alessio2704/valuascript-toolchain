@@ -106,6 +106,45 @@ namespace valuascript::compiler::test
             std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
         }
 
+        if (item.has_nested_block_sentinels)
+        {
+            RecoveryBlock pre = RecoverySentinel::generate_block_sentinel(
+                seed, BlockContext::TopLevel, item.excluded_sentinels, {});
+            RecoveryBlock post = RecoverySentinel::generate_block_sentinel(
+                seed + 1, BlockContext::TopLevel, item.excluded_sentinels, item.accepted_sentinels, ModifierFilterMode::Any);
+
+            std::string code = item.code;
+            while (!code.empty() && (code.back() == '\n' || code.back() == '\r'))
+            {
+                code.pop_back();
+            }
+
+            std::string full_code = pre.source + "\n\n" + code + "\n\n" + post.source + "\n";
+            std::string prefix_for_shifting = pre.source + "\n\n" + item.cumulative_prefix;
+
+            ProgramSpec full_spec;
+            if (pre.add_to_spec) pre.add_to_spec(full_spec);
+            full_spec = MergeSpecs(std::move(full_spec), spec);
+            if (post.add_to_spec) post.add_to_spec(full_spec);
+
+            return {
+                ConstructedRecoveryProgram{
+                    .full_code = std::move(full_code),
+                    .full_spec = std::move(full_spec),
+                    .prefix_for_shifting = std::move(prefix_for_shifting),
+                    .path_name = item.path_name,
+                    .post_kind = post.kind,
+                    .is_post_modified = post.is_modified,
+                    .pre_kind = pre.kind,
+                    .is_pre_modified = pre.is_modified,
+                    .inner_pre_kind = item.inner_pre_kind,
+                    .is_inner_pre_modified = item.is_inner_pre_modified,
+                    .inner_post_kind = item.inner_post_kind,
+                    .is_inner_post_modified = item.is_inner_post_modified
+                }
+            };
+        }
+
         return BuildRecoveryPrograms(
             item.code,
             std::move(spec),
