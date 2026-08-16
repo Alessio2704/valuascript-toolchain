@@ -54,4 +54,18 @@ namespace valuascript::compiler::test::ContextNames
             ExprCallArgMiddle
         };
     }
+
+    inline std::vector<std::string_view> all_nested_swallowing_bracket_contexts()
+    {
+        return {
+            ExprTensorStart,
+            ExprTensorMiddle,
+            ExprTupleStart,
+            ExprTupleMiddle,
+            ExprDictValueStart,
+            ExprDictValueMiddle,
+            ExprCallArgStart,
+            ExprCallArgMiddle
+        };
+    }
 }
