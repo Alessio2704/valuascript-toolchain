@@ -1,20 +1,24 @@
 #pragma once
-#include "context_infrastructure.h"
+#include "context_definition.h"
 
 namespace valuascript::compiler::test
 {
     class ContextRegistry
     {
     public:
-        static std::vector<Context> get_all_for(InjectableType type);
-
-        static std::vector<Context> get_block_contexts();
+        static const std::vector<Context>& get_all_for(InjectableType type);
+        static const std::vector<Context>& get_container_contexts_for(InjectableType type);
+        static const std::vector<Context>& get_block_contexts();
+        static const std::vector<Context>& get_top_level_contexts();
+        static const std::vector<std::string_view>& get_nested_expression_context_names();
 
     private:
-        static std::vector<Context> aggregate_all();
-        static std::vector<Context> get_top_level_contexts();
-        static std::vector<Context> get_expression_contexts();
-        static std::vector<Context> get_type_contexts();
-        static std::vector<Context> get_modifier_contexts();
+        static const std::vector<Context>& aggregate_all();
+        static const std::vector<Context>& get_expression_contexts();
+        static const std::vector<Context>& get_type_contexts();
+        static const std::vector<Context>& get_modifier_contexts();
+        static const std::vector<Context>& get_block_contexts_impl();
+        static const std::vector<Context>& get_extension_contexts();
+        static const std::vector<Context>& get_identifier_contexts();
     };
 }

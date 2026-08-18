@@ -1,0 +1,143 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "environment": {
+        "FUZZ_ITERATIONS": "2500",
+        "EXPANSION_DEPTH": "4",
+        "EXPANSION_RECURSION": "2",
+        "ENABLE_DEBUG_DUMPS": "0"
+      }
+    },
+    {
+      "name": "Release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "OFF",
+        "ENABLE_IWYU": "ON"
+      }
+    },
+    {
+      "name": "Release-Dump",
+      "displayName": "Release-Dump",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "OFF",
+        "ENABLE_IWYU": "ON"
+      },
+      "environment": {
+        "ENABLE_DEBUG_DUMPS": "1"
+      }
+    },
+    {
+      "name": "Release-Sanitizers",
+      "displayName": "Release-Sanitizers",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_SANITIZERS": "ON",
+        "ENABLE_IWYU": "ON"
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1",
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    },
+    {
+      "name": "RelWithDebInfo",
+      "displayName": "RelWithDebInfo",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ENABLE_SANITIZERS": "OFF",
+        "ENABLE_IWYU": "ON"
+      }
+    },
+    {
+      "name": "Debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_SANITIZERS": "ON",
+        "ENABLE_IWYU": "ON"
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_string_checks=1:detect_odr_violation=2:halt_on_error=1",
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Release",
+      "configurePreset": "Release"
+    },
+    {
+      "name": "Release-Dump",
+      "configurePreset": "Release-Dump"
+    },
+    {
+      "name": "Release-Sanitizers",
+      "configurePreset": "Release-Sanitizers"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "RelWithDebInfo"
+    },
+    {
+      "name": "Debug",
+      "configurePreset": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "base-test",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "Release",
+      "inherits": "base-test",
+      "configurePreset": "Release"
+    },
+    {
+      "name": "Release-Dump",
+      "inherits": "base-test",
+      "configurePreset": "Release-Dump"
+    },
+    {
+      "name": "Release-Sanitizers",
+      "inherits": "base-test",
+      "configurePreset": "Release-Sanitizers"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "inherits": "base-test",
+      "configurePreset": "RelWithDebInfo"
+    },
+    {
+      "name": "Debug",
+      "inherits": "base-test",
+      "configurePreset": "Debug"
+    }
+  ]
+}

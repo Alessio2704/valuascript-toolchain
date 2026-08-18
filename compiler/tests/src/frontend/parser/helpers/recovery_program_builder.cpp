@@ -1,0 +1,170 @@
+#include "recovery_program_builder.h"
+#include "recovery_sentinel.h"
+#include "error_shifter.h"
+#include "parser_runner.h"
+#include "spec_adder.h"
+
+namespace valuascript::compiler::test
+{
+    std::vector<ConstructedRecoveryProgram> RecoveryProgramBuilder::BuildRecoveryPrograms(
+        std::string inner_code,
+        ProgramSpec inner_spec,
+        const std::string& inner_prefix,
+        size_t seed,
+        const std::vector<SentinelKind>& excluded_sentinels,
+        const std::vector<SentinelKind>& accepted_sentinels,
+        const std::string& path_name)
+    {
+        std::vector<SentinelKind> effective_accepted;
+        if (!accepted_sentinels.empty())
+        {
+            effective_accepted.reserve(accepted_sentinels.size());
+            for (auto kind : accepted_sentinels)
+            {
+                if (std::find(excluded_sentinels.begin(), excluded_sentinels.end(), kind) == excluded_sentinels.end())
+                {
+                    effective_accepted.push_back(kind);
+                }
+            }
+        }
+
+        auto build_single = [&](size_t s, const std::vector<SentinelKind>& acc,
+                                ModifierFilterMode post_mod_mode,
+                                const std::string& path_suffix) -> ConstructedRecoveryProgram
+        {
+            RecoveryBlock pre = RecoverySentinel::generate_block_sentinel(
+                s, BlockContext::TopLevel, excluded_sentinels, {});
+            RecoveryBlock post = RecoverySentinel::generate_block_sentinel(
+                s + 1, BlockContext::TopLevel, excluded_sentinels, acc, post_mod_mode);
+
+            std::string code = inner_code;
+            while (!code.empty() && (code.back() == '\n' || code.back() == '\r'))
+            {
+                code.pop_back();
+            }
+
+            std::string full_code = pre.source + "\n\n" + code + "\n\n" + post.source + "\n";
+            std::string prefix_for_shifting = pre.source + "\n\n" + inner_prefix;
+
+            ProgramSpec full_spec;
+            if (pre.add_to_spec) pre.add_to_spec(full_spec);
+            full_spec = MergeSpecs(std::move(full_spec), inner_spec);
+            if (post.add_to_spec) post.add_to_spec(full_spec);
+
+            std::string full_path = path_name.empty() ? "" : (path_name + path_suffix);
+            return ConstructedRecoveryProgram{
+                .full_code = std::move(full_code),
+                .full_spec = std::move(full_spec),
+                .prefix_for_shifting = std::move(prefix_for_shifting),
+                .path_name = std::move(full_path),
+                .post_kind = post.kind,
+                .is_post_modified = post.is_modified,
+                .pre_kind = pre.kind,
+                .is_pre_modified = pre.is_modified
+            };
+        };
+
+        std::vector<ConstructedRecoveryProgram> results;
+        if (!effective_accepted.empty())
+        {
+            size_t step = 0;
+            for (size_t i = 0; i < effective_accepted.size(); ++i)
+            {
+                SentinelKind k = effective_accepted[i];
+                std::string tag = " [" + to_string(k) + "]";
+                results.push_back(build_single(seed + (step++ * 2), {k}, ModifierFilterMode::UnmodifiedOnly, tag));
+
+                if (RecoverySentinel::has_sentinel_with_modifier(BlockContext::TopLevel, k))
+                {
+                    std::string mod_tag = " [" + to_string(k) + " with_modifier]";
+                    results.push_back(build_single(seed + (step++ * 2), {k}, ModifierFilterMode::ModifiedOnly, mod_tag));
+                }
+            }
+            return results;
+        }
+
+        results.push_back(build_single(seed, {}, ModifierFilterMode::UnmodifiedOnly, ""));
+        if (RecoverySentinel::has_any_sentinel_with_modifier(BlockContext::TopLevel, excluded_sentinels))
+        {
+            results.push_back(build_single(seed + 2, {}, ModifierFilterMode::ModifiedOnly, " [with_modifier]"));
+        }
+        return results;
+    }
+
+    std::vector<ConstructedRecoveryProgram> RecoveryProgramBuilder::BuildRecoveryPrograms(
+        const ProcessingItem& item,
+        size_t seed,
+        std::optional<ProgramSpec> inner_spec_override)
+    {
+        ProgramSpec spec;
+        if (inner_spec_override.has_value())
+        {
+            spec = std::move(inner_spec_override.value());
+        }
+        else
+        {
+            std::visit([&](auto&& ver) { SpecAdder::add(spec, ver); }, item.verifier);
+        }
+
+        if (item.has_nested_block_sentinels)
+        {
+            RecoveryBlock pre = RecoverySentinel::generate_block_sentinel(
+                seed, BlockContext::TopLevel, item.excluded_sentinels, {});
+            RecoveryBlock post = RecoverySentinel::generate_block_sentinel(
+                seed + 1, BlockContext::TopLevel, item.excluded_sentinels, item.accepted_sentinels, ModifierFilterMode::Any);
+
+            std::string code = item.code;
+            while (!code.empty() && (code.back() == '\n' || code.back() == '\r'))
+            {
+                code.pop_back();
+            }
+
+            std::string full_code = pre.source + "\n\n" + code + "\n\n" + post.source + "\n";
+            std::string prefix_for_shifting = pre.source + "\n\n" + item.cumulative_prefix;
+
+            ProgramSpec full_spec;
+            if (pre.add_to_spec) pre.add_to_spec(full_spec);
+            full_spec = MergeSpecs(std::move(full_spec), spec);
+            if (post.add_to_spec) post.add_to_spec(full_spec);
+
+            return {
+                ConstructedRecoveryProgram{
+                    .full_code = std::move(full_code),
+                    .full_spec = std::move(full_spec),
+                    .prefix_for_shifting = std::move(prefix_for_shifting),
+                    .path_name = item.path_name,
+                    .post_kind = post.kind,
+                    .is_post_modified = post.is_modified,
+                    .pre_kind = pre.kind,
+                    .is_pre_modified = pre.is_modified,
+                    .inner_pre_kind = item.inner_pre_kind,
+                    .is_inner_pre_modified = item.is_inner_pre_modified,
+                    .inner_post_kind = item.inner_post_kind,
+                    .is_inner_post_modified = item.is_inner_post_modified
+                }
+            };
+        }
+
+        return BuildRecoveryPrograms(
+            item.code,
+            std::move(spec),
+            item.cumulative_prefix,
+            seed,
+            item.excluded_sentinels,
+            item.accepted_sentinels,
+            item.path_name
+        );
+    }
+
+    void RecoveryProgramBuilder::RunRecoveryScenario(ProcessingItem&& item,
+                                             const std::vector<ParserExpectedError>& errors,
+                                             size_t seed)
+    {
+        ForEachRecoveryProgram(item, seed, [&](const ConstructedRecoveryProgram& prog)
+        {
+            const auto& errors_to_use = item.custom_errors.has_value() ? item.custom_errors.value() : errors;
+            auto shifted = ErrorShifter::shift_errors(prog.prefix_for_shifting, errors_to_use);
+            ParserRunner::ExpectParseErrors(prog.full_code, shifted, prog.full_spec);
+        });
+    }
+}

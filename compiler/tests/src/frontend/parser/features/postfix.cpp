@@ -1,4 +1,3 @@
-#include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
@@ -7,53 +6,66 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("DotThenCall",
-                "obj.method(a: 1)",
-                IsCall(
+            reg({
+                .name = "DotThenCall",
+                .code = "obj.method(a: 1)",
+                .verifier = IsCall(
                     IsDot(IsIdentifier("obj"), "method"),
-                    {{"a", IsNumber("1")}}
-                ));
+                    {{.label="a", .value_v=IsNumber("1")}}
+                )
+            });
 
-            reg("CallThenDot",
-                "get_obj().prop",
-                IsDot(
+            reg({
+                .name = "CallThenDot",
+                .code = "get_obj().prop",
+                .verifier = IsDot(
                     IsCall(IsIdentifier("get_obj"), {}),
                     "prop"
-                ));
+                )
+            });
 
-            reg("BracketThenCall",
-                "arr[0](x: 1)",
-                IsCall(
+            reg({
+                .name = "BracketThenCall",
+                .code = "arr[0](x: 1)",
+                .verifier = IsCall(
                     IsBracket(IsIdentifier("arr"), IsNumber("0")),
-                    {{"x", IsNumber("1")}}
-                ));
+                    {{.label="x", .value_v=IsNumber("1")}}
+                )
+            });
 
-            reg("CallThenBracket",
-                "get_arr()[0]",
-                IsBracket(
+            reg({
+                .name = "CallThenBracket",
+                .code = "get_arr()[0]",
+                .verifier = IsBracket(
                     IsCall(IsIdentifier("get_arr"), {}),
                     IsNumber("0")
-                ));
+                )
+            });
 
-            reg("DotThenBracket",
-                "obj.list[0]",
-                IsBracket(
+            reg({
+                .name = "DotThenBracket",
+                .code = "obj.list[0]",
+                .verifier = IsBracket(
                     IsDot(IsIdentifier("obj"), "list"),
                     IsNumber("0")
-                ));
+                )
+            });
 
-            reg("BracketThenDot",
-                "arr[0].name",
-                IsDot(
+            reg({
+                .name = "BracketThenDot",
+                .code = "arr[0].name",
+                .verifier = IsDot(
                     IsBracket(IsIdentifier("arr"), IsNumber("0")),
                     "name"
-                ));
+                )
+            });
 
-            reg("MixedChain",
-                "a.b[0]().c",
-                IsDot(
+            reg({
+                .name = "MixedChain",
+                .code = "a.b[0]().c",
+                .verifier = IsDot(
                     IsCall(
                         IsBracket(
                             IsDot(IsIdentifier("a"), "b"),
@@ -62,7 +74,8 @@ namespace valuascript::compiler::test
                         {}
                     ),
                     "c"
-                ));
+                )
+            });
 
             return true;
         }();

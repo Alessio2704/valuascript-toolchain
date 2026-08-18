@@ -12,71 +12,85 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ModifierVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("SingleModifier",
-                "@simple",
-                std::vector<ModifierSpec>{
-                    {"simple"}
-                });
+            reg({
+                .name = "SingleModifier",
+                .code = "@simple",
+                .verifier = std::vector<ModifierSpec>{
+                    {.name="simple"}
+                }
+            });
 
-            reg("SingleModifierWithEmptyParens",
-                "@simple()",
-                std::vector<ModifierSpec>{
-                    {"simple"}
-                });
+            reg({
+                .name = "SingleModifierWithEmptyParens",
+                .code = "@simple()",
+                .verifier = std::vector<ModifierSpec>{
+                    {.name="simple"}
+                }
+            });
 
-            reg("MultipleModifiers",
-                "@first @second",
-                std::vector<ModifierSpec>{
-                    {"first"},
-                    {"second"}
-                });
+            reg({
+                .name = "MultipleModifiers",
+                .code = "@first @second",
+                .verifier = std::vector<ModifierSpec>{
+                    {.name="first"},
+                    {.name="second"}
+                }
+            });
 
-            reg("ModifierWithOneArgument",
-                "@meta(version: 1)",
-                std::vector<ModifierSpec>{
+            reg({
+                .name = "ModifierWithOneArgument",
+                .code = "@meta(version: 1)",
+                .verifier = std::vector<ModifierSpec>{
                     {
-                        "meta", {
-                            {"version", IsNumber("1")}
+                        .name="meta", .args={
+                            {.label="version", .value_v=IsNumber("1")}
                         }
                     }
-                });
+                }
+            });
 
-            reg("ModifierWithMultipleArguments",
-                "@config(active: true, retries: 3, strategy: \"fast\")",
-                std::vector<ModifierSpec>{
+            reg({
+                .name = "ModifierWithMultipleArguments",
+                .code = "@config(active: true, retries: 3, strategy: \"fast\")",
+                .verifier = std::vector<ModifierSpec>{
                     {
-                        "config", {
-                            {"active", IsBoolean(true)},
-                            {"retries", IsNumber("3")},
-                            {"strategy", IsString("\"fast\"")}
+                        .name="config", .args={
+                            {.label="active", .value_v=IsBoolean(true)},
+                            {.label="retries", .value_v=IsNumber("3")},
+                            {.label="strategy", .value_v=IsString("\"fast\"")}
                         }
                     }
-                });
+                }
+            });
 
-            reg("MixedModifiers",
-                "@inline @deprecated(msg: \"old\") @export",
-                std::vector<ModifierSpec>{
-                    {"inline"},
+            reg({
+                .name = "MixedModifiers",
+                .code = "@inline @deprecated(msg: \"old\") @export",
+                .verifier = std::vector<ModifierSpec>{
+                    {.name="inline"},
                     {
-                        "deprecated", {
-                            {"msg", IsString("\"old\"")}
+                        .name="deprecated", .args={
+                            {.label="msg", .value_v=IsString("\"old\"")}
                         }
                     },
-                    {"export"}
-                });
+                    {.name="export"}
+                }
+            });
 
-            reg("MultilineModifiers",
-                "@export\n@meta(version: 2)\n",
-                std::vector<ModifierSpec>{
-                    {"export"},
-                    {
-                        "meta", {
-                            {"version", IsNumber("2")}
-                        }
-                    }
-                });
+            reg({
+                .name = "ModifierWhitespaceAndCommentsCondensed",
+                .code = "@test1 // line comment\n"
+                "( \n a: 1 // end \n ) "
+                "@\n test2(b: 2) "
+                "@test3\n\n\n(c: 3) ",
+                .verifier = std::vector<ModifierSpec>{
+                    {.name="test1", .args={{.label="a", .value_v=IsNumber("1")}}},
+                    {.name="test2", .args={{.label="b", .value_v=IsNumber("2")}}},
+                    {.name="test3", .args={{.label="c", .value_v=IsNumber("3")}}}
+                }
+            });
 
             return true;
         }();
@@ -84,18 +98,16 @@ namespace valuascript::compiler::test
 
     TEST_P(ModifierRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidModifiers(code, verifier);
+        ExpectValidModifiers(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(
         Modifier,
         ModifierRegistryRunner,
         testing::ValuesIn(ConstructRegistry::modifiers()),
-        [](const testing::TestParamInfo<RegistryEntry<ModifierVerifier>>& info) {
-        return info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

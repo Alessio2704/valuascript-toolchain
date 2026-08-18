@@ -1,18 +1,24 @@
 #include <gtest/gtest.h>
-#include "../errors_synchronization/ast_base_test.h"
+#include "frontend/parser/helpers/parser_test_base.h"
 
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
-    class AstSpanTest : public AstBaseTest {
+    class AstSpanTest : public ParserTestBase {
     protected:
+        static std::shared_ptr<Program> parse_code(const std::string &code) {
+            CompilerContext context;
+            context.settings.fail_fast = true;
+            return run_parser(code, context);
+        }
+
         static void assert_span(const SourceSpan &span, size_t line_start, size_t col_start, size_t line_end,
                                 size_t col_end) {
             EXPECT_EQ(span.line_start, line_start) << "Mismatch in line_start";
             EXPECT_EQ(span.column_start, col_start) << "Mismatch in column_start";
             EXPECT_EQ(span.line_end, line_end) << "Mismatch in line_end";
             EXPECT_EQ(span.column_end, col_end) << "Mismatch in column_end";
-            EXPECT_EQ(span.file_path, "test.vs") << "Mismatch in file_path";
+            EXPECT_EQ(span.path(), "test_script.vs") << "Mismatch in file_path";
         }
     };
 
@@ -196,7 +202,7 @@ namespace valuascript::compiler::test {
         auto ast = parse_code("let pair: (int, int) = (1, 2)");
         auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
 
-        auto tuple_ann = dynamic_cast<TupleTypeAnnotation *>(assign_node->targets[0].second.get());
+        auto tuple_ann = dynamic_cast<TupleTypeAnnotation *>(assign_node->targets[0].type.get());
         ASSERT_NE(tuple_ann, nullptr);
 
         // '(int, int)' starts at 11, ends at 20 -> ends at 21
@@ -223,7 +229,7 @@ namespace valuascript::compiler::test {
         assert_span(switch_expr->target->span, 1, 16, 1, 17);
 
         // Case 0 value '1' is at 31 -> ends at 32
-        assert_span(switch_expr->cases[0].second->span, 1, 31, 1, 32);
+        assert_span(switch_expr->cases[0].result->span, 1, 31, 1, 32);
 
         // Default value '2' is at 44 -> ends at 45
         assert_span(switch_expr->default_case->span, 1, 44, 1, 45);
@@ -379,7 +385,7 @@ namespace valuascript::compiler::test {
         auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
 
         // Outermost type annotation 'matrix<int>'
-        auto outer_type = assign_node->targets[0].second.get();
+        auto outer_type = assign_node->targets[0].type.get();
         ASSERT_NE(outer_type, nullptr);
         assert_span(outer_type->span, 1, 13, 1, 24);
 

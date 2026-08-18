@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <memory>
 #include "core/valuascript_exception.h"
+#include "project_resolver_error_code.h"
 #include "core/error_formatter.h"
-#include "frontend/parser/ast.h"
 
 namespace valuascript::compiler
 {
@@ -55,9 +55,9 @@ namespace valuascript::compiler
             {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
-                    ValuascriptErrorCode::CircularImportDetected,
+                    ProjectResolverErrorCode::CircularImportDetected,
                     import_stmt->span,
-                    format_error(ValuascriptErrorCode::CircularImportDetected, next_file)
+                    format_error(ProjectResolverErrorCode::CircularImportDetected, next_file)
                 );
 
                 context.handle_error(ex);
@@ -68,9 +68,9 @@ namespace valuascript::compiler
             {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
-                    ValuascriptErrorCode::ImportFileNotFound,
+                    ProjectResolverErrorCode::ImportFileNotFound,
                     import_stmt->span,
-                    format_error(ValuascriptErrorCode::ImportFileNotFound, clean_path)
+                    format_error(ProjectResolverErrorCode::ImportFileNotFound, clean_path)
                 );
 
                 context.handle_error(ex);
@@ -90,20 +90,23 @@ namespace valuascript::compiler
     CompilerStageArtifact ProjectResolverStage::run(CompilerContext& context,
                                                     const std::vector<CompilerStageArtifact>& artifacts)
     {
-        auto raw_file_path = extract_artifact_data<std::string>(
+        const auto& raw_file_path = extract_artifact_data<std::string>(
             artifacts, CompilerStageArtifactCode::FilePath
         );
 
         std::string absolute_file_path = std::filesystem::weakly_canonical(raw_file_path).string();
 
-        ResolvedProjectArtifact project;
-        project.entry_file_path = absolute_file_path;
+        ResolvedProjectArtifact project{
+            .entry_file_path = absolute_file_path,
+            .modules = {},
+            .topological_order = {}
+        };
 
         resolving_.clear();
         resolved_.clear();
 
         resolve_recursive(context, absolute_file_path, project);
 
-        return {CompilerStageArtifactCode::ResolvedProject, project};
+        return {.code = CompilerStageArtifactCode::ResolvedProject, .data = project};
     }
 }

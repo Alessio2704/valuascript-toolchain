@@ -12,32 +12,46 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ReturnVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("ReturnSingleValue",
-                "return 1",
-                IsReturn({IsNumber("1")}));
+            reg({
+                .name = "ReturnSingleValue",
+                .code = "return 1",
+                .verifier = IsReturn({}, {IsNumber("1")})
+            });
 
-            reg("ReturnMultipleValues",
-                "return 1, true, \"success\"",
-                IsReturn({
-                    IsNumber("1"),
-                    IsBoolean(true),
-                    IsString("\"success\"")
-                }));
+            // reg({
+            //     .name = "ReturnNoValue",
+            //     .code = "return",
+            //     .verifier = IsReturn({}, {})
+            // });
 
-            reg("ReturnWithIdentifier",
-                "return result",
-                IsReturn({IsIdentifier("result")}));
+            reg({
+                .name = "ReturnMultipleValues",
+                .code = "return 1, true, \"success\"",
+                .verifier = IsReturn({}, {
+                                         IsNumber("1"),
+                                         IsBoolean(true),
+                                         IsString("\"success\"")
+                                     })
+            });
 
-            reg("MultilineFormatting",
-                "return \n"
+            reg({
+                .name = "ReturnWithIdentifier",
+                .code = "return result",
+                .verifier = IsReturn({}, {IsIdentifier("result")})
+            });
+
+            reg({
+                .name = "MultilineFormatting",
+                .code = "return \n"
                 "  1, \n"
                 "  2",
-                IsReturn({
-                    IsNumber("1"),
-                    IsNumber("2")
-                }));
+                .verifier = IsReturn({}, {
+                                         IsNumber("1"),
+                                         IsNumber("2")
+                                     })
+            });
 
             return true;
         }();
@@ -45,18 +59,16 @@ namespace valuascript::compiler::test
 
     TEST_P(ReturnStatementRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidReturn(code, verifier);
+        ExpectValidReturn(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(
         ReturnStatement,
         ReturnStatementRegistryRunner,
         testing::ValuesIn(ConstructRegistry::returns()),
-        [](const testing::TestParamInfo<RegistryEntry<ReturnVerifier>>& info) {
-        return info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

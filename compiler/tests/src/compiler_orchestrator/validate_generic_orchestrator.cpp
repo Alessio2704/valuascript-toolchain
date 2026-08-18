@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../../../src/core/compiler_stage_orchestrator.h"
+#include "core/compiler_stage_orchestrator.h"
 #include "mock_stages.h"
-#include "../../../src/core/internal_compiler_exception.h"
+#include "core/internal_compiler_exception.h"
 
 using namespace valuascript::compiler;
 

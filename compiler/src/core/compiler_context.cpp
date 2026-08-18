@@ -9,8 +9,4 @@ namespace valuascript::compiler {
             throw ex;
         }
     }
-
-    void CompilerContext::update_source_registry(const std::string &file_path, const std::string &source) {
-        source_registry[file_path] = source;
-    }
 }

@@ -2,97 +2,78 @@
 
 namespace valuascript::compiler::test
 {
-    class DirectiveErrorTest : public ParserTestBase
+    class DirectiveErrorRegistryRunner : public ParserTestBase,
+                                         public testing::WithParamInterface<ErrorRegistryEntry<DirectiveVerifier>>
     {
     };
 
-    TEST_F(DirectiveErrorTest, MissingName)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingDirectiveName, 1, 2, 1, 3);
+    using E = ParserErrorCode;
 
-        ExpectParseErrorsWithRecovery(
-            "#",
-            errors,
-            ProgramSpec{
-                .directives = {
-                    IsDirective("<error>")
-                }
-            }
-        );
+    namespace
+    {
+        const bool _ = []()
+        {
+            auto reg = [](const RecoveryCase<DirectiveVerifier>& spec) { ErrorRegistry::add(spec); };
+
+            reg({
+                .name = "MissingName",
+                .code = "#",
+                .errors = {PErr{.code = E::MissingDirectiveName, .line_start = 1, .column_start = 2, .line_end = 1, .column_end = 3}},
+                .verifier = IsDirective("<error>")
+            });
+
+            reg({
+                .name = "MissingValueAfterEquals",
+                .code = "#dir = ",
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsDirective("dir", IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
+            reg({
+                .name = "MissingHashValuelessDirective",
+                .code = "dir",
+                .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 4}},
+                .verifier = IsNull()
+            });
+
+            reg({
+                .name = "MissingNamePlusValueWithoutEquals",
+                .code = "# \"string\"",
+                .errors = {PErr{.code = E::MissingDirectiveName, .line_start = 1, .column_start = 3, .line_end = 1, .column_end = 11}},
+                .verifier = IsDirective("<error>", IsNull())
+            });
+
+            reg({
+                .name = "InvalidMarkerAsteriskWithValue",
+                .code = "*iterations = 1000",
+                .errors = {PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
+                .verifier = IsNull()
+            });
+
+            reg({
+                .name = "InvalidMarkerAsteriskNoValue",
+                .code = "*module",
+                .errors = {PErr{.code = E::InvalidExpression, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 2}},
+                .verifier = IsNull()
+            });
+
+            return true;
+        }();
     }
 
-    TEST_F(DirectiveErrorTest, MissingValueAfterEquals)
+    TEST_P(DirectiveErrorRegistryRunner, ValidatesInAllContexts)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 7, 1, 8);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + p.test_name);
 
-        ExpectParseErrorsWithRecovery(
-            "#dir = ",
-            errors,
-            ProgramSpec{
-                .directives = {
-                    IsDirective("dir", IsNull())
-                }
-            }
-        );
+        ExpectDirectiveErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels, p.accepted_sentinels);
     }
 
-    TEST_F(DirectiveErrorTest, MissingHashValuelessDirective)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidStandaloneStatement, 1, 1, 1, 4);
-
-        ExpectParseErrorsWithRecovery(
-            "dir",
-            errors,
-            ProgramSpec{
-                .directives = {}
-            }
-        );
-    }
-
-    TEST_F(DirectiveErrorTest, MissingNamePlusValueWithoutEquals)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingDirectiveName, 1, 3, 1, 11);
-
-        ExpectParseErrorsWithRecovery(
-            "# \"string\"",
-            errors,
-            ProgramSpec{
-                .directives = {
-                    IsDirective("<error>", IsNull())
-                }
-            }
-        );
-    }
-
-    TEST_F(DirectiveErrorTest, InvalidMarkerAsteriskWithValue)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2);
-
-        ExpectParseErrorsWithRecovery(
-            "*iterations = 1000",
-            errors,
-            ProgramSpec{
-                .directives = {}
-            }
-        );
-    }
-
-    TEST_F(DirectiveErrorTest, InvalidMarkerAsteriskNoValue)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidExpression, 1, 1, 1, 2);
-
-        ExpectParseErrorsWithRecovery(
-            "*module",
-            errors,
-            ProgramSpec{
-                .directives = {}
-            }
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Directive,
+        DirectiveErrorRegistryRunner,
+        testing::ValuesIn(ErrorRegistry::directives()),
+        TestNameGenerator{}
+    );
 }

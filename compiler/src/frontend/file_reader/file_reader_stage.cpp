@@ -3,20 +3,24 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include "file_reader_error_code.h"
 #include "core/error_formatter.h"
 
-namespace valuascript::compiler {
+namespace valuascript::compiler
+{
     FileReaderStage::FileReaderStage()
         : CompilerStage(
             "FileReaderStage",
             CompilerStageArtifactCode::SourceCode,
             {CompilerStageArtifactCode::FilePath}
-        ) {
+        )
+    {
     }
 
-    CompilerStageArtifact FileReaderStage::run(CompilerContext &context,
-                                               const std::vector<CompilerStageArtifact> &artifacts) {
-        auto raw_file_path = extract_artifact_data<std::string>(
+    CompilerStageArtifact FileReaderStage::run(CompilerContext& context,
+                                               const std::vector<CompilerStageArtifact>& artifacts)
+    {
+        const auto& raw_file_path = extract_artifact_data<std::string>(
             artifacts,
             CompilerStageArtifactCode::FilePath
         );
@@ -24,12 +28,19 @@ namespace valuascript::compiler {
         std::string canonical_path = std::filesystem::weakly_canonical(raw_file_path).string();
 
         std::ifstream file_stream(canonical_path, std::ios::in | std::ios::binary);
-        if (!file_stream.is_open()) {
+        if (!file_stream.is_open())
+        {
             ValuaScriptException ex(
                 ValuascriptErrorCategory::File,
-                ValuascriptErrorCode::FileNotFound,
-                {0, 0, 0, 0, canonical_path},
-                format_error(ValuascriptErrorCode::FileNotFound, canonical_path)
+                FileReaderErrorCode::FileNotFound,
+                SourceSpan{
+                    .line_start = 0,
+                    .column_start = 0,
+                    .line_end = 0,
+                    .column_end = 0,
+                    .file_path = std::make_shared<const std::string>(canonical_path)
+                },
+                format_error(FileReaderErrorCode::FileNotFound, canonical_path)
             );
             context.handle_error(ex);
         }
@@ -40,8 +51,8 @@ namespace valuascript::compiler {
 
         std::erase(source_content, '\r');
 
-        context.update_source_registry(canonical_path, source_content);
+        context.source_manager.update_source(canonical_path, source_content);
 
-        return {CompilerStageArtifactCode::SourceCode, source_content};
+        return {.code = CompilerStageArtifactCode::SourceCode, .data = source_content};
     }
 }

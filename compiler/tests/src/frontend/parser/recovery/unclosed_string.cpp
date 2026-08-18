@@ -6,14 +6,13 @@ namespace valuascript::compiler::test
     {
     };
 
+    using E = ParserErrorCode;
+
     TEST_F(UnclosedStringErrorTest, ImportStatementWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 8, 1, 24);
-
         ExpectParseErrorsWithRecovery(
             "import \"/path/to/module",
-            errors,
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 24}},
             ProgramSpec{
                 .imports = {
                     IsImport("\"/path/to/module")
@@ -24,12 +23,9 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 22);
-
         ExpectParseErrorsWithRecovery(
             "#config \"unclosed_val",
-            errors,
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 22}},
             ProgramSpec{
                 .directives = {
                     IsDirective("config", IsString("\"unclosed_val"))
@@ -40,12 +36,9 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DirectiveAssignmentWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 9, 1, 20);
-
         ExpectParseErrorsWithRecovery(
             "#mode = \"debug_mode",
-            errors,
+            {PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 20}},
             ProgramSpec{
                 .directives = {
                     IsDirective("mode", IsString("\"debug_mode"))
@@ -56,16 +49,15 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, FunctionDocstringUnclosed)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 2, 1, 4, 3);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterFunctionBody, 4, 42);
-
         ExpectParseErrors(
             "func test() -> void {\n"
             "\"\"\"This is a broken docstring\n"
             "let x = 1\n"
             "}",
-            errors,
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 2, .column_start = 1, .line_end = 4, .column_end = 3},
+                PErr{.code = E::ExpectedRightBraceAfterFunctionBody, .line_start = 4, .column_start = 1, .line_end = 4, .column_end = 2}
+            },
             ProgramSpec{
                 .functions = {
                     IsFunctionDef(
@@ -83,25 +75,22 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TupleLiteralWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 19, 1, 29);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightParenAfterTupleElements, 1, 29, 1, 30);
-
         ExpectParseErrorsWithRecovery(
             R"(let t = ("first", "unclosed))",
-            errors,
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 19, .line_end = 1, .column_end = 29},
+                PErr{.code = E::ExpectedRightParenAfterTupleElements, .line_start = 1, .column_start = 28, .line_end = 1, .column_end = 29}
+            },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"t"}
-                                 },
-                                 IsTuple(
-                                     {
-                                         IsString("\"first\""),
-                                         IsString("\"unclosed)")
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            AssignmentTargetSpec{.name = "t"}
+                        },
+                        IsTuple(
+                            IsString("\"first\""),
+                            IsString("\"unclosed)")
+                        )
                     )
                 }
             }
@@ -110,24 +99,21 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, DictLiteralWithUnclosedStringValue)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 16, 1, 31);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedBraceInDictionaryLiteral, 1, 31);
-
         ExpectParseErrorsWithRecovery(
             "let d = { key: \"unclosed_val }",
-            errors,
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 16, .line_end = 1, .column_end = 31},
+                PErr{.code = E::UnmatchedBraceInDictionaryLiteral, .line_start = 1, .column_start = 30, .line_end = 1, .column_end = 31}
+            },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"d"}
-                                 },
-                                 IsDict(
-                                     {
-                                         {"key", {}, IsString("\"unclosed_val }")}
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            AssignmentTargetSpec{.name = "d"}
+                        },
+                        IsDict(
+                            DictItemSpec{.key = "key", .value_v = IsString("\"unclosed_val }")}
+                        )
                     )
                 }
             }
@@ -136,25 +122,22 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, TensorLiteralWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 17, 1, 23);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedBracketAfterTensorElements, 1, 23);
-
         ExpectParseErrorsWithRecovery(
             R"(let v =["val1", "val2])",
-            errors,
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 23},
+                PErr{.code = E::UnmatchedBracketAfterTensorElements, .line_start = 1, .column_start = 22, .line_end = 1, .column_end = 23}
+            },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"v"}
-                                 },
-                                 IsTensor(
-                                     {
-                                         IsString("\"val1\""),
-                                         IsString("\"val2]")
-                                     }
-                                 )
+                    IsAssignment(
+                        {
+                            AssignmentTargetSpec{.name = "v"}
+                        },
+                        IsTensor(
+                            IsString("\"val1\""),
+                            IsString("\"val2]")
+                        )
                     )
                 }
             }
@@ -163,20 +146,19 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, EnumCaseValueWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 31, 1, 41);
-        errors.emplace_back(ValuascriptErrorCode::ExpectedRightBraceAfterEnumBody, 1, 41);
-
         ExpectParseErrorsWithRecovery(
             "enum Status: string { Error = \"failure }",
-            errors,
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 31, .line_end = 1, .column_end = 41},
+                PErr{.code = E::ExpectedRightBraceAfterEnumBody, .line_start = 1, .column_start = 40, .line_end = 1, .column_end = 41}
+            },
             ProgramSpec{
                 .enums = {
                     IsEnumDef("Status", {},
-                              IsType("string"),
-                              {
-                                  {"Error", {}, IsString("\"failure }")}
-                              }
+                               IsType("string"),
+                               {
+                                   {.name="Error", .modifiers={}, .value_v=IsString("\"failure }")}
+                               }
                     )
                 }
             }
@@ -185,30 +167,30 @@ namespace valuascript::compiler::test
 
     TEST_F(UnclosedStringErrorTest, ModifierArgumentWithUnclosedString)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnclosedString, 1, 21, 1, 31);
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedParenthesisAfterModifierArgs, 1, 31);
-
         ExpectParseErrorsWithRecovery(
-            "@deprecated(reason: \"not_safe)\n"
-            "let x = 1",
-            errors,
+            "let @deprecated(reason: \"not_safe)\n"
+            "x = 1",
+            {
+                PErr{.code = LexerErrorCode::UnclosedString, .line_start = 1, .column_start = 25, .line_end = 1, .column_end = 35},
+                PErr{.code = E::UnmatchedParenthesisAfterModifierArgs, .line_start = 1, .column_start = 34, .line_end = 1, .column_end = 35}
+            },
             ProgramSpec{
                 .execution_steps = {
-                    IsAssignment(
-                        {
-                            {
-                                "deprecated", {
-                                    {
-                                        "reason", IsString("\"not_safe)")
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            {"x"}
-                        },
-                        IsNumber("1")
+                    IsAssignment({
+                                     {
+                                         .modifiers={
+                                             {
+                                                 .name="deprecated", .args={
+                                                     {
+                                                         .label="reason", .value_v=IsString("\"not_safe)")
+                                                     }
+                                                 }
+                                             }
+                                         },
+                                         .name="x"
+                                     }
+                                 },
+                                 IsNumber("1")
                     )
                 }
             }

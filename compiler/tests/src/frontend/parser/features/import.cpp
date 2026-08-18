@@ -12,15 +12,19 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ImportVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("ValidatesImportStatement1",
-                "import \"file.vs\"",
-                IsImport("\"file.vs\""));
+            reg({
+                .name = "ValidatesImportStatement1",
+                .code = "import \"file.vs\"",
+                .verifier = IsImport("\"file.vs\"")
+            });
 
-            reg("ValidatesImportStatement2",
-                "import \"path/to/file.vs\"",
-                IsImport("\"path/to/file.vs\""));
+            reg({
+                .name = "ValidatesImportStatement2",
+                .code = "import \"path/to/file.vs\"",
+                .verifier = IsImport("\"path/to/file.vs\"")
+            });
 
             return true;
         }();
@@ -28,18 +32,16 @@ namespace valuascript::compiler::test
 
     TEST_P(ImportStatementRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidImport(code, verifier);
+        ExpectValidImport(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(
         ImportStatement,
         ImportStatementRegistryRunner,
         testing::ValuesIn(ConstructRegistry::imports()),
-        [](const testing::TestParamInfo<RegistryEntry<ImportVerifier>>& info) {
-        return info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

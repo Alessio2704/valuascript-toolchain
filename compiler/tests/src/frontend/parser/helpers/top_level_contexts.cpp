@@ -1,24 +1,26 @@
 #include "context_registry.h"
-#include "spec_adder.h"
+#include "context_names.h"
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_top_level_contexts()
+    const std::vector<Context>& ContextRegistry::get_top_level_contexts()
     {
-        return {
+        static const std::vector<Context> contexts = {
             {
-                "top_level_identity", NestingLevel::TopLevel,
-                {
-                    InjectableType::Import, InjectableType::Directive, InjectableType::Function,
-                    InjectableType::Struct, InjectableType::Enum, InjectableType::TypeAlias,
-                    InjectableType::Statement
+                .name = ContextNames::TopLevelWrapper,
+                .input_types = {
+                    InjectableType::TopLevel, InjectableType::Function, InjectableType::Struct,
+                    InjectableType::Enum, InjectableType::Extension, InjectableType::TypeAlias,
+                    InjectableType::Import, InjectableType::Directive, InjectableType::StrongStatement
                 },
-                "", "\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
-                {
-                    std::visit([&](auto&& verifier) { SpecAdder::add(s, verifier); }, v);
-                }
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = "",
+                .transform_verifier = [](const UniversalVerifier& v) { return v; },
+                .block_context = BlockContext::TopLevel
             }
         };
+
+        return contexts;
     }
 }

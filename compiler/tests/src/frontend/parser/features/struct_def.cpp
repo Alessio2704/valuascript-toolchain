@@ -12,43 +12,62 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<StructVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("MinimalStruct",
-                "struct S {}",
-                IsStructDef("S", {}, {}));
+            reg({
+                .name = "MinimalStruct",
+                .code = "struct S {}",
+                .verifier = IsStructDef("S")
+            });
 
-            reg("SingleField",
-                "struct S { f: int }",
-                IsStructDef("S", {}, {
-                                FieldSpec{"f", {}, IsType("int")}
-                            }));
+            reg({
+                .name = "MinimalStructPlusModifier",
+                .code = "@modifier struct S {}",
+                .verifier = IsStructDef("S", std::vector<ModifierSpec>{{.name = "modifier"}})
+            });
 
-            reg("MultipleFields",
-                "struct Point { x: float, y: float, z: float }",
-                IsStructDef("Point", {}, {
-                                FieldSpec{"x", {}, IsType("float")},
-                                FieldSpec{"y", {}, IsType("float")},
-                                FieldSpec{"z", {}, IsType("float")}
-                            }));
+            reg({
+                .name = "SingleField",
+                .code = "struct S { f: int }",
+                .verifier = IsStructDef("S",
+                                        FieldSpec{.name = "f", .type_v = IsType("int")}
+                )
+            });
 
-            reg("TrailingComma",
-                "struct S { f1: int, f2: bool, }",
-                IsStructDef("S", {}, {
-                                FieldSpec{"f1", {}, IsType("int")},
-                                FieldSpec{"f2", {}, IsType("bool")}
-                            }));
+            reg({
+                .name = "MultipleFields",
+                .code = "struct Point { x: float, y: float, z: float }",
+                .verifier = IsStructDef("Point",
+                                        FieldSpec{.name = "x", .type_v = IsType("float")},
+                                        FieldSpec{.name = "y", .type_v = IsType("float")},
+                                        FieldSpec{.name = "z", .type_v = IsType("float")}
+                )
+            });
 
-            reg("InterleavingModifiedFields",
-                "struct User { @id id: int, username: string, @optional bio: string }",
-                IsStructDef("User", {}, {
-                                FieldSpec{"id", {{"id"}}, IsType("int")},
-                                FieldSpec{"username", {}, IsType("string")},
-                                FieldSpec{"bio", {{"optional"}}, IsType("string")}
-                            }));
+            reg({
+                .name = "TrailingComma",
+                .code = "struct S { f1: int, f2: bool, }",
+                .verifier = IsStructDef("S",
+                                        FieldSpec{.name = "f1", .type_v = IsType("int")},
+                                        FieldSpec{.name = "f2", .type_v = IsType("bool")}
+                )
+            });
 
-            reg("MultilineFormatting",
-                "struct \n"
+            reg({
+                .name = "InterleavingModifiedFields",
+                .code = "struct User { @id id: int, username: string, @optional bio: string }",
+                .verifier = IsStructDef("User",
+                                        FieldSpec{.name = "id", .modifiers = {{.name="id"}}, .type_v = IsType("int")},
+                                        FieldSpec{.name = "username", .type_v = IsType("string")},
+                                        FieldSpec{
+                                            .name = "bio", .modifiers = {{.name="optional"}}, .type_v = IsType("string")
+                                        }
+                )
+            });
+
+            reg({
+                .name = "MultilineFormatting",
+                .code = "struct \n"
                 "  Config \n"
                 "{\n"
                 "  @internal \n"
@@ -56,10 +75,14 @@ namespace valuascript::compiler::test
                 "  \n"
                 "  version: int \n"
                 "}",
-                IsStructDef("Config", {}, {
-                                FieldSpec{"secret", {{"internal"}}, IsType("string")},
-                                FieldSpec{"version", {}, IsType("int")}
-                            }));
+                .verifier = IsStructDef("Config",
+                                        FieldSpec{
+                                            .name = "secret", .modifiers = {{.name="internal"}}, .type_v = IsType("string")
+                                        },
+                                        FieldSpec{.name = "version", .type_v = IsType("int")}
+                ),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
+            });
 
             return true;
         }();
@@ -67,18 +90,16 @@ namespace valuascript::compiler::test
 
     TEST_P(StructDefinitionRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, verifier] = GetParam();
-        SCOPED_TRACE("Running Registry Test Case: " + name);
+        const auto& entry = GetParam();
+        SCOPED_TRACE("Running Registry Test Case: " + entry.test_name);
 
-        ExpectValidStructDefinition(code, verifier);
+        ExpectValidStructDefinition(entry.code, entry.verifier, entry.skip_contexts);
     }
 
     INSTANTIATE_TEST_SUITE_P(
         StructDefinition,
         StructDefinitionRegistryRunner,
         testing::ValuesIn(ConstructRegistry::structs()),
-        [](const testing::TestParamInfo<RegistryEntry<StructVerifier>>& info) {
-        return info.param.test_name;
-        }
+        TestNameGenerator{}
     );
 }

@@ -1,134 +1,34 @@
 #pragma once
+#include <frontend/parser/ast_core.h>
 #include <string>
 #include <utility>
+#include <variant>
+#include <ostream>
+#include "frontend/file_reader/file_reader_error_code.h"
+#include "frontend/lexer/lexer_error_code.h"
+#include "frontend/parser/parser_error_code.h"
+#include "midend/project_resolver/project_resolver_error_code.h"
 
-#include "frontend/parser/ast.h"
-
-namespace valuascript::compiler {
+namespace valuascript::compiler
+{
     enum class ValuascriptErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
 
-    enum class ValuascriptErrorCode {
-        // --- File Reader Errors ---
-        FileNotFound,
+    using ValuascriptErrorCode = std::variant<
+        FileReaderErrorCode,
+        LexerErrorCode,
+        ParserErrorCode,
+        ProjectResolverErrorCode
+    >;
 
-        // --- Lexer Errors ---
-        InvalidCharacter,
-        UnclosedString,
-        InvalidIdentifier,
-        DecimalMissingLeadingZero,
-        UnterminatedDecimal,
-        TrailingSeparatorInNumberLiteral,
+    inline std::ostream& operator<<(std::ostream& os, const ValuascriptErrorCode& code)
+    {
+        int num = std::visit([](auto&& c) { return static_cast<int>(c); }, code);
+        std::string_view tmpl = std::visit([](auto&& c) { return get_error_template(c); }, code);
+        return os << "E" << num << " (\"" << tmpl << "\")";
+    }
 
-        // --- Parser Errors ---
-        UnexpectedTopLevelToken,
-        ExpectedImportToken,
-        MissingImportPathString,
-        ExpectedHashToken,
-        MissingDirectiveName,
-        ModifiersAttachedToInvalidDeclaration,
-        ModifiersAttachedToMultiAssignmentSingleElements,
-        ExpectedModifierName,
-        MissingArgumentNameInModifier,
-        MissingColonAfterArgument,
-        MissingCommaSeparatorForArgumentsInModifier,
-        UnmatchedParenthesisAfterModifierArgs,
-        ExpectedStructToken,
-        ExpectedStructName,
-        ExpectedBraceInStructDefinition,
-        ExpectedStructFieldName,
-        ExpectedColonAfterStructFieldName,
-        ExpectedCommaSeparatorInStruct,
-        ExpectedRightBraceAfterStructBody,
-        ExpectedEnumToken,
-        ExpectedEnumName,
-        ExpectedColonAfterEnumName,
-        ExpectedLeftBraceBeforeEnumBody,
-        ExpectedEnumCaseName,
-        ExpectedCommaSeparatorInEnum,
-        ExpectedRightBraceAfterEnumBody,
-        ExpectedFuncToken,
-        MissingFunctionName,
-        ExpectedLeftParenAfterFunctionName,
-        MissingParameterName,
-        MissingColonAfterParameter,
-        MissingDefaultParameterValue,
-        NonDefaultParameterAfterDefault,
-        ExpectedCommaSeparatorInParameterList,
-        ExpectedRightParenAfterParameters,
-        MissingArrowInFunction,
-        MissingTypeAnnotationAfterArrow,
-        ExpectedCommaSeparatorInReturnTypeList,
-        ExpectedLeftBraceBeforeFunctionBody,
-        ExpectedRightBraceAfterFunctionBody,
-        ExpectedCommaSeparatorInTupleType,
-        UnmatchedParenthesisInTuple,
-        MissingTypeAnnotation,
-        ExpectedCommaSeparatorInGenericArgs,
-        EmptyGenericTypeAnnotation,
-        UnmatchedBracketAfterGenericArgs,
-        ExpectedLetToken,
-        ReservedKeywordAsIdentifier,
-        ExpectedCommaInMultiAssignment,
-        IncompleteAssignment,
-        MissingValueAfterEquals,
-        MultiReassignmentNotSupported,
-        InvalidLeftSideExpressionInReassignment,
-        InvalidStandaloneStatement,
-        ChainingNotAllowedForComparisonOperations,
-        MissingOperatorOrArgumentName,
-        ExpectedArgumentNameOrClosingParen,
-        MissingArgumentNameInFunctionCall,
-        MissingCommaSeparatorForArgumentsInFunctionCall,
-        TrailingCommaInFunctionCall,
-        TrailingCommaInModifier,
-        ExpectedRightParenAfterArguments,
-        MissingOperatorOrExpectedColonOrBracketInTensor,
-        UnexpectedCommaInBracketAccess,
-        EmptyBracketAccess,
-        UnmatchedBracketAfterTensorIndex,
-        ExpectedPropertyName,
-        InvalidExpression,
-        SingleElementTuplesNotAllowed,
-        TrailingCommaInTuple,
-        ExpectedRightParenAfterTupleElements,
-        MissingOperatorInsideGrouping,
-        ExpectedRightParenAfterExpression,
-        UnmatchedBracketAfterTensorElements,
-        ExpectedDictionaryKey,
-        ExpectedColonAfterDictionaryKey,
-        ExpectedCommaSeparatorInDictionaryLiteral,
-        UnmatchedBraceInDictionaryLiteral,
-        MissingThenToken,
-        MissingElseToken,
-        ExpectedLeftParenAfterSwitch,
-        ExpectedRightParenAfterSwitchTarget,
-        ExpectedLeftBraceBeforeSwitchBody,
-        ExpectedRightArrowAfterSwitchCaseIdentifier,
-        MissingOperatorInSwitchCaseResult,
-        CaseOrDefaultMissingInSwitchAfterResult,
-        ExpectedEnumCaseNameAfterCase,
-        ExpectedCommaBetweenCaseIdentifiers,
-        MultipleDefaultCasesInSwitch,
-        ExpectedCaseOrDefaultInsideSwitchBody,
-        ExpectedRightBraceAfterSwitchBody,
-        MissingOperator,
-        TrailingCommaInList,
-        MissingCommaOrOperatorBetweenExpressions,
-        TrailingComma,
-        TrailingCommaInGenericArgument,
-        MissingCommaBetweenFields,
-        TopLevelDeclarationNotAllowedHere,
-        ReturnUsedInToplevel,
-        ExpectedTypeAliasToken,
-        ExpectedTypeAliasName,
-        ExpectedAssignAfterTypeAliasName,
-
-        // --- Import Resolver Errors ---
-        CircularImportDetected,
-        ImportFileNotFound
-    };
-
-    class ValuaScriptException : public std::exception {
+    class ValuaScriptException : public std::exception
+    {
     private:
         ValuascriptErrorCategory category_;
         ValuascriptErrorCode code_;
@@ -137,15 +37,29 @@ namespace valuascript::compiler {
 
     public:
         ValuaScriptException(ValuascriptErrorCategory cat, ValuascriptErrorCode code, SourceSpan span, std::string msg)
-            : category_(cat), code_(code), span_(std::move(span)), message_(std::move(msg)) {
+            : category_(cat), code_(code), span_(std::move(span)), message_(std::move(msg))
+        {
         }
 
-        [[nodiscard]] const char *what() const noexcept override {
+        [[nodiscard]] const char* what() const noexcept override
+        {
             return message_.c_str();
         }
 
         [[nodiscard]] ValuascriptErrorCategory get_category() const { return category_; }
-        [[nodiscard]] ValuascriptErrorCode get_code() const { return code_; }
-        [[nodiscard]] const SourceSpan &get_span() const { return span_; }
+        [[nodiscard]] const ValuascriptErrorCode& get_code() const { return code_; }
+        [[nodiscard]] const SourceSpan& get_span() const { return span_; }
+
+        [[nodiscard]] int get_error_number() const
+        {
+            return std::visit([](auto&& c) { return static_cast<int>(c); }, code_);
+        }
+
+        template <typename T>
+        [[nodiscard]] bool is_error(T expected_code) const
+        {
+            const T* val = std::get_if<T>(&code_);
+            return val != nullptr && *val == expected_code;
+        }
     };
 }

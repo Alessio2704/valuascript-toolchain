@@ -1,4 +1,3 @@
-#include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/construct_registry.h"
 
 namespace valuascript::compiler::test
@@ -7,62 +6,92 @@ namespace valuascript::compiler::test
     {
         const bool _ = []()
         {
-            auto reg = [](auto n, auto c, const auto& v) { ConstructRegistry::add(n, c, v); };
+            auto reg = [](const ConstructCase<ExprVerifier>& spec) { ConstructRegistry::add(spec); };
 
-            reg("EmptyDictionary",
-                "{}",
-                IsDict({}));
+            reg({
+                .name = "EmptyDictionary",
+                .code = "{}",
+                .verifier = IsDict()
+            });
 
-            reg("SingleItem",
-                "{ key: 1 }",
-                IsDict({
-                    {"key", {}, IsNumber("1")}
-                }));
+            reg({
+                .name = "SingleItem",
+                .code = "{ key: 1 }",
+                .verifier = IsDict(
+                    DictItemSpec{.key = "key", .value_v = IsNumber("1")}
+                )
+            });
 
-            reg("MultipleItems",
-                "{ a: 1, b: \"val\", c: true }",
-                IsDict({
-                    {"a", {}, IsNumber("1")},
-                    {"b", {}, IsString("\"val\"")},
-                    {"c", {}, IsBoolean(true)}
-                }));
+            reg({
+                .name = "MultipleItems",
+                .code = "{ a: 1, b: \"val\", c: true }",
+                .verifier = IsDict(
+                    DictItemSpec{.key = "a", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsString("\"val\"")},
+                    DictItemSpec{.key = "c", .value_v = IsBoolean(true)}
+                )
+            });
 
-            reg("NestedDictionaries",
-                "{ outer: { inner: 1 } }",
-                IsDict({
-                    {
-                        "outer", {}, IsDict({
-                            {"inner", {}, IsNumber("1")}
-                        })
+            reg({
+                .name = "NestedDictionaries",
+                .code = "{ outer: { inner: 1 } }",
+                .verifier = IsDict(
+                    DictItemSpec{
+                        .key = "outer", .value_v = IsDict(
+                            DictItemSpec{.key = "inner", .value_v = IsNumber("1")}
+                        )
                     }
-                }));
+                )
+            });
 
-            reg("DictTrailingComma",
-                "{ a: 1, b: 2, }",
-                IsDict({
-                    {"a", {}, IsNumber("1")},
-                    {"b", {}, IsNumber("2")}
-                }));
+            reg({
+                .name = "DictTrailingComma",
+                .code = "{ a: 1, b: 2, }",
+                .verifier = IsDict(
+                    DictItemSpec{.key = "a", .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsNumber("2")}
+                )
+            });
 
-            reg("MixedModifiedAndUnmodifiedKeys",
-                "{ @sealed a: 1, b: 2, @hidden c: 3 }",
-                IsDict({
-                    {"a", {{"sealed"}}, IsNumber("1")},
-                    {"b", {}, IsNumber("2")},
-                    {"c", {{"hidden"}}, IsNumber("3")}
-                }));
+            reg({
+                .name = "MixedModifiedAndUnmodifiedKeys",
+                .code = "{ @sealed a: 1, b: 2, @hidden c: 3 }",
+                .verifier = IsDict(
+                    DictItemSpec{.key = "a", .modifiers = {{.name="sealed"}}, .value_v = IsNumber("1")},
+                    DictItemSpec{.key = "b", .value_v = IsNumber("2")},
+                    DictItemSpec{.key = "c", .modifiers = {{.name="hidden"}}, .value_v = IsNumber("3")}
+                )
+            });
 
-            reg("DictLiteralMultilineFormatting",
-                "{\n"
+            reg({
+                .name = "DictLiteralMultilineFormatting",
+                .code = "{\n"
                 "  first_name: \"John\",\n"
                 "  last_name: \"Doe\",\n"
                 "  age: 30\n"
                 "}",
-                IsDict({
-                    {"first_name", {}, IsString("\"John\"")},
-                    {"last_name", {}, IsString("\"Doe\"")},
-                    {"age", {}, IsNumber("30")}
-                }));
+                .verifier = IsDict(
+                    DictItemSpec{.key = "first_name", .value_v = IsString("\"John\"")},
+                    DictItemSpec{.key = "last_name", .value_v = IsString("\"Doe\"")},
+                    DictItemSpec{.key = "age", .value_v = IsNumber("30")}
+                )
+            });
+
+            reg({
+                .name = "DictComplexRegression",
+                .code = "{ x: { y: { z: 1 } } }",
+                .verifier = IsDict(
+                    DictItemSpec{
+                        .key = "x", .value_v = IsDict(
+                            DictItemSpec{
+                                .key = "y", .value_v = IsDict(
+                                    DictItemSpec{.key = "z", .value_v = IsNumber("1")}
+                                )
+                            }
+                        )
+                    }
+                )
+            });
 
             return true;
         }();

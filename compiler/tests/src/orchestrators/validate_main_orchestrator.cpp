@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../../../src/core/main_orchestrator.h"
+#include "core/main_orchestrator.h"
 
 using namespace valuascript::compiler;
 

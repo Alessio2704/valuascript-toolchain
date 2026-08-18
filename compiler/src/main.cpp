@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include "core/compiler_context.h"
 #include "core/main_orchestrator.h"
 #include "core/diagnostic_formatter.h"
@@ -13,7 +12,7 @@ int main() {
     context->settings.fail_fast = false;
 
     std::vector<CompilerStageArtifact> initial_artifacts = {
-        {CompilerStageArtifactCode::FilePath, file_path}
+        {.code = CompilerStageArtifactCode::FilePath, .data = file_path}
     };
 
     try {
@@ -21,7 +20,7 @@ int main() {
         orchestrator.run(*context, initial_artifacts);
 
         if (context->diagnostics.has_errors()) {
-            DiagnosticFormatter::print_errors(context->diagnostics.get_errors(), context->source_registry);
+            DiagnosticFormatter::print_errors(context->diagnostics.get_errors(), context->source_manager);
             return 1;
         }
 
@@ -30,7 +29,7 @@ int main() {
 
     } catch (const ValuaScriptException& ex) {
         std::vector<ValuaScriptException> single_error = { ex };
-        DiagnosticFormatter::print_errors(single_error, context->source_registry);
+        DiagnosticFormatter::print_errors(single_error, context->source_manager);
         return 1;
 
     } catch (const std::exception& ex) {

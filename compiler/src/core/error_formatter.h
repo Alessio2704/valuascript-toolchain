@@ -3,20 +3,25 @@
 #include <format>
 #include <concepts>
 
-namespace valuascript::compiler {
-    enum class ValuascriptErrorCode;
-    enum class InternalErrorCode;
+namespace valuascript::compiler
+{
+    template <typename T>
+    concept CompilerErrorEnum = requires(T t)
+    {
+        { get_error_template(t) } -> std::convertible_to<std::string_view>;
+    };
 
-    template<typename T>
-    concept CompilerErrorEnum = std::same_as<T, ValuascriptErrorCode> || std::same_as<T, InternalErrorCode>;
-
-    std::string_view get_error_template(ValuascriptErrorCode code);
-
-    std::string_view get_error_template(InternalErrorCode code);
-
-    template<typename... Args>
-    std::string format_error(CompilerErrorEnum auto code, Args &&... args) {
+    template <CompilerErrorEnum T, typename... Args>
+    std::string format_error(T code, Args&&... args)
+    {
         std::string_view msg_template = get_error_template(code);
-        return std::vformat(msg_template, std::make_format_args(args...));
+        if constexpr (sizeof...(Args) == 0)
+        {
+            return std::string(msg_template);
+        }
+        else
+        {
+            return std::vformat(msg_template, std::make_format_args(args...));
+        }
     }
 }

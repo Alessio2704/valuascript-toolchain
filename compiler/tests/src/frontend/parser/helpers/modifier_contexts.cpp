@@ -1,93 +1,335 @@
 #include "context_registry.h"
 #include "spec_adder.h"
+#include "context_names.h"
 
 namespace valuascript::compiler::test
 {
-    std::vector<Context> ContextRegistry::get_modifier_contexts()
+    const std::vector<Context>& ContextRegistry::get_modifier_contexts()
     {
-        return {
+        static const std::vector<Context> contexts = {
             {
-                "assignment", NestingLevel::BlockLevel, {InjectableType::Modifier}, " ", " let ctx_assign = 1\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModBeforeLetSingle,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_assign = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment(SpecAdder::get_v<ModifierVerifier>(v), {{"ctx_assign"}}, IsNumber("1")));
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                {
+                                    .modifiers = SpecAdder::get_v<ModifierVerifier>(v), .name = "ctx_assign"
+                                }
+                            },
+                            IsNumber("1")
+                        )
+                    );
                 }
             },
-
             {
-                "function_definition", NestingLevel::TopLevel, {InjectableType::Modifier}, " ",
-                " func ctx_func() -> void {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModBeforeLetMultiple,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_a, ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_func", SpecAdder::get_v<ModifierVerifier>(v), {}, {IsType("void")}));
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec{
+                                    .modifiers = SpecAdder::get_v<ModifierVerifier>(v), .name = "ctx_a"
+                                },
+                                AssignmentTargetSpec{
+                                    .modifiers = SpecAdder::get_v<ModifierVerifier>(v), .name = "ctx_b"
+                                }
+                            }, IsNumber("1")
+                        )
+                    );
                 }
             },
-
             {
-                "function_parameter", NestingLevel::TopLevel, {InjectableType::Modifier}, "func ctx_param(",
-                " p: int) -> void {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModBeforeLetMultipleWithInner,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let ctx_a, @test ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsFunctionDef("ctx_param", {}, {ParamSpec{"p", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")}},
-                                         {IsType("void")}));
+                    auto mods_a = SpecAdder::get_v<ModifierVerifier>(v);
+                    auto mods_b = mods_a;
+                    mods_b.push_back({.name = "test"});
+
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec{.modifiers = mods_a, .name = "ctx_a"},
+                                AssignmentTargetSpec{.modifiers = mods_b, .name = "ctx_b"}
+                            }, IsNumber("1")
+                        )
+                    );
                 }
             },
-
             {
-                "struct_definition", NestingLevel::TopLevel, {InjectableType::Modifier}, " ", " struct ctx_struct {}\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModBeforeLetMultipleWithBothInner,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "",
+                .suffix = " let @test1 ctx_a, @test2 ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsStructDef("ctx_struct", SpecAdder::get_v<ModifierVerifier>(v), {}));
+                    auto injected_mods = SpecAdder::get_v<ModifierVerifier>(v);
+
+                    auto mods_a = injected_mods;
+                    mods_a.push_back({.name = "test1"});
+
+                    auto mods_b = injected_mods;
+                    mods_b.push_back({.name = "test2"});
+
+                    return UniversalVerifier(
+                        IsAssignment(
+                            {
+                                AssignmentTargetSpec{.modifiers = mods_a, .name = "ctx_a"},
+                                AssignmentTargetSpec{.modifiers = mods_b, .name = "ctx_b"}
+                            }, IsNumber("1")
+                        )
+                    );
                 }
             },
-
             {
-                "struct_field", NestingLevel::TopLevel, {InjectableType::Modifier}, "struct ctx_s_field { ",
-                " f: int }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModAssignment,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "let ",
+                .suffix = " ctx_assign = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsStructDef("ctx_s_field", {}, {FieldSpec{"f", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")}}));
+                    return UniversalVerifier(IsAssignment({
+                                                              AssignmentTargetSpec{
+                                                                  .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                                  .name = "ctx_assign"
+                                                              }
+                                                          },
+                                                          IsNumber("1")));
                 }
             },
-
             {
-                "enum_definition", NestingLevel::TopLevel, {InjectableType::Modifier}, " ",
-                " enum ctx_enum: int { A = 1 }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModMultiAssignment,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::StrongStatement,
+                .prefix = "let ctx_a, ",
+                .suffix = " ctx_b = 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsEnumDef("ctx_enum", SpecAdder::get_v<ModifierVerifier>(v), IsType("int"),
-                                     {{"A", {}, IsNumber("1")}}));
+                    return UniversalVerifier(IsAssignment({
+                                                              AssignmentTargetSpec{.name = "ctx_a"},
+                                                              AssignmentTargetSpec{
+                                                                  .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                                  .name = "ctx_b"
+                                                              }
+                                                          }, IsNumber("1")));
                 }
             },
-
             {
-                "enum_case", NestingLevel::TopLevel, {InjectableType::Modifier}, "enum ctx_e_case: int { ",
-                " A = 1 }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModImportStatement,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " import \"ctx_lib.vs\"\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsEnumDef("ctx_e_case", {}, IsType("int"),
-                                     {{"A", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}}));
+                    return UniversalVerifier(IsImport("\"ctx_lib.vs\"", SpecAdder::get_v<ModifierVerifier>(v)));
                 }
             },
-
             {
-                "typealias_definition", NestingLevel::TopLevel, {InjectableType::Modifier}, " ",
-                " typealias ctx_alias = int\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModReturnStatement,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::WeakStatement,
+                .prefix = "",
+                .suffix = " return 1\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsTypeAlias("ctx_alias", SpecAdder::get_v<ModifierVerifier>(v), IsType("int")));
+                    return UniversalVerifier(
+                        ReturnVerifier(IsReturn(SpecAdder::get_v<ModifierVerifier>(v), {IsNumber("1")})));
                 }
             },
-
             {
-                "dict_item", NestingLevel::BlockLevel, {InjectableType::Modifier}, "let ctx_dict = { ", " k: 1 }\n",
-                [](ProgramSpec& s, const UniversalVerifier& v)
+                .name = ContextNames::ModSwitchCase,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch(1) { ",
+                .suffix = " case A -> 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
                 {
-                    SpecAdder::add(s, IsAssignment({}, {{"ctx_dict"}}, IsDict({
-                                            DictItemSpec{"k", SpecAdder::get_v<ModifierVerifier>(v), IsNumber("1")}
-                                        })));
+                    return UniversalVerifier(IsSwitch(IsNumber("1"),
+                                                      SwitchCaseSpec{
+                                                          .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                          .labels = {"A"},
+                                                          .result_v = IsNumber("1")
+                                                      }
+                    ));
+                }
+            },
+            {
+                .name = ContextNames::ModSwitchDefault,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "switch(1) { ",
+                .suffix = " default -> 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsSwitch(IsNumber("1"), {}, SpecAdder::get_v<ModifierVerifier>(v),
+                                                      IsNumber("1")));
+                }
+            },
+            {
+                .name = ContextNames::ModFunctionDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " func ctx_func() -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_func", SpecAdder::get_v<ModifierVerifier>(v), {},
+                                                           {IsType("void")}));
+                }
+            },
+            {
+                .name = ContextNames::ModFunctionParameter,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_param(",
+                .suffix = " p: int) -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_param", {},
+                                                           {
+                                                               ParamSpec{
+                                                                   .name = "p",
+                                                                   .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                                   .type_v = IsType("int")
+                                                               }
+                                                           }, {IsType("void")}));
+                }
+            },
+            {
+                .name = ContextNames::ModFunctionParameterWithDefault,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "func ctx_param(",
+                .suffix = " p: int = 1) -> void {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsFunctionDef("ctx_param", {},
+                                                           {
+                                                               ParamSpec{
+                                                                   .name = "p",
+                                                                   .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                                   .type_v = IsType("int"),
+                                                                   .default_v = IsNumber("1")
+                                                               }
+                                                           }, {IsType("void")}));
+                }
+            },
+            {
+                .name = ContextNames::ModStructDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " struct ctx_struct {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsStructDef("ctx_struct", SpecAdder::get_v<ModifierVerifier>(v), {}));
+                }
+            },
+            {
+                .name = ContextNames::ModStructField,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "struct ctx_s_field { ",
+                .suffix = " f: int }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsStructDef("ctx_s_field",
+                                                         FieldSpec{
+                                                             .name = "f",
+                                                             .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                             .type_v = IsType("int")
+                                                         }
+                    ));
+                }
+            },
+            {
+                .name = ContextNames::ModEnumDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " enum ctx_enum: int { A = 1 }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsEnumDef("ctx_enum", SpecAdder::get_v<ModifierVerifier>(v), IsType("int"),
+                                                       EnumCaseSpec{.name = "A", .value_v = IsNumber("1")}));
+                }
+            },
+            {
+                .name = ContextNames::ModEnumCase,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "enum ctx_e_case: int { ",
+                .suffix = " A = 1 }\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsEnumDef("ctx_e_case", {}, IsType("int"),
+                                                       EnumCaseSpec{
+                                                           .name = "A",
+                                                           .modifiers = SpecAdder::get_v<ModifierVerifier>(v),
+                                                           .value_v = IsNumber("1")
+                                                       }
+                    ));
+                }
+            },
+            {
+                .name = ContextNames::ModTypealiasDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " typealias ctx_alias = int\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsTypeAlias("ctx_alias", SpecAdder::get_v<ModifierVerifier>(v),
+                                                         IsType("int")));
+                }
+            },
+            {
+                .name = ContextNames::ModExtensionDefinition,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::TopLevel,
+                .prefix = "",
+                .suffix = " extension ctx_target {}\n",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(
+                        IsExtensionDef(SpecAdder::get_v<ModifierVerifier>(v), IsType("ctx_target")));
+                }
+            },
+            {
+                .name = ContextNames::ModDictItem,
+                .input_types = {InjectableType::Modifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "{ ",
+                .suffix = " k: 1 }",
+                .transform_verifier = [](const UniversalVerifier& v) -> UniversalVerifier
+                {
+                    return UniversalVerifier(IsDict(
+                        DictItemSpec{
+                            .key = "k", .modifiers = SpecAdder::get_v<ModifierVerifier>(v), .value_v = IsNumber("1")
+                        }
+                    ));
                 }
             }
         };
+
+        return contexts;
     }
 }

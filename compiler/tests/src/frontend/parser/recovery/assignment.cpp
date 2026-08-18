@@ -2,353 +2,167 @@
 
 namespace valuascript::compiler::test
 {
-    class AssignmentErrorTest : public ParserTestBase
+    class AssignmentErrorRegistryRunner : public ParserTestBase,
+                                          public testing::WithParamInterface<ErrorRegistryEntry<AssignmentVerifier>>
     {
     };
 
-    TEST_F(AssignmentErrorTest, MissingVariableName)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 5, 1, 6);
+    using E = ParserErrorCode;
 
-        ExpectParseErrorsWithRecovery(
-            "let = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"<error>"}}, IsNumber("1"))
-                }
-            }
-        );
+    namespace
+    {
+        const bool _ = []()
+        {
+            auto reg = [](const RecoveryCase<AssignmentVerifier>& spec) { ErrorRegistry::add(spec); };
+
+            reg({
+                .name = "MissingVariableName",
+                .code = "let = 1",
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
+            });
+
+            reg({
+                .name = "InvalidCharacter1",
+                .code = "let a! = 1",
+                .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
+            });
+
+            reg({
+                .name = "InvalidCharacter2",
+                .code = "let a ! = 1",
+                .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
+            });
+
+            reg({
+                .name = "InvalidVariableNameStart",
+                .code = "let 123 = 1",
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
+            });
+
+            reg({
+                .name = "IncompleteAssignmentMissingEquals",
+                .code = "let a 1",
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "IncompleteMultipleAssignmentMissingEquals",
+                .code = "let a, b 1",
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 9, .line_end = 1, .column_end = 10}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MissingValueAfterEquals",
+                .code = "let a = ",
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
+            reg({
+                .name = "MissingValueAfterEqualsWithTypeAnnotation",
+                .code = "let a: int =",
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 13, .line_end = 1, .column_end = 14}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("int")}}, IsNull()),
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
+            reg({
+                .name = "IncompleteAssignmentAtEOF",
+                .code = "let a",
+                .errors = {PErr{.code = E::IncompleteAssignment, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNull())
+            });
+
+            reg({
+                .name = "MultiAssignmentTrailingComma",
+                .code = "let a, = 1",
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MultiAssignmentMissingComma",
+                .code = "let a b = 1",
+                .errors = {PErr{.code = E::ExpectedCommaInMultiAssignment, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MultiAssignmentDoubleComma",
+                .code = "let a,, b = 1",
+                .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "<error>"}, AssignmentTargetSpec{.name = "b"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MissingTypeAfterColon",
+                .code = "let a: = 1",
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsNullType()}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "BrokenNestedTypeAnnotation",
+                .code = "let a: vector<int = 1",
+                .errors = {PErr{.code = E::UnmatchedBracketAfterGenericArgs, .line_start = 1, .column_start = 17, .line_end = 1, .column_end = 18}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("vector", IsType("int"))}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "ReservedKeywordAsTarget",
+                .code = "let func = 1",
+                .errors = {PErr{.code = E::ReservedKeywordAsIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 9}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "func"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "ReservedKeywordInMultiAssignment",
+                .code = "let a, if = 1",
+                .errors = {PErr{.code = E::ReservedKeywordAsIdentifier, .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 10}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}, AssignmentTargetSpec{.name = "if"}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MissingTypeAfterColonInMultiAssignment",
+                .code = "let a: integer, b: = 1",
+                .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 20, .line_end = 1, .column_end = 21}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a", .type_v = IsType("integer")}, AssignmentTargetSpec{.name = "b", .type_v = IsNullType()}}, IsNumber("1"))
+            });
+
+            reg({
+                .name = "MissingValueAfterEqualsMultiAssignment",
+                .code = "let x, y = ",
+                .errors = {PErr{.code = E::MissingValueAfterEquals, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 12}},
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "x"}, AssignmentTargetSpec{.name = "y"}}, IsNull())
+            });
+
+            return true;
+        }();
     }
 
-    TEST_F(AssignmentErrorTest, InvalidCharacter1)
+    TEST_P(AssignmentErrorRegistryRunner, ValidatesInAllContexts)
     {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidCharacter, 1, 6, 1, 7);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + p.test_name);
 
-        ExpectParseErrorsWithRecovery(
-            "let a! = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNumber("1"))
-                }
-            }
-        );
+        ExpectAssignmentErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels, p.accepted_sentinels);
     }
 
-    TEST_F(AssignmentErrorTest, InvalidCharacter2)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidCharacter, 1, 7, 1, 8);
-
-        ExpectParseErrorsWithRecovery(
-            "let a ! = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, InvalidVariableNameStart)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 5, 1, 8);
-
-        ExpectParseErrorsWithRecovery(
-            "let 123 = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"<error>"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, IncompleteAssignmentMissingEquals)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 7, 1, 8);
-
-        ExpectParseErrorsWithRecovery(
-            "let a 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, IncompleteMultipleAssignmentMissingEquals)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 10, 1, 11);
-
-        ExpectParseErrorsWithRecovery(
-            "let a, b 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"b"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingValueAfterEquals)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 8, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "let a =",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNull())
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsWithTypeAnnotation)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 13, 1, 14);
-
-        ExpectParseErrorsWithRecovery(
-            "let a: int =",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a", IsType("int")}}, IsNull())
-                }
-            }
-        );
-    }
-
-
-    TEST_F(AssignmentErrorTest, IncompleteAssignmentAtEOF)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::IncompleteAssignment, 1, 6, 1, 7);
-
-        ExpectParseErrorsWithRecovery(
-            "let a",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}}, IsNull())
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MultiAssignmentTrailingComma)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 8, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "let a, = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"<error>"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MultiAssignmentMissingComma)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ExpectedCommaInMultiAssignment, 1, 7, 1, 8);
-
-        ExpectParseErrorsWithRecovery(
-            "let a b = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"b"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MultiAssignmentDoubleComma)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::InvalidIdentifier, 1, 7, 1, 8);
-
-        ExpectParseErrorsWithRecovery(
-            "let a,, b = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"<error>"}, {"b"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, IllegalModifierOnSingleElementOfMultiAssignment)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ModifiersAttachedToMultiAssignmentSingleElements, 1, 8, 1, 15);
-
-        ExpectParseErrorsWithRecovery(
-            "let a, @export b = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"b"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingTypeAfterColon)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingTypeAnnotation, 1, 8, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "let a: = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a", IsNullType()}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, BrokenNestedTypeAnnotation)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::UnmatchedBracketAfterGenericArgs, 1, 19, 1, 20);
-
-        ExpectParseErrorsWithRecovery(
-            "let a: vector<int = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"a", IsType("vector", {IsType("int")})}
-                                 },
-                                 IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, ReservedKeywordAsTarget)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ReservedKeywordAsIdentifier, 1, 5, 1, 9);
-
-        ExpectParseErrorsWithRecovery(
-            "let func = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"func"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, ReservedKeywordInMultiAssignment)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ReservedKeywordAsIdentifier, 1, 8, 1, 10);
-
-        ExpectParseErrorsWithRecovery(
-            "let a, if = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"a"}, {"if"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingModifierNameAfterAt)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ExpectedModifierName, 1, 3, 1, 6);
-
-        ExpectParseErrorsWithRecovery(
-            "@ let a = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({{"<error>"}}, {{"a"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MultipleBrokenModifiers)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::ExpectedModifierName, 1, 8, 1, 11);
-
-        ExpectParseErrorsWithRecovery(
-            "@mod1 @123 let a = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({{"mod1"}, {"<error>"}}, {{"a"}}, IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingTypeAfterColonInMultiAssignment)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingTypeAnnotation, 1, 20, 1, 21);
-
-        ExpectParseErrorsWithRecovery(
-            "let a: integer, b: = 1",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({},
-                                 {
-                                     {"a", IsType("integer")},
-                                     {"b", IsNullType()}
-                                 },
-                                 IsNumber("1"))
-                }
-            }
-        );
-    }
-
-    TEST_F(AssignmentErrorTest, MissingValueAfterEqualsMultiAssignment)
-    {
-        std::vector<ExpectedError> errors;
-        errors.emplace_back(ValuascriptErrorCode::MissingValueAfterEquals, 1, 11, 1, 12);
-
-        ExpectParseErrorsWithRecovery(
-            "let x, y = ",
-            errors,
-            ProgramSpec{
-                .execution_steps = {
-                    IsAssignment({}, {{"x"}, {"y"}}, IsNull())
-                }
-            }
-        );
-    }
+    INSTANTIATE_TEST_SUITE_P(
+        Assignment,
+        AssignmentErrorRegistryRunner,
+        testing::ValuesIn(ErrorRegistry::assignments()),
+        TestNameGenerator{}
+    );
 }

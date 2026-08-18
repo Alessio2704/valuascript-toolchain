@@ -1,5 +1,4 @@
 #include "compiler_stage_orchestrator.h"
-#include <algorithm>
 
 #include "internal_compiler_exception.h"
 
@@ -32,7 +31,7 @@ namespace valuascript::compiler {
     CompilerStageArtifact CompilerStageOrchestrator::run_from_file(CompilerContext &context,
                                                                    const std::string &file_path) {
         std::vector<CompilerStageArtifact> initial_artifacts = {
-            {CompilerStageArtifactCode::FilePath, file_path}
+            {.code = CompilerStageArtifactCode::FilePath, .data = file_path}
         };
         return run(context, initial_artifacts);
     }

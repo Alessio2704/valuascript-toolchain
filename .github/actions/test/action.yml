@@ -1,0 +1,38 @@
+name: "Test ValuaScript"
+description: "Runs CTest for the project"
+
+inputs:
+  cmake_preset:
+    description: "The CMake preset to use (Debug, Release, RelWithDebInfo)"
+    required: true
+    default: "Release"
+  fuzz_iterations:
+    description: "Number of iterations for the fuzzer"
+    required: false
+  expansion_depth:
+    description: "Max expansion depth for tests"
+    required: false
+  expansion_recursion:
+    description: "Max expansion recursion for tests"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up MSVC Developer Command Prompt (Windows)
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.msvc_arch }}
+
+    - name: Run C++ Engine Tests
+      shell: bash
+      run: |
+        CORES=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
+        echo "Running CTest with $CORES cores..."
+
+        [ -n "${{ inputs.fuzz_iterations }}" ] && export FUZZ_ITERATIONS=${{ inputs.fuzz_iterations }}
+        [ -n "${{ inputs.expansion_depth }}" ] && export EXPANSION_DEPTH=${{ inputs.expansion_depth }}
+        [ -n "${{ inputs.expansion_recursion }}" ] && export EXPANSION_RECURSION=${{ inputs.expansion_recursion }}
+        
+        ctest --preset ${{ inputs.cmake_preset }} -j $CORES
