@@ -80,7 +80,8 @@ namespace valuascript::compiler::test
                                             .name = "secret", .modifiers = {{.name="internal"}}, .type_v = IsType("string")
                                         },
                                         FieldSpec{.name = "version", .type_v = IsType("int")}
-                )
+                ),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             return true;

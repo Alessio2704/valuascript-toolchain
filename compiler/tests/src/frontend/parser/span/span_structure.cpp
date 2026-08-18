@@ -1,18 +1,24 @@
 #include <gtest/gtest.h>
-#include "ast_base_test.h"
+#include "frontend/parser/helpers/parser_test_base.h"
 
 using namespace valuascript::compiler;
 
 namespace valuascript::compiler::test {
-    class AstSpanTest : public AstBaseTest {
+    class AstSpanTest : public ParserTestBase {
     protected:
+        static std::shared_ptr<Program> parse_code(const std::string &code) {
+            CompilerContext context;
+            context.settings.fail_fast = true;
+            return run_parser(code, context);
+        }
+
         static void assert_span(const SourceSpan &span, size_t line_start, size_t col_start, size_t line_end,
                                 size_t col_end) {
             EXPECT_EQ(span.line_start, line_start) << "Mismatch in line_start";
             EXPECT_EQ(span.column_start, col_start) << "Mismatch in column_start";
             EXPECT_EQ(span.line_end, line_end) << "Mismatch in line_end";
             EXPECT_EQ(span.column_end, col_end) << "Mismatch in column_end";
-            EXPECT_EQ(span.path(), "test.vs") << "Mismatch in file_path";
+            EXPECT_EQ(span.path(), "test_script.vs") << "Mismatch in file_path";
         }
     };
 

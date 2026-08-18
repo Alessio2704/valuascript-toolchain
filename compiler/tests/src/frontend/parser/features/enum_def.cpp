@@ -91,7 +91,8 @@ namespace valuascript::compiler::test
                 .verifier = IsEnumDef("State", {}, IsType("string"),
                     EnumCaseSpec{.name = "Open", .modifiers = {{.name="init"}}, .value_v = IsString("\"open\"")},
                     EnumCaseSpec{.name = "Closed", .value_v = IsString("\"closed\"")}
-                )
+                ),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             return true;

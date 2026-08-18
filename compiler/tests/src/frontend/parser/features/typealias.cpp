@@ -26,7 +26,8 @@ namespace valuascript::compiler::test
                 "Data\n "
                 "= \n"
                 "string\n",
-                .verifier = IsTypeAlias("Data", {}, IsType("string"))
+                .verifier = IsTypeAlias("Data", {}, IsType("string")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             return true;
