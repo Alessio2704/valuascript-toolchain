@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include <algorithm>
+#include "frontend/parser/helpers/pool_kind.h"
 #include "frontend/parser/helpers/node_matchers.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/context_registry.h"
@@ -21,6 +22,7 @@ namespace valuascript::compiler::test
         bool is_broken = false;
         std::vector<ValuascriptErrorCode> suppressed_errors = {};
         std::vector<std::string_view> skip_contexts = {};
+        std::vector<PoolKind> excluded_pools = {};
     };
 
     struct InvalidDeclarationInBlockTestCase
@@ -59,6 +61,12 @@ namespace valuascript::compiler::test
         bool is_skipped_for_ctx = (std::find(construct.skip_contexts.begin(), construct.skip_contexts.end(),
                                              ctx.name) != construct.skip_contexts.end());
         if (is_skipped_for_ctx)
+        {
+            return false;
+        }
+
+        if (std::find(construct.excluded_pools.begin(), construct.excluded_pools.end(),
+                      PoolKind::InvalidDeclarationInBlock) != construct.excluded_pools.end())
         {
             return false;
         }

@@ -19,14 +19,16 @@ namespace valuascript::compiler::test
                 .name = "MissingImportKeyword",
                 .code = "file_path.vs",
                 .errors = {PErr{.code = E::InvalidStandaloneStatement, .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 13}},
-                .verifier = IsNull()
+                .verifier = IsNull(),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
                 .name = "MissingImportStringPath",
                 .code = "import ",
                 .errors = {PErr{.code = E::MissingImportPathString, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
-                .verifier = IsImport("<error>")
+                .verifier = IsImport("<error>"),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
@@ -70,10 +72,10 @@ namespace valuascript::compiler::test
 
     TEST_P(ImportErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels] = GetParam();
-        SCOPED_TRACE("Running Error Registry Test Case: " + name);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + p.test_name);
 
-        ExpectImportErrors(code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
+        ExpectImportErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels, p.accepted_sentinels);
     }
 
     INSTANTIATE_TEST_SUITE_P(

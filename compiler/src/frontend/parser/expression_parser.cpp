@@ -353,9 +353,32 @@ namespace valuascript::compiler
         const Token& tok = cursor.peek();
         const Token& next = cursor.peek(1);
         const Token& prev = cursor.previous();
-        bool is_stmt_start = TokenTraits::is_statement_start(tok, next.type) ||
-                             tok.type == TokenType::Return ||
-                             ctx.looks_like_reassignment();
+        bool is_container_or_multiline = (tok.line == next.line || tok.line > prev.line ||
+                                          (ctx.is_in_expression_container() && (prev.type == TokenType::LeftParen || prev.type == TokenType::LeftBracket || prev.type == TokenType::LeftBrace || prev.type == TokenType::Colon || prev.type == TokenType::Arrow || prev.type == TokenType::Then)));
+
+        bool is_import_stmt = tok.type == TokenType::Import &&
+                              ((next.type == TokenType::String || next.type == TokenType::DocString) ||
+                               (tok.line == next.line && next.type != TokenType::Comma && !ctx.is_active_closer(next.type)));
+
+        bool is_return_stmt = tok.type == TokenType::Return && next.type != TokenType::Comma && !ctx.is_active_closer(next.type) && is_container_or_multiline;
+
+        bool has_declaration_structure =
+            (tok.type == TokenType::Struct && (next.type == TokenType::Identifier || next.type == TokenType::LeftBrace || next.type == TokenType::Less)) ||
+            (tok.type == TokenType::Func && (next.type == TokenType::Identifier || next.type == TokenType::LeftParen || next.type == TokenType::Less)) ||
+            (tok.type == TokenType::Enum && (next.type == TokenType::Identifier || next.type == TokenType::LeftBrace || next.type == TokenType::Colon)) ||
+            (tok.type == TokenType::Extension && (next.type == TokenType::Identifier || next.type == TokenType::LeftBrace || next.type == TokenType::Less)) ||
+            (tok.type == TokenType::Typealias && (next.type == TokenType::Identifier || next.type == TokenType::Assign || next.type == TokenType::Less)) ||
+            (tok.type == TokenType::Let && (next.type == TokenType::Identifier || next.type == TokenType::Colon));
+
+        bool is_declaration_construct = has_declaration_structure && is_container_or_multiline;
+
+        bool is_stmt_start = (tok.line > prev.line && (TokenTraits::is_statement_start(tok, next.type) || tok.type == TokenType::Return)) ||
+                             ctx.looks_like_reassignment() ||
+                             tok.type == TokenType::At ||
+                             tok.type == TokenType::Hash ||
+                             is_import_stmt ||
+                             is_return_stmt ||
+                             is_declaration_construct;
         bool force_location = (tok.type != TokenType::EndOfFile && !is_stmt_start);
 
         if (is_stmt_start)
@@ -392,16 +415,18 @@ namespace valuascript::compiler
             throw ParseSyncException();
         }
 
-        if (tok.type == TokenType::Case || tok.type == TokenType::Default || tok.type == TokenType::RightBrace || tok.
-            type == TokenType::RightParen ||
-            tok.type == TokenType::RightBracket || tok.type == TokenType::Return || tok.type == TokenType::Then || tok.
-            type == TokenType::Else)
+        bool is_delimiter_or_closer = tok.type == TokenType::RightBrace ||
+                                      tok.type == TokenType::RightParen ||
+                                      tok.type == TokenType::RightBracket ||
+                                      ctx.is_active_closer(tok.type) ||
+                                      (tok.line > prev.line && (tok.type == TokenType::Return || tok.type == TokenType::Case || tok.type == TokenType::Default || tok.type == TokenType::Then || tok.type == TokenType::Else));
+
+        if (is_delimiter_or_closer)
         {
             if (tok.line > prev.line)
             {
                 if (TokenTraits::is_dangling_operator(prev.type) || TokenTraits::is_grouping_opener(prev.type))
-                    cursor.
-                        report_error(prev, E::InvalidExpression);
+                    cursor.report_error(prev, E::InvalidExpression);
             }
             cursor.report_error(tok, E::InvalidExpression, force_location);
         }

@@ -25,28 +25,6 @@ namespace valuascript::compiler::test
         ParserTestBase::ForEachRecoveryProgram(wrapped_code, inner_spec, inner_prefix, seed, std::forward<Callback>(callback));
     }
 
-    inline std::string get_expected_disallowed_context(std::string_view context_name)
-    {
-        if (context_name == ContextNames::ExprTupleMiddle ||
-            context_name == ContextNames::ExprTupleEnd ||
-            context_name == ContextNames::ExprTensorStart ||
-            context_name == ContextNames::ExprTensorMiddle ||
-            context_name == ContextNames::ExprTensorEnd ||
-            context_name == ContextNames::ExprTensorSingle ||
-            context_name == ContextNames::ExprDictValueStart ||
-            context_name == ContextNames::ExprDictValueMiddle ||
-            context_name == ContextNames::ExprDictValueEnd ||
-            context_name == ContextNames::ExprDictValueSingle ||
-            context_name == ContextNames::ExprCallArgStart ||
-            context_name == ContextNames::ExprCallArgMiddle ||
-            context_name == ContextNames::ExprCallArgEnd ||
-            context_name == ContextNames::ExprCallArgSingle)
-        {
-            return "in list";
-        }
-        return "in expression";
-    }
-
     inline std::vector<Context> get_expression_test_contexts()
     {
         std::vector<Context> valid_ctxs;

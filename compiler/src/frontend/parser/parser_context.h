@@ -60,6 +60,7 @@ namespace valuascript::compiler
         [[nodiscard]] bool is_in_sync_set(TokenType type) const;
 
         [[nodiscard]] bool looks_like_reassignment() const;
+        [[nodiscard]] bool is_in_expression_container() const;
 
         const Token& consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords = true,
                                         bool check_statement_boundary = false);

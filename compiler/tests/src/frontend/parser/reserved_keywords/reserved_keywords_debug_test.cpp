@@ -3,6 +3,7 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/dump_writer.h"
 #include "frontend/parser/helpers/error_shifter.h"
+#include "frontend/parser/helpers/context_names.h"
 
 namespace valuascript::compiler::test
 {
@@ -15,6 +16,21 @@ namespace valuascript::compiler::test
                                     const std::vector<SentinelKind>& excluded_sentinels = {},
                                     const std::vector<SentinelKind>& accepted_sentinels = {})
         {
+            std::vector<std::string_view> effective_skip_contexts = skip_contexts;
+            if (keyword == "true" || keyword == "false" || keyword == "self" ||
+                keyword == "if" || keyword == "switch" || keyword == "not" ||
+                keyword == "else" || keyword == "then" || keyword == "case" || keyword == "default" || keyword == "return")
+            {
+                auto add_skip = [&](std::string_view name)
+                {
+                    if (std::find(effective_skip_contexts.begin(), effective_skip_contexts.end(), name) == effective_skip_contexts.end())
+                    {
+                        effective_skip_contexts.push_back(name);
+                    }
+                };
+                add_skip(ContextNames::IdAsExpression);
+            }
+
             DumpWriter writer("reserved_keyword_debug_" + keyword + ".txt", "reserved_keyword_dumps");
             if (!writer.is_open()) return;
             auto& out = writer.out();
@@ -61,7 +77,7 @@ namespace valuascript::compiler::test
                     });
                 },
                 true,
-                skip_contexts,
+                effective_skip_contexts,
                 context_overrides,
                 std::nullopt,
                 excluded_sentinels,

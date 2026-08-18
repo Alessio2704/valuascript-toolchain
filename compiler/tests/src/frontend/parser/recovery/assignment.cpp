@@ -19,28 +19,32 @@ namespace valuascript::compiler::test
                 .name = "MissingVariableName",
                 .code = "let = 1",
                 .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 6}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
                 .name = "InvalidCharacter1",
                 .code = "let a! = 1",
                 .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
                 .name = "InvalidCharacter2",
                 .code = "let a ! = 1",
                 .errors = {PErr{.code = LexerErrorCode::InvalidCharacter, .line_start = 1, .column_start = 7, .line_end = 1, .column_end = 8}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1"))
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "a"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
                 .name = "InvalidVariableNameStart",
                 .code = "let 123 = 1",
                 .errors = {PErr{.code = E::ExpectedIdentifier, .line_start = 1, .column_start = 5, .line_end = 1, .column_end = 8}},
-                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1"))
+                .verifier = IsAssignment({AssignmentTargetSpec{.name = "<error>"}}, IsNumber("1")),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
@@ -149,10 +153,10 @@ namespace valuascript::compiler::test
 
     TEST_P(AssignmentErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels] = GetParam();
-        SCOPED_TRACE("Running Error Registry Test Case: " + name);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + p.test_name);
 
-        ExpectAssignmentErrors(code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
+        ExpectAssignmentErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels, p.accepted_sentinels);
     }
 
     INSTANTIATE_TEST_SUITE_P(

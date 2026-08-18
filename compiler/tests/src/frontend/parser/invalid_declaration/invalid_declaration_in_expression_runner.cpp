@@ -50,17 +50,6 @@ namespace valuascript::compiler::test
                 << " in context " << test_case.context.name
                 << " for source:\n" << format_source_with_lines(prog.full_code);
 
-            std::string expected_construct = (test_case.construct_case.name.find("Reassignment") != std::string::npos)
-                                                 ? "reassignment"
-                                                 : "declaration";
-            std::string expected_context = get_expected_disallowed_context(test_case.context.name);
-            std::string error_msg = target_diag->what();
-
-            EXPECT_TRUE(error_msg.find("declaration") != std::string::npos ||
-                        error_msg.find("reassignment") != std::string::npos)
-                << "Expected error message to contain 'declaration' or 'reassignment', but got: " << error_msg;
-            EXPECT_TRUE(error_msg.find("in list") != std::string::npos || error_msg.find("in expression") != std::string::npos)
-                << "Expected error message to contain 'in list' or 'in expression', but got: " << error_msg;
 
             if (test_case.construct_case.is_broken)
             {

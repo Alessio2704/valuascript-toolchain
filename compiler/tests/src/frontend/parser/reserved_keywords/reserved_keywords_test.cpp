@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names.h"
 #include "token/reserved_keyword_lookup.h"
 
 namespace valuascript::compiler::test
@@ -15,12 +16,21 @@ namespace valuascript::compiler::test
 
         ParserExpectedError base_error(ParserErrorCode::ReservedKeywordAsIdentifier, 1, 1, 1, keyword.length() + 1);
 
+        std::vector<std::string_view> skip_contexts = {};
+        if (keyword == "true" || keyword == "false" || keyword == "self" ||
+            keyword == "if" || keyword == "switch" || keyword == "not" ||
+            keyword == "else" || keyword == "then" || keyword == "case" || keyword == "default" || keyword == "return")
+        {
+            skip_contexts.push_back(ContextNames::IdAsExpression);
+        }
+
         ExpectParseErrorsUnified(
             InjectableType::Identifier,
             keyword,
             {base_error},
             UniversalVerifier(keyword),
-            "KeywordTest"
+            "KeywordTest",
+            skip_contexts
         );
     }
 

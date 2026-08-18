@@ -1,4 +1,5 @@
 #include "frontend/parser/helpers/parser_test_base.h"
+#include "frontend/parser/helpers/context_names_helpers.h"
 
 namespace valuascript::compiler::test
 {
@@ -188,6 +189,24 @@ namespace valuascript::compiler::test
                         {.label="b", .value_v=IsNumber("3")}
                     }
                 )
+            });
+
+            reg({
+                .name = "FunctionCallMissingClosingParen",
+                .code = "f(a: 1",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedRightParenAfterArguments,
+                        .line_start = 1, .column_start = 6, .line_end = 1, .column_end = 7
+                    }
+                },
+                .verifier = IsCall(
+                    IsIdentifier("f"), {
+                        {.label = "a", .value_v = IsNumber("1")}
+                    }
+                ),
+                .skip_contexts = ContextNames::all_nested_swallowing_func_call_contexts(),
+                .accepted_sentinels = SentinelKinds::all()
             });
 
             return true;

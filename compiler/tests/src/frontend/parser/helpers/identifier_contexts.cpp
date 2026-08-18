@@ -372,6 +372,17 @@ namespace valuascript::compiler::test
                 {
                     return UniversalVerifier(IsCall(IsIdentifier("ctx_f"), {{.label=SpecAdder::get_id(v), .value_v=IsNumber("1")}}));
                 }
+            },
+            {
+                .name = ContextNames::IdAsExpression,
+                .input_types = {InjectableType::Identifier},
+                .output_type = InjectableType::Expression,
+                .prefix = "",
+                .suffix = "",
+                .transform_verifier = [](const UniversalVerifier& v)
+                {
+                    return UniversalVerifier(IsIdentifier(SpecAdder::get_id(v)));
+                }
             }
         };
         return contexts;

@@ -21,7 +21,8 @@ namespace valuascript::compiler::test
                 std::vector<const RegistryEntry<T>*> valid_clean;
                 for (const auto& entry : clean_registry)
                 {
-                    bool skipped = std::find(entry.skip_contexts.begin(), entry.skip_contexts.end(), context_name) != entry.skip_contexts.end();
+                    bool skipped = (std::find(entry.skip_contexts.begin(), entry.skip_contexts.end(), context_name) != entry.skip_contexts.end()) ||
+                                   (std::find(entry.excluded_pools.begin(), entry.excluded_pools.end(), PoolKind::InvalidDeclarationInExpression) != entry.excluded_pools.end());
                     if (!skipped)
                     {
                         valid_clean.push_back(&entry);
@@ -37,7 +38,8 @@ namespace valuascript::compiler::test
                         .type = type,
                         .is_broken = false,
                         .suppressed_errors = {},
-                        .skip_contexts = entry_ptr->skip_contexts
+                        .skip_contexts = entry_ptr->skip_contexts,
+                        .excluded_pools = entry_ptr->excluded_pools
                     });
                 }
             }
@@ -47,26 +49,11 @@ namespace valuascript::compiler::test
                 std::vector<const ErrorRegistryEntry<T>*> valid_broken;
                 for (const auto& entry : broken_registry)
                 {
-                    bool skipped = std::find(entry.skip_contexts.begin(), entry.skip_contexts.end(), context_name) != entry.skip_contexts.end();
+                    bool skipped = (std::find(entry.skip_contexts.begin(), entry.skip_contexts.end(), context_name) != entry.skip_contexts.end()) ||
+                                   (std::find(entry.excluded_pools.begin(), entry.excluded_pools.end(), PoolKind::InvalidDeclarationInExpression) != entry.excluded_pools.end());
                     if (skipped) continue;
 
                     if (!is_valid_declaration_keyword(type, entry.code)) continue;
-
-                    std::string_view name_view = entry.test_name;
-                    if (name_view.find("EnumMissingName") != std::string_view::npos ||
-                        name_view.find("MissingTypeName") != std::string_view::npos ||
-                        name_view.find("MissingStructName") != std::string_view::npos ||
-                        name_view.find("NoNameFunc") != std::string_view::npos ||
-                        name_view.find("MissingAliasName") != std::string_view::npos ||
-                        name_view.find("MissingVariableName") != std::string_view::npos ||
-                        name_view.find("MultiReassignmentNotSupported") != std::string_view::npos ||
-                        name_view.find("MissingImportStringPath") != std::string_view::npos ||
-                        name_view.find("InvalidStandaloneStatement") != std::string_view::npos ||
-                        name_view.find("InvalidCharacter") != std::string_view::npos ||
-                        name_view.find("InvalidLeftSide") != std::string_view::npos)
-                    {
-                        continue;
-                    }
 
                     valid_broken.push_back(&entry);
                 }
@@ -87,7 +74,8 @@ namespace valuascript::compiler::test
                         .type = type,
                         .is_broken = true,
                         .suppressed_errors = std::move(err_codes),
-                        .skip_contexts = entry_ptr->skip_contexts
+                        .skip_contexts = entry_ptr->skip_contexts,
+                        .excluded_pools = entry_ptr->excluded_pools
                     });
                 }
             }
@@ -127,6 +115,12 @@ namespace valuascript::compiler::test
             return false;
         }
 
+        if (std::find(construct.excluded_pools.begin(), construct.excluded_pools.end(),
+                      PoolKind::InvalidDeclarationInExpression) != construct.excluded_pools.end())
+        {
+            return false;
+        }
+
         if (construct.is_broken && !is_valid_declaration_keyword(construct.type, construct.code))
         {
             return false;
@@ -135,20 +129,6 @@ namespace valuascript::compiler::test
         if (construct.is_broken && has_unclosed_brace(construct.code))
         {
             return false;
-        }
-
-        if (construct.is_broken)
-        {
-            if (construct.name.find("EnumMissingName") != std::string::npos ||
-                construct.name.find("MissingTypeName") != std::string::npos ||
-                construct.name.find("MissingAliasName") != std::string::npos ||
-                construct.name.find("MissingTargetTypeAnnotation") != std::string::npos ||
-                construct.name.find("MissingVariableName") != std::string::npos ||
-                construct.name.find("MultiReassignmentNotSupported") != std::string::npos ||
-                construct.name.find("MissingImportStringPath") != std::string::npos)
-            {
-                return false;
-            }
         }
 
         return true;

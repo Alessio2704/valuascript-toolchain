@@ -36,7 +36,8 @@ namespace valuascript::compiler::test
                         .column_end = 20
                     }
                 },
-                .verifier = IsTypeAlias("MyType", {}, IsNullType())
+                .verifier = IsTypeAlias("MyType", {}, IsNullType()),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
@@ -81,12 +82,11 @@ namespace valuascript::compiler::test
 
     TEST_P(TypeAliasErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels,
-            accepted_sentinels] = GetParam();
-        SCOPED_TRACE("Running Error Registry Test Case: " + name);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Error Registry Test Case: " + p.test_name);
 
-        ExpectTypeAliasErrors(code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels,
-                              accepted_sentinels);
+        ExpectTypeAliasErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels,
+                              p.accepted_sentinels);
     }
 
     INSTANTIATE_TEST_SUITE_P(

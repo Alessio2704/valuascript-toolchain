@@ -26,7 +26,8 @@ namespace valuascript::compiler::test
                 .name = "MissingTypeNameWithTrailingCharacters",
                 .code = "extension 123 {}",
                 .errors = {PErr{.code = E::MissingTypeAnnotation, .line_start = 1, .column_start = 11, .line_end = 1, .column_end = 14}},
-                .verifier = IsExtensionDef({}, IsNullType(), {})
+                .verifier = IsExtensionDef({}, IsNullType(), {}),
+                .excluded_pools = { PoolKind::InvalidDeclarationInExpression }
             });
 
             reg({
@@ -49,9 +50,9 @@ namespace valuascript::compiler::test
 
     TEST_P(ExtensionErrorRegistryRunner, ValidatesInAllContexts)
     {
-        const auto& [name, code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels] = GetParam();
-        SCOPED_TRACE("Running Recovery Test Case: " + name);
-        ExpectExtensionDefinitionErrors(code, errors, verifier, skip_contexts, context_overrides, excluded_sentinels, accepted_sentinels);
+        const auto& p = GetParam();
+        SCOPED_TRACE("Running Recovery Test Case: " + p.test_name);
+        ExpectExtensionDefinitionErrors(p.code, p.errors, p.verifier, p.skip_contexts, p.context_overrides, p.excluded_sentinels, p.accepted_sentinels);
     }
 
     INSTANTIATE_TEST_SUITE_P(

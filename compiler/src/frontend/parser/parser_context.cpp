@@ -110,6 +110,18 @@ namespace valuascript::compiler
         return false;
     }
 
+    bool ParserContext::is_in_expression_container() const
+    {
+        for (const auto& closer : active_closers)
+        {
+            if (closer.kind != ContainerKind::Block && closer.kind != ContainerKind::Generic)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     const Token& ParserContext::consume_identifier(ParserErrorCode fallback_err, bool allow_top_level_keywords,
                                                    bool check_statement_boundary)
     {

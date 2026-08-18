@@ -25,6 +25,28 @@ namespace valuascript::compiler::test
                 .accepted_sentinels = SentinelKinds::all()
             });
 
+            reg({
+                .name = "MultipleNestedUnclosedGroupings",
+                .code = "(((1 + 2",
+                .errors = {
+                    PErr{
+                        .code = E::ExpectedRightParenAfterExpression,
+                        .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9
+                    },
+                    PErr{
+                        .code = E::ExpectedRightParenAfterExpression,
+                        .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9
+                    },
+                    PErr{
+                        .code = E::ExpectedRightParenAfterExpression,
+                        .line_start = 1, .column_start = 8, .line_end = 1, .column_end = 9
+                    }
+                },
+                .verifier = IsGrouping(IsGrouping(IsGrouping(IsBinary(TokenType::Plus, IsNumber("1"), IsNumber("2"))))),
+                .skip_contexts = ContextNames::all_nested_swallowing_grouping_contexts(),
+                .accepted_sentinels = SentinelKinds::all()
+            });
+
             return true;
         }();
     }

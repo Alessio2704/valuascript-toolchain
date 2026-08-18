@@ -248,9 +248,7 @@ namespace valuascript::compiler
         {
             if (cursor.peek().line > cursor.previous().line) return true;
             if (cursor.peek().type == TokenType::At) return false;
-            return cursor.is_at_end() || TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
-                (cursor.peek().type == TokenType::Return && ctx.is_active_closer(TokenType::RightBrace)) ||
-                ctx.is_active_closer(cursor.peek().type);
+            return cursor.is_at_end() || ctx.is_active_closer(cursor.peek().type);
         };
 
         if (cursor.match(TokenType::Assign))
@@ -317,16 +315,14 @@ namespace valuascript::compiler
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
                 if (expr && expr->is_complete())
-                {
                     cursor.report_error(expr->span, E::InvalidLeftSideExpressionInReassignment);
-                }
             }
 
             ExprPtr value = nullptr;
             TokenType peek_target = ctx.peek_past_modifiers();
-            bool is_pseudo_stmt = ctx.is_at_any_declaration() ||
-                (cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
-                peek_target == TokenType::Return ||
+            bool is_pseudo_stmt = (cursor.peek().line > cursor.previous().line && ctx.is_at_any_declaration()) ||
+                (cursor.peek().line > cursor.previous().line && cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
+                (cursor.peek().line > cursor.previous().line && peek_target == TokenType::Return) ||
                 (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)) ||
                 ctx.is_active_closer(cursor.peek().type);
 
@@ -337,7 +333,7 @@ namespace valuascript::compiler
                                              : cursor.peek();
                 cursor.report_error_no_panic(report_at, E::MissingValueAfterEquals, false);
             }
-             else
+            else
             {
                 prev_expr_stmt = ctx.is_parsing_expression_statement;
                 ctx.is_parsing_expression_statement = ctx.looks_like_reassignment();
@@ -383,7 +379,7 @@ namespace valuascript::compiler
         }
 
         verify_statement_end();
-        return AstFactory::make_node_with_span<ExpressionStatement>(start_span, std::move(expr));
+        return AstFactory::make_node_with_span<ExpressionStatement>(expr->span, std::move(expr));
     }
 
     std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement(std::vector<Modifier> modifiers)

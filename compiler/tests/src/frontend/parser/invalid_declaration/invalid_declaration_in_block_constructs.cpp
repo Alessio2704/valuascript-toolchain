@@ -26,7 +26,8 @@ namespace valuascript::compiler::test
                     .type = type,
                     .is_broken = false,
                     .suppressed_errors = {},
-                    .skip_contexts = entry.skip_contexts
+                    .skip_contexts = entry.skip_contexts,
+                    .excluded_pools = entry.excluded_pools
                 });
             }
             if (!broken_registry.empty())
@@ -46,7 +47,8 @@ namespace valuascript::compiler::test
                     .type = type,
                     .is_broken = true,
                     .suppressed_errors = std::move(err_codes),
-                    .skip_contexts = entry.skip_contexts
+                    .skip_contexts = entry.skip_contexts,
+                    .excluded_pools = entry.excluded_pools
                 });
             }
         }

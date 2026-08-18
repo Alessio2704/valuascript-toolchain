@@ -129,6 +129,7 @@ namespace valuascript::compiler::test::ContextNames
     X(IdModifierName, "id_modifier_name") \
     X(IdModifierArgLabel, "id_modifier_arg_label") \
     X(IdCallArgLabel, "id_call_arg_label") \
+    X(IdAsExpression, "id_as_expression") \
     X(IdStandaloneExpr, "id_standalone_expr")
 
 #define VALUASCRIPT_ALL_CONTEXTS(X) \
