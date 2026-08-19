@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <ostream>
 #include <type_traits>
 #include "token/token.h"
 #include "ast_arena.h"

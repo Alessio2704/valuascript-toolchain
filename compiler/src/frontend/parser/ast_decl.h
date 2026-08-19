@@ -26,6 +26,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::ImportStatement;
         std::vector<Modifier> modifiers;
         NodeName path;
+        std::optional<std::string> resolved_canonical_path = std::nullopt;
 
         explicit ImportStatement(std::vector<Modifier> mods, NodeName p)
             : AstNode(KIND), modifiers(std::move(mods)), path(std::move(p))

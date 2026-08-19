@@ -242,11 +242,6 @@ namespace valuascript::compiler::test
             }
             return true;
         }
-
-        [[nodiscard]] operator InlineVerifier<node_type>() const
-        {
-            return InlineVerifier<node_type>(*this);
-        }
     };
 
     template <typename NodeT, size_t BufferSize>

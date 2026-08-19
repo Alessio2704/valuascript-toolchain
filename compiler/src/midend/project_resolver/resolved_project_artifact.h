@@ -10,5 +10,6 @@ namespace valuascript::compiler {
         std::string entry_file_path = {};
         std::unordered_map<std::string, std::shared_ptr<Program>> modules = {};
         std::vector<std::string> topological_order = {};
+        std::unordered_map<std::string, std::vector<std::string>> reverse_imports = {};
     };
 }

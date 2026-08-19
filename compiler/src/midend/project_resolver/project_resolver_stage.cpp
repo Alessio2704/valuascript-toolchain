@@ -77,6 +77,14 @@ namespace valuascript::compiler
                 continue;
             }
 
+            import_stmt->resolved_canonical_path = next_file;
+
+            auto& dependents = project.reverse_imports[next_file];
+            if (std::find(dependents.begin(), dependents.end(), current_file) == dependents.end())
+            {
+                dependents.push_back(current_file);
+            }
+
             resolve_recursive(context, next_file, project);
         }
 
@@ -99,7 +107,8 @@ namespace valuascript::compiler
         ResolvedProjectArtifact project{
             .entry_file_path = absolute_file_path,
             .modules = {},
-            .topological_order = {}
+            .topological_order = {},
+            .reverse_imports = {}
         };
 
         resolving_.clear();

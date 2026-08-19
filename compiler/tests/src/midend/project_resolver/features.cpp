@@ -77,4 +77,58 @@ namespace valuascript::compiler::test
 
         ExpectResolverGraph(main_path, 7, core_path, main_path);
     }
+
+    TEST_F(ProjectResolverHappyPathTest, ReverseDependencyGraphTracking)
+    {
+        /*
+        //     A
+        //    / \
+        //   B   C
+        //    \ /
+        //     D
+        */
+        std::string d_path = CreateFile("d.vs", "let d = 4");
+        std::string c_path = CreateFile("c.vs", "import \"d.vs\"\nlet c = 3");
+        std::string b_path = CreateFile("b.vs", "import \"d.vs\"\nlet b = 2");
+        std::string a_path = CreateFile("a.vs", "import \"b.vs\"\nimport \"c.vs\"\nlet a = 1");
+
+        ResolvedProjectArtifact project = RunResolver(a_path);
+
+        // d.vs is imported by b.vs and c.vs
+        ASSERT_TRUE(project.reverse_imports.contains(d_path));
+        EXPECT_EQ(project.reverse_imports[d_path].size(), 2);
+        EXPECT_NE(std::find(project.reverse_imports[d_path].begin(), project.reverse_imports[d_path].end(), b_path),
+                  project.reverse_imports[d_path].end());
+        EXPECT_NE(std::find(project.reverse_imports[d_path].begin(), project.reverse_imports[d_path].end(), c_path),
+                  project.reverse_imports[d_path].end());
+
+        // b.vs is imported by a.vs
+        ASSERT_TRUE(project.reverse_imports.contains(b_path));
+        EXPECT_EQ(project.reverse_imports[b_path].size(), 1);
+        EXPECT_EQ(project.reverse_imports[b_path][0], a_path);
+
+        // c.vs is imported by a.vs
+        ASSERT_TRUE(project.reverse_imports.contains(c_path));
+        EXPECT_EQ(project.reverse_imports[c_path].size(), 1);
+        EXPECT_EQ(project.reverse_imports[c_path][0], a_path);
+
+        // a.vs is entry and has no incoming reverse imports
+        EXPECT_FALSE(project.reverse_imports.contains(a_path));
+    }
+
+    TEST_F(ProjectResolverHappyPathTest, CanonicalTargetPathOnImportStatements)
+    {
+        std::string math_path = CreateFile("utils/math.vs", "let pi = 3.14");
+        std::string main_path = CreateFile("main.vs", "import \"utils/math.vs\"\nlet r = pi");
+
+        ResolvedProjectArtifact project = RunResolver(main_path);
+
+        ASSERT_TRUE(project.modules.contains(main_path));
+        const auto& main_ast = project.modules[main_path];
+        ASSERT_EQ(main_ast->import_statements.size(), 1);
+
+        const auto& import_stmt = main_ast->import_statements[0];
+        ASSERT_TRUE(import_stmt->resolved_canonical_path.has_value());
+        EXPECT_EQ(import_stmt->resolved_canonical_path.value(), math_path);
+    }
 }
