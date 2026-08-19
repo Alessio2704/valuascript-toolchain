@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "injectable_type.h"
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 
 namespace valuascript::compiler::test
 {

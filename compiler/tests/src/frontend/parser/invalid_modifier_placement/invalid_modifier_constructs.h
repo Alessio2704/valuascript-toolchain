@@ -5,7 +5,7 @@
 #include <string_view>
 #include "frontend/parser/helpers/injectable_type.h"
 #include "frontend/parser/helpers/universal_verifier.h"
-#include "frontend/parser/helpers/node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 
 namespace valuascript::compiler::test
 {

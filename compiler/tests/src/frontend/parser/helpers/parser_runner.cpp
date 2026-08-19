@@ -8,7 +8,7 @@
 #include "error_shifter.h"
 #include "recovery_program_builder.h"
 #include "deterministic_sampler.h"
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 
 namespace valuascript::compiler::test
 {

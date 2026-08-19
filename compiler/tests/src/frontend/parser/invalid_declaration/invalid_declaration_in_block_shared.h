@@ -5,7 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include "frontend/parser/helpers/pool_kind.h"
-#include "frontend/parser/helpers/node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "frontend/parser/helpers/context_registry.h"
 #include "frontend/parser/helpers/recovery_sentinel.h"

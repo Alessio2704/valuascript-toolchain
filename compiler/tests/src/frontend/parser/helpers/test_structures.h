@@ -2,7 +2,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 #include "context_override.h"
 
 namespace valuascript::compiler::test

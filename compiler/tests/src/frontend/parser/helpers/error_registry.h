@@ -9,7 +9,7 @@
 #include "injectable_type.h"
 #include "sentinel_kind.h"
 #include "universal_verifier.h"
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 #include "context_override.h"
 
 namespace valuascript::compiler::test

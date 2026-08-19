@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "test_structures.h"
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 #include "spec_adder.h"
 
 namespace valuascript::compiler::test

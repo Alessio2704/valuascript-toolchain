@@ -4,7 +4,7 @@
 #include <vector>
 #include <optional>
 #include <functional>
-#include "node_matchers.h"
+#include "frontend/parser/node_matchers/node_matchers.h"
 #include "sentinel_kind.h"
 #include "test_structures.h"
 
