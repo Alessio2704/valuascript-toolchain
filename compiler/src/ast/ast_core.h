@@ -203,4 +203,16 @@ namespace valuascript::compiler
             return dynamic_cast<const T*>(node);
         }
     }
+
+    template <typename T, typename Base>
+        requires AstNodeSubclass<T> && AstNodeSubclass<Base>
+    [[nodiscard]] inline std::unique_ptr<T> ast_cast_unique(std::unique_ptr<Base> ptr) noexcept
+    {
+        if (!ptr) return nullptr;
+        if (ast_cast<T>(ptr.get()))
+        {
+            return std::unique_ptr<T>(static_cast<T*>(ptr.release()));
+        }
+        return nullptr;
+    }
 }
