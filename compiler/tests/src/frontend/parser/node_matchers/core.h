@@ -67,6 +67,47 @@ namespace valuascript::compiler::test
         }
     };
 
+    inline void AssertSpanMatch(const SourceSpan& actual, const SourceSpan& expected,
+                                std::source_location loc = std::source_location::current())
+    {
+        if (actual.line_start != expected.line_start ||
+            actual.column_start != expected.column_start ||
+            actual.line_end != expected.line_end ||
+            actual.column_end != expected.column_end)
+        {
+            ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
+                << "Span line/column mismatch:\n"
+                << "  Expected: line " << expected.line_start << ":" << expected.column_start
+                << " -> line " << expected.line_end << ":" << expected.column_end << "\n"
+                << "  Actual:   line " << actual.line_start << ":" << actual.column_start
+                << " -> line " << actual.line_end << ":" << actual.column_end;
+        }
+
+        if (expected.start_offset != 0 || expected.length != 0)
+        {
+            if (actual.start_offset != expected.start_offset || actual.length != expected.length)
+            {
+                ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
+                    << "Span offset/length mismatch:\n"
+                    << "  Expected: offset " << expected.start_offset << ", length " << expected.length
+                    << ", end_offset " << expected.end_offset() << "\n"
+                    << "  Actual:   offset " << actual.start_offset << ", length " << actual.length
+                    << ", end_offset " << actual.end_offset();
+            }
+        }
+
+        if (!expected.path().empty())
+        {
+            if (actual.path() != expected.path())
+            {
+                ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
+                    << "Span file_path mismatch:\n"
+                    << "  Expected: " << expected.path() << "\n"
+                    << "  Actual:   " << actual.path();
+            }
+        }
+    }
+
     struct AnyMatcher;
 
     template <typename F, typename NodeT>
@@ -99,6 +140,116 @@ namespace valuascript::compiler::test
     concept StmtMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, Statement>;
 
     template <typename NodeT, size_t BufferSize = 64>
+    class InlineVerifier;
+
+    template <typename M>
+    struct FluentNodeMatcher
+    {
+        using node_type = typename std::decay_t<M>::node_type;
+
+        M matcher;
+        std::optional<SourceSpan> expected_span;
+        std::optional<SourceSpan> expected_name_span;
+
+        constexpr FluentNodeMatcher(M m) : matcher(std::move(m))
+        {
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return copy;
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                                  size_t start_offset, size_t length) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return copy;
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_span(const SourceSpan& span) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_span = span;
+            return copy;
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return copy;
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                                       size_t start_offset, size_t length) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return copy;
+        }
+
+        [[nodiscard]] FluentNodeMatcher with_name_span(const SourceSpan& span) const
+        {
+            FluentNodeMatcher copy = *this;
+            copy.expected_name_span = span;
+            return copy;
+        }
+
+        void operator()(node_type* node) const
+        {
+            if (!node) return;
+            if (expected_span.has_value())
+            {
+                AssertSpanMatch(node->span, *expected_span);
+            }
+            if (expected_name_span.has_value())
+            {
+                if constexpr (requires { node->name.span; })
+                {
+                    AssertSpanMatch(node->name.span, *expected_name_span);
+                }
+                else if constexpr (requires { node->path.span; })
+                {
+                    AssertSpanMatch(node->path.span, *expected_name_span);
+                }
+                else if constexpr (requires { node->property_name.span; })
+                {
+                    AssertSpanMatch(node->property_name.span, *expected_name_span);
+                }
+            }
+            matcher(node);
+        }
+
+        explicit operator bool() const
+        {
+            if constexpr (requires { static_cast<bool>(matcher); })
+            {
+                return static_cast<bool>(matcher);
+            }
+            return true;
+        }
+
+        [[nodiscard]] operator InlineVerifier<node_type>() const
+        {
+            return InlineVerifier<node_type>(*this);
+        }
+    };
+
+    template <typename NodeT, size_t BufferSize>
     class InlineVerifier
     {
     private:

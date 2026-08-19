@@ -57,6 +57,8 @@ namespace valuascript::compiler::test
         for (size_t i = 0; i < specs.size(); i++)
         {
             EXPECT_EQ(actual[i].name, specs[i].label.get()) << "Argument label mismatch at index " << i << ".";
+            if (specs[i].name_span.has_value()) AssertSpanMatch(actual[i].name.span, *specs[i].name_span);
+            if (specs[i].span.has_value()) AssertSpanMatch(actual[i].span, *specs[i].span);
             if (specs[i].value_v) specs[i].value_v(actual[i].value.get());
         }
     }
@@ -67,6 +69,8 @@ namespace valuascript::compiler::test
         for (size_t i = 0; i < specs.size(); i++)
         {
             EXPECT_EQ(actual[i].name, specs[i].name.get()) << "Modifier name mismatch at index " << i << ".";
+            if (specs[i].name_span.has_value()) AssertSpanMatch(actual[i].name.span, *specs[i].name_span);
+            if (specs[i].span.has_value()) AssertSpanMatch(actual[i].span, *specs[i].span);
             ExpectArguments(actual[i].arguments, specs[i].args);
         }
     }
@@ -154,10 +158,15 @@ namespace valuascript::compiler::test
             for (size_t i = 0; i < cases.size(); i++)
             {
                 ExpectModifiers(sw->cases[i].modifiers, cases[i].modifiers);
+                if (cases[i].span.has_value()) AssertSpanMatch(sw->cases[i].span, *cases[i].span);
                 ASSERT_EQ(sw->cases[i].identifiers.size(), cases[i].labels.size());
                 for (size_t l = 0; l < cases[i].labels.size(); l++)
                 {
                     EXPECT_EQ(sw->cases[i].identifiers[l], cases[i].labels[l].get()) << "Switch case label mismatch.";
+                    if (l < cases[i].label_spans.size())
+                    {
+                        AssertSpanMatch(sw->cases[i].identifiers[l].span, cases[i].label_spans[l]);
+                    }
                 }
                 if (cases[i].result_v) cases[i].result_v(sw->cases[i].result.get());
             }
@@ -200,6 +209,8 @@ namespace valuascript::compiler::test
             for (size_t i = 0; i < items.size(); i++)
             {
                 EXPECT_EQ(d->elements[i].key, items[i].key.get()) << "Dictionary item key mismatch at index " << i << ".";
+                if (items[i].name_span.has_value()) AssertSpanMatch(d->elements[i].key.span, *items[i].name_span);
+                if (items[i].span.has_value()) AssertSpanMatch(d->elements[i].span, *items[i].span);
                 ExpectModifiers(d->elements[i].modifiers, items[i].modifiers);
                 if (items[i].value_v) items[i].value_v(d->elements[i].value.get());
             }
@@ -241,6 +252,8 @@ namespace valuascript::compiler::test
             {
                 ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
                 EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index " << i << ".";
+                if (targets[i].name_span.has_value()) AssertSpanMatch(a->targets[i].name.span, *targets[i].name_span);
+                if (targets[i].span.has_value()) AssertSpanMatch(a->targets[i].span, *targets[i].span);
                 if (targets[i].type_v) targets[i].type_v(a->targets[i].type.get());
             }
             if (val_v) val_v(a->value.get());
@@ -306,6 +319,8 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(f->parameters[i].name, params[i].name.get()) << "Function parameter name mismatch at index " << i
                 << " for function '" << name << "'.";
+            if (params[i].name_span.has_value()) AssertSpanMatch(f->parameters[i].name.span, *params[i].name_span);
+            if (params[i].span.has_value()) AssertSpanMatch(f->parameters[i].span, *params[i].span);
             ExpectModifiers(f->parameters[i].modifiers, params[i].modifiers);
             if (params[i].type_v) params[i].type_v(f->parameters[i].type.get());
             if (params[i].default_v) params[i].default_v(f->parameters[i].default_value.get());
@@ -368,6 +383,8 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(s->fields[i].name, fields[i].name.get()) << "Struct field name mismatch at index " << i
                 << " for struct '" << name << "'.";
+            if (fields[i].name_span.has_value()) AssertSpanMatch(s->fields[i].name.span, *fields[i].name_span);
+            if (fields[i].span.has_value()) AssertSpanMatch(s->fields[i].span, *fields[i].span);
             ExpectModifiers(s->fields[i].modifiers, fields[i].modifiers);
             if (fields[i].type_v) fields[i].type_v(s->fields[i].type.get());
         }
@@ -387,6 +404,8 @@ namespace valuascript::compiler::test
         {
             EXPECT_EQ(e->cases[i].name, cases[i].name.get()) << "Enum case name mismatch at index " << i
                 << " for enum '" << name << "'.";
+            if (cases[i].name_span.has_value()) AssertSpanMatch(e->cases[i].name.span, *cases[i].name_span);
+            if (cases[i].span.has_value()) AssertSpanMatch(e->cases[i].span, *cases[i].span);
             ExpectModifiers(e->cases[i].modifiers, cases[i].modifiers);
             if (cases[i].value_v) cases[i].value_v(e->cases[i].value.get());
         }

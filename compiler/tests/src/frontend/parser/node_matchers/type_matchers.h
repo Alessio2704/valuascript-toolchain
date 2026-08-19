@@ -36,19 +36,21 @@ namespace valuascript::compiler::test
         void operator()(TypeAnnotation* t) const { ExpectType(t, name.get(), generics); }
     };
 
-    inline TypeVerifier IsType(StringStorage name, std::vector<TypeVerifier> generics = {})
+    inline FluentNodeMatcher<TypeMatcher> IsType(StringStorage name, std::vector<TypeVerifier> generics = {})
     {
-        return TypeVerifier(TypeMatcher{.name = std::move(name), .generics = std::move(generics)});
+        return FluentNodeMatcher<TypeMatcher>{TypeMatcher{.name = std::move(name), .generics = std::move(generics)}};
     }
 
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<TypeVerifier>>))
-    inline TypeVerifier IsType(StringStorage name, Matchers&&... matchers)
+    inline auto IsType(StringStorage name, Matchers&&... matchers)
     {
-        return TypeVerifier(TypeVariadicMatcher<std::decay_t<Matchers>...>{
-            std::move(name), std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<TypeVariadicMatcher<std::decay_t<Matchers>...>>{
+            TypeVariadicMatcher<std::decay_t<Matchers>...>{
+                std::move(name), std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 
     template <typename T = TypeVerifier>
@@ -82,18 +84,20 @@ namespace valuascript::compiler::test
         void operator()(TypeAnnotation* t) const { ExpectTupleType(t, elements); }
     };
 
-    inline TypeVerifier IsTupleType(std::vector<TypeVerifier> elements = {})
+    inline FluentNodeMatcher<TupleTypeMatcher> IsTupleType(std::vector<TypeVerifier> elements = {})
     {
-        return TypeVerifier(TupleTypeMatcher{std::move(elements)});
+        return FluentNodeMatcher<TupleTypeMatcher>{TupleTypeMatcher{std::move(elements)}};
     }
 
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<TypeVerifier>>))
-    inline TypeVerifier IsTupleType(Matchers&&... matchers)
+    inline auto IsTupleType(Matchers&&... matchers)
     {
-        return TypeVerifier(TupleTypeVariadicMatcher<std::decay_t<Matchers>...>{
-            std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<TupleTypeVariadicMatcher<std::decay_t<Matchers>...>>{
+            TupleTypeVariadicMatcher<std::decay_t<Matchers>...>{
+                std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 }

@@ -12,12 +12,112 @@ namespace valuascript::compiler::test
     {
         StringStorage label;
         ExprVerifier value_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        ArgSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ArgSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                           size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ArgSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        ArgSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ArgSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ArgSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct ModifierSpec
     {
         StringStorage name;
         std::vector<ArgSpec> args = {};
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        ModifierSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ModifierSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ModifierSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        ModifierSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ModifierSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                     size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ModifierSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct ParamSpec
@@ -26,6 +126,56 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         ExprVerifier default_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        ParamSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ParamSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                             size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ParamSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        ParamSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        ParamSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                  size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        ParamSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct FieldSpec
@@ -33,6 +183,56 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        FieldSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        FieldSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                             size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        FieldSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        FieldSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        FieldSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                  size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        FieldSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct EnumCaseSpec
@@ -40,6 +240,56 @@ namespace valuascript::compiler::test
         StringStorage name;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        EnumCaseSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        EnumCaseSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        EnumCaseSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        EnumCaseSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        EnumCaseSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                     size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        EnumCaseSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct DictItemSpec
@@ -47,6 +297,56 @@ namespace valuascript::compiler::test
         StringStorage key;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        DictItemSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        DictItemSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        DictItemSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        DictItemSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        DictItemSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                     size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        DictItemSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct SwitchCaseSpec
@@ -54,6 +354,38 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         std::vector<StringStorage> labels = {};
         ExprVerifier result_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::vector<SourceSpan> label_spans = {};
+
+        SwitchCaseSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        SwitchCaseSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                  size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        SwitchCaseSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        SwitchCaseSpec& with_label_spans(std::vector<SourceSpan> spans)
+        {
+            label_spans = std::move(spans);
+            return *this;
+        }
     };
 
     struct AssignmentTargetSpec
@@ -61,6 +393,56 @@ namespace valuascript::compiler::test
         std::vector<ModifierSpec> modifiers = {};
         StringStorage name;
         TypeVerifier type_v = nullptr;
+        std::optional<SourceSpan> span = std::nullopt;
+        std::optional<SourceSpan> name_span = std::nullopt;
+
+        AssignmentTargetSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        AssignmentTargetSpec& with_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                        size_t start_offset, size_t length)
+        {
+            span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        AssignmentTargetSpec& with_span(const SourceSpan& s)
+        {
+            span = s;
+            return *this;
+        }
+
+        AssignmentTargetSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end
+            };
+            return *this;
+        }
+
+        AssignmentTargetSpec& with_name_span(size_t line_start, size_t col_start, size_t line_end, size_t col_end,
+                                             size_t start_offset, size_t length)
+        {
+            name_span = SourceSpan{
+                .line_start = line_start, .column_start = col_start, .line_end = line_end, .column_end = col_end,
+                .start_offset = start_offset, .length = length
+            };
+            return *this;
+        }
+
+        AssignmentTargetSpec& with_name_span(const SourceSpan& s)
+        {
+            name_span = s;
+            return *this;
+        }
     };
 
     struct StmtVerifier : public InlineVerifier<Statement>
@@ -115,12 +497,21 @@ namespace valuascript::compiler::test
             }
         }
 
+        template <typename M>
+            requires (std::derived_from<typename std::decay_t<M>::node_type, Statement> &&
+                      !std::same_as<typename std::decay_t<M>::node_type, Statement>)
+        StmtVerifier(FluentNodeMatcher<M> fm)
+            : StmtVerifier(InlineVerifier<typename std::decay_t<M>::node_type>(std::move(fm)))
+        {
+        }
+
         template <typename F>
             requires (!std::derived_from<std::decay_t<F>, Statement> &&
                 !std::same_as<std::decay_t<F>, StmtVerifier> &&
                 !std::same_as<std::decay_t<F>, InlineVerifier<Statement>> &&
                 !std::same_as<std::decay_t<F>, std::nullptr_t> &&
-                IsCompatibleNodeVerifier<F, Statement>)
+                !HasNodeType<F, Statement> &&
+                std::invocable<F, Statement*>)
         StmtVerifier(F&& f) : InlineVerifier<Statement>(std::forward<F>(f))
         {
         }

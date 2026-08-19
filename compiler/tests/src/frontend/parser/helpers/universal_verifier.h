@@ -14,7 +14,7 @@ namespace valuascript::compiler::test
 {
     struct MultiInjectVerifier;
 
-    using UniversalVerifier = std::variant<
+    using UniversalVerifierVariant = std::variant<
         NullVerifier,
         std::string,
         ImportVerifier,
@@ -32,6 +32,25 @@ namespace valuascript::compiler::test
         TypeVerifier,
         std::shared_ptr<MultiInjectVerifier>
     >;
+
+    struct UniversalVerifier : public UniversalVerifierVariant
+    {
+        using UniversalVerifierVariant::UniversalVerifierVariant;
+
+        UniversalVerifier(const UniversalVerifierVariant& v) : UniversalVerifierVariant(v)
+        {
+        }
+
+        UniversalVerifier(UniversalVerifierVariant&& v) noexcept : UniversalVerifierVariant(std::move(v))
+        {
+        }
+
+        template <typename M>
+        UniversalVerifier(FluentNodeMatcher<M> fm)
+            : UniversalVerifierVariant(InlineVerifier<typename std::decay_t<M>::node_type>(std::move(fm)))
+        {
+        }
+    };
 
     enum class VerifierCategory
     {
@@ -105,6 +124,11 @@ namespace valuascript::compiler::test
         OneOf(UniversalVerifier v) : value(std::move(v))
         {
         }
+
+        template <typename M>
+        OneOf(FluentNodeMatcher<M> fm) : value(std::move(fm))
+        {
+        }
     };
 
     struct MultiInjectVerifier
@@ -159,6 +183,6 @@ namespace valuascript::compiler::test
             {
                 return false;
             }
-        }, v);
+        }, static_cast<const UniversalVerifierVariant&>(v));
     }
 }

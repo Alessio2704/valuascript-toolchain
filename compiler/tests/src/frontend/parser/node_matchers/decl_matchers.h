@@ -22,17 +22,17 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline FuncVerifier IsFunctionDef(StringStorage name,
-                                      std::vector<ModifierSpec> modifiers = {},
-                                      std::vector<ParamSpec> params = {},
-                                      std::vector<TypeVerifier> returns = {},
-                                      std::vector<StmtVerifier> body = {},
-                                      std::optional<StringStorage> docstring = std::nullopt)
+    inline FluentNodeMatcher<FunctionDefMatcher> IsFunctionDef(StringStorage name,
+                                                              std::vector<ModifierSpec> modifiers = {},
+                                                              std::vector<ParamSpec> params = {},
+                                                              std::vector<TypeVerifier> returns = {},
+                                                              std::vector<StmtVerifier> body = {},
+                                                              std::optional<StringStorage> docstring = std::nullopt)
     {
-        return FuncVerifier(FunctionDefMatcher{
+        return FluentNodeMatcher<FunctionDefMatcher>{FunctionDefMatcher{
             .name = std::move(name), .modifiers = std::move(modifiers), .params = std::move(params),
             .returns = std::move(returns), .body = std::move(body), .docstring = std::move(docstring)
-        });
+        }};
     }
 
     struct StructDefMatcher
@@ -53,34 +53,34 @@ namespace valuascript::compiler::test
     template <typename T>
     StructVerifier IsStructDef(StringStorage, std::vector<ModifierSpec>, std::initializer_list<T>) = delete;
 
-    inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
-                                      std::vector<FieldSpec> fields = {})
+    inline FluentNodeMatcher<StructDefMatcher> IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
+                                                          std::vector<FieldSpec> fields = {})
     {
-        return StructVerifier(StructDefMatcher{
+        return FluentNodeMatcher<StructDefMatcher>{StructDefMatcher{
             .name = std::move(name), .modifiers = std::move(modifiers), .fields = std::move(fields)
-        });
+        }};
     }
 
     template <typename... FieldSpecs>
         requires (sizeof...(FieldSpecs) > 0 && !(sizeof...(FieldSpecs) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<FieldSpecs...>>>, std::vector<FieldSpec>>))
-    inline StructVerifier IsStructDef(StringStorage name, FieldSpecs&&... fields)
+    inline auto IsStructDef(StringStorage name, FieldSpecs&&... fields)
     {
         std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
-        return StructVerifier(StructDefMatcher{
+        return FluentNodeMatcher<StructDefMatcher>{StructDefMatcher{
             .name = std::move(name), .modifiers = {}, .fields = std::move(field_list)
-        });
+        }};
     }
 
     template <typename... FieldSpecs>
         requires (sizeof...(FieldSpecs) > 0 && !(sizeof...(FieldSpecs) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<FieldSpecs...>>>, std::vector<FieldSpec>>))
-    inline StructVerifier IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers, FieldSpecs&&... fields)
+    inline auto IsStructDef(StringStorage name, std::vector<ModifierSpec> modifiers, FieldSpecs&&... fields)
     {
         std::vector<FieldSpec> field_list = {std::forward<FieldSpecs>(fields)...};
-        return StructVerifier(StructDefMatcher{
+        return FluentNodeMatcher<StructDefMatcher>{StructDefMatcher{
             .name = std::move(name), .modifiers = std::move(modifiers), .fields = std::move(field_list)
-        });
+        }};
     }
 
     struct EnumDefMatcher
@@ -99,41 +99,43 @@ namespace valuascript::compiler::test
 
     template <typename T>
     EnumVerifier IsEnumDef(StringStorage, std::initializer_list<T>) = delete;
-    template <typename T>
-    EnumVerifier IsEnumDef(StringStorage, std::vector<ModifierSpec>, TypeVerifier, std::initializer_list<T>) = delete;
+    template <typename T, typename U = TypeVerifier>
+    EnumVerifier IsEnumDef(StringStorage, std::vector<ModifierSpec>, U&&, std::initializer_list<T>) = delete;
 
-    inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
-                                  TypeVerifier type = nullptr,
-                                  std::vector<EnumCaseSpec> cases = {})
+    template <TypeNodeMatcher T = TypeVerifier>
+    inline FluentNodeMatcher<EnumDefMatcher> IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers = {},
+                                                      T&& type = nullptr,
+                                                      std::vector<EnumCaseSpec> cases = {})
     {
-        return EnumVerifier(EnumDefMatcher{
-            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::move(type),
+        return FluentNodeMatcher<EnumDefMatcher>{EnumDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::forward<T>(type),
             .cases = std::move(cases)
-        });
+        }};
     }
 
     template <typename... EnumCaseSpecs>
         requires (sizeof...(EnumCaseSpecs) > 0 && !(sizeof...(EnumCaseSpecs) == 1 && std::same_as<
-            std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>))
-    inline EnumVerifier IsEnumDef(StringStorage name, EnumCaseSpecs&&... cases)
+            std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>) &&
+            !std::same_as<std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<ModifierSpec>>)
+    inline auto IsEnumDef(StringStorage name, EnumCaseSpecs&&... cases)
     {
         std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
-        return EnumVerifier(EnumDefMatcher{
+        return FluentNodeMatcher<EnumDefMatcher>{EnumDefMatcher{
             .name = std::move(name), .modifiers = {}, .type = nullptr, .cases = std::move(case_list)
-        });
+        }};
     }
 
-    template <typename... EnumCaseSpecs>
+    template <TypeNodeMatcher T = TypeVerifier, typename... EnumCaseSpecs>
         requires (sizeof...(EnumCaseSpecs) > 0 && !(sizeof...(EnumCaseSpecs) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<EnumCaseSpecs...>>>, std::vector<EnumCaseSpec>>))
-    inline EnumVerifier IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers, TypeVerifier type,
-                                  EnumCaseSpecs&&... cases)
+    inline auto IsEnumDef(StringStorage name, std::vector<ModifierSpec> modifiers, T&& type,
+                          EnumCaseSpecs&&... cases)
     {
         std::vector<EnumCaseSpec> case_list = {std::forward<EnumCaseSpecs>(cases)...};
-        return EnumVerifier(EnumDefMatcher{
-            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::move(type),
+        return FluentNodeMatcher<EnumDefMatcher>{EnumDefMatcher{
+            .name = std::move(name), .modifiers = std::move(modifiers), .type = std::forward<T>(type),
             .cases = std::move(case_list)
-        });
+        }};
     }
 
     struct TypeAliasMatcher
@@ -149,12 +151,12 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline AliasVerifier IsTypeAlias(StringStorage name, std::vector<ModifierSpec> modifiers = {},
-                                     TypeVerifier target = nullptr)
+    inline FluentNodeMatcher<TypeAliasMatcher> IsTypeAlias(StringStorage name, std::vector<ModifierSpec> modifiers = {},
+                                                          TypeVerifier target = nullptr)
     {
-        return AliasVerifier(TypeAliasMatcher{
+        return FluentNodeMatcher<TypeAliasMatcher>{TypeAliasMatcher{
             .name = std::move(name), .modifiers = std::move(modifiers), .target = std::move(target)
-        });
+        }};
     }
 
     struct ExtensionDefMatcher
@@ -170,13 +172,13 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline ExtVerifier IsExtensionDef(std::vector<ModifierSpec> modifiers = {},
-                                      TypeVerifier target = nullptr,
-                                      ProgramSpec spec = {})
+    inline FluentNodeMatcher<ExtensionDefMatcher> IsExtensionDef(std::vector<ModifierSpec> modifiers = {},
+                                                                TypeVerifier target = nullptr,
+                                                                ProgramSpec spec = {})
     {
-        return ExtVerifier(ExtensionDefMatcher{
+        return FluentNodeMatcher<ExtensionDefMatcher>{ExtensionDefMatcher{
             .modifiers = std::move(modifiers), .target = std::move(target), .spec = std::move(spec)
-        });
+        }};
     }
 
     struct ImportMatcher
@@ -191,9 +193,9 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline ImportVerifier IsImport(StringStorage path, std::vector<ModifierSpec> modifiers = {})
+    inline FluentNodeMatcher<ImportMatcher> IsImport(StringStorage path, std::vector<ModifierSpec> modifiers = {})
     {
-        return ImportVerifier(ImportMatcher{.path = std::move(path), .modifiers = std::move(modifiers)});
+        return FluentNodeMatcher<ImportMatcher>{ImportMatcher{.path = std::move(path), .modifiers = std::move(modifiers)}};
     }
 
     template <typename V = AnyMatcher>
@@ -214,8 +216,10 @@ namespace valuascript::compiler::test
     };
 
     template <typename V = AnyMatcher>
-    inline DirectiveVerifier IsDirective(StringStorage name, V&& value = {})
+    inline auto IsDirective(StringStorage name, V&& value = {})
     {
-        return DirectiveVerifier(DirectiveMatcher<std::decay_t<V>>{std::move(name), std::forward<V>(value)});
+        return FluentNodeMatcher<DirectiveMatcher<std::decay_t<V>>>{
+            DirectiveMatcher<std::decay_t<V>>{std::move(name), std::forward<V>(value)}
+        };
     }
 }

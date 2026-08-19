@@ -19,14 +19,14 @@ namespace valuascript::compiler::test
     using PercentageMatcher = SingleValueMatcher<ExpectPercentage>;
     using IdentifierMatcher = SingleValueMatcher<ExpectIdentifier>;
 
-    inline ExprVerifier IsNumber(StringStorage value)
+    inline FluentNodeMatcher<NumberMatcher> IsNumber(StringStorage value)
     {
-        return ExprVerifier(NumberMatcher{std::move(value)});
+        return FluentNodeMatcher<NumberMatcher>{NumberMatcher{std::move(value)}};
     }
 
-    inline ExprVerifier IsString(StringStorage val)
+    inline FluentNodeMatcher<StringMatcher> IsString(StringStorage val)
     {
-        return ExprVerifier(StringMatcher{std::move(val)});
+        return FluentNodeMatcher<StringMatcher>{StringMatcher{std::move(val)}};
     }
 
     struct BooleanMatcher
@@ -36,16 +36,19 @@ namespace valuascript::compiler::test
         void operator()(Expression* node) const { ExpectBoolean(node, value); }
     };
 
-    inline ExprVerifier IsBoolean(bool val) { return ExprVerifier(BooleanMatcher{val}); }
-
-    inline ExprVerifier IsPercentage(StringStorage val)
+    inline FluentNodeMatcher<BooleanMatcher> IsBoolean(bool val)
     {
-        return ExprVerifier(PercentageMatcher{std::move(val)});
+        return FluentNodeMatcher<BooleanMatcher>{BooleanMatcher{val}};
     }
 
-    inline ExprVerifier IsIdentifier(StringStorage val)
+    inline FluentNodeMatcher<PercentageMatcher> IsPercentage(StringStorage val)
     {
-        return ExprVerifier(IdentifierMatcher{std::move(val)});
+        return FluentNodeMatcher<PercentageMatcher>{PercentageMatcher{std::move(val)}};
+    }
+
+    inline FluentNodeMatcher<IdentifierMatcher> IsIdentifier(StringStorage val)
+    {
+        return FluentNodeMatcher<IdentifierMatcher>{IdentifierMatcher{std::move(val)}};
     }
 
     struct SelfMatcher
@@ -54,7 +57,10 @@ namespace valuascript::compiler::test
         void operator()(Expression* node) const { ExpectSelf(node); }
     };
 
-    inline ExprVerifier IsSelf() { return ExprVerifier(SelfMatcher{}); }
+    inline FluentNodeMatcher<SelfMatcher> IsSelf()
+    {
+        return FluentNodeMatcher<SelfMatcher>{SelfMatcher{}};
+    }
 
     template <ExprMatcher L = AnyMatcher, ExprMatcher R = AnyMatcher>
     struct BinaryMatcher
@@ -76,11 +82,13 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher L = AnyMatcher, ExprMatcher R = AnyMatcher>
-    inline ExprVerifier IsBinary(TokenType op, L&& l = {}, R&& r = {})
+    inline auto IsBinary(TokenType op, L&& l = {}, R&& r = {})
     {
-        return ExprVerifier(BinaryMatcher<std::decay_t<L>, std::decay_t<R>>{
-            op, std::forward<L>(l), std::forward<R>(r)
-        });
+        return FluentNodeMatcher<BinaryMatcher<std::decay_t<L>, std::decay_t<R>>>{
+            BinaryMatcher<std::decay_t<L>, std::decay_t<R>>{
+                op, std::forward<L>(l), std::forward<R>(r)
+            }
+        };
     }
 
     template <ExprMatcher R = AnyMatcher>
@@ -101,9 +109,11 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher R = AnyMatcher>
-    inline ExprVerifier IsUnary(TokenType op, R&& r = {})
+    inline auto IsUnary(TokenType op, R&& r = {})
     {
-        return ExprVerifier(UnaryMatcher<std::decay_t<R>>{op, std::forward<R>(r)});
+        return FluentNodeMatcher<UnaryMatcher<std::decay_t<R>>>{
+            UnaryMatcher<std::decay_t<R>>{op, std::forward<R>(r)}
+        };
     }
 
     template <ExprMatcher I = AnyMatcher>
@@ -122,9 +132,11 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher I = AnyMatcher>
-    inline ExprVerifier IsGrouping(I&& inner = {})
+    inline auto IsGrouping(I&& inner = {})
     {
-        return ExprVerifier(GroupingMatcher<std::decay_t<I>>{std::forward<I>(inner)});
+        return FluentNodeMatcher<GroupingMatcher<std::decay_t<I>>>{
+            GroupingMatcher<std::decay_t<I>>{std::forward<I>(inner)}
+        };
     }
 
     template <ExprMatcher C = AnyMatcher, ExprMatcher T = AnyMatcher, ExprMatcher E = AnyMatcher>
@@ -147,11 +159,13 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher C = AnyMatcher, ExprMatcher T = AnyMatcher, ExprMatcher E = AnyMatcher>
-    inline ExprVerifier IsConditional(C&& condition = {}, T&& then_expr = {}, E&& else_expr = {})
+    inline auto IsConditional(C&& condition = {}, T&& then_expr = {}, E&& else_expr = {})
     {
-        return ExprVerifier(ConditionalMatcher<std::decay_t<C>, std::decay_t<T>, std::decay_t<E>>{
-            std::forward<C>(condition), std::forward<T>(then_expr), std::forward<E>(else_expr)
-        });
+        return FluentNodeMatcher<ConditionalMatcher<std::decay_t<C>, std::decay_t<T>, std::decay_t<E>>>{
+            ConditionalMatcher<std::decay_t<C>, std::decay_t<T>, std::decay_t<E>>{
+                std::forward<C>(condition), std::forward<T>(then_expr), std::forward<E>(else_expr)
+            }
+        };
     }
 
     template <ExprMatcher T = AnyMatcher>
@@ -175,18 +189,22 @@ namespace valuascript::compiler::test
     ExprVerifier IsCall(T&&, std::initializer_list<U>) = delete;
 
     template <ExprMatcher T = AnyMatcher>
-    inline ExprVerifier IsCall(T&& target, std::vector<ArgSpec> args = {})
+    inline auto IsCall(T&& target, std::vector<ArgSpec> args = {})
     {
-        return ExprVerifier(CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(args)});
+        return FluentNodeMatcher<CallMatcher<std::decay_t<T>>>{
+            CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(args)}
+        };
     }
 
     template <ExprMatcher T = AnyMatcher, typename... ArgSpecs>
         requires (sizeof...(ArgSpecs) > 0 && !(sizeof...(ArgSpecs) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<ArgSpecs...>>>, std::vector<ArgSpec>>))
-    inline ExprVerifier IsCall(T&& target, ArgSpecs&&... args)
+    inline auto IsCall(T&& target, ArgSpecs&&... args)
     {
         std::vector<ArgSpec> arg_list = {std::forward<ArgSpecs>(args)...};
-        return ExprVerifier(CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(arg_list)});
+        return FluentNodeMatcher<CallMatcher<std::decay_t<T>>>{
+            CallMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(arg_list)}
+        };
     }
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher I = AnyMatcher>
@@ -207,11 +225,13 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher I = AnyMatcher>
-    inline ExprVerifier IsBracket(T&& target, I&& index)
+    inline auto IsBracket(T&& target, I&& index)
     {
-        return ExprVerifier(BracketMatcher<std::decay_t<T>, std::decay_t<I>>{
-            std::forward<T>(target), std::forward<I>(index)
-        });
+        return FluentNodeMatcher<BracketMatcher<std::decay_t<T>, std::decay_t<I>>>{
+            BracketMatcher<std::decay_t<T>, std::decay_t<I>>{
+                std::forward<T>(target), std::forward<I>(index)
+            }
+        };
     }
 
     template <ExprMatcher T = AnyMatcher>
@@ -232,9 +252,11 @@ namespace valuascript::compiler::test
     };
 
     template <ExprMatcher T = AnyMatcher>
-    inline ExprVerifier IsDot(T&& target, StringStorage property)
+    inline auto IsDot(T&& target, StringStorage property)
     {
-        return ExprVerifier(DotMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(property)});
+        return FluentNodeMatcher<DotMatcher<std::decay_t<T>>>{
+            DotMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(property)}
+        };
     }
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
@@ -256,16 +278,18 @@ namespace valuascript::compiler::test
     ExprVerifier IsSwitch(T&&, std::initializer_list<U>) = delete;
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
-    inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, std::vector<ModifierSpec> default_mods,
-                                 D&& default_expr = {})
+    inline auto IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, std::vector<ModifierSpec> default_mods,
+                         D&& default_expr = {})
     {
-        return ExprVerifier(SwitchMatcher<std::decay_t<T>, std::decay_t<D>>{
-            std::forward<T>(t), std::move(cases), std::move(default_mods), std::forward<D>(default_expr)
-        });
+        return FluentNodeMatcher<SwitchMatcher<std::decay_t<T>, std::decay_t<D>>>{
+            SwitchMatcher<std::decay_t<T>, std::decay_t<D>>{
+                std::forward<T>(t), std::move(cases), std::move(default_mods), std::forward<D>(default_expr)
+            }
+        };
     }
 
     template <ExprMatcher T = AnyMatcher, ExprMatcher D = AnyMatcher>
-    inline ExprVerifier IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, D&& default_expr = {})
+    inline auto IsSwitch(T&& t, std::vector<SwitchCaseSpec> cases, D&& default_expr = {})
     {
         return IsSwitch(std::forward<T>(t), std::move(cases), {}, std::forward<D>(default_expr));
     }
@@ -273,12 +297,14 @@ namespace valuascript::compiler::test
     template <ExprMatcher T = AnyMatcher, typename... Cases>
         requires (sizeof...(Cases) > 0 && !(sizeof...(Cases) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Cases...>>>, std::vector<SwitchCaseSpec>>))
-    inline ExprVerifier IsSwitch(T&& t, Cases&&... cases)
+    inline auto IsSwitch(T&& t, Cases&&... cases)
     {
         std::vector<SwitchCaseSpec> case_list = {std::forward<Cases>(cases)...};
-        return ExprVerifier(SwitchMatcher<std::decay_t<T>, AnyMatcher>{
-            std::forward<T>(t), std::move(case_list), {}, AnyMatcher{}
-        });
+        return FluentNodeMatcher<SwitchMatcher<std::decay_t<T>, AnyMatcher>>{
+            SwitchMatcher<std::decay_t<T>, AnyMatcher>{
+                std::forward<T>(t), std::move(case_list), {}, AnyMatcher{}
+            }
+        };
     }
 
     template <typename ASTNodeT, typename... Matchers>
@@ -319,24 +345,26 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline ExprVerifier IsTensor(std::vector<ExprVerifier> elements)
+    inline FluentNodeMatcher<TensorVectorMatcher> IsTensor(std::vector<ExprVerifier> elements)
     {
-        return ExprVerifier(TensorVectorMatcher{std::move(elements)});
+        return FluentNodeMatcher<TensorVectorMatcher>{TensorVectorMatcher{std::move(elements)}};
     }
 
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<ExprVerifier>>))
-    inline ExprVerifier IsTensor(Matchers&&... matchers)
+    inline auto IsTensor(Matchers&&... matchers)
     {
-        return ExprVerifier(TensorVariadicMatcher<std::decay_t<Matchers>...>{
-            std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<TensorVariadicMatcher<std::decay_t<Matchers>...>>{
+            TensorVariadicMatcher<std::decay_t<Matchers>...>{
+                std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 
-    inline ExprVerifier IsTensor()
+    inline FluentNodeMatcher<TensorVectorMatcher> IsTensor()
     {
-        return ExprVerifier(TensorVectorMatcher{});
+        return FluentNodeMatcher<TensorVectorMatcher>{TensorVectorMatcher{}};
     }
 
     template <typename... Matchers>
@@ -356,24 +384,26 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline ExprVerifier IsTuple(std::vector<ExprVerifier> elements)
+    inline FluentNodeMatcher<TupleVectorMatcher> IsTuple(std::vector<ExprVerifier> elements)
     {
-        return ExprVerifier(TupleVectorMatcher{std::move(elements)});
+        return FluentNodeMatcher<TupleVectorMatcher>{TupleVectorMatcher{std::move(elements)}};
     }
 
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<ExprVerifier>>))
-    inline ExprVerifier IsTuple(Matchers&&... matchers)
+    inline auto IsTuple(Matchers&&... matchers)
     {
-        return ExprVerifier(TupleVariadicMatcher<std::decay_t<Matchers>...>{
-            std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<TupleVariadicMatcher<std::decay_t<Matchers>...>>{
+            TupleVariadicMatcher<std::decay_t<Matchers>...>{
+                std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 
-    inline ExprVerifier IsTuple()
+    inline FluentNodeMatcher<TupleVectorMatcher> IsTuple()
     {
-        return ExprVerifier(TupleVectorMatcher{});
+        return FluentNodeMatcher<TupleVectorMatcher>{TupleVectorMatcher{}};
     }
 
     template <typename T = DictItemSpec>
@@ -404,23 +434,25 @@ namespace valuascript::compiler::test
         void operator()(Expression* node) const { ExpectDict(node, items); }
     };
 
-    inline ExprVerifier IsDict(std::vector<DictItemSpec> items)
+    inline FluentNodeMatcher<DictMatcher> IsDict(std::vector<DictItemSpec> items)
     {
-        return ExprVerifier(DictMatcher{std::move(items)});
+        return FluentNodeMatcher<DictMatcher>{DictMatcher{std::move(items)}};
     }
 
-    inline ExprVerifier IsDict()
+    inline FluentNodeMatcher<DictMatcher> IsDict()
     {
-        return ExprVerifier(DictMatcher{});
+        return FluentNodeMatcher<DictMatcher>{DictMatcher{}};
     }
 
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<DictItemSpec>>))
-    inline ExprVerifier IsDict(Matchers&&... matchers)
+    inline auto IsDict(Matchers&&... matchers)
     {
-        return ExprVerifier(DictVariadicMatcher<std::decay_t<Matchers>...>{
-            std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<DictVariadicMatcher<std::decay_t<Matchers>...>>{
+            DictVariadicMatcher<std::decay_t<Matchers>...>{
+                std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 }

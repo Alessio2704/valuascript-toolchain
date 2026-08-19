@@ -17,13 +17,15 @@ namespace valuascript::compiler
 
     ImportPtr DeclarationParser::parse_import_statement(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Import, E::ExpectedImportToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Import, E::ExpectedImportToken);
         Token path = ErrorRecovery::try_consume(
             ctx, TokenType::String, E::MissingImportPathString,
             RecoveryConfig::StopAtBoundary({TokenType::Comma})
         );
-        return AstFactory::make_node<ImportStatement>(
-            cursor, start, std::move(modifiers), NodeName{path.lexeme, cursor.make_span(path)});
+        SourceSpan full_span = cursor.combine_spans(start_span, cursor.make_span(path));
+        return AstFactory::make_node_with_span<ImportStatement>(
+            full_span, std::move(modifiers), NodeName{path.lexeme, cursor.make_span(path)});
     }
 
     DirectivePtr DeclarationParser::parse_directive()
@@ -202,7 +204,8 @@ namespace valuascript::compiler
 
     StructDefPtr DeclarationParser::parse_struct_definition(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Struct, E::ExpectedStructToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Struct, E::ExpectedStructToken);
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::ExpectedStructName, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}), false);
 
@@ -214,7 +217,7 @@ namespace valuascript::compiler
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedBraceInStructDefinition);
             return AstFactory::make_node_with_span<StructDefinition>(
-                cursor.make_span(start, cursor.previous()), std::move(modifiers),
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
                 NodeName{name.lexeme, cursor.make_span(name)}, std::vector<StructField>{}
             );
         }
@@ -274,13 +277,14 @@ namespace valuascript::compiler
         }
 
         return AstFactory::make_node_with_span<StructDefinition>(
-            cursor.make_span(start, end_token), std::move(modifiers),
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(fields));
     }
 
     EnumDefPtr DeclarationParser::parse_enum_definition(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Enum, E::ExpectedEnumToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Enum, E::ExpectedEnumToken);
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::ExpectedEnumName, RecoveryConfig::StopAtBoundary({
                 TokenType::Colon, TokenType::LeftBrace, TokenType::Comma
@@ -323,7 +327,7 @@ namespace valuascript::compiler
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftBraceBeforeEnumBody);
             return AstFactory::make_node_with_span<EnumDefinition>(
-                cursor.make_span(start, cursor.previous()), std::move(modifiers),
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
                 NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type), std::vector<EnumCase>{}
             );
         }
@@ -373,14 +377,15 @@ namespace valuascript::compiler
         }
 
         return AstFactory::make_node_with_span<EnumDefinition>(
-            cursor.make_span(start, end_token), std::move(modifiers),
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type),
             std::move(cases));
     }
 
     FuncDefPtr DeclarationParser::parse_function_definition(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Func, E::ExpectedFuncToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Func, E::ExpectedFuncToken);
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::MissingFunctionName, RecoveryConfig::StopAtBoundary({
                 TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma
@@ -524,7 +529,7 @@ namespace valuascript::compiler
 
         Token end_token = cursor.previous();
         return AstFactory::make_node_with_span<FunctionDefinition>(
-            cursor.make_span(start, end_token), std::move(modifiers),
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(params),
             std::move(return_types), std::move(body), std::move(docstring)
         );
@@ -532,7 +537,8 @@ namespace valuascript::compiler
 
     TypeAliasPtr DeclarationParser::parse_type_alias_definition(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Typealias, E::ExpectedTypeAliasToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Typealias, E::ExpectedTypeAliasToken);
         Token name = ErrorRecovery::try_consume_identifier(
             ctx, E::ExpectedTypeAliasName, RecoveryConfig::StopAtBoundary({TokenType::Assign, TokenType::Comma}), false);
 
@@ -546,8 +552,9 @@ namespace valuascript::compiler
         if (cursor.is_at_end() || next_is_newline_stmt)
         {
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, false);
-            return AstFactory::make_node<TypeAliasDefinition>(
-                cursor, start, std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)}, nullptr);
+            return AstFactory::make_node_with_span<TypeAliasDefinition>(
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+                std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)}, nullptr);
         }
 
         auto is_at_parent_boundary = [this](size_t offset = 0) {
@@ -566,8 +573,9 @@ namespace valuascript::compiler
         );
 
         if (target_type) parser.verify_statement_end();
-        return AstFactory::make_node<TypeAliasDefinition>(
-            cursor, start, std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)},
+        return AstFactory::make_node_with_span<TypeAliasDefinition>(
+            cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+            std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)},
             std::move(target_type));
     }
 
@@ -680,7 +688,8 @@ namespace valuascript::compiler
 
     ExtensionDefPtr DeclarationParser::parse_extension_definition(std::vector<Modifier> modifiers)
     {
-        const Token& start = cursor.consume(TokenType::Extension, E::ExpectedExtensionToken);
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Extension, E::ExpectedExtensionToken);
 
         auto is_at_parent_boundary = [this](size_t offset = 0) {
             return cursor.peek(offset).type == TokenType::LeftBrace;
@@ -710,7 +719,7 @@ namespace valuascript::compiler
                 parser.parse_statement_or_declaration(ParseContextType::ExtensionBody, nullptr, extension.get(), dummy_block);
             });
 
-        extension->span = cursor.make_span(start, cursor.previous());
+        extension->span = cursor.combine_spans(start_span, cursor.make_span(cursor.previous()));
         return extension;
     }
 }

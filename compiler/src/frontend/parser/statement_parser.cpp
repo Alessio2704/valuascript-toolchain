@@ -175,7 +175,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<Assignment> StatementParser::parse_assignment(const std::vector<Modifier>& modifiers)
     {
-        const Token& start = cursor.peek();
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
         cursor.consume(TokenType::Let, E::ExpectedLetToken);
 
         std::vector<AssignmentTarget> targets;
@@ -323,7 +323,9 @@ namespace valuascript::compiler
 
         if (value) verify_statement_end();
 
-        return AstFactory::make_node<Assignment>(cursor, start, std::move(targets), std::move(value));
+        return AstFactory::make_node_with_span<Assignment>(
+            cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+            std::move(targets), std::move(value));
     }
 
     StmtPtr StatementParser::parse_expression_statement()
@@ -410,6 +412,7 @@ namespace valuascript::compiler
 
     std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement(std::vector<Modifier> modifiers)
     {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
         const Token& start = cursor.advance();
         std::vector<ExprPtr> return_values;
         return_values.reserve(2);
@@ -423,7 +426,9 @@ namespace valuascript::compiler
              TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)))
         {
             verify_statement_end();
-            return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(modifiers), std::move(return_values));
+            return AstFactory::make_node_with_span<ReturnStatement>(
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+                std::move(modifiers), std::move(return_values));
         }
 
         do
@@ -436,6 +441,8 @@ namespace valuascript::compiler
         while (cursor.match(TokenType::Comma));
 
         verify_statement_end();
-        return AstFactory::make_node<ReturnStatement>(cursor, start, std::move(modifiers), std::move(return_values));
+        return AstFactory::make_node_with_span<ReturnStatement>(
+            cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+            std::move(modifiers), std::move(return_values));
     }
 }

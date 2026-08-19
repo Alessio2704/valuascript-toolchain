@@ -23,6 +23,8 @@ namespace valuascript::compiler::test
                     ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
                     EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index "
                         << i << ".";
+                    if (targets[i].name_span.has_value()) AssertSpanMatch(a->targets[i].name.span, *targets[i].name_span);
+                    if (targets[i].span.has_value()) AssertSpanMatch(a->targets[i].span, *targets[i].span);
                     if (targets[i].type_v) targets[i].type_v(a->targets[i].type.get());
                 }
                 value(a->value.get());
@@ -31,9 +33,11 @@ namespace valuascript::compiler::test
     };
 
     template <typename V = AnyMatcher>
-    inline AssignmentVerifier IsAssignment(std::vector<AssignmentTargetSpec> targets, V&& value = {})
+    inline auto IsAssignment(std::vector<AssignmentTargetSpec> targets, V&& value = {})
     {
-        return AssignmentVerifier(AssignmentMatcher<std::decay_t<V>>{std::move(targets), std::forward<V>(value)});
+        return FluentNodeMatcher<AssignmentMatcher<std::decay_t<V>>>{
+            AssignmentMatcher<std::decay_t<V>>{std::move(targets), std::forward<V>(value)}
+        };
     }
 
     template <typename T = AnyMatcher, typename V = AnyMatcher>
@@ -54,11 +58,13 @@ namespace valuascript::compiler::test
     };
 
     template <typename T = AnyMatcher, typename V = AnyMatcher>
-    inline ReassignmentVerifier IsReassignment(T&& target = {}, V&& value = {})
+    inline auto IsReassignment(T&& target = {}, V&& value = {})
     {
-        return ReassignmentVerifier(ReassignmentMatcher<std::decay_t<T>, std::decay_t<V>>{
-            std::forward<T>(target), std::forward<V>(value)
-        });
+        return FluentNodeMatcher<ReassignmentMatcher<std::decay_t<T>, std::decay_t<V>>>{
+            ReassignmentMatcher<std::decay_t<T>, std::decay_t<V>>{
+                std::forward<T>(target), std::forward<V>(value)
+            }
+        };
     }
 
     template <typename T = ExprVerifier>
@@ -99,12 +105,14 @@ namespace valuascript::compiler::test
         }
     };
 
-    inline ReturnVerifier IsReturn(std::vector<ModifierSpec> modifiers, std::vector<ExprVerifier> values)
+    inline FluentNodeMatcher<ReturnMatcher> IsReturn(std::vector<ModifierSpec> modifiers, std::vector<ExprVerifier> values)
     {
-        return ReturnVerifier(ReturnMatcher{.modifiers = std::move(modifiers), .values = std::move(values)});
+        return FluentNodeMatcher<ReturnMatcher>{
+            ReturnMatcher{.modifiers = std::move(modifiers), .values = std::move(values)}
+        };
     }
 
-    inline ReturnVerifier IsReturn(std::vector<ExprVerifier> values = {})
+    inline FluentNodeMatcher<ReturnMatcher> IsReturn(std::vector<ExprVerifier> values = {})
     {
         return IsReturn({}, std::move(values));
     }
@@ -112,11 +120,13 @@ namespace valuascript::compiler::test
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<ExprVerifier>>))
-    inline ReturnVerifier IsReturn(Matchers&&... matchers)
+    inline auto IsReturn(Matchers&&... matchers)
     {
-        return ReturnVerifier(ReturnVariadicMatcher<std::decay_t<Matchers>...>{
-            std::make_tuple(std::forward<Matchers>(matchers)...)
-        });
+        return FluentNodeMatcher<ReturnVariadicMatcher<std::decay_t<Matchers>...>>{
+            ReturnVariadicMatcher<std::decay_t<Matchers>...>{
+                std::make_tuple(std::forward<Matchers>(matchers)...)
+            }
+        };
     }
 
     template <typename E = AnyMatcher>
@@ -135,8 +145,10 @@ namespace valuascript::compiler::test
     };
 
     template <typename E = AnyMatcher>
-    inline ExprStmtVerifier IsExprStmt(E&& expr = {})
+    inline auto IsExprStmt(E&& expr = {})
     {
-        return ExprStmtVerifier(ExprStmtMatcher<std::decay_t<E>>{std::forward<E>(expr)});
+        return FluentNodeMatcher<ExprStmtMatcher<std::decay_t<E>>>{
+            ExprStmtMatcher<std::decay_t<E>>{std::forward<E>(expr)}
+        };
     }
 }
