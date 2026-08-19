@@ -14,7 +14,7 @@
 #include <span>
 #include <compare>
 #include <source_location>
-#include "frontend/parser/ast.h"
+#include "ast/ast.h"
 #include "utils/demangle_name.h"
 
 namespace valuascript::compiler::test

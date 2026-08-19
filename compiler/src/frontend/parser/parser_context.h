@@ -3,7 +3,7 @@
 #include <functional>
 #include "token_cursor.h"
 #include "token_traits.h"
-#include "ast.h"
+#include "ast/ast.h"
 
 namespace valuascript::compiler
 {

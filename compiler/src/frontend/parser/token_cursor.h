@@ -10,7 +10,7 @@
 #include "core/compiler_context.h"
 #include "core/error_formatter.h"
 #include "token/token.h"
-#include "ast.h"
+#include "ast/ast.h"
 
 using namespace valuascript::shared;
 

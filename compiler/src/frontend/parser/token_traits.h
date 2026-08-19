@@ -1,5 +1,5 @@
 #pragma once
-#include "ast.h"
+#include "ast/ast.h"
 #include "token/operator_lookup.h"
 
 namespace valuascript::compiler

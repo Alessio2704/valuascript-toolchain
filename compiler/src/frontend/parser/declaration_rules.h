@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 #include "token/token.h"
-#include "ast.h"
+#include "ast/ast.h"
 
 namespace valuascript::compiler
 {

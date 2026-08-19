@@ -3,7 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include "frontend/parser/ast.h"
+#include "ast/ast.h"
 
 namespace valuascript::compiler {
     struct ResolvedProjectArtifact {

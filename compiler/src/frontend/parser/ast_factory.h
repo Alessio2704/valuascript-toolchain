@@ -2,7 +2,7 @@
 #include <memory>
 #include <utility>
 #include "token_cursor.h"
-#include "ast.h"
+#include "ast/ast.h"
 
 namespace valuascript::compiler
 {
