@@ -5,15 +5,19 @@
 
 #include "core/valuascript_exception.h"
 #include "core/error_formatter.h"
+#include "lexer_error_code.h"
 #include "token/token.h"
 
-namespace valuascript::compiler {
-    class Lexer {
+namespace valuascript::compiler
+{
+    class Lexer
+    {
     private:
-        std::string source_;
+        std::string_view source_;
         std::string file_path_;
         std::vector<Token> tokens_;
-        CompilerContext &context_;
+        std::vector<CommentToken> comments_;
+        CompilerContext& context_;
         size_t start_ = 0;
         size_t current_ = 0;
         size_t line_ = 1;
@@ -22,23 +26,20 @@ namespace valuascript::compiler {
         size_t column_current_ = 1;
 
     public:
-        Lexer(std::string source, std::string file_path, CompilerContext &context);
+        Lexer(std::string_view source, std::string file_path, CompilerContext& context);
 
         std::vector<Token> tokenize();
+        [[nodiscard]] const std::vector<CommentToken>& comments() const noexcept { return comments_; }
 
     private:
         [[nodiscard]] bool is_at_end() const;
-
         char advance();
-
         [[nodiscard]] char peek() const;
-
         [[nodiscard]] char peek_next() const;
-
         bool match(char expected);
 
         void add_token(TokenType type);
-        void add_token(TokenType type, std::string text);
+        void add_token(TokenType type, std::string_view text);
 
         void scan_string();
 
@@ -46,22 +47,31 @@ namespace valuascript::compiler {
 
         void finalize_number();
 
-        [[nodiscard]] bool is_member_access() const;
-
         void scan_number();
 
         void scan_identifier();
 
         void scan_token();
 
-        template<typename... Args>
-        void report_error(const ValuascriptErrorCode &code, Args &&... args) const {
+        template <typename... Args>
+        void report_error(const LexerErrorCode& code, Args&&... args) const
+        {
             std::string message = format_error(code, std::forward<Args>(args)...);
+
+            size_t len = (current_ > start_) ? (current_ - start_) : 1;
 
             ValuaScriptException ex(
                 ValuascriptErrorCategory::Lexical,
                 code,
-                {line_start_, column_start_, line_, column_current_, file_path_},
+                SourceSpan{
+                    .line_start = line_start_,
+                    .column_start = column_start_,
+                    .line_end = line_,
+                    .column_end = column_current_,
+                    .file_path = std::make_shared<const std::string>(file_path_),
+                    .start_offset = start_,
+                    .length = len
+                },
                 std::move(message)
             );
 

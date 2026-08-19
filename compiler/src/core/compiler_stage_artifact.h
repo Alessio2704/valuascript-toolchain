@@ -18,13 +18,13 @@ namespace valuascript::compiler {
     };
 
     struct CompilerStageArtifact {
-        CompilerStageArtifactCode code;
-        std::any data;
+        CompilerStageArtifactCode code = CompilerStageArtifactCode::FilePath;
+        std::any data = {};
     };
 
     template<typename ExpectedType>
-    ExpectedType extract_artifact_data(const std::vector<CompilerStageArtifact> &artifacts,
-                                       CompilerStageArtifactCode target_code) {
+    const ExpectedType& extract_artifact_data(const std::vector<CompilerStageArtifact> &artifacts,
+                                              CompilerStageArtifactCode target_code) {
         auto it = std::find_if(artifacts.begin(), artifacts.end(), [target_code](const CompilerStageArtifact &a) {
             return a.code == target_code;
         });
@@ -37,7 +37,7 @@ namespace valuascript::compiler {
         }
 
         try {
-            return std::any_cast<ExpectedType>(it->data);
+            return std::any_cast<const ExpectedType&>(it->data);
         } catch (const std::bad_any_cast &) {
             throw InternalCompilerException(
                 InternalErrorCode::InvalidArtifactCast,

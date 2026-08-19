@@ -1,0 +1,725 @@
+#include "declaration_parser.h"
+#include "parser.h"
+#include "token/reserved_keyword_lookup.h"
+#include "ast_factory.h"
+#include "list_parser.h"
+#include "block_parser.h"
+#include "error_recovery.h"
+#include "declaration_rules.h"
+
+namespace valuascript::compiler
+{
+    using E = ParserErrorCode;
+
+    DeclarationParser::DeclarationParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
+    {
+    }
+
+    ImportPtr DeclarationParser::parse_import_statement(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Import, E::ExpectedImportToken);
+        Token path = ErrorRecovery::try_consume(
+            ctx, TokenType::String, E::MissingImportPathString,
+            RecoveryConfig::StopAtBoundary({TokenType::Comma})
+        );
+        SourceSpan full_span = cursor.combine_spans(start_span, cursor.make_span(path));
+        return AstFactory::make_node_with_span<ImportStatement>(
+            full_span, std::move(modifiers), NodeName{path.lexeme, cursor.make_span(path)});
+    }
+
+    DirectivePtr DeclarationParser::parse_directive()
+    {
+        const Token& start = cursor.consume(TokenType::Hash, E::ExpectedHashToken);
+        Token name_token(TokenType::Identifier, "<error>", cursor.peek().line, cursor.peek().column);
+
+        if (cursor.is_at_end() || cursor.peek().line > cursor.previous().line || ctx.
+            is_active_closer(cursor.peek().type) || ctx.is_in_sync_set(cursor.peek().type))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::MissingDirectiveName, false);
+        }
+        else
+        {
+            name_token = ErrorRecovery::try_consume_identifier(ctx, E::MissingDirectiveName,
+                                                               RecoveryConfig::StopAtNewline());
+        }
+
+        std::string directive_name = std::string(name_token.lexeme);
+        ExprPtr value = nullptr;
+
+        if (directive_name != "<error>")
+        {
+            if (cursor.match(TokenType::Assign))
+            {
+                bool is_pseudo_stmt = (cursor.peek().line > cursor.previous().line && cursor.peek().type != TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)) ||
+                    (cursor.peek().line > cursor.previous().line && TokenTraits::is_expression_statement_start(
+                        cursor.peek(), cursor.peek(1).type));
+                if (cursor.is_at_end() || is_pseudo_stmt || cursor.peek().line > cursor.previous().line || ctx.
+                    is_active_closer(cursor.peek().type) || ctx.is_in_sync_set(cursor.peek().type))
+                {
+                    cursor.report_error_no_panic(cursor.peek(), E::MissingValueAfterEquals, false);
+                }
+                else
+                {
+                    value = ErrorRecovery::try_parse<ExprPtr>(
+                        ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline()
+                    );
+                }
+            }
+            else if (cursor.peek().line == cursor.previous().line && (cursor.peek().type == TokenType::At || TokenTraits::is_expression_start(
+                cursor.peek().type) || is_reserved_keyword(cursor.peek())))
+            {
+                value = ErrorRecovery::try_parse<ExprPtr>(
+                    ctx, [&]() { return parser.parse_expression(); }, RecoveryConfig::StopAtNewline());
+            }
+
+            if (value) parser.verify_statement_end();
+        }
+        return AstFactory::make_node<Directive>(
+            cursor, start, NodeName{directive_name, cursor.make_span(name_token)}, std::move(value));
+    }
+
+    std::vector<Modifier> DeclarationParser::parse_modifiers(bool is_statement_context)
+    {
+        std::vector<Modifier> modifiers;
+        modifiers.reserve(4);
+        while (cursor.match(TokenType::At))
+        {
+            const Token& start_token = cursor.previous();
+            try
+            {
+                RecoveryConfig config{
+                    .stop_tokens = {TokenType::LeftParen, TokenType::At},
+                    .options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp,
+                    .custom_stop_predicate = [](const Token& tok, TokenType next)
+                    {
+                        return tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next) || tok.type
+                            == TokenType::Colon || tok.type == TokenType::Comma || tok.type == TokenType::Assign ||
+                            TokenTraits::is_grouping_closer(tok.type) || TokenTraits::is_grouping_opener(tok.type);
+                    }
+                };
+
+                Token name_token = ErrorRecovery::try_consume_identifier(
+                    ctx, E::ExpectedModifierName, config, is_statement_context);
+                std::vector<CallArgument> arguments;
+
+                if (cursor.match(TokenType::LeftParen))
+                {
+                    CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::ModifierArguments);
+                    KeyValueContainerGuard kv_guard(ctx);
+                    ParameterRuleSpec arg_spec{
+                        .allow_value = true, .require_value = true, .value_separator = TokenType::Colon,
+                        .missing_name_err = E::MissingArgumentNameInModifier,
+                        .missing_value_separator_err = E::MissingColonAfterArgument,
+                        .missing_value_err = E::InvalidExpression
+                    };
+
+                    auto args_gen = ListParser<GenericParameter>(ctx)
+                                    .stop_at(TokenType::RightParen)
+                                    .on_trailing_comma(E::TrailingCommaInModifier)
+                                    .on_missing_comma(E::MissingCommaSeparatorForArgumentsInModifier)
+                                    .is_element_start([this]()
+                                    {
+                                        if (ErrorRecovery::is_unclosed_before_parent_boundary(ctx))
+                                            return false;
+                                        const Token& tok = cursor.peek();
+                                        return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(
+                                            tok, cursor.peek(1).type)) && cursor.peek(1).type == TokenType::Colon;
+                                    })
+                                    .parse_elements([&]() { return parse_generic_parameter(arg_spec); });
+
+                    for (auto& g : args_gen)
+                    {
+                        arguments.push_back(CallArgument{
+                            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                            .value = std::move(g.value),
+                            .span = g.span
+                        });
+                    }
+
+                    bool is_at_boundary =
+                        ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+                        (!cursor.check(TokenType::RightParen) &&
+                         (ctx.is_active_closer(cursor.peek().type) ||
+                          ctx.is_at_any_declaration() ||
+                          TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                          cursor.peek().type == TokenType::Return ||
+                          cursor.peek(1).type == TokenType::Assign ||
+                          ctx.looks_like_reassignment()));
+
+                    if (is_at_boundary)
+                    {
+                        cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisAfterModifierArgs);
+                        modifiers.push_back(Modifier{
+                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            .arguments = std::move(arguments),
+                            .span = cursor.make_span(start_token, cursor.previous())
+                        });
+                    }
+                    else
+                    {
+                        try { cursor.consume(TokenType::RightParen, E::UnmatchedParenthesisAfterModifierArgs); }
+                        catch (const ParseSyncException&)
+                        {
+                            if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
+                                ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
+                        }
+                        modifiers.push_back(Modifier{
+                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            .arguments = std::move(arguments),
+                            .span = cursor.make_span(start_token, cursor.previous())
+                        });
+                    }
+                }
+                else
+                {
+                    modifiers.push_back(Modifier{
+                        .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                        .arguments = std::move(arguments),
+                        .span = cursor.make_span(start_token, cursor.previous())
+                    });
+                }
+            }
+            catch (const ParseSyncException&)
+            {
+                if (ctx.is_active_closer(cursor.peek().type)) throw;
+
+                RecoveryConfig sync_config{
+                    .stop_tokens = {TokenType::At}
+                };
+                sync_config.options = DefaultRecoveryOptions | RecoveryOptions::StopAtBoundaryRespectingDanglingOp;
+                sync_config.custom_stop_predicate = [](const Token& tok, TokenType)
+                {
+                    return TokenTraits::is_grouping_closer(tok.type);
+                };
+                ErrorRecovery::synchronize_with(ctx, sync_config);
+
+                if (cursor.is_at_end() || TokenTraits::is_grouping_closer(cursor.peek().type) || (cursor.peek().type !=
+                    TokenType::At && TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type)))
+                    break;
+            }
+        }
+        return modifiers;
+    }
+
+    StructDefPtr DeclarationParser::parse_struct_definition(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Struct, E::ExpectedStructToken);
+        Token name = ErrorRecovery::try_consume_identifier(
+            ctx, E::ExpectedStructName, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}), false);
+
+        if (cursor.check(TokenType::LeftBrace))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedBraceInStructDefinition);
+            return AstFactory::make_node_with_span<StructDefinition>(
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
+                NodeName{name.lexeme, cursor.make_span(name)}, std::vector<StructField>{}
+            );
+        }
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::StructBody);
+
+        auto is_at_parent_boundary = [this](size_t offset = 0)
+        {
+            const Token& tok = cursor.peek(offset);
+            const TokenType next = cursor.peek(offset + 1).type;
+            if (tok.type == TokenType::Comma)
+            {
+                const Token& after_comma = cursor.peek(offset + 1);
+                const TokenType after_comma_next = cursor.peek(offset + 2).type;
+                if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
+                {
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, !ctx.active_closers.empty() ? ctx.active_closers.back() : TokenType::RightBrace);
+                }
+            }
+            return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
+                TokenType::Colon;
+        };
+
+        ParameterRuleSpec field_spec{
+            .allow_modifiers = true, .allow_type = true, .require_type = true,
+            .missing_name_err = E::ExpectedStructFieldName,
+            .missing_type_colon_err = E::ExpectedColonAfterStructFieldName
+        };
+
+        auto fields_gen = ListParser<GenericParameter>(ctx)
+                          .stop_at(TokenType::RightBrace)
+                          .on_missing_comma(E::ExpectedCommaSeparatorInStruct)
+                          .break_on_reassignment()
+                          .is_element_start([this]()
+                          {
+                              const Token& tok = cursor.peek();
+                              if (tok.type == TokenType::At) return !ctx.is_at_any_declaration();
+                              if (tok.type == TokenType::Identifier) return true;
+                              return is_reserved_keyword(tok) && (cursor.peek(1).type == TokenType::Colon);
+                          })
+                          .parse_elements([&]() { return parse_generic_parameter(field_spec, is_at_parent_boundary); });
+
+        std::vector<StructField> fields;
+        fields.reserve(fields_gen.size());
+        for (auto& g : fields_gen) fields.push_back({
+            .modifiers = std::move(g.modifiers),
+            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            .type = std::move(g.type),
+            .span = g.span
+        });
+
+        Token end_token = cursor.previous();
+        try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
+        catch (const ParseSyncException&)
+        {
+            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
+            end_token = cursor.previous();
+        }
+
+        return AstFactory::make_node_with_span<StructDefinition>(
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
+            NodeName{name.lexeme, cursor.make_span(name)}, std::move(fields));
+    }
+
+    EnumDefPtr DeclarationParser::parse_enum_definition(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Enum, E::ExpectedEnumToken);
+        Token name = ErrorRecovery::try_consume_identifier(
+            ctx, E::ExpectedEnumName, RecoveryConfig::StopAtBoundary({
+                TokenType::Colon, TokenType::LeftBrace, TokenType::Comma
+            }), false);
+
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            return cursor.peek(offset).type == TokenType::LeftBrace;
+        };
+
+        TypeAnnPtr underlying_type = nullptr;
+        if (cursor.check(TokenType::Colon))
+        {
+            cursor.advance();
+            underlying_type = ErrorRecovery::try_parse<TypeAnnPtr>(
+                ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
+                RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}));
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedColonAfterEnumName);
+            if (!cursor.check(TokenType::LeftBrace))
+            {
+                bool failed = false;
+                underlying_type = ErrorRecovery::try_parse<TypeAnnPtr>(
+                    ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
+                    RecoveryConfig::StopAtBoundary({TokenType::LeftBrace, TokenType::Comma}),
+                    &failed);
+                if (failed)
+                {
+                    underlying_type = nullptr;
+                }
+            }
+        }
+
+        if (cursor.check(TokenType::LeftBrace))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftBraceBeforeEnumBody);
+            return AstFactory::make_node_with_span<EnumDefinition>(
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
+                NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type), std::vector<EnumCase>{}
+            );
+        }
+        CloserTracker tracker(ctx, TokenType::RightBrace, ContainerKind::EnumBody);
+
+        ParameterRuleSpec case_spec{
+            .allow_modifiers = true, .allow_value = true, .value_separator = TokenType::Assign,
+            .missing_name_err = E::ExpectedEnumCaseName, .missing_value_separator_err = E::MissingOperator,
+            .missing_value_err = E::InvalidExpression
+        };
+
+        auto cases_gen = ListParser<GenericParameter>(ctx)
+                         .stop_at(TokenType::RightBrace)
+                         .on_missing_comma(E::ExpectedCommaSeparatorInEnum)
+                         .is_element_start([this]()
+                         {
+                             const Token& tok = cursor.peek();
+                             const Token& next = cursor.peek(1);
+                             if (tok.type == TokenType::At) return !ctx.is_at_any_declaration();
+                             if (tok.type == TokenType::At || tok.type == TokenType::Identifier) return true;
+                             if (is_reserved_keyword(tok))
+                             {
+                                 if (TokenTraits::acts_like_identifier(tok, next.type)) return true;
+                                 if (TokenTraits::is_top_level_only_declaration(tok.type)) return false;
+                                 if (tok.type == TokenType::Let) return next.type != TokenType::Identifier;
+                                 return true;
+                             }
+                             return false;
+                         })
+                         .parse_elements([&]() { return parse_generic_parameter(case_spec); });
+
+        std::vector<EnumCase> cases;
+        cases.reserve(cases_gen.size());
+        for (auto& g : cases_gen) cases.push_back({
+            .modifiers = std::move(g.modifiers),
+            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            .value = std::move(g.value),
+            .span = g.span
+        });
+
+        Token end_token = cursor.previous();
+        try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
+        catch (const ParseSyncException&)
+        {
+            ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
+            end_token = cursor.previous();
+        }
+
+        return AstFactory::make_node_with_span<EnumDefinition>(
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
+            NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type),
+            std::move(cases));
+    }
+
+    FuncDefPtr DeclarationParser::parse_function_definition(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Func, E::ExpectedFuncToken);
+        Token name = ErrorRecovery::try_consume_identifier(
+            ctx, E::MissingFunctionName, RecoveryConfig::StopAtBoundary({
+                TokenType::LeftParen, TokenType::LeftBrace, TokenType::Comma
+            }), false);
+
+        if (cursor.check(TokenType::LeftParen))
+        {
+            cursor.advance();
+        }
+        else
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftParenAfterFunctionName);
+        }
+
+        auto is_at_parent_boundary = [this](size_t offset = 0)
+        {
+            const Token& tok = cursor.peek(offset);
+            const TokenType next = cursor.peek(offset + 1).type;
+            if (tok.type == TokenType::Comma)
+            {
+                const Token& after_comma = cursor.peek(offset + 1);
+                const TokenType after_comma_next = cursor.peek(offset + 2).type;
+                if ((after_comma.type == TokenType::Identifier || TokenTraits::acts_like_identifier(after_comma, after_comma_next)) && after_comma_next == TokenType::Colon)
+                {
+                    return ErrorRecovery::is_unclosed_before_parent_boundary(ctx, !ctx.active_closers.empty() ? ctx.active_closers.back() : TokenType::RightParen);
+                }
+            }
+            return (tok.type == TokenType::Identifier || TokenTraits::acts_like_identifier(tok, next)) && next ==
+                TokenType::Colon;
+        };
+
+        std::vector<FunctionParameter> params;
+        {
+            CloserTracker param_tracker(ctx, TokenType::RightParen, ContainerKind::FunctionParameters);
+
+            ParameterRuleSpec param_spec{
+                .allow_modifiers = true, .allow_type = true, .require_type = true, .allow_value = true,
+                .require_value = false, .value_separator = TokenType::Assign,
+                .missing_name_err = E::MissingParameterName,
+                .missing_type_colon_err = E::MissingColonAfterParameter,
+                .missing_value_err = E::MissingDefaultParameterValue
+            };
+
+            auto params_gen = ListParser<GenericParameter>(ctx)
+                              .stop_at(TokenType::RightParen)
+                              .on_trailing_comma(E::TrailingComma)
+                              .on_missing_comma(E::ExpectedCommaSeparatorInParameterList)
+                              .is_element_start([this]()
+                              {
+                                  const Token& tok = cursor.peek();
+                                  return tok.type == TokenType::At || tok.type == TokenType::Identifier ||
+                                      TokenTraits::acts_like_identifier(tok, cursor.peek(1).type);
+                              })
+                              .parse_elements([&]()
+                              {
+                                  return parse_generic_parameter(param_spec, is_at_parent_boundary);
+                              });
+
+            bool seen_default_param = false;
+            params.reserve(params_gen.size());
+            for (auto& g : params_gen)
+            {
+                if (g.has_value_separator || g.value) seen_default_param = true;
+                else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
+                params.push_back({
+                    .modifiers = std::move(g.modifiers),
+                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    .type = std::move(g.type),
+                    .default_value = std::move(g.value),
+                    .span = g.span
+                });
+            }
+        }
+
+        if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
+            (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterParameters);
+        }
+        else
+        {
+            try
+            {
+                cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterParameters);
+            }
+            catch (const ParseSyncException&)
+            {
+                TokenType peek = cursor.peek().type;
+                if (peek != TokenType::Arrow && peek != TokenType::LeftBrace && peek != TokenType::EndOfFile)
+                {
+                    throw;
+                }
+            }
+        }
+
+        std::vector<TypeAnnPtr> return_types;
+        if (cursor.check(TokenType::Arrow))
+        {
+            cursor.advance();
+            auto is_at_return_boundary = [this](size_t offset = 0) {
+                return cursor.peek(offset).type == TokenType::LeftBrace;
+            };
+            ErrorRecovery::attempt_parse_void(
+                ctx, [&]()
+                {
+                    return_types = ListParser<TypeAnnPtr>(ctx)
+                                   .stop_at(TokenType::LeftBrace)
+                                   .on_trailing_comma(E::TrailingComma)
+                                   .on_missing_comma(
+                                       E::ExpectedCommaSeparatorInReturnTypeList)
+                                   .is_at_parent_boundary(is_at_return_boundary)
+                                   .parse_elements([&]()
+                                   {
+                                       return parser.parse_type_annotation(is_at_return_boundary);
+                                    });
+
+                    if (return_types.empty())
+                        cursor.report_error_no_panic(
+                            cursor.peek(), E::MissingTypeAnnotationAfterArrow);
+                }, RecoveryConfig::StopAtBoundary({TokenType::LeftBrace})
+            );
+        }
+        else if (cursor.check(TokenType::LeftBrace))
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::MissingArrowInFunction);
+        }
+        else { cursor.consume(TokenType::Arrow, E::MissingArrowInFunction); }
+
+        std::optional<std::string> docstring = std::nullopt;
+        std::vector<StmtPtr> body;
+
+        BlockParser(parser)
+            .on_missing_open_brace(E::ExpectedLeftBraceBeforeFunctionBody)
+            .on_missing_close_brace(E::ExpectedRightBraceAfterFunctionBody)
+            .with_recovery_config(RecoveryConfig{
+                .stop_tokens = {TokenType::RightBrace, TokenType::Return},
+                .options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp
+            })
+            .collect_docstring(docstring)
+            .parse_statements(ParseContextType::FunctionBody, body);
+
+        Token end_token = cursor.previous();
+        return AstFactory::make_node_with_span<FunctionDefinition>(
+            cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
+            NodeName{name.lexeme, cursor.make_span(name)}, std::move(params),
+            std::move(return_types), std::move(body), std::move(docstring)
+        );
+    }
+
+    TypeAliasPtr DeclarationParser::parse_type_alias_definition(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Typealias, E::ExpectedTypeAliasToken);
+        Token name = ErrorRecovery::try_consume_identifier(
+            ctx, E::ExpectedTypeAliasName, RecoveryConfig::StopAtBoundary({TokenType::Assign, TokenType::Comma}), false);
+
+        if (cursor.check(TokenType::Assign)) cursor.advance();
+        else cursor.report_error_no_panic(cursor.peek(), E::ExpectedAssignAfterTypeAliasName);
+
+        bool next_is_newline_stmt = cursor.peek().line > cursor.previous().line && (
+            TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+            TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type));
+
+        if (cursor.is_at_end() || next_is_newline_stmt)
+        {
+            cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, false);
+            return AstFactory::make_node_with_span<TypeAliasDefinition>(
+                cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+                std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)}, nullptr);
+        }
+
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            const Token& peek = cursor.peek(offset);
+            const Token& prev = offset > 0 ? cursor.peek(offset - 1) : cursor.previous();
+            return cursor.is_at_end() ||
+                   (peek.line > prev.line &&
+                    (TokenTraits::is_statement_start(peek, cursor.peek(offset + 1).type) ||
+                     TokenTraits::is_expression_statement_start(peek, cursor.peek(offset + 1).type)));
+        };
+
+        auto target_type = ErrorRecovery::attempt_parse<TypeAnnPtr>(
+            ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
+            RecoveryConfig::StopAtNewline(),
+            nullptr
+        );
+
+        if (target_type) parser.verify_statement_end();
+        return AstFactory::make_node_with_span<TypeAliasDefinition>(
+            cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
+            std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)},
+            std::move(target_type));
+    }
+
+    GenericParameter DeclarationParser::parse_generic_parameter(const ParameterRuleSpec& spec,
+                                                                const ParentBoundaryPredicate& is_at_parent_boundary)
+    {
+        GenericParameter result;
+        const Token& start = cursor.peek();
+
+        if (spec.allow_modifiers || cursor.check(TokenType::At))
+        {
+            auto mods = parse_modifiers();
+            if (!mods.empty())
+            {
+                if (!spec.allow_modifiers)
+                {
+                    SourceSpan span = cursor.combine_spans(mods.front().span, mods.back().span);
+                    cursor.report_error_no_panic(span, spec.unexpected_modifier_err);
+                }
+                else result.modifiers = std::move(mods);
+            }
+        }
+
+        bool name_failed = false;
+        result.name = ErrorRecovery::try_consume_identifier(
+            ctx, spec.missing_name_err, RecoveryConfig::StopAtBoundary({
+                TokenType::Colon, spec.value_separator, TokenType::Comma
+            }),
+            false, false, &name_failed);
+
+        if (spec.allow_type)
+        {
+            if (cursor.check(TokenType::Colon))
+            {
+                cursor.advance();
+                result.type = ErrorRecovery::try_parse<TypeAnnPtr>(
+                    ctx, [&]() { return parser.parse_type_annotation(is_at_parent_boundary); },
+                    RecoveryConfig::StopAtBoundary({spec.value_separator, TokenType::Comma})
+                );
+            }
+            else if (spec.require_type && !name_failed)
+            {
+                if (!cursor.check(spec.value_separator) && !cursor.check(TokenType::Comma) && !ctx.is_active_closer(
+                    cursor.peek().type))
+                    cursor.consume(TokenType::Colon, spec.missing_type_colon_err);
+                else cursor.report_error_no_panic(cursor.peek(), spec.missing_type_colon_err);
+            }
+        }
+
+        if (spec.allow_value)
+        {
+            bool has_sep = false;
+            if (cursor.match(spec.value_separator))
+            {
+                has_sep = true;
+                result.has_value_separator = true;
+            }
+            else if (spec.require_value && !name_failed)
+            {
+                if (!cursor.check(TokenType::Comma) && !ctx.is_active_closer(cursor.peek().type))
+                    cursor.consume(spec.value_separator, spec.missing_value_separator_err);
+                else cursor.report_error_no_panic(cursor.peek(), spec.missing_value_separator_err);
+            }
+
+            if (has_sep || spec.require_value)
+            {
+                if (cursor.check(TokenType::Comma) || ctx.is_active_closer(cursor.peek().type))
+                {
+                    if (has_sep) cursor.report_error_no_panic(cursor.peek(), spec.missing_value_err);
+                }
+                else
+                {
+                    ErrorRecovery::attempt_parse_void(
+                        ctx,
+                        [&]()
+                        {
+                            bool prev_list = ctx.is_parsing_list_element;
+                            ctx.is_parsing_list_element = true;
+                            result.value = parser.parse_expression();
+                            ctx.is_parsing_list_element = prev_list;
+                            bool is_boundary =
+                                ctx.is_active_closer(cursor.peek().type) ||
+                                ctx.is_at_any_declaration() ||
+                                TokenTraits::is_statement_start(cursor.peek(), cursor.peek(1).type) ||
+                                cursor.peek(1).type == TokenType::Assign ||
+                                ctx.looks_like_reassignment();
+
+                            if (!is_boundary && (TokenTraits::is_expression_start(cursor.peek().type) ||
+                                    TokenTraits::is_binary_operator(cursor.peek().type))
+                                &&
+                                cursor.peek(1).type != spec.value_separator && cursor.
+                                                                               peek(1).type != TokenType::Colon)
+                            {
+                                if (!TokenTraits::is_newline_statement_boundary(
+                                    cursor.previous(), cursor.peek(),
+                                    cursor.peek(1).type))
+                                    cursor.report_error(
+                                        cursor.peek(), E::MissingOperator);
+                            }
+                        },
+                        RecoveryConfig::StopAtBoundary({TokenType::Comma})
+                    );
+                }
+            }
+        }
+
+        result.span = cursor.make_span(start, cursor.previous());
+        return result;
+    }
+
+    ExtensionDefPtr DeclarationParser::parse_extension_definition(std::vector<Modifier> modifiers)
+    {
+        const SourceSpan start_span = !modifiers.empty() ? modifiers.front().span : cursor.make_span(cursor.peek());
+        cursor.consume(TokenType::Extension, E::ExpectedExtensionToken);
+
+        auto is_at_parent_boundary = [this](size_t offset = 0) {
+            return cursor.peek(offset).type == TokenType::LeftBrace;
+        };
+
+        TypeAnnPtr target_type = nullptr;
+        ErrorRecovery::attempt_parse_void(
+            ctx,
+            [&]() { target_type = parser.parse_type_annotation(is_at_parent_boundary); },
+            RecoveryConfig::ForceStopAtBoundary({TokenType::LeftBrace})
+        );
+
+        auto extension = std::make_unique<ExtensionDefinition>(std::move(modifiers), std::move(target_type));
+
+        BlockParser(parser)
+            .on_missing_open_brace(E::ExpectedLeftBraceBeforeExtensionBody)
+            .on_missing_close_brace(E::ExpectedRightBraceAfterExtensionBody)
+            .with_recovery_config(RecoveryConfig{
+                .options = RecoveryOptions::ForceStopAtBoundaryIgnoringDanglingOp
+            })
+            .terminates_on_declaration([&]() {
+                TokenType t = ctx.peek_past_modifiers();
+                return t == TokenType::Import || t == TokenType::Hash || t == TokenType::Extension;
+            })
+            .parse_body([&]() {
+                std::vector<StmtPtr> dummy_block;
+                parser.parse_statement_or_declaration(ParseContextType::ExtensionBody, nullptr, extension.get(), dummy_block);
+            });
+
+        extension->span = cursor.combine_spans(start_span, cursor.make_span(cursor.previous()));
+        return extension;
+    }
+}
