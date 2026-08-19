@@ -42,6 +42,12 @@ namespace valuascript::compiler
         [[nodiscard]] size_t size() const noexcept { return tokens_.size(); }
         [[nodiscard]] bool empty() const noexcept { return tokens_.empty(); }
         [[nodiscard]] std::span<const Token> remaining() const noexcept { return tokens_.subspan(current_); }
+        [[nodiscard]] CompilerContext& context() noexcept { return context_; }
+        [[nodiscard]] const CompilerContext& context() const noexcept { return context_; }
+        [[nodiscard]] const std::vector<CommentToken>& get_comments() const
+        {
+            return context_.get_comments(file_path_ ? *file_path_ : "");
+        }
 
         void set_suppress_errors(bool suppress) { suppress_errors_ = suppress; }
         [[nodiscard]] bool get_suppress_errors() const { return suppress_errors_; }

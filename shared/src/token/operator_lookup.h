@@ -101,6 +101,6 @@ namespace valuascript::shared
     const OperatorMap& get_binary_operators_map();
     const OperatorMap& get_unary_operators_map();
 
-    std::vector<std::pair<TokenType, std::string>> get_all_binary_operators();
-    std::vector<std::pair<TokenType, std::string>> get_all_unary_operators();
+    const std::vector<std::pair<TokenType, std::string>>& get_all_binary_operators();
+    const std::vector<std::pair<TokenType, std::string>>& get_all_unary_operators();
 }

@@ -26,25 +26,31 @@ namespace valuascript::shared
         return map;
     }
 
-    std::vector<std::pair<TokenType, std::string>> get_all_binary_operators()
+    const std::vector<std::pair<TokenType, std::string>>& get_all_binary_operators()
     {
-        std::vector<std::pair<TokenType, std::string>> ops;
-        ops.reserve(BINARY_OPERATORS.size());
-        for (const auto& op : BINARY_OPERATORS)
-        {
-            ops.emplace_back(op.type, std::string(op.text));
-        }
+        static const std::vector<std::pair<TokenType, std::string>> ops = [] {
+            std::vector<std::pair<TokenType, std::string>> list;
+            list.reserve(BINARY_OPERATORS.size());
+            for (const auto& op : BINARY_OPERATORS)
+            {
+                list.emplace_back(op.type, std::string(op.text));
+            }
+            return list;
+        }();
         return ops;
     }
 
-    std::vector<std::pair<TokenType, std::string>> get_all_unary_operators()
+    const std::vector<std::pair<TokenType, std::string>>& get_all_unary_operators()
     {
-        std::vector<std::pair<TokenType, std::string>> ops;
-        ops.reserve(UNARY_OPERATORS.size());
-        for (const auto& op : UNARY_OPERATORS)
-        {
-            ops.emplace_back(op.type, std::string(op.text));
-        }
+        static const std::vector<std::pair<TokenType, std::string>> ops = [] {
+            std::vector<std::pair<TokenType, std::string>> list;
+            list.reserve(UNARY_OPERATORS.size());
+            for (const auto& op : UNARY_OPERATORS)
+            {
+                list.emplace_back(op.type, std::string(op.text));
+            }
+            return list;
+        }();
         return ops;
     }
 }

@@ -40,7 +40,9 @@ namespace valuascript::compiler
                 .column_start = start_token.column,
                 .line_end = start_token.line,
                 .column_end = end_col,
-                .file_path = file_path_
+                .file_path = file_path_,
+                .start_offset = start_token.start_offset,
+                .length = start_token.length
             };
         }
 
@@ -49,23 +51,35 @@ namespace valuascript::compiler
         {
             end_col += end_token.lexeme.length();
         }
+
+        size_t end_byte = end_token.start_offset + end_token.length;
+        size_t total_length = (end_byte >= start_token.start_offset) ? (end_byte - start_token.start_offset) : 0;
+
         return SourceSpan{
             .line_start = start_token.line,
             .column_start = start_token.column,
             .line_end = end_token.line,
             .column_end = end_col,
-            .file_path = file_path_
+            .file_path = file_path_,
+            .start_offset = start_token.start_offset,
+            .length = total_length
         };
     }
 
     SourceSpan TokenCursor::combine_spans(const SourceSpan& start, const SourceSpan& end) const
     {
+        size_t start_off = std::min(start.start_offset, end.start_offset);
+        size_t end_off = std::max(start.start_offset + start.length, end.start_offset + end.length);
+        size_t total_len = (end_off >= start_off) ? (end_off - start_off) : 0;
+
         return SourceSpan{
             .line_start = start.line_start,
             .column_start = start.column_start,
             .line_end = end.line_end,
             .column_end = end.column_end,
-            .file_path = file_path_
+            .file_path = file_path_,
+            .start_offset = start_off,
+            .length = total_len
         };
     }
 
@@ -76,6 +90,8 @@ namespace valuascript::compiler
         size_t err_line = token.line;
         size_t err_column_start = token.column;
         size_t err_column_end = token.column + (token.lexeme.empty() ? 1 : token.lexeme.length());
+        size_t err_start_offset = token.start_offset;
+        size_t err_length = token.length > 0 ? token.length : 1;
 
         if (!use_exact_token_range && current_ > 0)
         {
@@ -141,6 +157,8 @@ namespace valuascript::compiler
                     err_column_start = final_col;
                     err_column_end = final_col + 1;
                 }
+                err_start_offset = prev.start_offset + view.length();
+                err_length = 1;
             }
         }
 
@@ -149,7 +167,9 @@ namespace valuascript::compiler
             .column_start = err_column_start,
             .line_end = err_line,
             .column_end = err_column_end,
-            .file_path = file_path_
+            .file_path = file_path_,
+            .start_offset = err_start_offset,
+            .length = err_length
         };
     }
 }

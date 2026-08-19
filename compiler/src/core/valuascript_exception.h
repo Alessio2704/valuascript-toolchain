@@ -1,5 +1,5 @@
 #pragma once
-#include <frontend/parser/ast_core.h>
+#include "token/source_span.h"
 #include <string>
 #include <utility>
 #include <variant>

@@ -16,6 +16,7 @@ namespace valuascript::compiler
         std::string_view source_;
         std::string file_path_;
         std::vector<Token> tokens_;
+        std::vector<CommentToken> comments_;
         CompilerContext& context_;
         size_t start_ = 0;
         size_t current_ = 0;
@@ -28,6 +29,7 @@ namespace valuascript::compiler
         Lexer(std::string_view source, std::string file_path, CompilerContext& context);
 
         std::vector<Token> tokenize();
+        [[nodiscard]] const std::vector<CommentToken>& comments() const noexcept { return comments_; }
 
     private:
         [[nodiscard]] bool is_at_end() const;
@@ -56,6 +58,8 @@ namespace valuascript::compiler
         {
             std::string message = format_error(code, std::forward<Args>(args)...);
 
+            size_t len = (current_ > start_) ? (current_ - start_) : 1;
+
             ValuaScriptException ex(
                 ValuascriptErrorCategory::Lexical,
                 code,
@@ -64,7 +68,9 @@ namespace valuascript::compiler
                     .column_start = column_start_,
                     .line_end = line_,
                     .column_end = column_current_,
-                    .file_path = std::make_shared<const std::string>(file_path_)
+                    .file_path = std::make_shared<const std::string>(file_path_),
+                    .start_offset = start_,
+                    .length = len
                 },
                 std::move(message)
             );

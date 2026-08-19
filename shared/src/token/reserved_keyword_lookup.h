@@ -88,14 +88,17 @@ namespace valuascript::shared
         return get_keyword_type(token.lexeme).has_value();
     }
 
-    inline std::vector<std::string> get_all_reserved_keyword_strings()
+    inline const std::vector<std::string>& get_all_reserved_keyword_strings()
     {
-        std::vector<std::string> keywords;
-        keywords.reserve(RESERVED_KEYWORDS.size());
-        for (const auto& entry : RESERVED_KEYWORDS)
-        {
-            keywords.emplace_back(entry.name);
-        }
+        static const std::vector<std::string> keywords = [] {
+            std::vector<std::string> list;
+            list.reserve(RESERVED_KEYWORDS.size());
+            for (const auto& entry : RESERVED_KEYWORDS)
+            {
+                list.emplace_back(entry.name);
+            }
+            return list;
+        }();
         return keywords;
     }
 }

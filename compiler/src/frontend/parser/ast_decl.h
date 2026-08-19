@@ -128,6 +128,7 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::Program;
         std::unique_ptr<AstArena> arena = nullptr;
+        std::vector<CommentToken> comments;
         std::vector<ImportPtr> import_statements;
         std::vector<DirectivePtr> directives;
         std::vector<StmtPtr> execution_steps;

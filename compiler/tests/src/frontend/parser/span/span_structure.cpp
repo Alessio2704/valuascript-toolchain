@@ -407,4 +407,48 @@ namespace valuascript::compiler::test {
         ASSERT_NE(group, nullptr);
         assert_span(group->span, 1, 9, 1, 16);
     }
+
+    TEST_F(AstSpanTest, ValidatesAstNodeByteOffsets) {
+        std::string code = "let total = 10 + 20";
+        auto ast = parse_code(code);
+
+        ASSERT_EQ(ast->execution_steps.size(), 1);
+        auto assign_node = dynamic_cast<Assignment *>(ast->execution_steps[0].get());
+        ASSERT_NE(assign_node, nullptr);
+
+        // Entire assignment: "let total = 10 + 20"
+        EXPECT_EQ(assign_node->span.start_offset, 0);
+        EXPECT_EQ(assign_node->span.length, code.length());
+        EXPECT_EQ(assign_node->span.end_offset(), code.length());
+        EXPECT_EQ(code.substr(assign_node->span.start_offset, assign_node->span.length), "let total = 10 + 20");
+
+        // BinaryExpression: "10 + 20"
+        auto bin_expr = dynamic_cast<BinaryExpression *>(assign_node->value.get());
+        ASSERT_NE(bin_expr, nullptr);
+        size_t bin_offset = code.find("10 + 20");
+        EXPECT_EQ(bin_expr->span.start_offset, bin_offset);
+        EXPECT_EQ(bin_expr->span.length, 7);
+        EXPECT_EQ(code.substr(bin_expr->span.start_offset, bin_expr->span.length), "10 + 20");
+    }
+
+    TEST_F(AstSpanTest, ValidatesProgramCommentsPreservation) {
+        std::string code =
+            "// Header comment\n"
+            "let x = 42 // vs-lint:disable-line\n"
+            "// Footer comment";
+        auto ast = parse_code(code);
+
+        ASSERT_EQ(ast->comments.size(), 3);
+        EXPECT_EQ(ast->comments[0].text, "// Header comment");
+        EXPECT_EQ(ast->comments[0].start_offset, 0);
+        EXPECT_EQ(ast->comments[0].length, 17);
+
+        EXPECT_EQ(ast->comments[1].text, "// vs-lint:disable-line");
+        size_t c1_off = code.find("// vs-lint");
+        EXPECT_EQ(ast->comments[1].start_offset, c1_off);
+
+        EXPECT_EQ(ast->comments[2].text, "// Footer comment");
+        size_t c2_off = code.find("// Footer");
+        EXPECT_EQ(ast->comments[2].start_offset, c2_off);
+    }
 }

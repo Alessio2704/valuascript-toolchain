@@ -835,4 +835,95 @@ namespace valuascript::compiler::test
             {.type = TokenType::EndOfFile, .lexeme = "", .line = 1, .column = 10}
         });
     }
+
+    TEST_F(LexerHappyPathTest, ValidatesTokenByteOffsets)
+    {
+        std::string source = "let sum = a + 42";
+        auto ctx = std::make_shared<CompilerContext>();
+        auto tokens = tokenize_code(source, true, ctx);
+
+        // 'let': start=0, length=3
+        EXPECT_EQ(tokens[0].start_offset, 0);
+        EXPECT_EQ(tokens[0].length, 3);
+        EXPECT_EQ(source.substr(tokens[0].start_offset, tokens[0].length), "let");
+
+        // 'sum': start=4, length=3
+        EXPECT_EQ(tokens[1].start_offset, 4);
+        EXPECT_EQ(tokens[1].length, 3);
+        EXPECT_EQ(source.substr(tokens[1].start_offset, tokens[1].length), "sum");
+
+        // '=': start=8, length=1
+        EXPECT_EQ(tokens[2].start_offset, 8);
+        EXPECT_EQ(tokens[2].length, 1);
+        EXPECT_EQ(source.substr(tokens[2].start_offset, tokens[2].length), "=");
+
+        // 'a': start=10, length=1
+        EXPECT_EQ(tokens[3].start_offset, 10);
+        EXPECT_EQ(tokens[3].length, 1);
+        EXPECT_EQ(source.substr(tokens[3].start_offset, tokens[3].length), "a");
+
+        // '+': start=12, length=1
+        EXPECT_EQ(tokens[4].start_offset, 12);
+        EXPECT_EQ(tokens[4].length, 1);
+        EXPECT_EQ(source.substr(tokens[4].start_offset, tokens[4].length), "+");
+
+        // '42': start=14, length=2
+        EXPECT_EQ(tokens[5].start_offset, 14);
+        EXPECT_EQ(tokens[5].length, 2);
+        EXPECT_EQ(source.substr(tokens[5].start_offset, tokens[5].length), "42");
+
+        // EOF: start=16, length=0
+        EXPECT_EQ(tokens[6].start_offset, 16);
+        EXPECT_EQ(tokens[6].length, 0);
+    }
+
+    TEST_F(LexerHappyPathTest, CollectsCommentTriviaWithSpansAndOffsets)
+    {
+        std::string source =
+            "// First comment\n"
+            "let x = 1 // vs-lint:disable-line\n"
+            "// Trailing TODO: fixme";
+
+        auto ctx = std::make_shared<CompilerContext>();
+        auto tokens = tokenize_code(source, true, ctx);
+
+        // Tokens only contain code and EOF
+        ASSERT_EQ(tokens.size(), 5); // let, x, =, 1, EOF
+
+        const auto& comments = ctx->get_comments("test.vs");
+        ASSERT_EQ(comments.size(), 3);
+
+        // Comment 1: "// First comment"
+        EXPECT_EQ(comments[0].text, "// First comment");
+        EXPECT_EQ(comments[0].line, 1);
+        EXPECT_EQ(comments[0].column, 1);
+        EXPECT_EQ(comments[0].start_offset, 0);
+        EXPECT_EQ(comments[0].length, 16);
+        EXPECT_EQ(comments[0].span.line_start, 1);
+        EXPECT_EQ(comments[0].span.column_start, 1);
+        EXPECT_EQ(comments[0].span.line_end, 1);
+        EXPECT_EQ(comments[0].span.column_end, 17);
+        EXPECT_EQ(comments[0].span.start_offset, 0);
+        EXPECT_EQ(comments[0].span.length, 16);
+        EXPECT_EQ(comments[0].span.end_offset(), 16);
+
+        // Comment 2: "// vs-lint:disable-line"
+        size_t c2_offset = source.find("// vs-lint");
+        EXPECT_EQ(comments[1].text, "// vs-lint:disable-line");
+        EXPECT_EQ(comments[1].line, 2);
+        EXPECT_EQ(comments[1].column, 11);
+        EXPECT_EQ(comments[1].start_offset, c2_offset);
+        EXPECT_EQ(comments[1].length, 23);
+
+        // Comment 3: "// Trailing TODO: fixme"
+        size_t c3_offset = source.find("// Trailing");
+        EXPECT_EQ(comments[2].text, "// Trailing TODO: fixme");
+        EXPECT_EQ(comments[2].line, 3);
+        EXPECT_EQ(comments[2].column, 1);
+        EXPECT_EQ(comments[2].start_offset, c3_offset);
+        EXPECT_EQ(comments[2].length, 23);
+
+        // Context general list also contains all comments
+        EXPECT_EQ(ctx->comments.size(), 3);
+    }
 }

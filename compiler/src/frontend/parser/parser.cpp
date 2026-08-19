@@ -43,6 +43,7 @@ namespace valuascript::compiler
         }
 
         program->span = ctx.cursor.make_span(start_token, ctx.cursor.previous());
+        program->comments = ctx.cursor.get_comments();
         AstArenaManager::set_current_resource(prev_resource);
         return program;
     }

@@ -187,6 +187,24 @@ namespace valuascript::compiler
             if (match('/'))
             {
                 while (peek() != '\n' && !is_at_end()) advance();
+                size_t length = current_ - start_;
+                std::string_view text = source_.substr(start_, length);
+                comments_.push_back(CommentToken{
+                    .text = std::string(text),
+                    .line = line_start_,
+                    .column = column_start_,
+                    .start_offset = start_,
+                    .length = length,
+                    .span = SourceSpan{
+                        .line_start = line_start_,
+                        .column_start = column_start_,
+                        .line_end = line_,
+                        .column_end = column_current_,
+                        .file_path = std::make_shared<const std::string>(file_path_),
+                        .start_offset = start_,
+                        .length = length
+                    }
+                });
             }
             else
             {
