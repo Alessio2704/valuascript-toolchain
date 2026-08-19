@@ -21,14 +21,18 @@ namespace valuascript::compiler::test
         LexerErrorCode code;
         size_t line;
         size_t column;
+        size_t start_offset = 0;
+        size_t length = 0;
     };
 
     struct ExpectedToken
     {
         TokenType type = TokenType::Error;
-        std::optional<std::string> lexeme = std::nullopt;
-        std::optional<size_t> line = std::nullopt;
-        std::optional<size_t> column = std::nullopt;
+        std::string lexeme = {};
+        size_t line = 0;
+        size_t column = 0;
+        size_t start_offset = 0;
+        size_t length = 0;
     };
 
     class LexerTestBase : public testing::Test
@@ -58,49 +62,59 @@ namespace valuascript::compiler::test
         static void ExpectTokens(const std::string& source_code,
                                  const std::vector<ExpectedToken>& expected_tokens)
         {
+            for (size_t i = 0; i < expected_tokens.size(); ++i)
+            {
+                EXPECT_NE(expected_tokens[i].type, TokenType::EndOfFile)
+                    << "Do not explicitly pass EndOfFile to ExpectTokens; it is checked automatically at the end.";
+            }
+
             std::vector<Token> actual_tokens;
             ASSERT_NO_THROW({
                 actual_tokens = tokenize_code(source_code);
             }) << "Lexer threw an unexpected exception for source: " << source_code;
 
-            ASSERT_EQ(actual_tokens.size(), expected_tokens.size())
-                << "Token count mismatch for source: \"" << source_code << "\"";
+            ASSERT_FALSE(actual_tokens.empty())
+                << "Lexer returned empty token stream for source: \"" << source_code << "\"";
+
+            EXPECT_EQ(actual_tokens.back().type, TokenType::EndOfFile)
+                << "Last token must always be EndOfFile for source: \"" << source_code << "\"";
+
+            ASSERT_EQ(actual_tokens.size(), expected_tokens.size() + 1)
+                << "Token count mismatch (excluding trailing EOF) for source: \"" << source_code << "\"";
 
             for (size_t i = 0; i < expected_tokens.size(); ++i)
             {
                 EXPECT_EQ(actual_tokens[i].type, expected_tokens[i].type)
                     << "Token type mismatch at index " << i << " for source: \"" << source_code << "\"";
-
-                if (expected_tokens[i].lexeme.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].lexeme, expected_tokens[i].lexeme.value())
-                        << "Lexeme mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
-
-                if (expected_tokens[i].line.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].line, expected_tokens[i].line.value())
-                        << "Line mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
-
-                if (expected_tokens[i].column.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].column, expected_tokens[i].column.value())
-                        << "Column mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
+                EXPECT_EQ(actual_tokens[i].lexeme, expected_tokens[i].lexeme)
+                    << "Lexeme mismatch at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].line, expected_tokens[i].line)
+                    << "Line mismatch at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].column, expected_tokens[i].column)
+                    << "Column mismatch at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].start_offset, expected_tokens[i].start_offset)
+                    << "Start offset mismatch at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].length, expected_tokens[i].length)
+                    << "Length mismatch at index " << i << " for source: \"" << source_code << "\"";
             }
+        }
+
+        static void ExpectTokens(const std::string& source_code)
+        {
+            ExpectTokens(source_code, std::vector<ExpectedToken>{});
         }
 
         static void ExpectTokens(const std::string& source_code,
                                  const std::vector<TokenType>& expected_types)
         {
-            std::vector<ExpectedToken> expected;
-            expected.reserve(expected_types.size());
-            for (auto t : expected_types)
+            auto actual_tokens = tokenize_code(source_code);
+            ASSERT_FALSE(actual_tokens.empty());
+            EXPECT_EQ(actual_tokens.back().type, TokenType::EndOfFile);
+            ASSERT_EQ(actual_tokens.size(), expected_types.size() + 1);
+            for (size_t i = 0; i < expected_types.size(); ++i)
             {
-                expected.emplace_back(t);
+                EXPECT_EQ(actual_tokens[i].type, expected_types[i]);
             }
-            ExpectTokens(source_code, expected);
         }
 
         static void ExpectLexerError(const std::string& source_code, LexerErrorCode expected_error)
@@ -108,13 +122,14 @@ namespace valuascript::compiler::test
             try
             {
                 tokenize_code(source_code);
-                FAIL() << "Expected lexer error " << static_cast<int>(expected_error)
-                       << " but lexing succeeded for source: \"" << source_code << "\"";
+                FAIL() << "Expected lexer to throw ValuaScriptException for source: \"" << source_code << "\"";
             }
             catch (const ValuaScriptException& e)
             {
                 EXPECT_EQ(e.get_category(), ValuascriptErrorCategory::Lexical)
-                    << "Error category mismatch for source: \"" << source_code << "\"";
+                    << "Expected Lexical error category, got: " << static_cast<int>(e.get_category())
+                    << " for source: \"" << source_code << "\"";
+
                 EXPECT_TRUE(e.is_error(expected_error))
                     << "Error code mismatch for source: \"" << source_code << "\". Actual error: " << e.what();
             }
@@ -157,6 +172,14 @@ namespace valuascript::compiler::test
 
                 EXPECT_EQ(actual.get_span().column_start, expected.column)
                     << "Column mismatch at error index " << i << " (" << actual.what() << ")";
+
+                if (expected.start_offset > 0 || expected.length > 0)
+                {
+                    EXPECT_EQ(actual.get_span().start_offset, expected.start_offset)
+                        << "Start offset mismatch at error index " << i;
+                    EXPECT_EQ(actual.get_span().length, expected.length)
+                        << "Length mismatch at error index " << i;
+                }
             }
         }
 
@@ -164,6 +187,12 @@ namespace valuascript::compiler::test
                                         const std::vector<LexerExpectedError>& expected_errors,
                                         const std::vector<ExpectedToken>& expected_tokens)
         {
+            for (size_t i = 0; i < expected_tokens.size(); ++i)
+            {
+                EXPECT_NE(expected_tokens[i].type, TokenType::EndOfFile)
+                    << "Do not explicitly pass EndOfFile to ExpectLexerRecovery; it is checked automatically at the end.";
+            }
+
             auto context = std::make_shared<CompilerContext>();
             std::vector<Token> actual_tokens;
             ASSERT_NO_THROW({
@@ -194,33 +223,39 @@ namespace valuascript::compiler::test
 
                 EXPECT_EQ(actual.get_span().column_start, expected.column)
                     << "Column mismatch at error index " << i << " (" << actual.what() << ")";
+
+                if (expected.start_offset > 0 || expected.length > 0)
+                {
+                    EXPECT_EQ(actual.get_span().start_offset, expected.start_offset)
+                        << "Start offset mismatch at error index " << i;
+                    EXPECT_EQ(actual.get_span().length, expected.length)
+                        << "Length mismatch at error index " << i;
+                }
             }
 
-            ASSERT_EQ(actual_tokens.size(), expected_tokens.size())
-                << "Token count mismatch in recovery for source: \"" << source_code << "\"";
+            ASSERT_FALSE(actual_tokens.empty())
+                << "Lexer returned empty token stream in recovery for source: \"" << source_code << "\"";
+
+            EXPECT_EQ(actual_tokens.back().type, TokenType::EndOfFile)
+                << "Last token in recovery must always be EndOfFile for source: \"" << source_code << "\"";
+
+            ASSERT_EQ(actual_tokens.size(), expected_tokens.size() + 1)
+                << "Token count mismatch in recovery (excluding trailing EOF) for source: \"" << source_code << "\"";
 
             for (size_t i = 0; i < expected_tokens.size(); ++i)
             {
                 EXPECT_EQ(actual_tokens[i].type, expected_tokens[i].type)
-                    << "Token type mismatch at index " << i << " for source: \"" << source_code << "\"";
-
-                if (expected_tokens[i].lexeme.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].lexeme, expected_tokens[i].lexeme.value())
-                        << "Lexeme mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
-
-                if (expected_tokens[i].line.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].line, expected_tokens[i].line.value())
-                        << "Line mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
-
-                if (expected_tokens[i].column.has_value())
-                {
-                    EXPECT_EQ(actual_tokens[i].column, expected_tokens[i].column.value())
-                        << "Column mismatch at index " << i << " for source: \"" << source_code << "\"";
-                }
+                    << "Token type mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].lexeme, expected_tokens[i].lexeme)
+                    << "Lexeme mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].line, expected_tokens[i].line)
+                    << "Line mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].column, expected_tokens[i].column)
+                    << "Column mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].start_offset, expected_tokens[i].start_offset)
+                    << "Start offset mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
+                EXPECT_EQ(actual_tokens[i].length, expected_tokens[i].length)
+                    << "Length mismatch in recovery at index " << i << " for source: \"" << source_code << "\"";
             }
         }
     };
