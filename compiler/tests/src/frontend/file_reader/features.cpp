@@ -53,4 +53,29 @@ namespace valuascript::compiler::test
 
         ExpectFileReadSuccess(file_path.string(), utf8_content);
     }
+
+    TEST_F(FileReaderHappyPathTest, PrefersInMemorySourceOverDiskFile)
+    {
+        std::string disk_content = "let from_disk = 1";
+        std::string memory_content = "let from_memory = 2";
+        auto file_path = CreateTestFile("overlay_test.vs", disk_content);
+
+        auto context = std::make_shared<CompilerContext>();
+        std::string canonical_path = std::filesystem::weakly_canonical(file_path).string();
+        context->source_manager.register_source(canonical_path, memory_content);
+
+        ExpectFileReadSuccess(file_path.string(), memory_content, context);
+    }
+
+    TEST_F(FileReaderHappyPathTest, ReadsInMemoryVirtualFileWithoutDiskFile)
+    {
+        std::string virtual_path = (temp_dir / "virtual_only.vs").string();
+        std::string memory_content = "let virtual_val = 100\r\nfunc get() { return virtual_val }";
+        std::string expected_normalized = "let virtual_val = 100\nfunc get() { return virtual_val }";
+
+        auto context = std::make_shared<CompilerContext>();
+        context->source_manager.register_source(virtual_path, memory_content);
+
+        ExpectFileReadSuccess(virtual_path, expected_normalized, context);
+    }
 }

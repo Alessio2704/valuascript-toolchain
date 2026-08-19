@@ -131,4 +131,31 @@ namespace valuascript::compiler::test
         ASSERT_TRUE(import_stmt->resolved_canonical_path.has_value());
         EXPECT_EQ(import_stmt->resolved_canonical_path.value(), math_path);
     }
+
+    TEST_F(ProjectResolverHappyPathTest, ResolvesProjectWithInMemoryVirtualModules)
+    {
+        std::string helper_path = std::filesystem::weakly_canonical(temp_dir / "helper.vs").string();
+        std::string main_path = std::filesystem::weakly_canonical(temp_dir / "main.vs").string();
+
+        auto context = std::make_shared<CompilerContext>();
+        context->source_manager.register_source(helper_path, "let helper_val = 42");
+        context->source_manager.register_source(main_path, "import \"./helper.vs\"\nlet total = helper_val");
+
+        ResolvedProjectArtifact project = RunResolver(main_path, /*fail_fast=*/true, context);
+
+        ASSERT_EQ(project.topological_order.size(), 2);
+        EXPECT_EQ(project.topological_order[0], helper_path);
+        EXPECT_EQ(project.topological_order[1], main_path);
+
+        ASSERT_TRUE(project.modules.contains(helper_path));
+        ASSERT_TRUE(project.modules.contains(main_path));
+
+        ASSERT_TRUE(project.reverse_imports.contains(helper_path));
+        EXPECT_EQ(project.reverse_imports[helper_path].size(), 1);
+        EXPECT_EQ(project.reverse_imports[helper_path][0], main_path);
+
+        const auto& main_ast = project.modules[main_path];
+        ASSERT_EQ(main_ast->import_statements.size(), 1);
+        EXPECT_EQ(main_ast->import_statements[0]->resolved_canonical_path.value(), helper_path);
+    }
 }

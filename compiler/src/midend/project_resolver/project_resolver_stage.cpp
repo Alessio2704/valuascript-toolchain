@@ -64,7 +64,8 @@ namespace valuascript::compiler
                 continue;
             }
 
-            if (!std::filesystem::exists(next_file))
+            bool file_exists = context.source_manager.contains(next_file) || std::filesystem::exists(next_file);
+            if (!file_exists)
             {
                 ValuaScriptException ex(
                     ValuascriptErrorCategory::Import,
