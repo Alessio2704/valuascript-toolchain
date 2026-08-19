@@ -94,12 +94,12 @@ namespace valuascript::compiler::test {
         assert_span(outer_call->span, 1, 9, 1, 42);
 
         // First argument 'inner(p: 42)'
-        auto inner_call = dynamic_cast<FunctionCall *>(outer_call->arguments[0].second.get());
+        auto inner_call = dynamic_cast<FunctionCall *>(outer_call->arguments[0].value.get());
         ASSERT_NE(inner_call, nullptr);
         assert_span(inner_call->span, 1, 18, 1, 30);
 
         // Second argument '"test"'
-        auto str_lit = dynamic_cast<StringLiteral *>(outer_call->arguments[1].second.get());
+        auto str_lit = dynamic_cast<StringLiteral *>(outer_call->arguments[1].value.get());
         ASSERT_NE(str_lit, nullptr);
         assert_span(str_lit->span, 1, 35, 1, 41); // starts at 35, length 6 (including quotes) -> 41
     }

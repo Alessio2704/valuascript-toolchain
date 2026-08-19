@@ -107,6 +107,7 @@ namespace valuascript::compiler
         const Token& consume(TokenType type, ParserErrorCode code, bool use_exact_token_range = false);
 
         [[nodiscard]] SourceSpan make_span(const Token& start_token, const Token& end_token) const;
+        [[nodiscard]] inline SourceSpan make_span(const Token& token) const { return make_span(token, token); }
 
         [[nodiscard]] SourceSpan combine_spans(const SourceSpan& start, const SourceSpan& end) const;
 

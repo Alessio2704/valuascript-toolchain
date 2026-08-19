@@ -122,6 +122,7 @@ namespace valuascript::compiler
 
         if (missing_base_type) return nullptr;
 
-        return AstFactory::make_node<TypeAnnotation>(cursor, start, name_token.lexeme, std::move(generic_args));
+        return AstFactory::make_node<TypeAnnotation>(
+            cursor, start, NodeName{name_token.lexeme, cursor.make_span(name_token)}, std::move(generic_args));
     }
 }

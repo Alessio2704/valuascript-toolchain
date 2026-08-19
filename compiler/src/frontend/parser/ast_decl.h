@@ -11,11 +11,11 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::Directive;
-        std::string name;
+        NodeName name;
         ExprPtr value;
 
-        explicit Directive(std::string_view n, ExprPtr val)
-            : AstNode(KIND), name(n), value(std::move(val))
+        explicit Directive(NodeName n, ExprPtr val)
+            : AstNode(KIND), name(std::move(n)), value(std::move(val))
         {
         }
     };
@@ -25,10 +25,10 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::ImportStatement;
         std::vector<Modifier> modifiers;
-        std::string path;
+        NodeName path;
 
-        explicit ImportStatement(std::vector<Modifier> mods, std::string_view p)
-            : AstNode(KIND), modifiers(std::move(mods)), path(p)
+        explicit ImportStatement(std::vector<Modifier> mods, NodeName p)
+            : AstNode(KIND), modifiers(std::move(mods)), path(std::move(p))
         {
         }
     };
@@ -36,9 +36,10 @@ namespace valuascript::compiler
     struct FunctionParameter
     {
         std::vector<Modifier> modifiers;
-        std::string name;
+        NodeName name;
         TypeAnnPtr type;
         ExprPtr default_value = nullptr;
+        SourceSpan span = {};
     };
 
     class FunctionDefinition : public AstNode
@@ -46,19 +47,19 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::FunctionDefinition;
         std::vector<Modifier> modifiers;
-        std::string name;
+        NodeName name;
         std::vector<FunctionParameter> parameters;
         std::vector<TypeAnnPtr> return_types;
         std::vector<StmtPtr> body;
         std::optional<std::string> docstring;
 
         explicit FunctionDefinition(std::vector<Modifier> mods,
-                                    std::string_view n,
+                                    NodeName n,
                                     std::vector<FunctionParameter> params,
                                     std::vector<TypeAnnPtr> ret_types,
                                     std::vector<StmtPtr> b,
                                     std::optional<std::string> docs = std::nullopt)
-            : AstNode(KIND), modifiers(std::move(mods)), name(n), parameters(std::move(params)),
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs))
         {
         }
@@ -67,9 +68,9 @@ namespace valuascript::compiler
     struct StructField
     {
         std::vector<Modifier> modifiers;
-        std::string name;
+        NodeName name;
         TypeAnnPtr type;
-        SourceSpan span;
+        SourceSpan span = {};
     };
 
     class StructDefinition : public AstNode
@@ -77,13 +78,13 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::StructDefinition;
         std::vector<Modifier> modifiers;
-        std::string name;
+        NodeName name;
         std::vector<StructField> fields;
 
         explicit StructDefinition(std::vector<Modifier> mods,
-                                  std::string_view n,
+                                  NodeName n,
                                   std::vector<StructField> f)
-            : AstNode(KIND), modifiers(std::move(mods)), name(n), fields(std::move(f))
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f))
         {
         }
     };
@@ -93,13 +94,13 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::TypeAliasDefinition;
         std::vector<Modifier> modifiers;
-        std::string name;
+        NodeName name;
         TypeAnnPtr target_type;
 
         explicit TypeAliasDefinition(std::vector<Modifier> mods,
-                                     std::string_view n,
+                                     NodeName n,
                                      TypeAnnPtr t_type)
-            : AstNode(KIND), modifiers(std::move(mods)), name(n), target_type(std::move(t_type))
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type))
         {
         }
     };

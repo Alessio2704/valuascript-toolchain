@@ -16,9 +16,13 @@ namespace valuascript::compiler
             Modifier copy;
             copy.name = mod.name;
             copy.span = mod.span;
-            for (const auto& [arg_name, expr] : mod.arguments)
+            for (const auto& arg : mod.arguments)
             {
-                copy.arguments.push_back({arg_name, clone_expression(expr.get())});
+                copy.arguments.push_back(CallArgument{
+                    .name = arg.name,
+                    .value = clone_expression(arg.value.get()),
+                    .span = arg.span
+                });
             }
             return copy;
         }
@@ -81,8 +85,8 @@ namespace valuascript::compiler
                 }
                 case AstKind::DotAccess: {
                     auto* e = static_cast<const DotAccess*>(expr);
-                    return AstFactory::make_node_with_span<DotAccess>(e->span, clone_expression(e->target.get()),
-                                                                      e->property_name);
+                    return AstFactory::make_node_with_span<DotAccess>(
+                        e->span, clone_expression(e->target.get()), e->property_name);
                 }
                 case AstKind::TupleLiteral: {
                     auto* e = static_cast<const TupleLiteral*>(expr);
@@ -98,8 +102,15 @@ namespace valuascript::compiler
                 }
                 case AstKind::FunctionCall: {
                     auto* e = static_cast<const FunctionCall*>(expr);
-                    std::vector<std::pair<std::string, ExprPtr>> args;
-                    for (const auto& [n, v] : e->arguments) args.push_back({n, clone_expression(v.get())});
+                    std::vector<CallArgument> args;
+                    for (const auto& arg : e->arguments)
+                    {
+                        args.push_back(CallArgument{
+                            .name = arg.name,
+                            .value = clone_expression(arg.value.get()),
+                            .span = arg.span
+                        });
+                    }
                     return AstFactory::make_node_with_span<FunctionCall>(e->span, clone_expression(e->target.get()),
                                                                          std::move(args));
                 }
@@ -110,7 +121,12 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> mods;
                         for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
-                        items.push_back({.modifiers = std::move(mods), .key = item.key, .value = clone_expression(item.value.get())});
+                        items.push_back({
+                            .modifiers = std::move(mods),
+                            .key = item.key,
+                            .value = clone_expression(item.value.get()),
+                            .span = item.span
+                        });
                     }
                     return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
                 }
@@ -121,7 +137,12 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> c_mods;
                         for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
-                        cases.push_back({.modifiers = std::move(c_mods), .identifiers = sc.identifiers, .result = clone_expression(sc.result.get())});
+                        cases.push_back({
+                            .modifiers = std::move(c_mods),
+                            .identifiers = sc.identifiers,
+                            .result = clone_expression(sc.result.get()),
+                            .span = sc.span
+                        });
                     }
                     std::vector<Modifier> d_mods;
                     for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
@@ -160,6 +181,7 @@ namespace valuascript::compiler
         std::vector<AssignmentTarget> targets;
         do
         {
+            const Token& target_start = cursor.peek();
             std::vector<Modifier> target_mods;
             target_mods.reserve(modifiers.size());
             for (const auto& m : modifiers)
@@ -204,7 +226,6 @@ namespace valuascript::compiler
                                 }
                                 if (ctx.is_active_closer(TokenType::RightParen))
                                 {
-                                    // In a tuple type (e.g. (int, string, ctx_m2 = 1) or ((int, string), ctx_m2 = 1), yield
                                     if (offset == 0 && cursor.current() >= 1)
                                     {
                                         if (cursor.previous().type == TokenType::RightParen ||
@@ -226,7 +247,12 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({.modifiers = std::move(target_mods), .name = std::string(target.lexeme), .type = std::move(type_annotation)});
+            targets.push_back({
+                .modifiers = std::move(target_mods),
+                .name = NodeName{target.lexeme, cursor.make_span(target)},
+                .type = std::move(type_annotation),
+                .span = cursor.make_span(target_start, cursor.previous())
+            });
 
             if (!cursor.match(TokenType::Comma))
             {

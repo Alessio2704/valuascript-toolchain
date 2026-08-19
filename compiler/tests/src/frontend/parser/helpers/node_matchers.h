@@ -56,6 +56,11 @@ namespace valuascript::compiler::test
             return lhs.get() == rhs;
         }
 
+        [[nodiscard]] friend bool operator==(const StringStorage& lhs, const NodeName& rhs)
+        {
+            return lhs.get() == rhs.value;
+        }
+
         [[nodiscard]] friend std::strong_ordering operator<=>(const StringStorage& lhs, std::string_view rhs)
         {
             return lhs.get() <=> rhs;
@@ -560,14 +565,14 @@ namespace valuascript::compiler::test
         ExpectNode<SelfExpression>(node);
     }
 
-    inline void ExpectArguments(std::span<const std::pair<std::string, std::unique_ptr<Expression>>> actual,
+    inline void ExpectArguments(std::span<const CallArgument> actual,
                                 std::span<const ArgSpec> specs)
     {
         ASSERT_EQ(actual.size(), specs.size()) << "Arg count mismatch.";
         for (size_t i = 0; i < specs.size(); i++)
         {
-            EXPECT_EQ(actual[i].first, specs[i].label.get()) << "Argument label mismatch at index " << i << ".";
-            if (specs[i].value_v) specs[i].value_v(actual[i].second.get());
+            EXPECT_EQ(actual[i].name, specs[i].label.get()) << "Argument label mismatch at index " << i << ".";
+            if (specs[i].value_v) specs[i].value_v(actual[i].value.get());
         }
     }
 

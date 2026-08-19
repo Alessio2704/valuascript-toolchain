@@ -52,9 +52,9 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::IdentifierAccess;
-        std::string name;
+        NodeName name;
 
-        explicit IdentifierAccess(std::string_view n) : Expression(KIND), name(n)
+        explicit IdentifierAccess(NodeName n) : Expression(KIND), name(std::move(n))
         {
         }
     };
@@ -146,9 +146,9 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::FunctionCall;
         ExprPtr target;
-        std::vector<std::pair<std::string, ExprPtr>> arguments;
+        std::vector<CallArgument> arguments;
 
-        explicit FunctionCall(ExprPtr tgt, std::vector<std::pair<std::string, ExprPtr>> args)
+        explicit FunctionCall(ExprPtr tgt, std::vector<CallArgument> args)
             : Expression(KIND), target(std::move(tgt)), arguments(std::move(args))
         {
         }
@@ -156,9 +156,9 @@ namespace valuascript::compiler
         [[nodiscard]] bool is_complete() const override
         {
             if (!target || !target->is_complete()) return false;
-            for (const auto& [name, val] : arguments)
+            for (const auto& arg : arguments)
             {
-                if (!val || !val->is_complete()) return false;
+                if (!arg.value || !arg.value->is_complete()) return false;
             }
             return true;
         }
@@ -167,8 +167,9 @@ namespace valuascript::compiler
     struct DictItem
     {
         std::vector<Modifier> modifiers;
-        std::string key;
+        NodeName key;
         ExprPtr value;
+        SourceSpan span = {};
     };
 
     class DictLiteral : public Expression
@@ -257,10 +258,10 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::DotAccess;
         ExprPtr target;
-        std::string property_name;
+        NodeName property_name;
 
-        explicit DotAccess(ExprPtr tgt, std::string_view prop)
-            : Expression(KIND), target(std::move(tgt)), property_name(prop)
+        explicit DotAccess(ExprPtr tgt, NodeName prop)
+            : Expression(KIND), target(std::move(tgt)), property_name(std::move(prop))
         {
         }
 
@@ -273,8 +274,9 @@ namespace valuascript::compiler
     struct SwitchCase
     {
         std::vector<Modifier> modifiers;
-        std::vector<std::string> identifiers;
+        std::vector<NodeName> identifiers;
         ExprPtr result;
+        SourceSpan span = {};
     };
 
     class SwitchExpression : public Expression

@@ -7,17 +7,17 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::TypeAnnotation;
-        std::string name;
+        NodeName name;
         std::vector<TypeAnnPtr> generic_args;
 
-        explicit TypeAnnotation(std::string_view n, std::vector<TypeAnnPtr> args = {})
-            : AstNode(KIND), name(n), generic_args(std::move(args))
+        explicit TypeAnnotation(NodeName n, std::vector<TypeAnnPtr> args = {})
+            : AstNode(KIND), name(std::move(n)), generic_args(std::move(args))
         {
         }
 
     protected:
-        TypeAnnotation(AstKind k, std::string_view n, std::vector<TypeAnnPtr> args = {})
-            : AstNode(k), name(n), generic_args(std::move(args))
+        TypeAnnotation(AstKind k, NodeName n, std::vector<TypeAnnPtr> args = {})
+            : AstNode(k), name(std::move(n)), generic_args(std::move(args))
         {
         }
     };
@@ -29,7 +29,7 @@ namespace valuascript::compiler
         std::vector<TypeAnnPtr> element_types;
 
         explicit TupleTypeAnnotation(std::vector<TypeAnnPtr> elements)
-            : TypeAnnotation(KIND, "tuple"), element_types(std::move(elements))
+            : TypeAnnotation(KIND, NodeName{"tuple"}), element_types(std::move(elements))
         {
         }
     };

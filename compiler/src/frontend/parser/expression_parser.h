@@ -82,6 +82,10 @@ namespace valuascript::compiler
         {
             return AstFactory::make_node<T>(cursor, t);
         }
+        else if constexpr (std::is_same_v<T, IdentifierAccess>)
+        {
+            return AstFactory::make_node<T>(cursor, t, NodeName{t.lexeme, cursor.make_span(t)});
+        }
         else
         {
             return AstFactory::make_node<T>(cursor, t, t.lexeme);

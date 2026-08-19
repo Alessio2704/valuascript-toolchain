@@ -435,7 +435,8 @@ namespace valuascript::compiler
         {
             cursor.report_error_no_panic(tok, E::ReservedKeywordAsIdentifier, true);
             cursor.advance();
-            return AstFactory::make_node_with_span<IdentifierAccess>(cursor.make_span(tok, tok), tok.lexeme);
+            return AstFactory::make_node_with_span<IdentifierAccess>(
+                cursor.make_span(tok, tok), NodeName{tok.lexeme, cursor.make_span(tok)});
         }
         cursor.report_error(tok, E::InvalidExpression, force_location);
     }
@@ -444,7 +445,7 @@ namespace valuascript::compiler
     {
         const SourceSpan target_span = target->span;
         CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::CallArguments);
-        std::vector<std::pair<std::string, ExprPtr>> arguments;
+        std::vector<CallArgument> arguments;
 
         try
         {
@@ -495,7 +496,14 @@ namespace valuascript::compiler
                             })
                             .parse_elements([&]() { return parser.parse_generic_parameter(arg_spec); });
 
-            for (auto& g : args_gen) arguments.emplace_back(std::string(g.name.lexeme), std::move(g.value));
+            for (auto& g : args_gen)
+            {
+                arguments.push_back(CallArgument{
+                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    .value = std::move(g.value),
+                    .span = g.span
+                });
+            }
 
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
                 (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
@@ -643,9 +651,10 @@ namespace valuascript::compiler
                 TokenType::LeftBrace
             }), true, true);
 
+        SourceSpan prop_span = cursor.make_span(property_token);
         return AstFactory::make_node_with_span<DotAccess>(
-            cursor.combine_spans(target->span, cursor.make_span(property_token, property_token)), std::move(target),
-            property_token.lexeme);
+            cursor.combine_spans(target->span, prop_span), std::move(target),
+            NodeName{property_token.lexeme, prop_span});
     }
 
     ExprPtr ExpressionParser::parse_tuple_or_grouping()
@@ -878,7 +887,12 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({.modifiers = std::move(g.modifiers), .key = std::string(g.name.lexeme), .value = std::move(g.value)});
+        for (auto& g : items_gen) elements.push_back({
+            .modifiers = std::move(g.modifiers),
+            .key = NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            .value = std::move(g.value),
+            .span = g.span
+        });
 
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBrace) ||
             (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type)))
@@ -1034,7 +1048,7 @@ namespace valuascript::compiler
 
     SwitchCase ExpressionParser::parse_switch_case(std::vector<Modifier> modifiers)
     {
-        std::vector<std::string> identifiers;
+        std::vector<NodeName> identifiers;
 
         while (true)
         {
@@ -1047,12 +1061,12 @@ namespace valuascript::compiler
                         RecoveryOptions::StopAtBoundaryRespectingDanglingOp
                 };
                 Token id = ErrorRecovery::try_consume_identifier(ctx, E::ExpectedEnumCaseNameAfterCase, conf);
-                identifiers.emplace_back(std::string(id.lexeme));
+                identifiers.emplace_back(NodeName{id.lexeme, cursor.make_span(id)});
             }
             else
             {
                 cursor.report_error_no_panic(tok, E::ExpectedEnumCaseNameAfterCase, true);
-                identifiers.emplace_back("<error>");
+                identifiers.emplace_back(NodeName{"<error>", cursor.make_span(tok)});
 
                 if (!cursor.check(TokenType::Comma) && !cursor.check(TokenType::Arrow) && !cursor.check(
                     TokenType::RightBrace))
@@ -1080,7 +1094,11 @@ namespace valuascript::compiler
             .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
         };
         auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
-        return {.modifiers = std::move(modifiers), .identifiers = std::move(identifiers), .result = std::move(result)};
+        return {
+            .modifiers = std::move(modifiers),
+            .identifiers = std::move(identifiers),
+            .result = std::move(result)
+        };
     }
 
     ExprPtr ExpressionParser::parse_switch_default()
@@ -1207,7 +1225,20 @@ namespace valuascript::compiler
             {
                 auto modifiers = parser.parse_modifiers();
 
-                if (cursor.match(TokenType::Case)) cases.push_back(parse_switch_case(std::move(modifiers)));
+                if (cursor.match(TokenType::Case))
+                {
+                    const Token& case_tok = cursor.previous();
+                    auto sc = parse_switch_case(std::move(modifiers));
+                    if (!sc.modifiers.empty())
+                    {
+                        sc.span = cursor.combine_spans(sc.modifiers.front().span, cursor.make_span(cursor.previous(), cursor.previous()));
+                    }
+                    else
+                    {
+                        sc.span = cursor.make_span(case_tok, cursor.previous());
+                    }
+                    cases.push_back(std::move(sc));
+                }
                 else if (cursor.match(TokenType::Default))
                 {
                     if (default_case != nullptr)
