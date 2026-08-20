@@ -10,8 +10,8 @@ namespace valuascript::compiler::test
     struct SingleValueMatcher
     {
         using node_type = Expression;
-        StringStorage value;
-        void operator()(Expression* node) const { ExpectFn(node, value.get()); }
+        std::string value;
+        void operator()(Expression* node) const { ExpectFn(node, value); }
     };
 
     using NumberMatcher = SingleValueMatcher<ExpectNumber>;
@@ -19,12 +19,12 @@ namespace valuascript::compiler::test
     using PercentageMatcher = SingleValueMatcher<ExpectPercentage>;
     using IdentifierMatcher = SingleValueMatcher<ExpectIdentifier>;
 
-    inline FluentNodeMatcher<NumberMatcher> IsNumber(StringStorage value)
+    inline FluentNodeMatcher<NumberMatcher> IsNumber(std::string value)
     {
         return FluentNodeMatcher<NumberMatcher>{NumberMatcher{std::move(value)}};
     }
 
-    inline FluentNodeMatcher<StringMatcher> IsString(StringStorage val)
+    inline FluentNodeMatcher<StringMatcher> IsString(std::string val)
     {
         return FluentNodeMatcher<StringMatcher>{StringMatcher{std::move(val)}};
     }
@@ -41,12 +41,12 @@ namespace valuascript::compiler::test
         return FluentNodeMatcher<BooleanMatcher>{BooleanMatcher{val}};
     }
 
-    inline FluentNodeMatcher<PercentageMatcher> IsPercentage(StringStorage val)
+    inline FluentNodeMatcher<PercentageMatcher> IsPercentage(std::string val)
     {
         return FluentNodeMatcher<PercentageMatcher>{PercentageMatcher{std::move(val)}};
     }
 
-    inline FluentNodeMatcher<IdentifierMatcher> IsIdentifier(StringStorage val)
+    inline FluentNodeMatcher<IdentifierMatcher> IsIdentifier(std::string val)
     {
         return FluentNodeMatcher<IdentifierMatcher>{IdentifierMatcher{std::move(val)}};
     }
@@ -239,20 +239,20 @@ namespace valuascript::compiler::test
     {
         using node_type = Expression;
         MatcherStorage<T> target_v;
-        StringStorage property;
+        std::string property;
 
         void operator()(Expression* node) const
         {
             if (auto d = ExpectNode<DotAccess>(node))
             {
                 target_v(d->target.get());
-                EXPECT_EQ(d->property_name, property.get()) << "Dot access property name mismatch.";
+                EXPECT_EQ(d->property_name, property) << "Dot access property name mismatch.";
             }
         }
     };
 
     template <ExprMatcher T = AnyMatcher>
-    inline auto IsDot(T&& target, StringStorage property)
+    inline auto IsDot(T&& target, std::string property)
     {
         return FluentNodeMatcher<DotMatcher<std::decay_t<T>>>{
             DotMatcher<std::decay_t<T>>{std::forward<T>(target), std::move(property)}

@@ -21,7 +21,7 @@ namespace valuascript::compiler::test
                 for (size_t i = 0; i < targets.size(); i++)
                 {
                     ExpectModifiers(a->targets[i].modifiers, targets[i].modifiers);
-                    EXPECT_EQ(a->targets[i].name, targets[i].name.get()) << "Assignment target name mismatch at index "
+                    EXPECT_EQ(a->targets[i].name, targets[i].name) << "Assignment target name mismatch at index "
                         << i << ".";
                     if (targets[i].name_span.has_value()) AssertSpanMatch(a->targets[i].name.span, *targets[i].name_span);
                     if (targets[i].span.has_value()) AssertSpanMatch(a->targets[i].span, *targets[i].span);

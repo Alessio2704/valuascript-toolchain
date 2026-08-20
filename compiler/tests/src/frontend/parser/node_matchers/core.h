@@ -1,6 +1,5 @@
 #pragma once
 
-#include "string_storage.h"
 #include "span_assertions.h"
 #include "matcher_concepts.h"
 #include "inline_verifier.h"

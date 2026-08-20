@@ -10,7 +10,7 @@ namespace valuascript::compiler::test
 
     struct ArgSpec
     {
-        StringStorage label;
+        std::string label;
         ExprVerifier value_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
         std::optional<SourceSpan> name_span = std::nullopt;
@@ -66,7 +66,7 @@ namespace valuascript::compiler::test
 
     struct ModifierSpec
     {
-        StringStorage name;
+        std::string name;
         std::vector<ArgSpec> args = {};
         std::optional<SourceSpan> span = std::nullopt;
         std::optional<SourceSpan> name_span = std::nullopt;
@@ -122,7 +122,7 @@ namespace valuascript::compiler::test
 
     struct ParamSpec
     {
-        StringStorage name;
+        std::string name;
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         ExprVerifier default_v = nullptr;
@@ -180,7 +180,7 @@ namespace valuascript::compiler::test
 
     struct FieldSpec
     {
-        StringStorage name;
+        std::string name;
         std::vector<ModifierSpec> modifiers = {};
         TypeVerifier type_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
@@ -237,7 +237,7 @@ namespace valuascript::compiler::test
 
     struct EnumCaseSpec
     {
-        StringStorage name;
+        std::string name;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
@@ -294,7 +294,7 @@ namespace valuascript::compiler::test
 
     struct DictItemSpec
     {
-        StringStorage key;
+        std::string key;
         std::vector<ModifierSpec> modifiers = {};
         ExprVerifier value_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
@@ -352,7 +352,7 @@ namespace valuascript::compiler::test
     struct SwitchCaseSpec
     {
         std::vector<ModifierSpec> modifiers = {};
-        std::vector<StringStorage> labels = {};
+        std::vector<std::string> labels = {};
         ExprVerifier result_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
         std::vector<SourceSpan> label_spans = {};
@@ -391,7 +391,7 @@ namespace valuascript::compiler::test
     struct AssignmentTargetSpec
     {
         std::vector<ModifierSpec> modifiers = {};
-        StringStorage name;
+        std::string name;
         TypeVerifier type_v = nullptr;
         std::optional<SourceSpan> span = std::nullopt;
         std::optional<SourceSpan> name_span = std::nullopt;
