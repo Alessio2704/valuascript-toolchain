@@ -14,7 +14,6 @@ using namespace valuascript::shared;
 
 namespace valuascript::compiler
 {
-
     class Expression;
     class Statement;
     class TypeAnnotation;
@@ -89,7 +88,10 @@ namespace valuascript::compiler
         SourceSpan span;
         AstKind kind = AstKind::Unknown;
 
-        explicit AstNode(AstKind k = AstKind::Unknown) : kind(k) {}
+        explicit AstNode(AstKind k = AstKind::Unknown) : kind(k)
+        {
+        }
+
         virtual ~AstNode() = default;
 
         static void* operator new(size_t size);
@@ -100,14 +102,19 @@ namespace valuascript::compiler
     class Expression : public AstNode
     {
     public:
-        explicit Expression(AstKind k = AstKind::Unknown) : AstNode(k) {}
+        explicit Expression(AstKind k = AstKind::Unknown) : AstNode(k)
+        {
+        }
+
         [[nodiscard]] virtual bool is_complete() const { return true; }
     };
 
     class Statement : public AstNode
     {
     public:
-        explicit Statement(AstKind k = AstKind::Unknown) : AstNode(k) {}
+        explicit Statement(AstKind k = AstKind::Unknown) : AstNode(k)
+        {
+        }
     };
 
     struct NodeName
@@ -116,7 +123,10 @@ namespace valuascript::compiler
         SourceSpan span = {};
 
         NodeName() = default;
-        NodeName(std::string_view val, SourceSpan sp = {}) : value(val), span(std::move(sp)) {}
+
+        NodeName(std::string_view val, SourceSpan sp = {}) : value(val), span(std::move(sp))
+        {
+        }
 
         [[nodiscard]] const std::string& str() const noexcept { return value; }
         [[nodiscard]] const char* c_str() const noexcept { return value.c_str(); }
@@ -136,28 +146,34 @@ namespace valuascript::compiler
             result += rhs.value;
             return result;
         }
+
         friend std::string operator+(const NodeName& lhs, std::string_view rhs)
         {
             std::string result(lhs.value);
             result += rhs;
             return result;
         }
+
         friend std::string operator+(const std::string& lhs, const NodeName& rhs)
         {
             return lhs + rhs.value;
         }
+
         friend std::string operator+(const NodeName& lhs, const std::string& rhs)
         {
             return lhs.value + rhs;
         }
+
         friend std::string operator+(const char* lhs, const NodeName& rhs)
         {
             return std::string(lhs) + rhs.value;
         }
+
         friend std::string operator+(const NodeName& lhs, const char* rhs)
         {
             return lhs.value + rhs;
         }
+
         friend std::ostream& operator<<(std::ostream& os, const NodeName& name)
         {
             return os << name.value;
@@ -170,12 +186,16 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::Comment;
         std::string text = {};
 
-        Comment() : AstNode(KIND) {}
+        Comment() : AstNode(KIND)
+        {
+        }
+
         Comment(std::string txt, SourceSpan sp = {})
             : AstNode(KIND), text(std::move(txt))
         {
             span = sp;
         }
+
         explicit Comment(const valuascript::shared::CommentToken& tok)
             : AstNode(KIND), text(tok.text)
         {
@@ -190,7 +210,10 @@ namespace valuascript::compiler
         NodeName name;
         ExprPtr value = nullptr;
 
-        CallArgument() : AstNode(KIND) {}
+        CallArgument() : AstNode(KIND)
+        {
+        }
+
         CallArgument(NodeName n, ExprPtr val = nullptr, SourceSpan sp = {})
             : AstNode(KIND), name(std::move(n)), value(std::move(val))
         {
@@ -205,7 +228,10 @@ namespace valuascript::compiler
         NodeName name;
         std::vector<CallArgument> arguments;
 
-        Modifier() : AstNode(KIND) {}
+        Modifier() : AstNode(KIND)
+        {
+        }
+
         Modifier(NodeName n, std::vector<CallArgument> args = {}, SourceSpan sp = {})
             : AstNode(KIND), name(std::move(n)), arguments(std::move(args))
         {
@@ -217,39 +243,48 @@ namespace valuascript::compiler
     concept AstElement = std::derived_from<std::decay_t<T>, AstNode>;
 
     template <typename T>
-    inline constexpr bool is_ast_node_v = AstElement<T>;
+    concept ExpressionNode = std::derived_from<std::decay_t<T>, Expression>;
 
     template <typename T>
-    concept AstNodeSubclass = AstElement<T>;
+    concept StatementNode = std::derived_from<std::decay_t<T>, Statement>;
 
-    template <AstElement T>
-    [[nodiscard]] inline T* ast_cast(AstNode* node) noexcept
+    template <typename T>
+    concept TypeAnnNode = std::derived_from<std::decay_t<T>, TypeAnnotation>;
+
+    template <typename T>
+    concept ConcreteAstNode = AstElement<T> && requires { { T::KIND } -> std::same_as<const AstKind&>; };
+
+    template <AstElement T, typename NodeT>
+        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    [[nodiscard]] inline auto* ast_cast(NodeT* node) noexcept
     {
-        if (!node) [[unlikely]] return nullptr;
+        using ReturnType = std::conditional_t<std::is_const_v<NodeT>, const T, T>;
+        if (!node) [[unlikely]] return static_cast<ReturnType*>(nullptr);
         if constexpr (requires { T::KIND; })
         {
-            if (node->kind == T::KIND) [[likely]] return static_cast<T*>(node);
-            return nullptr;
+            if (node->kind == T::KIND) [[likely]] return static_cast<ReturnType*>(node);
+            return static_cast<ReturnType*>(nullptr);
         }
         else
         {
-            return dynamic_cast<T*>(node);
+            return dynamic_cast<ReturnType*>(node);
         }
     }
 
-    template <AstElement T>
-    [[nodiscard]] inline const T* ast_cast(const AstNode* node) noexcept
+    template <AstElement T, typename NodeT>
+        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    [[nodiscard]] inline bool is_a(NodeT* node) noexcept
     {
-        if (!node) [[unlikely]] return nullptr;
-        if constexpr (requires { T::KIND; })
-        {
-            if (node->kind == T::KIND) [[likely]] return static_cast<const T*>(node);
-            return nullptr;
-        }
-        else
-        {
-            return dynamic_cast<const T*>(node);
-        }
+        return ast_cast<T>(node) != nullptr;
+    }
+
+    template <AstElement T, typename NodeT>
+        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    [[nodiscard]] inline auto& as(NodeT& node) noexcept
+    {
+        auto* casted = ast_cast<T>(&node);
+        assert(casted != nullptr && "Invalid AST node cast with as<T>()");
+        return *casted;
     }
 
     template <AstElement T, AstElement Base>
@@ -261,5 +296,25 @@ namespace valuascript::compiler
             return std::unique_ptr<T>(static_cast<T*>(ptr.release()));
         }
         return nullptr;
+    }
+
+    template <typename T>
+    [[nodiscard]] constexpr std::string_view get_node_name(const T& elem) noexcept
+    {
+        if constexpr (requires { elem.name.value; }) return elem.name.value;
+        else if constexpr (requires { elem.property_name.value; }) return elem.property_name.value;
+        else if constexpr (requires { elem.key.value; }) return elem.key.value;
+        else if constexpr (requires { elem.path.value; }) return elem.path.value;
+        else if constexpr (requires { elem.name; }) return elem.name;
+        else return "";
+    }
+
+    template <typename T>
+    [[nodiscard]] constexpr const SourceSpan* get_node_name_span(const T& elem) noexcept
+    {
+        if constexpr (requires { elem.name.span; }) return &elem.name.span;
+        else if constexpr (requires { elem.path.span; }) return &elem.path.span;
+        else if constexpr (requires { elem.property_name.span; }) return &elem.property_name.span;
+        else return nullptr;
     }
 }

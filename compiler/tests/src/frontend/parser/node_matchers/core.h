@@ -6,12 +6,10 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 #include <optional>
 #include <utility>
 #include <tuple>
 #include <variant>
-#include <span>
 #include <compare>
 #include <source_location>
 #include "ast/ast.h"
@@ -121,9 +119,6 @@ namespace valuascript::compiler::test
         (HasNodeType<F, NodeT> && std::derived_from<typename std::decay_t<F>::node_type, NodeT>) ||
         (!HasNodeType<F, NodeT> && std::invocable<F, NodeT*>);
 
-    template <typename T>
-    concept ASTNodeConcept = std::derived_from<std::decay_t<T>, AstNode>;
-
     template <typename M, typename NodeT>
     concept ASTMatcher = requires(const std::decay_t<M>& m, NodeT* node)
     {
@@ -218,17 +213,9 @@ namespace valuascript::compiler::test
             }
             if (expected_name_span.has_value())
             {
-                if constexpr (requires { node->name.span; })
+                if (const auto* name_span = get_node_name_span(*node))
                 {
-                    AssertSpanMatch(node->name.span, *expected_name_span);
-                }
-                else if constexpr (requires { node->path.span; })
-                {
-                    AssertSpanMatch(node->path.span, *expected_name_span);
-                }
-                else if constexpr (requires { node->property_name.span; })
-                {
-                    AssertSpanMatch(node->property_name.span, *expected_name_span);
+                    AssertSpanMatch(*name_span, *expected_name_span);
                 }
             }
             matcher(node);
@@ -425,8 +412,7 @@ namespace valuascript::compiler::test
     using ReturnVerifier = InlineVerifier<ReturnStatement>;
     using ExprStmtVerifier = InlineVerifier<ExpressionStatement>;
 
-    template <typename T>
-        requires std::derived_from<T, AstNode>
+    template <AstElement T>
     T* ExpectNode(AstNode* node, std::source_location loc = std::source_location::current())
     {
         if (!node) [[unlikely]]

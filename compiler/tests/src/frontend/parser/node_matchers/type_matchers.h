@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core.h"
-#include "specs.h"
 #include "expect_functions.h"
 
 namespace valuascript::compiler::test

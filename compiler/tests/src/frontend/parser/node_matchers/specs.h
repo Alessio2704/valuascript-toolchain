@@ -498,7 +498,7 @@ namespace valuascript::compiler::test
         }
 
         template <typename M>
-            requires (std::derived_from<typename std::decay_t<M>::node_type, Statement> &&
+            requires (StatementNode<typename std::decay_t<M>::node_type> &&
                       !std::same_as<typename std::decay_t<M>::node_type, Statement>)
         StmtVerifier(FluentNodeMatcher<M> fm)
             : StmtVerifier(InlineVerifier<typename std::decay_t<M>::node_type>(std::move(fm)))
@@ -506,7 +506,7 @@ namespace valuascript::compiler::test
         }
 
         template <typename F>
-            requires (!std::derived_from<std::decay_t<F>, Statement> &&
+            requires (!StatementNode<F> &&
                 !std::same_as<std::decay_t<F>, StmtVerifier> &&
                 !std::same_as<std::decay_t<F>, InlineVerifier<Statement>> &&
                 !std::same_as<std::decay_t<F>, std::nullptr_t> &&
