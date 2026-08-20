@@ -82,6 +82,55 @@ namespace valuascript::compiler
         Comment
     };
 
+    constexpr std::string_view to_string(AstKind kind) noexcept
+    {
+        switch (kind)
+        {
+            case AstKind::Unknown: return "Unknown";
+            case AstKind::NumberLiteral: return "NumberLiteral";
+            case AstKind::PercentageLiteral: return "PercentageLiteral";
+            case AstKind::StringLiteral: return "StringLiteral";
+            case AstKind::BooleanLiteral: return "BooleanLiteral";
+            case AstKind::IdentifierAccess: return "IdentifierAccess";
+            case AstKind::SelfExpression: return "SelfExpression";
+            case AstKind::BinaryExpression: return "BinaryExpression";
+            case AstKind::UnaryExpression: return "UnaryExpression";
+            case AstKind::GroupingExpression: return "GroupingExpression";
+            case AstKind::ConditionalExpression: return "ConditionalExpression";
+            case AstKind::FunctionCall: return "FunctionCall";
+            case AstKind::DictLiteral: return "DictLiteral";
+            case AstKind::TensorLiteral: return "TensorLiteral";
+            case AstKind::TupleLiteral: return "TupleLiteral";
+            case AstKind::BracketAccess: return "BracketAccess";
+            case AstKind::DotAccess: return "DotAccess";
+            case AstKind::SwitchExpression: return "SwitchExpression";
+            case AstKind::Assignment: return "Assignment";
+            case AstKind::Reassignment: return "Reassignment";
+            case AstKind::ExpressionStatement: return "ExpressionStatement";
+            case AstKind::ReturnStatement: return "ReturnStatement";
+            case AstKind::EnumDefinition: return "EnumDefinition";
+            case AstKind::Directive: return "Directive";
+            case AstKind::ImportStatement: return "ImportStatement";
+            case AstKind::FunctionDefinition: return "FunctionDefinition";
+            case AstKind::StructDefinition: return "StructDefinition";
+            case AstKind::TypeAliasDefinition: return "TypeAliasDefinition";
+            case AstKind::ExtensionDefinition: return "ExtensionDefinition";
+            case AstKind::Program: return "Program";
+            case AstKind::TypeAnnotation: return "TypeAnnotation";
+            case AstKind::TupleTypeAnnotation: return "TupleTypeAnnotation";
+            case AstKind::FunctionParameter: return "FunctionParameter";
+            case AstKind::StructField: return "StructField";
+            case AstKind::EnumCase: return "EnumCase";
+            case AstKind::SwitchCase: return "SwitchCase";
+            case AstKind::AssignmentTarget: return "AssignmentTarget";
+            case AstKind::Modifier: return "Modifier";
+            case AstKind::CallArgument: return "CallArgument";
+            case AstKind::DictItem: return "DictItem";
+            case AstKind::Comment: return "Comment";
+        }
+        return "Unknown";
+    }
+
     class AstNode
     {
     public:
@@ -317,4 +366,40 @@ namespace valuascript::compiler
         else if constexpr (requires { elem.property_name.span; }) return &elem.property_name.span;
         else return nullptr;
     }
+
+    template <AstElement T>
+    [[nodiscard]] constexpr std::string_view get_ast_node_name() noexcept
+    {
+        using DecayedT = std::decay_t<T>;
+        if constexpr (requires { DecayedT::KIND; })
+        {
+            return to_string(DecayedT::KIND);
+        }
+        else if constexpr (std::same_as<DecayedT, Expression>)
+        {
+            return "Expression";
+        }
+        else if constexpr (std::same_as<DecayedT, Statement>)
+        {
+            return "Statement";
+        }
+        else if constexpr (std::same_as<DecayedT, TypeAnnotation>)
+        {
+            return "TypeAnnotation";
+        }
+        else if constexpr (std::same_as<DecayedT, AstNode>)
+        {
+            return "AstNode";
+        }
+        else
+        {
+            return "Unknown";
+        }
+    }
+
+    [[nodiscard]] inline std::string_view get_ast_node_name(const AstNode& node) noexcept
+    {
+        return to_string(node.kind);
+    }
 }
+

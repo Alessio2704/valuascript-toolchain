@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <source_location>
 #include "ast/ast.h"
-#include "utils/demangle_name.h"
 
 namespace valuascript::compiler::test
 {
@@ -13,7 +12,7 @@ namespace valuascript::compiler::test
         if (!node) [[unlikely]]
         {
             ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
-                << "Expected AST node of type [" << get_demangled_name(typeid(T).name())
+                << "Expected AST node of type [" << get_ast_node_name<T>()
                 << "], but got [nullptr].";
             return nullptr;
         }
@@ -21,8 +20,8 @@ namespace valuascript::compiler::test
         if (!casted) [[unlikely]]
         {
             ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
-                << "Expected AST type [" << get_demangled_name(typeid(T).name())
-                << "], but got [" << get_demangled_name(typeid(*node).name()) << "].";
+                << "Expected AST type [" << get_ast_node_name<T>()
+                << "], but got [" << get_ast_node_name(*node) << "].";
             return nullptr;
         }
         return casted;

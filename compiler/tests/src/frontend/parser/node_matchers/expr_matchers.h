@@ -317,7 +317,7 @@ namespace valuascript::compiler::test
         {
             if (auto t = ExpectNode<ASTNodeT>(node))
             {
-                ASSERT_EQ(t->elements.size(), sizeof...(Matchers)) << get_demangled_name(typeid(ASTNodeT).name()) <<
+                ASSERT_EQ(t->elements.size(), sizeof...(Matchers)) << get_ast_node_name<ASTNodeT>() <<
                     " elements count mismatch.";
                 size_t idx = 0;
                 std::apply([&](const auto&... m)
