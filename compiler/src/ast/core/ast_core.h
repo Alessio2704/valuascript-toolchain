@@ -71,7 +71,16 @@ namespace valuascript::compiler
         ExtensionDefinition,
         Program,
         TypeAnnotation,
-        TupleTypeAnnotation
+        TupleTypeAnnotation,
+        FunctionParameter,
+        StructField,
+        EnumCase,
+        SwitchCase,
+        AssignmentTarget,
+        Modifier,
+        CallArgument,
+        DictItem,
+        Comment
     };
 
     class AstNode
@@ -155,25 +164,65 @@ namespace valuascript::compiler
         }
     };
 
-    struct CallArgument
+    class Comment : public AstNode
     {
-        NodeName name;
-        ExprPtr value;
-        SourceSpan span = {};
+    public:
+        static constexpr AstKind KIND = AstKind::Comment;
+        std::string text = {};
+
+        Comment() : AstNode(KIND) {}
+        Comment(std::string txt, SourceSpan sp = {})
+            : AstNode(KIND), text(std::move(txt))
+        {
+            span = sp;
+        }
+        explicit Comment(const valuascript::shared::CommentToken& tok)
+            : AstNode(KIND), text(tok.text)
+        {
+            span = tok.span;
+        }
     };
 
-    struct Modifier
+    class CallArgument : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::CallArgument;
+        NodeName name;
+        ExprPtr value = nullptr;
+
+        CallArgument() : AstNode(KIND) {}
+        CallArgument(NodeName n, ExprPtr val = nullptr, SourceSpan sp = {})
+            : AstNode(KIND), name(std::move(n)), value(std::move(val))
+        {
+            span = sp;
+        }
+    };
+
+    class Modifier : public AstNode
+    {
+    public:
+        static constexpr AstKind KIND = AstKind::Modifier;
         NodeName name;
         std::vector<CallArgument> arguments;
-        SourceSpan span = {};
+
+        Modifier() : AstNode(KIND) {}
+        Modifier(NodeName n, std::vector<CallArgument> args = {}, SourceSpan sp = {})
+            : AstNode(KIND), name(std::move(n)), arguments(std::move(args))
+        {
+            span = sp;
+        }
     };
 
     template <typename T>
-    concept AstNodeSubclass = std::derived_from<std::decay_t<T>, AstNode>;
+    concept AstElement = std::derived_from<std::decay_t<T>, AstNode>;
 
     template <typename T>
-        requires AstNodeSubclass<T>
+    inline constexpr bool is_ast_node_v = AstElement<T>;
+
+    template <typename T>
+    concept AstNodeSubclass = AstElement<T>;
+
+    template <AstElement T>
     [[nodiscard]] inline T* ast_cast(AstNode* node) noexcept
     {
         if (!node) [[unlikely]] return nullptr;
@@ -188,8 +237,7 @@ namespace valuascript::compiler
         }
     }
 
-    template <typename T>
-        requires AstNodeSubclass<T>
+    template <AstElement T>
     [[nodiscard]] inline const T* ast_cast(const AstNode* node) noexcept
     {
         if (!node) [[unlikely]] return nullptr;
@@ -202,5 +250,16 @@ namespace valuascript::compiler
         {
             return dynamic_cast<const T*>(node);
         }
+    }
+
+    template <AstElement T, AstElement Base>
+    [[nodiscard]] inline std::unique_ptr<T> ast_cast_unique(std::unique_ptr<Base> ptr) noexcept
+    {
+        if (!ptr) return nullptr;
+        if (ast_cast<T>(ptr.get()))
+        {
+            return std::unique_ptr<T>(static_cast<T*>(ptr.release()));
+        }
+        return nullptr;
     }
 }

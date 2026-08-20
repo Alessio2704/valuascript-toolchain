@@ -18,11 +18,11 @@ namespace valuascript::compiler
             copy.span = mod.span;
             for (const auto& arg : mod.arguments)
             {
-                copy.arguments.push_back(CallArgument{
-                    .name = arg.name,
-                    .value = clone_expression(arg.value.get()),
-                    .span = arg.span
-                });
+                copy.arguments.push_back(CallArgument(
+                    arg.name,
+                    clone_expression(arg.value.get()),
+                    arg.span
+                ));
             }
             return copy;
         }
@@ -105,11 +105,11 @@ namespace valuascript::compiler
                     std::vector<CallArgument> args;
                     for (const auto& arg : e->arguments)
                     {
-                        args.push_back(CallArgument{
-                            .name = arg.name,
-                            .value = clone_expression(arg.value.get()),
-                            .span = arg.span
-                        });
+                        args.push_back(CallArgument(
+                            arg.name,
+                            clone_expression(arg.value.get()),
+                            arg.span
+                        ));
                     }
                     return AstFactory::make_node_with_span<FunctionCall>(e->span, clone_expression(e->target.get()),
                                                                          std::move(args));
@@ -121,12 +121,12 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> mods;
                         for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
-                        items.push_back({
-                            .modifiers = std::move(mods),
-                            .key = item.key,
-                            .value = clone_expression(item.value.get()),
-                            .span = item.span
-                        });
+                        items.push_back(DictItem(
+                            std::move(mods),
+                            item.key,
+                            clone_expression(item.value.get()),
+                            item.span
+                        ));
                     }
                     return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
                 }
@@ -137,12 +137,12 @@ namespace valuascript::compiler
                     {
                         std::vector<Modifier> c_mods;
                         for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
-                        cases.push_back({
-                            .modifiers = std::move(c_mods),
-                            .identifiers = sc.identifiers,
-                            .result = clone_expression(sc.result.get()),
-                            .span = sc.span
-                        });
+                        cases.push_back(SwitchCase(
+                            std::move(c_mods),
+                            sc.identifiers,
+                            clone_expression(sc.result.get()),
+                            sc.span
+                        ));
                     }
                     std::vector<Modifier> d_mods;
                     for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
@@ -247,12 +247,12 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({
-                .modifiers = std::move(target_mods),
-                .name = NodeName{target.lexeme, cursor.make_span(target)},
-                .type = std::move(type_annotation),
-                .span = cursor.make_span(target_start, cursor.previous())
-            });
+            targets.push_back(AssignmentTarget(
+                std::move(target_mods),
+                NodeName{target.lexeme, cursor.make_span(target)},
+                std::move(type_annotation),
+                cursor.make_span(target_start, cursor.previous())
+            ));
 
             if (!cursor.match(TokenType::Comma))
             {

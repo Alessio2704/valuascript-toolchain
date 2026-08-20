@@ -130,11 +130,11 @@ namespace valuascript::compiler
 
                     for (auto& g : args_gen)
                     {
-                        arguments.push_back(CallArgument{
-                            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                            .value = std::move(g.value),
-                            .span = g.span
-                        });
+                        arguments.push_back(CallArgument(
+                            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                            std::move(g.value),
+                            g.span
+                        ));
                     }
 
                     bool is_at_boundary =
@@ -150,11 +150,11 @@ namespace valuascript::compiler
                     if (is_at_boundary)
                     {
                         cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisAfterModifierArgs);
-                        modifiers.push_back(Modifier{
-                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                            .arguments = std::move(arguments),
-                            .span = cursor.make_span(start_token, cursor.previous())
-                        });
+                        modifiers.push_back(Modifier(
+                            NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            std::move(arguments),
+                            cursor.make_span(start_token, cursor.previous())
+                        ));
                     }
                     else
                     {
@@ -164,20 +164,20 @@ namespace valuascript::compiler
                             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
                                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
                         }
-                        modifiers.push_back(Modifier{
-                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                            .arguments = std::move(arguments),
-                            .span = cursor.make_span(start_token, cursor.previous())
-                        });
+                        modifiers.push_back(Modifier(
+                            NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            std::move(arguments),
+                            cursor.make_span(start_token, cursor.previous())
+                        ));
                     }
                 }
                 else
                 {
-                    modifiers.push_back(Modifier{
-                        .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                        .arguments = std::move(arguments),
-                        .span = cursor.make_span(start_token, cursor.previous())
-                    });
+                    modifiers.push_back(Modifier(
+                        NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                        std::move(arguments),
+                        cursor.make_span(start_token, cursor.previous())
+                    ));
                 }
             }
             catch (const ParseSyncException&)
@@ -261,12 +261,12 @@ namespace valuascript::compiler
 
         std::vector<StructField> fields;
         fields.reserve(fields_gen.size());
-        for (auto& g : fields_gen) fields.push_back({
-            .modifiers = std::move(g.modifiers),
-            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .type = std::move(g.type),
-            .span = g.span
-        });
+        for (auto& g : fields_gen) fields.push_back(StructField(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.type),
+            g.span
+        ));
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
@@ -361,12 +361,12 @@ namespace valuascript::compiler
 
         std::vector<EnumCase> cases;
         cases.reserve(cases_gen.size());
-        for (auto& g : cases_gen) cases.push_back({
-            .modifiers = std::move(g.modifiers),
-            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .value = std::move(g.value),
-            .span = g.span
-        });
+        for (auto& g : cases_gen) cases.push_back(EnumCase(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.value),
+            g.span
+        ));
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
@@ -450,13 +450,13 @@ namespace valuascript::compiler
             {
                 if (g.has_value_separator || g.value) seen_default_param = true;
                 else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
-                params.push_back({
-                    .modifiers = std::move(g.modifiers),
-                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                    .type = std::move(g.type),
-                    .default_value = std::move(g.value),
-                    .span = g.span
-                });
+                params.push_back(FunctionParameter(
+                    std::move(g.modifiers),
+                    NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    std::move(g.type),
+                    std::move(g.value),
+                    g.span
+                ));
             }
         }
 

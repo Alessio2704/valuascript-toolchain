@@ -5,12 +5,23 @@
 
 namespace valuascript::compiler
 {
-    struct AssignmentTarget
+    class AssignmentTarget : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::AssignmentTarget;
         std::vector<Modifier> modifiers;
         NodeName name;
         TypeAnnPtr type;
-        SourceSpan span = {};
+
+        AssignmentTarget() : AstNode(KIND) {}
+        AssignmentTarget(std::vector<Modifier> mods,
+                         NodeName n,
+                         TypeAnnPtr t,
+                         SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), type(std::move(t))
+        {
+            span = sp;
+        }
     };
 
     class Assignment : public Statement
@@ -65,12 +76,23 @@ namespace valuascript::compiler
         }
     };
 
-    struct EnumCase
+    class EnumCase : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::EnumCase;
         std::vector<Modifier> modifiers;
         NodeName name;
-        ExprPtr value;
-        SourceSpan span = {};
+        ExprPtr value = nullptr;
+
+        EnumCase() : AstNode(KIND) {}
+        EnumCase(std::vector<Modifier> mods,
+                 NodeName n,
+                 ExprPtr val = nullptr,
+                 SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), value(std::move(val))
+        {
+            span = sp;
+        }
     };
 
     class EnumDefinition : public Statement

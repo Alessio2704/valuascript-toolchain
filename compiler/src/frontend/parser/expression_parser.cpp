@@ -498,11 +498,11 @@ namespace valuascript::compiler
 
             for (auto& g : args_gen)
             {
-                arguments.push_back(CallArgument{
-                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                    .value = std::move(g.value),
-                    .span = g.span
-                });
+                arguments.push_back(CallArgument(
+                    NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    std::move(g.value),
+                    g.span
+                ));
             }
 
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
@@ -887,12 +887,12 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({
-            .modifiers = std::move(g.modifiers),
-            .key = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .value = std::move(g.value),
-            .span = g.span
-        });
+        for (auto& g : items_gen) elements.push_back(DictItem(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.value),
+            g.span
+        ));
 
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBrace) ||
             (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type)))
@@ -1094,11 +1094,11 @@ namespace valuascript::compiler
             .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
         };
         auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
-        return {
-            .modifiers = std::move(modifiers),
-            .identifiers = std::move(identifiers),
-            .result = std::move(result)
-        };
+        return SwitchCase(
+            std::move(modifiers),
+            std::move(identifiers),
+            std::move(result)
+        );
     }
 
     ExprPtr ExpressionParser::parse_switch_default()

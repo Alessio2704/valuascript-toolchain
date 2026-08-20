@@ -34,13 +34,26 @@ namespace valuascript::compiler
         }
     };
 
-    struct FunctionParameter
+    class FunctionParameter : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::FunctionParameter;
         std::vector<Modifier> modifiers;
         NodeName name;
         TypeAnnPtr type;
         ExprPtr default_value = nullptr;
-        SourceSpan span = {};
+
+        FunctionParameter() : AstNode(KIND) {}
+        FunctionParameter(std::vector<Modifier> mods,
+                          NodeName n,
+                          TypeAnnPtr t,
+                          ExprPtr def = nullptr,
+                          SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), type(std::move(t)),
+              default_value(std::move(def))
+        {
+            span = sp;
+        }
     };
 
     class FunctionDefinition : public AstNode
@@ -66,12 +79,23 @@ namespace valuascript::compiler
         }
     };
 
-    struct StructField
+    class StructField : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::StructField;
         std::vector<Modifier> modifiers;
         NodeName name;
         TypeAnnPtr type;
-        SourceSpan span = {};
+
+        StructField() : AstNode(KIND) {}
+        StructField(std::vector<Modifier> mods,
+                    NodeName n,
+                    TypeAnnPtr t,
+                    SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), type(std::move(t))
+        {
+            span = sp;
+        }
     };
 
     class StructDefinition : public AstNode
@@ -130,7 +154,7 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::Program;
         std::unique_ptr<AstArena> arena = nullptr;
-        std::vector<CommentToken> comments;
+        std::vector<Comment> comments;
         std::vector<ImportPtr> import_statements;
         std::vector<DirectivePtr> directives;
         std::vector<StmtPtr> execution_steps;

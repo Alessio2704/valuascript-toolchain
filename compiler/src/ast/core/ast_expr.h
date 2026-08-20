@@ -164,12 +164,23 @@ namespace valuascript::compiler
         }
     };
 
-    struct DictItem
+    class DictItem : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::DictItem;
         std::vector<Modifier> modifiers;
         NodeName key;
-        ExprPtr value;
-        SourceSpan span = {};
+        ExprPtr value = nullptr;
+
+        DictItem() : AstNode(KIND) {}
+        DictItem(std::vector<Modifier> mods,
+                 NodeName k,
+                 ExprPtr v = nullptr,
+                 SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), key(std::move(k)), value(std::move(v))
+        {
+            span = sp;
+        }
     };
 
     class DictLiteral : public Expression
@@ -271,12 +282,23 @@ namespace valuascript::compiler
         }
     };
 
-    struct SwitchCase
+    class SwitchCase : public AstNode
     {
+    public:
+        static constexpr AstKind KIND = AstKind::SwitchCase;
         std::vector<Modifier> modifiers;
         std::vector<NodeName> identifiers;
-        ExprPtr result;
-        SourceSpan span = {};
+        ExprPtr result = nullptr;
+
+        SwitchCase() : AstNode(KIND) {}
+        SwitchCase(std::vector<Modifier> mods,
+                   std::vector<NodeName> ids,
+                   ExprPtr res = nullptr,
+                   SourceSpan sp = {})
+            : AstNode(KIND), modifiers(std::move(mods)), identifiers(std::move(ids)), result(std::move(res))
+        {
+            span = sp;
+        }
     };
 
     class SwitchExpression : public Expression

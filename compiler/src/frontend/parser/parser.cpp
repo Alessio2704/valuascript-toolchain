@@ -43,7 +43,12 @@ namespace valuascript::compiler
         }
 
         program->span = ctx.cursor.make_span(start_token, ctx.cursor.previous());
-        program->comments = ctx.cursor.get_comments();
+        const auto& raw_comments = ctx.cursor.get_comments();
+        program->comments.reserve(raw_comments.size());
+        for (const auto& c : raw_comments)
+        {
+            program->comments.emplace_back(c);
+        }
         AstArenaManager::set_current_resource(prev_resource);
         return program;
     }
