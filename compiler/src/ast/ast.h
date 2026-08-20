@@ -6,3 +6,4 @@
 #include "ast/core/ast_expr.h"
 #include "ast/core/ast_stmt.h"
 #include "ast/core/ast_decl.h"
+#include "ast/core/ast_clone.h"
