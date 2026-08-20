@@ -9,12 +9,12 @@ namespace valuascript::compiler::test
     struct FunctionDefMatcher
     {
         using node_type = FunctionDefinition;
-        std::string name;
-        std::vector<ModifierSpec> modifiers;
-        std::vector<ParamSpec> params;
-        std::vector<TypeVerifier> returns;
-        std::vector<StmtVerifier> body;
-        std::optional<std::string> docstring;
+        std::string name = {};
+        std::vector<ModifierSpec> modifiers = {};
+        std::vector<ParamSpec> params = {};
+        std::vector<TypeVerifier> returns = {};
+        std::vector<StmtVerifier> body = {};
+        std::optional<std::string> docstring = std::nullopt;
 
         void operator()(FunctionDefinition* f) const
         {
@@ -38,9 +38,9 @@ namespace valuascript::compiler::test
     struct StructDefMatcher
     {
         using node_type = StructDefinition;
-        std::string name;
-        std::vector<ModifierSpec> modifiers;
-        std::vector<FieldSpec> fields;
+        std::string name = {};
+        std::vector<ModifierSpec> modifiers = {};
+        std::vector<FieldSpec> fields = {};
 
         void operator()(StructDefinition* s) const
         {
@@ -86,10 +86,10 @@ namespace valuascript::compiler::test
     struct EnumDefMatcher
     {
         using node_type = EnumDefinition;
-        std::string name;
-        std::vector<ModifierSpec> modifiers;
-        TypeVerifier type;
-        std::vector<EnumCaseSpec> cases;
+        std::string name = {};
+        std::vector<ModifierSpec> modifiers = {};
+        TypeVerifier type = nullptr;
+        std::vector<EnumCaseSpec> cases = {};
 
         void operator()(EnumDefinition* e) const
         {
@@ -141,9 +141,9 @@ namespace valuascript::compiler::test
     struct TypeAliasMatcher
     {
         using node_type = TypeAliasDefinition;
-        std::string name;
-        std::vector<ModifierSpec> modifiers;
-        TypeVerifier target;
+        std::string name = {};
+        std::vector<ModifierSpec> modifiers = {};
+        TypeVerifier target = nullptr;
 
         void operator()(TypeAliasDefinition* a) const
         {
@@ -162,9 +162,9 @@ namespace valuascript::compiler::test
     struct ExtensionDefMatcher
     {
         using node_type = ExtensionDefinition;
-        std::vector<ModifierSpec> modifiers;
-        TypeVerifier target;
-        ProgramSpec spec;
+        std::vector<ModifierSpec> modifiers = {};
+        TypeVerifier target = nullptr;
+        ProgramSpec spec = {};
 
         void operator()(ExtensionDefinition* e) const
         {
@@ -184,8 +184,8 @@ namespace valuascript::compiler::test
     struct ImportMatcher
     {
         using node_type = ImportStatement;
-        std::string path;
-        std::vector<ModifierSpec> modifiers;
+        std::string path = {};
+        std::vector<ModifierSpec> modifiers = {};
 
         void operator()(ImportStatement* i) const
         {
@@ -202,8 +202,8 @@ namespace valuascript::compiler::test
     struct DirectiveMatcher
     {
         using node_type = Directive;
-        std::string name;
-        MatcherStorage<V> value;
+        std::string name = {};
+        MatcherStorage<V> value = {};
 
         void operator()(Directive* d) const
         {

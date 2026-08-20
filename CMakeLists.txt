@@ -57,6 +57,8 @@ else ()
                 "-Wsign-conversion"
                 "-Wnon-virtual-dtor"
                 "-Woverloaded-virtual"
+                "-Wno-missing-field-initializers"
+                "-Wno-maybe-uninitialized"
         )
     endif ()
 
