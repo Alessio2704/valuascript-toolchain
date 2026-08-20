@@ -9,10 +9,7 @@ namespace valuascript::compiler::test
     inline void AssertSpanMatch(const SourceSpan& actual, const SourceSpan& expected,
                                 std::source_location loc = std::source_location::current())
     {
-        if (actual.line_start != expected.line_start ||
-            actual.column_start != expected.column_start ||
-            actual.line_end != expected.line_end ||
-            actual.column_end != expected.column_end)
+        if (!actual.matches_lines_columns(expected))
         {
             ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
                 << "Span line/column mismatch:\n"
@@ -24,7 +21,7 @@ namespace valuascript::compiler::test
 
         if (expected.start_offset != 0 || expected.length != 0)
         {
-            if (actual.start_offset != expected.start_offset || actual.length != expected.length)
+            if (!actual.matches_offsets(expected))
             {
                 ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
                     << "Span offset/length mismatch:\n"
@@ -37,7 +34,7 @@ namespace valuascript::compiler::test
 
         if (!expected.path().empty())
         {
-            if (actual.path() != expected.path())
+            if (!actual.matches_file_path(expected))
             {
                 ADD_FAILURE_AT(loc.file_name(), static_cast<int>(loc.line()))
                     << "Span file_path mismatch:\n"

@@ -70,12 +70,33 @@ namespace valuascript::shared
             return starts_before(other);
         }
 
-        [[nodiscard]] bool operator==(const SourceSpan& other) const
+        [[nodiscard]] constexpr bool matches_lines_columns(const SourceSpan& other) const noexcept
         {
             return line_start == other.line_start && column_start == other.column_start &&
-                   line_end == other.line_end && column_end == other.column_end &&
-                   start_offset == other.start_offset && length == other.length &&
-                   (file_path == other.file_path || (file_path && other.file_path && *file_path == *other.file_path));
+                   line_end == other.line_end && column_end == other.column_end;
+        }
+
+        [[nodiscard]] constexpr bool matches_offsets(const SourceSpan& other) const noexcept
+        {
+            return start_offset == other.start_offset && length == other.length;
+        }
+
+        [[nodiscard]] bool matches_file_path(const SourceSpan& other) const noexcept
+        {
+            return file_path == other.file_path || (file_path && other.file_path && *file_path == *other.file_path);
+        }
+
+        [[nodiscard]] bool matches(const SourceSpan& pattern) const noexcept
+        {
+            if (!matches_lines_columns(pattern)) return false;
+            if ((pattern.start_offset != 0 || pattern.length != 0) && !matches_offsets(pattern)) return false;
+            if (!pattern.path().empty() && path() != pattern.path()) return false;
+            return true;
+        }
+
+        [[nodiscard]] bool operator==(const SourceSpan& other) const
+        {
+            return matches_lines_columns(other) && matches_offsets(other) && matches_file_path(other);
         }
     };
 

@@ -457,7 +457,7 @@ namespace valuascript::compiler::test
         {
             if (v) [[likely]]
             {
-                *this = StmtVerifier([ver = std::move(v)](Statement* s)
+                InlineVerifier<Statement>::operator=([ver = std::move(v)](Statement* s)
                 {
                     if (auto* casted = ExpectNode<Assignment>(s)) [[likely]] ver(casted);
                 });
@@ -468,7 +468,7 @@ namespace valuascript::compiler::test
         {
             if (v) [[likely]]
             {
-                *this = StmtVerifier([ver = std::move(v)](Statement* s)
+                InlineVerifier<Statement>::operator=([ver = std::move(v)](Statement* s)
                 {
                     if (auto* casted = ExpectNode<Reassignment>(s)) [[likely]] ver(casted);
                 });
@@ -479,7 +479,7 @@ namespace valuascript::compiler::test
         {
             if (v) [[likely]]
             {
-                *this = StmtVerifier([ver = std::move(v)](Statement* s)
+                InlineVerifier<Statement>::operator=([ver = std::move(v)](Statement* s)
                 {
                     if (auto* casted = ExpectNode<ReturnStatement>(s)) [[likely]] ver(casted);
                 });
@@ -490,7 +490,7 @@ namespace valuascript::compiler::test
         {
             if (v) [[likely]]
             {
-                *this = StmtVerifier([ver = std::move(v)](Statement* s)
+                InlineVerifier<Statement>::operator=([ver = std::move(v)](Statement* s)
                 {
                     if (auto* casted = ExpectNode<ExpressionStatement>(s)) [[likely]] ver(casted);
                 });
@@ -510,7 +510,7 @@ namespace valuascript::compiler::test
                 !std::same_as<std::decay_t<F>, StmtVerifier> &&
                 !std::same_as<std::decay_t<F>, InlineVerifier<Statement>> &&
                 !std::same_as<std::decay_t<F>, std::nullptr_t> &&
-                !HasNodeType<F, Statement> &&
+                !HasNodeType<F> &&
                 std::invocable<F, Statement*>)
         StmtVerifier(F&& f) : InlineVerifier<Statement>(std::forward<F>(f))
         {

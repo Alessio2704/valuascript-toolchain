@@ -9,6 +9,7 @@
 #include <type_traits>
 #include "token/token.h"
 #include "ast_arena.h"
+#include "ast_concepts.h"
 
 using namespace valuascript::shared;
 
@@ -287,21 +288,6 @@ namespace valuascript::compiler
             span = sp;
         }
     };
-
-    template <typename T>
-    concept AstElement = std::derived_from<std::decay_t<T>, AstNode>;
-
-    template <typename T>
-    concept ExpressionNode = std::derived_from<std::decay_t<T>, Expression>;
-
-    template <typename T>
-    concept StatementNode = std::derived_from<std::decay_t<T>, Statement>;
-
-    template <typename T>
-    concept TypeAnnNode = std::derived_from<std::decay_t<T>, TypeAnnotation>;
-
-    template <typename T>
-    concept ConcreteAstNode = AstElement<T> && requires { { T::KIND } -> std::same_as<const AstKind&>; };
 
     template <AstElement T, typename NodeT>
         requires std::derived_from<std::decay_t<NodeT>, AstNode>

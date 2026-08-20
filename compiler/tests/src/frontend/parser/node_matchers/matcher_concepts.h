@@ -3,9 +3,20 @@
 #include <concepts>
 #include <type_traits>
 #include "ast/ast.h"
+#include "ast/core/ast_concepts.h"
 
 namespace valuascript::compiler::test
 {
+    using valuascript::compiler::HasNodeType;
+    using valuascript::compiler::IsCompatibleNodeCallable;
+    using valuascript::compiler::AstNodeVisitor;
+
+    template <typename F, typename NodeT>
+    concept IsCompatibleNodeVerifier = IsCompatibleNodeCallable<F, NodeT>;
+
+    template <typename M, typename NodeT>
+    concept ASTMatcher = AstNodeVisitor<M, NodeT>;
+
     struct AnyMatcher
     {
         void operator()(AstNode*) const {}
@@ -15,29 +26,12 @@ namespace valuascript::compiler::test
         explicit operator bool() const { return false; }
     };
 
-    template <typename F, typename NodeT>
-    concept HasNodeType = requires
-    {
-        typename std::decay_t<F>::node_type;
-    };
-
-    template <typename F, typename NodeT>
-    concept IsCompatibleNodeVerifier =
-        (HasNodeType<F, NodeT> && std::derived_from<typename std::decay_t<F>::node_type, NodeT>) ||
-        (!HasNodeType<F, NodeT> && std::invocable<F, NodeT*>);
-
-    template <typename M, typename NodeT>
-    concept ASTMatcher = requires(const std::decay_t<M>& m, NodeT* node)
-    {
-        { m(node) };
-    };
+    template <typename M>
+    concept ExprMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeCallable<M, Expression>;
 
     template <typename M>
-    concept ExprMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, Expression>;
+    concept TypeNodeMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeCallable<M, TypeAnnotation>;
 
     template <typename M>
-    concept TypeNodeMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, TypeAnnotation>;
-
-    template <typename M>
-    concept StmtMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeVerifier<M, Statement>;
+    concept StmtMatcher = std::same_as<std::decay_t<M>, AnyMatcher> || IsCompatibleNodeCallable<M, Statement>;
 }
