@@ -4,62 +4,61 @@
 namespace valuascript::compiler
 {
     template <typename Rewriter, typename T>
-    struct CheckRewriterSingleType
+    concept RewriterSupportsNode = requires(Rewriter& r, std::unique_ptr<T> ptr_node, T val_node)
     {
-        static constexpr bool value = [] {
-            if constexpr (requires(Rewriter& r, std::unique_ptr<T> n) { r.rewrite(std::move(n)); })
-            {
-                using RetType = decltype(std::declval<Rewriter&>().rewrite(std::declval<std::unique_ptr<T>>()));
-                return std::is_same_v<RetType, ExprPtr> ||
-                       std::is_same_v<RetType, StmtPtr> ||
-                       std::is_same_v<RetType, TypeAnnPtr> ||
-                       std::is_same_v<RetType, std::unique_ptr<T>>;
-            }
-            else if constexpr (requires(Rewriter& r, T n) { r.rewrite(std::move(n)); })
-            {
-                using RetType = decltype(std::declval<Rewriter&>().rewrite(std::declval<T>()));
-                return std::is_same_v<RetType, T>;
-            }
-            else
-            {
-                return false;
-            }
-        }();
+        { r.rewrite(std::move(ptr_node)) };
+    } || requires(Rewriter& r, T val_node)
+    {
+        { r.rewrite(std::move(val_node)) } -> std::same_as<T>;
     };
+
+    template <typename Rewriter, typename T>
+    requires RewriterSupportsNode<Rewriter, T>
+    consteval bool verify_rewriter_node()
+    {
+        return true;
+    }
 
     template <typename Rewriter, typename Tuple>
-    struct ValidateRewriterCompleteness;
+    struct AstRewriterNodeValidator;
 
     template <typename Rewriter, typename... Types>
-    struct ValidateRewriterCompleteness<Rewriter, std::tuple<Types...>>
+    struct AstRewriterNodeValidator<Rewriter, std::tuple<Types...>>
     {
-        static constexpr bool value = (CheckRewriterSingleType<Rewriter, Types>::value && ...);
+        static consteval bool validate()
+        {
+            return (verify_rewriter_node<Rewriter, Types>() && ...);
+        }
     };
 
-    static_assert(ValidateRewriterCompleteness<AstRewriter, AllAstNodeTypes>::value,
+    static_assert(AstRewriterNodeValidator<AstRewriter, AllAstNodeTypes>::validate(),
                   "AstRewriter is missing a rewrite() overload for one or more registered AST node types in AllAstNodeTypes");
 
     template <typename Rewriter, typename Category>
-    struct CheckRewriterSingleCategory
+    concept RewriterSupportsCategory = requires(Rewriter& r, std::unique_ptr<Category> cat)
     {
-        static constexpr bool value = [] {
-            if constexpr (requires(Rewriter& r, std::unique_ptr<Category> c) { r.rewrite(std::move(c)); })
-            {
-                return std::is_same_v<decltype(std::declval<Rewriter&>().rewrite(std::declval<std::unique_ptr<Category>>())), std::unique_ptr<Category>>;
-            }
-            return false;
-        }();
+        { r.rewrite(std::move(cat)) } -> std::same_as<std::unique_ptr<Category>>;
     };
+
+    template <typename Rewriter, typename Category>
+    requires RewriterSupportsCategory<Rewriter, Category>
+    consteval bool verify_rewriter_category()
+    {
+        return true;
+    }
 
     template <typename Rewriter, typename Tuple>
-    struct ValidateCategoryRewriterCompleteness;
+    struct AstRewriterCategoryValidator;
 
     template <typename Rewriter, typename... Categories>
-    struct ValidateCategoryRewriterCompleteness<Rewriter, std::tuple<Categories...>>
+    struct AstRewriterCategoryValidator<Rewriter, std::tuple<Categories...>>
     {
-        static constexpr bool value = (CheckRewriterSingleCategory<Rewriter, Categories>::value && ...);
+        static consteval bool validate()
+        {
+            return (verify_rewriter_category<Rewriter, Categories>() && ...);
+        }
     };
 
-    static_assert(ValidateCategoryRewriterCompleteness<AstRewriter, AstCategoryTypes>::value,
+    static_assert(AstRewriterCategoryValidator<AstRewriter, AstCategoryTypes>::validate(),
                   "AstRewriter is missing a rewrite() overload for one or more registered categories in AstCategoryTypes");
 }

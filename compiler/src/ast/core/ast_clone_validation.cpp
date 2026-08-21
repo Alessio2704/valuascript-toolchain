@@ -4,33 +4,32 @@
 namespace valuascript::compiler
 {
     template <typename T>
-    struct CheckCloneableSingleType
+    concept CloneableNode = requires(const T* node_ptr, const T& node_ref)
     {
-        static constexpr bool value = [] {
-            if constexpr (requires(const T* n) { clone_node(n); })
-            {
-                return std::is_same_v<decltype(clone_node(std::declval<const T*>())), std::unique_ptr<T>>;
-            }
-            else if constexpr (requires(const T& n) { clone_node(n); })
-            {
-                return std::is_same_v<decltype(clone_node(std::declval<const T&>())), T>;
-            }
-            else
-            {
-                return false;
-            }
-        }();
+        { clone_node(node_ptr) } -> std::same_as<std::unique_ptr<T>>;
+    } || requires(const T& node_ref)
+    {
+        { clone_node(node_ref) } -> std::same_as<T>;
     };
+
+    template <CloneableNode T>
+    consteval bool verify_cloneable_node()
+    {
+        return true;
+    }
 
     template <typename Tuple>
-    struct ValidateCloneCompleteness;
+    struct AstCloneCompletenessValidator;
 
     template <typename... Types>
-    struct ValidateCloneCompleteness<std::tuple<Types...>>
+    struct AstCloneCompletenessValidator<std::tuple<Types...>>
     {
-        static constexpr bool value = (CheckCloneableSingleType<Types>::value && ...);
+        static consteval bool validate()
+        {
+            return (verify_cloneable_node<Types>() && ...);
+        }
     };
 
-    static_assert(ValidateCloneCompleteness<AllAstNodeTypes>::value,
+    static_assert(AstCloneCompletenessValidator<AllAstNodeTypes>::validate(),
                   "All registered AST node types in AllAstNodeTypes must be cloneable via clone_node()");
 }

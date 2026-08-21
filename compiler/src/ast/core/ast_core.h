@@ -80,14 +80,18 @@ namespace valuascript::compiler
         Modifier,
         CallArgument,
         DictItem,
-        Comment
+        Comment,
+        _Count
     };
+
+    inline constexpr size_t AST_KIND_COUNT = static_cast<size_t>(AstKind::_Count) - 1;
 
     constexpr std::string_view to_string(AstKind kind) noexcept
     {
         switch (kind)
         {
             case AstKind::Unknown: return "Unknown";
+            case AstKind::_Count: return "Unknown";
             case AstKind::NumberLiteral: return "NumberLiteral";
             case AstKind::PercentageLiteral: return "PercentageLiteral";
             case AstKind::StringLiteral: return "StringLiteral";
@@ -289,8 +293,7 @@ namespace valuascript::compiler
         }
     };
 
-    template <AstElement T, typename NodeT>
-        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    template <AstElement T, AstElement NodeT>
     [[nodiscard]] inline auto* ast_cast(NodeT* node) noexcept
     {
         using ReturnType = std::conditional_t<std::is_const_v<NodeT>, const T, T>;
@@ -306,15 +309,13 @@ namespace valuascript::compiler
         }
     }
 
-    template <AstElement T, typename NodeT>
-        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    template <AstElement T, AstElement NodeT>
     [[nodiscard]] inline bool is_a(NodeT* node) noexcept
     {
         return ast_cast<T>(node) != nullptr;
     }
 
-    template <AstElement T, typename NodeT>
-        requires std::derived_from<std::decay_t<NodeT>, AstNode>
+    template <AstElement T, AstElement NodeT>
     [[nodiscard]] inline auto& as(NodeT& node) noexcept
     {
         auto* casted = ast_cast<T>(&node);

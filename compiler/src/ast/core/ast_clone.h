@@ -13,16 +13,16 @@
 namespace valuascript::compiler
 {
     template <AstElement T>
-    [[nodiscard]] std::unique_ptr<T> clone_node(const T* node);
+    [[nodiscard]] inline std::unique_ptr<T> clone_node(const T* node);
 
     template <AstElement T>
-    [[nodiscard]] std::unique_ptr<T> clone_node(const std::unique_ptr<T>& ptr);
+    [[nodiscard]] inline std::unique_ptr<T> clone_node(const std::unique_ptr<T>& ptr);
 
     template <typename T>
-    [[nodiscard]] std::vector<T> clone_nodes(const std::vector<T>& vec);
+    [[nodiscard]] inline std::vector<T> clone_nodes(const std::vector<T>& vec);
 
-    template <typename T>
-    [[nodiscard]] std::vector<std::unique_ptr<T>> clone_nodes(const std::vector<std::unique_ptr<T>>& vec);
+    template <AstElement T>
+    [[nodiscard]] inline std::vector<std::unique_ptr<T>> clone_nodes(const std::vector<std::unique_ptr<T>>& vec);
 
     [[nodiscard]] inline Comment clone_node(const Comment& comment);
     [[nodiscard]] inline CallArgument clone_node(const CallArgument& arg);
@@ -578,7 +578,7 @@ namespace valuascript::compiler
         return result;
     }
 
-    template <typename T>
+    template <AstElement T>
     [[nodiscard]] std::vector<std::unique_ptr<T>> clone_nodes(const std::vector<std::unique_ptr<T>>& vec)
     {
         std::vector<std::unique_ptr<T>> result;
