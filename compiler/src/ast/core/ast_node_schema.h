@@ -43,10 +43,17 @@ namespace valuascript::compiler
         { AstNodeSchema<T>::members };
     };
 
-    template <typename T, size_t ExpectedDifference>
+    template <typename T, size_t ExpectedClangDiff, size_t ExpectedMsvcDiff = ExpectedClangDiff>
     concept SchemaMatchesLayout =
         HasAstNodeSchema<T> &&
-        ((sizeof(T) - MemberSizeSum<std::remove_cvref_t<decltype(AstNodeSchema<T>::members)>>::template calculate<T>()) == ExpectedDifference);
+        ([] {
+            constexpr size_t actual_diff = sizeof(T) - MemberSizeSum<std::remove_cvref_t<decltype(AstNodeSchema<T>::members)>>::template calculate<T>();
+#if defined(_MSC_VER) && !defined(__clang__)
+            return actual_diff == ExpectedMsvcDiff;
+#else
+            return actual_diff == ExpectedClangDiff;
+#endif
+        }());
 
     template <typename T, typename Func>
     requires HasAstNodeSchema<T>
@@ -208,7 +215,7 @@ namespace valuascript::compiler
             &BooleanLiteral::span,
             &BooleanLiteral::value
         );
-        static_assert(SchemaMatchesLayout<BooleanLiteral, 15>);
+        static_assert(SchemaMatchesLayout<BooleanLiteral, 15, 23>);
     };
 
     template <>
@@ -250,7 +257,7 @@ namespace valuascript::compiler
             &UnaryExpression::op,
             &UnaryExpression::right
         );
-        static_assert(SchemaMatchesLayout<UnaryExpression, 12>);
+        static_assert(SchemaMatchesLayout<UnaryExpression, 12, 20>);
     };
 
     template <>
