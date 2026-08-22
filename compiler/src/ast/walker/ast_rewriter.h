@@ -112,7 +112,12 @@ namespace valuascript::compiler
             return type;
         }
 
-        virtual ImportPtr rewrite(ImportPtr node) { return node; }
+        virtual ImportPtr rewrite(ImportPtr node)
+        {
+            if (!node) return nullptr;
+            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
+            return node;
+        }
 
         virtual DirectivePtr rewrite(DirectivePtr node)
         {
@@ -193,6 +198,7 @@ namespace valuascript::compiler
         virtual StmtPtr rewrite(std::unique_ptr<ReturnStatement> node)
         {
             if (!node) return nullptr;
+            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
             for (auto& val : node->values) { val = rewrite(std::move(val)); }
             return node;
         }
@@ -281,6 +287,7 @@ namespace valuascript::compiler
             if (!node) return nullptr;
             if (node->target) node->target = rewrite(std::move(node->target));
             for (auto& sc : node->cases) { sc = rewrite(std::move(sc)); }
+            for (auto& mod : node->default_modifiers) { mod = rewrite(std::move(mod)); }
             if (node->default_case) node->default_case = rewrite(std::move(node->default_case));
             return node;
         }
@@ -316,12 +323,14 @@ namespace valuascript::compiler
 
         virtual SwitchCase rewrite(SwitchCase node)
         {
+            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
             if (node.result) node.result = rewrite(std::move(node.result));
             return node;
         }
 
         virtual AssignmentTarget rewrite(AssignmentTarget node)
         {
+            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
             if (node.type) node.type = rewrite(std::move(node.type));
             return node;
         }
@@ -340,6 +349,7 @@ namespace valuascript::compiler
 
         virtual DictItem rewrite(DictItem node)
         {
+            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
             if (node.value) node.value = rewrite(std::move(node.value));
             return node;
         }
