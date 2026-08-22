@@ -27,57 +27,105 @@ namespace valuascript::compiler::test
         }
     };
 
+    template <DirectlyValidatable T>
+    inline void test_value_validity(const T& sample)
+    {
+        EXPECT_TRUE(ast_is_valid(sample));
+    }
+
+    template <DirectlyValidatable T>
+    inline void test_raw_pointer_validity(const T* valid_ptr)
+    {
+        const T* null_ptr = nullptr;
+        EXPECT_FALSE(ast_is_valid(null_ptr));
+        ASSERT_NE(valid_ptr, nullptr);
+        EXPECT_TRUE(ast_is_valid(valid_ptr));
+    }
+
+    template <DirectlyValidatable T>
+    inline void test_unique_ptr_validity(const std::unique_ptr<T>& valid_uptr)
+    {
+        const std::unique_ptr<T> null_uptr = nullptr;
+        EXPECT_FALSE(ast_is_valid(null_uptr));
+        ASSERT_NE(valid_uptr, nullptr);
+        EXPECT_TRUE(ast_is_valid(valid_uptr));
+    }
+
+    template <DirectlyValidatable T>
+    inline void test_vector_value_validity(T sample)
+    {
+        std::vector<T> empty_vec;
+        EXPECT_TRUE(ast_is_valid(empty_vec));
+
+        std::vector<T> valid_vec;
+        valid_vec.push_back(std::move(sample));
+        EXPECT_TRUE(ast_is_valid(valid_vec));
+    }
+
+    template <DirectlyValidatable T>
+    inline void test_vector_unique_ptr_validity(std::unique_ptr<T> valid_uptr)
+    {
+        std::vector<std::unique_ptr<T>> empty_vec;
+        EXPECT_TRUE(ast_is_valid(empty_vec));
+
+        std::vector<std::unique_ptr<T>> valid_vec;
+        valid_vec.push_back(std::move(valid_uptr));
+        EXPECT_TRUE(ast_is_valid(valid_vec));
+
+        valid_vec.push_back(nullptr);
+        EXPECT_FALSE(ast_is_valid(valid_vec));
+    }
+
+    template <DirectlyValidatable T>
+    inline void test_vector_raw_ptr_validity(const T* valid_ptr)
+    {
+        std::vector<const T*> empty_vec;
+        EXPECT_TRUE(ast_is_valid(empty_vec));
+
+        std::vector<const T*> valid_vec;
+        valid_vec.push_back(valid_ptr);
+        EXPECT_TRUE(ast_is_valid(valid_vec));
+
+        valid_vec.push_back(nullptr);
+        EXPECT_FALSE(ast_is_valid(valid_vec));
+    }
+
     template <typename T>
     inline void test_single_node_validity()
     {
-        const T* null_raw = nullptr;
-        EXPECT_FALSE(ast_is_valid(null_raw));
-
-        std::unique_ptr<T> null_uptr = nullptr;
-        EXPECT_FALSE(ast_is_valid(null_uptr));
-
         auto sample = create_sample<T>();
         if constexpr (std::same_as<decltype(sample), std::unique_ptr<T>>)
         {
             ASSERT_NE(sample, nullptr);
-            EXPECT_TRUE(ast_is_valid(sample));
-            EXPECT_TRUE(ast_is_valid(sample.get()));
-            EXPECT_TRUE(ast_is_valid(*sample));
+            test_value_validity<T>(*sample);
+            test_raw_pointer_validity<T>(sample.get());
+            test_unique_ptr_validity<T>(sample);
 
-            std::vector<std::unique_ptr<T>> empty_vec;
-            EXPECT_TRUE(ast_is_valid(empty_vec));
-
-            std::vector<std::unique_ptr<T>> valid_vec;
-            valid_vec.push_back(std::move(sample));
-            EXPECT_TRUE(ast_is_valid(valid_vec));
-
-            valid_vec.push_back(nullptr);
-            EXPECT_FALSE(ast_is_valid(valid_vec));
+            auto sample_for_vec = create_sample<T>();
+            test_vector_unique_ptr_validity<T>(std::move(sample_for_vec));
+            test_vector_raw_ptr_validity<T>(sample.get());
         }
         else
         {
-            EXPECT_TRUE(ast_is_valid(sample));
-            EXPECT_TRUE(ast_is_valid(&sample));
+            test_value_validity<T>(sample);
+            test_raw_pointer_validity<T>(&sample);
 
             auto sample2 = create_sample<T>();
             auto sample_uptr = std::make_unique<T>(std::move(sample2));
-            EXPECT_TRUE(ast_is_valid(sample_uptr));
+            test_unique_ptr_validity<T>(sample_uptr);
 
-            std::vector<T> empty_vec;
-            EXPECT_TRUE(ast_is_valid(empty_vec));
+            auto sample_for_uvec = create_sample<T>();
+            auto sample_uptr2 = std::make_unique<T>(std::move(sample_for_uvec));
+            test_vector_unique_ptr_validity<T>(std::move(sample_uptr2));
 
-            std::vector<T> valid_vec;
-            valid_vec.push_back(std::move(sample));
-            EXPECT_TRUE(ast_is_valid(valid_vec));
+            test_vector_raw_ptr_validity<T>(&*sample_uptr);
+            test_vector_value_validity<T>(std::move(sample));
 
             if constexpr (std::is_default_constructible_v<T>)
             {
                 T invalid_default{};
                 EXPECT_FALSE(ast_is_valid(invalid_default));
                 EXPECT_FALSE(ast_is_valid(&invalid_default));
-
-                valid_vec.push_back(std::move(invalid_default));
-                EXPECT_FALSE(ast_is_valid(valid_vec));
             }
         }
     }
@@ -133,22 +181,17 @@ namespace valuascript::compiler::test
     inline void test_leaf_validity()
     {
         auto valid_val = LeafSampleProvider<T>::valid();
-        EXPECT_TRUE(ast_is_valid(valid_val));
-        EXPECT_TRUE(ast_is_valid(&valid_val));
-
-        std::vector<T> empty_vec;
-        EXPECT_TRUE(ast_is_valid(empty_vec));
-
-        std::vector<T> valid_vec = {valid_val, valid_val};
-        EXPECT_TRUE(ast_is_valid(valid_vec));
+        test_value_validity<T>(valid_val);
+        test_raw_pointer_validity<T>(&valid_val);
+        test_vector_value_validity<T>(valid_val);
 
         if (auto invalid_val = LeafSampleProvider<T>::invalid(); invalid_val.has_value())
         {
             EXPECT_FALSE(ast_is_valid(*invalid_val));
             EXPECT_FALSE(ast_is_valid(&*invalid_val));
 
-            valid_vec.push_back(*invalid_val);
-            EXPECT_FALSE(ast_is_valid(valid_vec));
+            std::vector<T> invalid_vec = {valid_val, *invalid_val};
+            EXPECT_FALSE(ast_is_valid(invalid_vec));
         }
     }
 
