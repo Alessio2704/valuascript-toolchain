@@ -10,7 +10,7 @@
 #include <optional>
 #include <utility>
 
-#include "ast/core/ast_validity.h"
+#include "ast/validity/ast_validity.h"
 #include "ast/sample/ast_sample_factory.h"
 #include "ast/core/ast_node_registry.h"
 
@@ -97,7 +97,7 @@ namespace valuascript::compiler::test
     AstValidityTestDescriptor make_ast_validity_test_descriptor()
     {
         return AstValidityTestDescriptor{
-            .type_name = std::string(to_string(T::KIND)),
+            .type_name = std::string(get_ast_node_name<T>()),
             .run_test = []() {
                 test_single_node_validity<T>();
             }

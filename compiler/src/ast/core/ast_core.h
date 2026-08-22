@@ -8,7 +8,7 @@
 #include <ostream>
 #include <type_traits>
 #include "token/token.h"
-#include "ast_arena.h"
+#include "ast/arena/ast_arena.h"
 #include "ast_concepts.h"
 
 using namespace valuascript::shared;

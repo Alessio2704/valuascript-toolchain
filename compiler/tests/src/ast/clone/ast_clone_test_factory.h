@@ -10,9 +10,9 @@
 
 #include "token/source_span.h"
 #include "ast/core/ast_core.h"
-#include "ast/core/ast_clone.h"
+#include "ast/clone/ast_clone.h"
 #include "ast/core/ast_node_registry.h"
-#include "ast/core/ast_disjoint.h"
+#include "ast/equality/ast_disjoint.h"
 #include "ast/sample/ast_sample_factory.h"
 
 namespace valuascript::compiler::test

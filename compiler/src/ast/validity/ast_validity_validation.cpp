@@ -1,5 +1,5 @@
-#include "ast_validity.h"
-#include "ast_node_registry.h"
+#include "ast/validity/ast_validity.h"
+#include "ast/core/ast_node_registry.h"
 
 namespace valuascript::compiler
 {

@@ -8,12 +8,12 @@
 #include <type_traits>
 
 #include "token/source_span.h"
-#include "ast_core.h"
-#include "ast_type.h"
-#include "ast_expr.h"
-#include "ast_stmt.h"
-#include "ast_decl.h"
-#include "ast_concepts.h"
+#include "ast/core/ast_core.h"
+#include "ast/core/ast_type.h"
+#include "ast/core/ast_expr.h"
+#include "ast/core/ast_stmt.h"
+#include "ast/core/ast_decl.h"
+#include "ast/core/ast_concepts.h"
 
 namespace valuascript::compiler
 {

@@ -3,14 +3,14 @@
 #include <memory>
 #include <vector>
 #include <concepts>
-#include "ast_core.h"
-#include "ast_type.h"
-#include "ast_expr.h"
-#include "ast_stmt.h"
-#include "ast_decl.h"
-#include "ast_concepts.h"
-#include "ast_equality.h"
-#include "ast_disjoint.h"
+#include "ast/core/ast_core.h"
+#include "ast/core/ast_type.h"
+#include "ast/core/ast_expr.h"
+#include "ast/core/ast_stmt.h"
+#include "ast/core/ast_decl.h"
+#include "ast/core/ast_concepts.h"
+#include "ast/equality/ast_equality.h"
+#include "ast/equality/ast_disjoint.h"
 
 namespace valuascript::compiler
 {
@@ -597,4 +597,10 @@ namespace valuascript::compiler
     {
         return ast_equals(orig, clone) && ast_is_disjoint(orig, clone);
     }
+
+    template <typename T>
+    concept CloneableAstNode = ConcreteAstNode<T> && (
+        requires(const T* node) { { clone_node(node) } -> std::same_as<std::unique_ptr<T>>; } ||
+        requires(const T& node) { { clone_node(node) } -> std::same_as<T>; }
+    );
 }

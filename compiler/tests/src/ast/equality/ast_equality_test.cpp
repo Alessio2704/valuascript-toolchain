@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "ast/core/ast_equality.h"
+#include "ast/equality/ast_equality.h"
 #include "ast/sample/ast_sample_factory.h"
 
 namespace valuascript::compiler::test

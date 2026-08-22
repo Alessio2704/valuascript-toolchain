@@ -1,4 +1,4 @@
-#include "ast_arena.h"
+#include "ast/arena/ast_arena.h"
 
 namespace valuascript::compiler
 {
