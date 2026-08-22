@@ -80,7 +80,7 @@ namespace valuascript::compiler
             &Comment::span,
             &Comment::text
         );
-        static_assert(SchemaMatchesLayout<Comment, 16>);
+        static_assert(SchemaMatchesLayout<Comment, 16>, "AstNodeSchema<Comment> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -91,7 +91,7 @@ namespace valuascript::compiler
             &CallArgument::name,
             &CallArgument::value
         );
-        static_assert(SchemaMatchesLayout<CallArgument, 16>);
+        static_assert(SchemaMatchesLayout<CallArgument, 16>, "AstNodeSchema<CallArgument> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -102,7 +102,7 @@ namespace valuascript::compiler
             &Modifier::name,
             &Modifier::arguments
         );
-        static_assert(SchemaMatchesLayout<Modifier, 16>);
+        static_assert(SchemaMatchesLayout<Modifier, 16>, "AstNodeSchema<Modifier> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -115,7 +115,7 @@ namespace valuascript::compiler
             &FunctionParameter::type,
             &FunctionParameter::default_value
         );
-        static_assert(SchemaMatchesLayout<FunctionParameter, 16>);
+        static_assert(SchemaMatchesLayout<FunctionParameter, 16>, "AstNodeSchema<FunctionParameter> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -127,7 +127,7 @@ namespace valuascript::compiler
             &StructField::name,
             &StructField::type
         );
-        static_assert(SchemaMatchesLayout<StructField, 16>);
+        static_assert(SchemaMatchesLayout<StructField, 16>, "AstNodeSchema<StructField> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -139,7 +139,7 @@ namespace valuascript::compiler
             &EnumCase::name,
             &EnumCase::value
         );
-        static_assert(SchemaMatchesLayout<EnumCase, 16>);
+        static_assert(SchemaMatchesLayout<EnumCase, 16>, "AstNodeSchema<EnumCase> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -151,7 +151,7 @@ namespace valuascript::compiler
             &DictItem::key,
             &DictItem::value
         );
-        static_assert(SchemaMatchesLayout<DictItem, 16>);
+        static_assert(SchemaMatchesLayout<DictItem, 16>, "AstNodeSchema<DictItem> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -163,7 +163,7 @@ namespace valuascript::compiler
             &SwitchCase::identifiers,
             &SwitchCase::result
         );
-        static_assert(SchemaMatchesLayout<SwitchCase, 16>);
+        static_assert(SchemaMatchesLayout<SwitchCase, 16>, "AstNodeSchema<SwitchCase> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -175,7 +175,7 @@ namespace valuascript::compiler
             &AssignmentTarget::name,
             &AssignmentTarget::type
         );
-        static_assert(SchemaMatchesLayout<AssignmentTarget, 16>);
+        static_assert(SchemaMatchesLayout<AssignmentTarget, 16>, "AstNodeSchema<AssignmentTarget> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -185,7 +185,7 @@ namespace valuascript::compiler
             &NumberLiteral::span,
             &NumberLiteral::value
         );
-        static_assert(SchemaMatchesLayout<NumberLiteral, 16>);
+        static_assert(SchemaMatchesLayout<NumberLiteral, 16>, "AstNodeSchema<NumberLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -195,7 +195,7 @@ namespace valuascript::compiler
             &PercentageLiteral::span,
             &PercentageLiteral::value
         );
-        static_assert(SchemaMatchesLayout<PercentageLiteral, 16>);
+        static_assert(SchemaMatchesLayout<PercentageLiteral, 16>, "AstNodeSchema<PercentageLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -205,7 +205,7 @@ namespace valuascript::compiler
             &StringLiteral::span,
             &StringLiteral::value
         );
-        static_assert(SchemaMatchesLayout<StringLiteral, 16>);
+        static_assert(SchemaMatchesLayout<StringLiteral, 16>, "AstNodeSchema<StringLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -215,7 +215,7 @@ namespace valuascript::compiler
             &BooleanLiteral::span,
             &BooleanLiteral::value
         );
-        static_assert(SchemaMatchesLayout<BooleanLiteral, 15, 23>);
+        static_assert(SchemaMatchesLayout<BooleanLiteral, 15, 23>, "AstNodeSchema<BooleanLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -225,7 +225,7 @@ namespace valuascript::compiler
             &IdentifierAccess::span,
             &IdentifierAccess::name
         );
-        static_assert(SchemaMatchesLayout<IdentifierAccess, 16>);
+        static_assert(SchemaMatchesLayout<IdentifierAccess, 16>, "AstNodeSchema<IdentifierAccess> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -234,7 +234,7 @@ namespace valuascript::compiler
         static constexpr auto members = std::make_tuple(
             &SelfExpression::span
         );
-        static_assert(SchemaMatchesLayout<SelfExpression, 16>);
+        static_assert(SchemaMatchesLayout<SelfExpression, 16>, "AstNodeSchema<SelfExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -246,7 +246,7 @@ namespace valuascript::compiler
             &BinaryExpression::op,
             &BinaryExpression::right
         );
-        static_assert(SchemaMatchesLayout<BinaryExpression, 20>);
+        static_assert(SchemaMatchesLayout<BinaryExpression, 20>, "AstNodeSchema<BinaryExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -257,7 +257,7 @@ namespace valuascript::compiler
             &UnaryExpression::op,
             &UnaryExpression::right
         );
-        static_assert(SchemaMatchesLayout<UnaryExpression, 12, 20>);
+        static_assert(SchemaMatchesLayout<UnaryExpression, 12, 20>, "AstNodeSchema<UnaryExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -267,7 +267,7 @@ namespace valuascript::compiler
             &GroupingExpression::span,
             &GroupingExpression::expression
         );
-        static_assert(SchemaMatchesLayout<GroupingExpression, 16>);
+        static_assert(SchemaMatchesLayout<GroupingExpression, 16>, "AstNodeSchema<GroupingExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -279,7 +279,7 @@ namespace valuascript::compiler
             &ConditionalExpression::then_branch,
             &ConditionalExpression::else_branch
         );
-        static_assert(SchemaMatchesLayout<ConditionalExpression, 16>);
+        static_assert(SchemaMatchesLayout<ConditionalExpression, 16>, "AstNodeSchema<ConditionalExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -290,7 +290,7 @@ namespace valuascript::compiler
             &FunctionCall::target,
             &FunctionCall::arguments
         );
-        static_assert(SchemaMatchesLayout<FunctionCall, 16>);
+        static_assert(SchemaMatchesLayout<FunctionCall, 16>, "AstNodeSchema<FunctionCall> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -300,7 +300,7 @@ namespace valuascript::compiler
             &DictLiteral::span,
             &DictLiteral::elements
         );
-        static_assert(SchemaMatchesLayout<DictLiteral, 16>);
+        static_assert(SchemaMatchesLayout<DictLiteral, 16>, "AstNodeSchema<DictLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -310,7 +310,7 @@ namespace valuascript::compiler
             &TensorLiteral::span,
             &TensorLiteral::elements
         );
-        static_assert(SchemaMatchesLayout<TensorLiteral, 16>);
+        static_assert(SchemaMatchesLayout<TensorLiteral, 16>, "AstNodeSchema<TensorLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -320,7 +320,7 @@ namespace valuascript::compiler
             &TupleLiteral::span,
             &TupleLiteral::elements
         );
-        static_assert(SchemaMatchesLayout<TupleLiteral, 16>);
+        static_assert(SchemaMatchesLayout<TupleLiteral, 16>, "AstNodeSchema<TupleLiteral> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -331,7 +331,7 @@ namespace valuascript::compiler
             &BracketAccess::target,
             &BracketAccess::index
         );
-        static_assert(SchemaMatchesLayout<BracketAccess, 16>);
+        static_assert(SchemaMatchesLayout<BracketAccess, 16>, "AstNodeSchema<BracketAccess> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -342,7 +342,7 @@ namespace valuascript::compiler
             &DotAccess::target,
             &DotAccess::property_name
         );
-        static_assert(SchemaMatchesLayout<DotAccess, 16>);
+        static_assert(SchemaMatchesLayout<DotAccess, 16>, "AstNodeSchema<DotAccess> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -355,7 +355,7 @@ namespace valuascript::compiler
             &SwitchExpression::default_modifiers,
             &SwitchExpression::default_case
         );
-        static_assert(SchemaMatchesLayout<SwitchExpression, 16>);
+        static_assert(SchemaMatchesLayout<SwitchExpression, 16>, "AstNodeSchema<SwitchExpression> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -366,7 +366,7 @@ namespace valuascript::compiler
             &Assignment::targets,
             &Assignment::value
         );
-        static_assert(SchemaMatchesLayout<Assignment, 16>);
+        static_assert(SchemaMatchesLayout<Assignment, 16>, "AstNodeSchema<Assignment> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -377,7 +377,7 @@ namespace valuascript::compiler
             &Reassignment::target,
             &Reassignment::value
         );
-        static_assert(SchemaMatchesLayout<Reassignment, 16>);
+        static_assert(SchemaMatchesLayout<Reassignment, 16>, "AstNodeSchema<Reassignment> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -387,7 +387,7 @@ namespace valuascript::compiler
             &ExpressionStatement::span,
             &ExpressionStatement::expr
         );
-        static_assert(SchemaMatchesLayout<ExpressionStatement, 16>);
+        static_assert(SchemaMatchesLayout<ExpressionStatement, 16>, "AstNodeSchema<ExpressionStatement> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -398,7 +398,7 @@ namespace valuascript::compiler
             &ReturnStatement::modifiers,
             &ReturnStatement::values
         );
-        static_assert(SchemaMatchesLayout<ReturnStatement, 16>);
+        static_assert(SchemaMatchesLayout<ReturnStatement, 16>, "AstNodeSchema<ReturnStatement> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -411,7 +411,7 @@ namespace valuascript::compiler
             &EnumDefinition::underlying_type,
             &EnumDefinition::cases
         );
-        static_assert(SchemaMatchesLayout<EnumDefinition, 16>);
+        static_assert(SchemaMatchesLayout<EnumDefinition, 16>, "AstNodeSchema<EnumDefinition> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -422,7 +422,7 @@ namespace valuascript::compiler
             &Directive::name,
             &Directive::value
         );
-        static_assert(SchemaMatchesLayout<Directive, 16>);
+        static_assert(SchemaMatchesLayout<Directive, 16>, "AstNodeSchema<Directive> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -434,7 +434,7 @@ namespace valuascript::compiler
             &ImportStatement::path,
             &ImportStatement::resolved_canonical_path
         );
-        static_assert(SchemaMatchesLayout<ImportStatement, 16>);
+        static_assert(SchemaMatchesLayout<ImportStatement, 16>, "AstNodeSchema<ImportStatement> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -449,7 +449,7 @@ namespace valuascript::compiler
             &FunctionDefinition::body,
             &FunctionDefinition::docstring
         );
-        static_assert(SchemaMatchesLayout<FunctionDefinition, 16>);
+        static_assert(SchemaMatchesLayout<FunctionDefinition, 16>, "AstNodeSchema<FunctionDefinition> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -461,7 +461,7 @@ namespace valuascript::compiler
             &StructDefinition::name,
             &StructDefinition::fields
         );
-        static_assert(SchemaMatchesLayout<StructDefinition, 16>);
+        static_assert(SchemaMatchesLayout<StructDefinition, 16>, "AstNodeSchema<StructDefinition> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -473,7 +473,7 @@ namespace valuascript::compiler
             &TypeAliasDefinition::name,
             &TypeAliasDefinition::target_type
         );
-        static_assert(SchemaMatchesLayout<TypeAliasDefinition, 16>);
+        static_assert(SchemaMatchesLayout<TypeAliasDefinition, 16>, "AstNodeSchema<TypeAliasDefinition> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -489,7 +489,7 @@ namespace valuascript::compiler
             &ExtensionDefinition::enum_definitions,
             &ExtensionDefinition::type_aliases
         );
-        static_assert(SchemaMatchesLayout<ExtensionDefinition, 16>);
+        static_assert(SchemaMatchesLayout<ExtensionDefinition, 16>, "AstNodeSchema<ExtensionDefinition> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -507,7 +507,7 @@ namespace valuascript::compiler
             &Program::type_aliases,
             &Program::extension_definitions
         );
-        static_assert(SchemaMatchesLayout<Program, 24>);
+        static_assert(SchemaMatchesLayout<Program, 24>, "AstNodeSchema<Program> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -518,7 +518,7 @@ namespace valuascript::compiler
             &TypeAnnotation::name,
             &TypeAnnotation::generic_args
         );
-        static_assert(SchemaMatchesLayout<TypeAnnotation, 16>);
+        static_assert(SchemaMatchesLayout<TypeAnnotation, 16>, "AstNodeSchema<TypeAnnotation> members do not match struct memory layout and ABI padding");
     };
 
     template <>
@@ -530,7 +530,7 @@ namespace valuascript::compiler
             &TupleTypeAnnotation::generic_args,
             &TupleTypeAnnotation::element_types
         );
-        static_assert(SchemaMatchesLayout<TupleTypeAnnotation, 16>);
+        static_assert(SchemaMatchesLayout<TupleTypeAnnotation, 16>, "AstNodeSchema<TupleTypeAnnotation> members do not match struct memory layout and ABI padding");
     };
 
     template <HasAstNodeSchema T>

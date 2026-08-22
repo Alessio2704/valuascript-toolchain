@@ -40,12 +40,12 @@ namespace valuascript::compiler
     template <typename T>
     consteval bool verify_positive_ast_validity()
     {
-        static_assert(CanCallAstIsValid<T>);
-        static_assert(CanCallAstIsValid<T*>);
-        static_assert(CanCallAstIsValid<const T*>);
-        static_assert(CanCallAstIsValid<std::unique_ptr<T>>);
-        static_assert(CanCallAstIsValid<std::vector<std::unique_ptr<T>>>);
-        static_assert(CanCallAstIsValid<std::vector<T*>>);
+        static_assert(CanCallAstIsValid<T>, "Type T must support ast_is_valid(const T&)");
+        static_assert(CanCallAstIsValid<T*>, "Type T* must support ast_is_valid(const T*)");
+        static_assert(CanCallAstIsValid<const T*>, "Type const T* must support ast_is_valid(const T*)");
+        static_assert(CanCallAstIsValid<std::unique_ptr<T>>, "std::unique_ptr<T> must support ast_is_valid(const std::unique_ptr<T>&)");
+        static_assert(CanCallAstIsValid<std::vector<std::unique_ptr<T>>>, "std::vector<std::unique_ptr<T>> must support ast_is_valid(const std::vector<std::unique_ptr<T>>&)");
+        static_assert(CanCallAstIsValid<std::vector<T*>>, "std::vector<T*> must support ast_is_valid(const std::vector<T*>&)");
         return true;
     }
 
@@ -82,13 +82,13 @@ namespace valuascript::compiler
     template <typename T>
     consteval bool verify_negative_ast_validity()
     {
-        static_assert(!CanCallAstIsValid<T>);
-        static_assert(!CanCallAstIsValid<T*>);
-        static_assert(!CanCallAstIsValid<const T*>);
-        static_assert(!CanCallAstIsValid<std::unique_ptr<T>>);
-        static_assert(!CanCallAstIsValid<std::vector<T>>);
-        static_assert(!CanCallAstIsValid<std::vector<std::unique_ptr<T>>>);
-        static_assert(!CanCallAstIsValid<std::vector<T*>>);
+        static_assert(!CanCallAstIsValid<T>, "Non-AST type T must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<T*>, "Non-AST pointer T* must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<const T*>, "Non-AST pointer const T* must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<std::unique_ptr<T>>, "Non-AST unique_ptr<T> must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<std::vector<T>>, "Non-AST vector<T> must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<std::vector<std::unique_ptr<T>>>, "Non-AST vector<unique_ptr<T>> must be rejected by ast_is_valid");
+        static_assert(!CanCallAstIsValid<std::vector<T*>>, "Non-AST vector<T*> must be rejected by ast_is_valid");
         return true;
     }
 
