@@ -4,13 +4,14 @@
 #include <type_traits>
 #include <cstdint>
 
+#include "ast_kind.h"
+
 namespace valuascript::compiler
 {
     class AstNode;
     class Expression;
     class Statement;
     class TypeAnnotation;
-    enum class AstKind : uint8_t;
 
     template <typename T>
     concept AstElement = std::derived_from<std::decay_t<T>, AstNode>;
@@ -53,4 +54,3 @@ namespace valuascript::compiler
     template <typename T>
     concept ValidatableAstNode = ConcreteAstNode<T> && DirectlyValidatable<T>;
 }
-

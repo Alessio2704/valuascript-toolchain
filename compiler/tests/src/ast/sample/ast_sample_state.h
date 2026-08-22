@@ -6,8 +6,7 @@
 #include <cstddef>
 #include <utility>
 
-#include "token/source_span.h"
-#include "ast/core/ast_core.h"
+#include "ast/core/ast_node_name.h"
 
 namespace valuascript::compiler::test
 {
