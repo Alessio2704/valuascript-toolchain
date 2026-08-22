@@ -36,9 +36,6 @@ namespace valuascript::compiler::test
         std::unique_ptr<T> null_uptr = nullptr;
         EXPECT_FALSE(ast_is_valid(null_uptr));
 
-        std::optional<std::unique_ptr<T>> null_opt_uptr = std::nullopt;
-        EXPECT_TRUE(ast_is_valid(null_opt_uptr));
-
         auto sample = create_sample<T>();
         if constexpr (std::same_as<decltype(sample), std::unique_ptr<T>>)
         {
@@ -66,10 +63,6 @@ namespace valuascript::compiler::test
             auto sample_uptr = std::make_unique<T>(std::move(sample2));
             EXPECT_TRUE(ast_is_valid(sample_uptr));
 
-            auto sample3 = create_sample<T>();
-            std::optional<T> opt_val{std::move(sample3)};
-            EXPECT_TRUE(ast_is_valid(opt_val));
-
             std::vector<T> empty_vec;
             EXPECT_TRUE(ast_is_valid(empty_vec));
 
@@ -82,10 +75,6 @@ namespace valuascript::compiler::test
                 T invalid_default{};
                 EXPECT_FALSE(ast_is_valid(invalid_default));
                 EXPECT_FALSE(ast_is_valid(&invalid_default));
-
-                T invalid_default2{};
-                std::optional<T> opt_invalid{std::move(invalid_default2)};
-                EXPECT_FALSE(ast_is_valid(opt_invalid));
 
                 valid_vec.push_back(std::move(invalid_default));
                 EXPECT_FALSE(ast_is_valid(valid_vec));
@@ -125,19 +114,11 @@ namespace valuascript::compiler::test
     struct LeafSampleProvider;
 
     template <>
-    struct LeafSampleProvider<std::string>
+    struct LeafSampleProvider<SourceSpan>
     {
-        static std::string valid() { return "valid_string"; }
-        static std::optional<std::string> invalid() { return std::string(""); }
-        static std::string type_name() { return "std_string"; }
-    };
-
-    template <>
-    struct LeafSampleProvider<bool>
-    {
-        static bool valid() { return true; }
-        static std::optional<bool> invalid() { return std::nullopt; }
-        static std::string type_name() { return "bool"; }
+        static SourceSpan valid() { return sample_span(); }
+        static std::optional<SourceSpan> invalid() { return SourceSpan{}; }
+        static std::string type_name() { return "SourceSpan"; }
     };
 
     template <>
@@ -153,12 +134,7 @@ namespace valuascript::compiler::test
     {
         auto valid_val = LeafSampleProvider<T>::valid();
         EXPECT_TRUE(ast_is_valid(valid_val));
-
-        std::optional<T> null_opt = std::nullopt;
-        EXPECT_TRUE(ast_is_valid(null_opt));
-
-        std::optional<T> valid_opt = valid_val;
-        EXPECT_TRUE(ast_is_valid(valid_opt));
+        EXPECT_TRUE(ast_is_valid(&valid_val));
 
         std::vector<T> empty_vec;
         EXPECT_TRUE(ast_is_valid(empty_vec));
@@ -169,9 +145,7 @@ namespace valuascript::compiler::test
         if (auto invalid_val = LeafSampleProvider<T>::invalid(); invalid_val.has_value())
         {
             EXPECT_FALSE(ast_is_valid(*invalid_val));
-
-            std::optional<T> invalid_opt = *invalid_val;
-            EXPECT_FALSE(ast_is_valid(invalid_opt));
+            EXPECT_FALSE(ast_is_valid(&*invalid_val));
 
             valid_vec.push_back(*invalid_val);
             EXPECT_FALSE(ast_is_valid(valid_vec));
@@ -189,7 +163,7 @@ namespace valuascript::compiler::test
         };
     }
 
-    using AstLeafTypes = std::tuple<std::string, bool, NodeName>;
+    using AstLeafTypes = std::tuple<SourceSpan, NodeName>;
 
     template <typename Tuple>
     struct LeafValidityTestDescriptorCollector;

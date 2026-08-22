@@ -45,9 +45,12 @@ namespace valuascript::compiler
     };
 
     template <typename T>
-    concept ValidatableAstNode = ConcreteAstNode<T> && requires(const T& node)
+    concept DirectlyValidatable = requires(const T& node)
     {
         { node.is_valid() } -> std::same_as<bool>;
     };
+
+    template <typename T>
+    concept ValidatableAstNode = ConcreteAstNode<T> && DirectlyValidatable<T>;
 }
 
