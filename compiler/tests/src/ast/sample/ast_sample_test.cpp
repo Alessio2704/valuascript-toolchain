@@ -44,6 +44,8 @@ namespace valuascript::compiler::test
         ASSERT_NE(p2, nullptr);
         EXPECT_NE(p1.get(), p2.get());
         EXPECT_EQ(p1->span, p2->span);
+        EXPECT_EQ(p1->kind, AstKind::Program);
+        EXPECT_EQ(p2->kind, AstKind::Program);
         EXPECT_TRUE(p1->is_valid());
         EXPECT_TRUE(p2->is_valid());
     }
