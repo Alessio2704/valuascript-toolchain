@@ -4,7 +4,7 @@
 #include <vector>
 #include <ostream>
 
-#include "ast_clone_test_factory.h"
+#include "ast_clone_test_helper.h"
 #include "ast/core/ast_node_registry.h"
 
 namespace valuascript::compiler::test

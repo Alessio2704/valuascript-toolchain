@@ -1,4 +1,4 @@
-#include "ast_validity_test_factory.h"
+#include "ast_validity_test_helper.h"
 #include "ast/core/ast_node_schema.h"
 #include "ast/core/ast_node_registry.h"
 

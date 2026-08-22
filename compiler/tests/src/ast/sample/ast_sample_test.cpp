@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "ast_sample_test_factory.h"
+#include "ast_sample_test_helper.h"
 
 namespace valuascript::compiler::test
 {
