@@ -20,9 +20,12 @@ namespace valuascript::compiler
     template <typename T>
     [[nodiscard]] inline bool ast_is_valid(const T& node) noexcept;
 
+    template <typename T>
+    [[nodiscard]] inline bool ast_is_valid(T* ptr) noexcept;
+
     inline bool ast_is_valid(const std::string& str) noexcept { return !str.empty(); }
     inline bool ast_is_valid(bool) noexcept { return true; }
-    inline bool ast_is_valid(const SourceSpan& span) noexcept { return span.line_start > 0; }
+    inline bool ast_is_valid(const SourceSpan& span) noexcept { return span.is_valid(); }
     inline bool ast_is_valid(const NodeName& name) noexcept { return name.is_valid(); }
 
     template <typename T>
@@ -34,7 +37,7 @@ namespace valuascript::compiler
     template <typename T>
     inline bool ast_is_valid(const std::unique_ptr<T>& ptr) noexcept
     {
-        return ptr && ast_is_valid(*ptr);
+        return ptr != nullptr && ast_is_valid(*ptr);
     }
 
     template <typename T>
@@ -48,15 +51,19 @@ namespace valuascript::compiler
     }
 
     template <typename T>
-    inline bool ast_is_valid(const T* ptr) noexcept
+    inline bool ast_is_valid(T* ptr) noexcept
     {
-        return ptr && ast_is_valid(*ptr);
+        return ptr != nullptr && ast_is_valid(*ptr);
     }
 
     template <typename T>
     inline bool ast_is_valid(const T& node) noexcept
     {
-        if constexpr (requires { { node.is_valid() } -> std::same_as<bool>; })
+        if constexpr (std::is_pointer_v<T>)
+        {
+            return node != nullptr && ast_is_valid(*node);
+        }
+        else if constexpr (requires { { node.is_valid() } -> std::same_as<bool>; })
         {
             return node.is_valid();
         }
