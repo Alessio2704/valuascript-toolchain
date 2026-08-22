@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <tuple>
 #include <string>
-#include "utils/tuple_traits.h"
+#include "utils/traits/tuple_traits.h"
 
 namespace valuascript::shared::test
 {

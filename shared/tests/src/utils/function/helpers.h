@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include "utils/inline_function.h"
+#include "utils/function/inline_function.h"
 #include <string>
 #include <array>
 #include <memory>

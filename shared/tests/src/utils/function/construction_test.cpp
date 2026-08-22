@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "utils/inline_function/helpers.h"
+#include "helpers.h"
 
 using namespace valuascript::shared;
 using namespace valuascript::shared::test;

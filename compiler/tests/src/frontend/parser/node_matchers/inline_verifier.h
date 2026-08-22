@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/inline_function.h"
+#include "utils/function/inline_function.h"
 #include "ast/ast.h"
 
 namespace valuascript::compiler::test

@@ -3,7 +3,7 @@
 #include <tuple>
 #include <type_traits>
 #include <concepts>
-#include "utils/tuple_traits.h"
+#include "utils/traits/tuple_traits.h"
 #include "ast_core.h"
 #include "ast_type.h"
 #include "ast_expr.h"
