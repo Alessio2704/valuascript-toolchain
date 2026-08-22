@@ -22,6 +22,11 @@ namespace valuascript::compiler
         {
             span = sp;
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && (!type || type->is_valid());
+        }
     };
 
     class Assignment : public Statement
@@ -36,6 +41,11 @@ namespace valuascript::compiler
             : Statement(KIND), targets(std::move(tar)), value(std::move(val))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return value && value->is_valid() && are_all_valid(targets) && span.is_valid();
+        }
     };
 
     class Reassignment : public Statement
@@ -49,6 +59,11 @@ namespace valuascript::compiler
             : Statement(KIND), target(std::move(tar)), value(std::move(val))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return target && target->is_valid() && value && value->is_valid() && span.is_valid();
+        }
     };
 
     class ExpressionStatement : public Statement
@@ -60,6 +75,11 @@ namespace valuascript::compiler
         explicit ExpressionStatement(ExprPtr e)
             : Statement(KIND), expr(std::move(e))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return expr && expr->is_valid() && span.is_valid();
         }
     };
 
@@ -73,6 +93,11 @@ namespace valuascript::compiler
         explicit ReturnStatement(std::vector<Modifier> mods, std::vector<ExprPtr> return_values)
             : Statement(KIND), modifiers(std::move(mods)), values(std::move(return_values))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return are_all_valid(modifiers) && are_all_valid(values) && span.is_valid();
         }
     };
 
@@ -92,6 +117,11 @@ namespace valuascript::compiler
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), value(std::move(val))
         {
             span = sp;
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && (!value || value->is_valid());
         }
     };
 
@@ -114,6 +144,11 @@ namespace valuascript::compiler
               underlying_type(std::move(type)),
               cases(std::move(c))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && are_all_valid(cases) && (!underlying_type || underlying_type->is_valid());
         }
     };
 }

@@ -187,7 +187,7 @@ namespace valuascript::compiler
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
-                if (expr && expr->is_complete())
+                if (expr && expr->is_valid())
                     cursor.report_error(expr->span, E::InvalidLeftSideExpressionInReassignment);
             }
 
@@ -247,7 +247,7 @@ namespace valuascript::compiler
 
         if (!expr || expr->kind != AstKind::FunctionCall)
         {
-            if (expr && expr->is_complete()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
+            if (expr && expr->is_valid()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
             return nullptr;
         }
 

@@ -148,6 +148,11 @@ namespace valuascript::compiler
 
         virtual ~AstNode() = default;
 
+        [[nodiscard]] virtual bool is_valid() const noexcept
+        {
+            return span.is_valid();
+        }
+
         static void* operator new(size_t size);
         static void operator delete(void* ptr, size_t size) noexcept;
         static void operator delete(void* ptr) noexcept;
@@ -159,8 +164,6 @@ namespace valuascript::compiler
         explicit Expression(AstKind k = AstKind::Unknown) : AstNode(k)
         {
         }
-
-        [[nodiscard]] virtual bool is_complete() const { return true; }
     };
 
     class Statement : public AstNode
@@ -180,6 +183,11 @@ namespace valuascript::compiler
 
         NodeName(std::string_view val, SourceSpan sp = {}) : value(val), span(std::move(sp))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept
+        {
+            return !value.empty() && span.is_valid();
         }
 
         [[nodiscard]] const std::string& str() const noexcept { return value; }
@@ -234,6 +242,23 @@ namespace valuascript::compiler
         }
     };
 
+    template <typename Container>
+    [[nodiscard]] inline bool are_all_valid(const Container& items) noexcept
+    {
+        for (const auto& item : items)
+        {
+            if constexpr (requires { item->is_valid(); })
+            {
+                if (!item || !item->is_valid()) return false;
+            }
+            else if constexpr (requires { item.is_valid(); })
+            {
+                if (!item.is_valid()) return false;
+            }
+        }
+        return true;
+    }
+
     class Comment : public AstNode
     {
     public:
@@ -255,6 +280,11 @@ namespace valuascript::compiler
         {
             span = tok.span;
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return !text.empty() && span.is_valid();
+        }
     };
 
     class CallArgument : public AstNode
@@ -273,6 +303,11 @@ namespace valuascript::compiler
         {
             span = sp;
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid() && (!value || value->is_valid());
+        }
     };
 
     class Modifier : public AstNode
@@ -290,6 +325,11 @@ namespace valuascript::compiler
             : AstNode(KIND), name(std::move(n)), arguments(std::move(args))
         {
             span = sp;
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(arguments);
         }
     };
 

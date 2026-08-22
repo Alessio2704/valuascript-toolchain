@@ -15,6 +15,11 @@ namespace valuascript::compiler
         {
         }
 
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(generic_args);
+        }
+
     protected:
         TypeAnnotation(AstKind k, NodeName n, std::vector<TypeAnnPtr> args = {})
             : AstNode(k), name(std::move(n)), generic_args(std::move(args))
@@ -31,6 +36,11 @@ namespace valuascript::compiler
         explicit TupleTypeAnnotation(std::vector<TypeAnnPtr> elements)
             : TypeAnnotation(KIND, NodeName{"tuple"}), element_types(std::move(elements))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid() && are_all_valid(element_types);
         }
     };
 }

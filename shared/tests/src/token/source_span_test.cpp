@@ -80,3 +80,40 @@ TEST(SourceSpanTest, FuzzyMatchesPredicate)
     pattern6 = "other.vs";
     EXPECT_FALSE(actual.matches(pattern6));
 }
+
+TEST(SourceSpanTest, ValidityPredicate)
+{
+    SourceSpan default_span{};
+    EXPECT_FALSE(default_span.is_valid());
+
+    SourceSpan valid_single_line{
+        .line_start = 1, .column_start = 1, .line_end = 1, .column_end = 10
+    };
+    EXPECT_TRUE(valid_single_line.is_valid());
+
+    SourceSpan valid_multiline{
+        .line_start = 1, .column_start = 5, .line_end = 3, .column_end = 2
+    };
+    EXPECT_TRUE(valid_multiline.is_valid());
+
+    SourceSpan invalid_line_order{
+        .line_start = 5, .column_start = 1, .line_end = 3, .column_end = 10
+    };
+    EXPECT_FALSE(invalid_line_order.is_valid());
+
+    SourceSpan invalid_col_order{
+        .line_start = 1, .column_start = 10, .line_end = 1, .column_end = 5
+    };
+    EXPECT_FALSE(invalid_col_order.is_valid());
+
+    SourceSpan zero_start_line{
+        .line_start = 0, .column_start = 1, .line_end = 1, .column_end = 5
+    };
+    EXPECT_FALSE(zero_start_line.is_valid());
+
+    SourceSpan zero_start_col{
+        .line_start = 1, .column_start = 0, .line_end = 1, .column_end = 5
+    };
+    EXPECT_FALSE(zero_start_col.is_valid());
+}
+

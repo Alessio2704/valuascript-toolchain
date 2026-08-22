@@ -13,6 +13,11 @@ namespace valuascript::compiler
         explicit NumberLiteral(std::string_view val) : Expression(KIND), value(val)
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return !value.empty() && span.is_valid();
+        }
     };
 
     class PercentageLiteral : public Expression
@@ -23,6 +28,11 @@ namespace valuascript::compiler
 
         explicit PercentageLiteral(std::string_view val) : Expression(KIND), value(val)
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return !value.empty() && span.is_valid();
         }
     };
 
@@ -35,6 +45,11 @@ namespace valuascript::compiler
         explicit StringLiteral(std::string_view val) : Expression(KIND), value(val)
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid();
+        }
     };
 
     class BooleanLiteral : public Expression
@@ -45,6 +60,11 @@ namespace valuascript::compiler
 
         explicit BooleanLiteral(bool val) : Expression(KIND), value(val)
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid();
         }
     };
 
@@ -57,6 +77,11 @@ namespace valuascript::compiler
         explicit IdentifierAccess(NodeName n) : Expression(KIND), name(std::move(n))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid();
+        }
     };
 
     class SelfExpression : public Expression
@@ -64,6 +89,11 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::SelfExpression;
         SelfExpression() : Expression(KIND) {}
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid();
+        }
     };
 
     class BinaryExpression : public Expression
@@ -79,9 +109,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return left && left->is_complete() && right && right->is_complete();
+            return left && left->is_valid() && right && right->is_valid() && span.is_valid();
         }
     };
 
@@ -97,9 +127,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return right && right->is_complete();
+            return right && right->is_valid() && span.is_valid();
         }
     };
 
@@ -114,9 +144,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return expression && expression->is_complete();
+            return expression && expression->is_valid() && span.is_valid();
         }
     };
 
@@ -133,11 +163,12 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return condition && condition->is_complete() &&
-                then_branch && then_branch->is_complete() &&
-                else_branch && else_branch->is_complete();
+            return condition && condition->is_valid() &&
+                   then_branch && then_branch->is_valid() &&
+                   else_branch && else_branch->is_valid() &&
+                   span.is_valid();
         }
     };
 
@@ -153,14 +184,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            if (!target || !target->is_complete()) return false;
-            for (const auto& arg : arguments)
-            {
-                if (!arg.value || !arg.value->is_complete()) return false;
-            }
-            return true;
+            return target && target->is_valid() && are_all_valid(arguments) && span.is_valid();
         }
     };
 
@@ -181,6 +207,11 @@ namespace valuascript::compiler
         {
             span = sp;
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return key.is_valid() && span.is_valid() && are_all_valid(modifiers) && (!value || value->is_valid());
+        }
     };
 
     class DictLiteral : public Expression
@@ -194,13 +225,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            for (const auto& item : elements)
-            {
-                if (!item.value || !item.value->is_complete()) return false;
-            }
-            return true;
+            return are_all_valid(elements) && span.is_valid();
         }
     };
 
@@ -215,13 +242,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            for (const auto& elem : elements)
-            {
-                if (!elem || !elem->is_complete()) return false;
-            }
-            return true;
+            return are_all_valid(elements) && span.is_valid();
         }
     };
 
@@ -236,13 +259,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            for (const auto& elem : elements)
-            {
-                if (!elem || !elem->is_complete()) return false;
-            }
-            return true;
+            return are_all_valid(elements) && span.is_valid();
         }
     };
 
@@ -258,9 +277,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return target && target->is_complete() && index && index->is_complete();
+            return target && target->is_valid() && index && index->is_valid() && span.is_valid();
         }
     };
 
@@ -276,9 +295,9 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            return target && target->is_complete();
+            return target && target->is_valid() && property_name.is_valid() && span.is_valid();
         }
     };
 
@@ -298,6 +317,11 @@ namespace valuascript::compiler
             : AstNode(KIND), modifiers(std::move(mods)), identifiers(std::move(ids)), result(std::move(res))
         {
             span = sp;
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid() && are_all_valid(modifiers) && are_all_valid(identifiers) && (!result || result->is_valid());
         }
     };
 
@@ -319,15 +343,13 @@ namespace valuascript::compiler
         {
         }
 
-        [[nodiscard]] bool is_complete() const override
+        [[nodiscard]] bool is_valid() const noexcept override
         {
-            if (!target || !target->is_complete()) return false;
-            for (const auto& c : cases)
-            {
-                if (!c.result || !c.result->is_complete()) return false;
-            }
-            if (default_case && !default_case->is_complete()) return false;
-            return true;
+            return target && target->is_valid() &&
+                   are_all_valid(cases) &&
+                   are_all_valid(default_modifiers) &&
+                   (!default_case || default_case->is_valid()) &&
+                   span.is_valid();
         }
     };
 

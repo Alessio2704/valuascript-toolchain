@@ -40,6 +40,12 @@ namespace valuascript::shared
             return start_offset + length;
         }
 
+        [[nodiscard]] constexpr bool is_valid() const noexcept
+        {
+            return line_start > 0 && column_start > 0 && line_end >= line_start &&
+                   (line_end > line_start || column_end >= column_start);
+        }
+
         [[nodiscard]] constexpr bool contains(size_t line, size_t column) const noexcept
         {
             if (line < line_start || line > line_end) return false;

@@ -1,6 +1,6 @@
 #pragma once
 #include "ast_core.h"
-#include "optional"
+#include <optional>
 #include "ast_expr.h"
 #include "ast_stmt.h"
 #include "ast_type.h"
@@ -18,6 +18,11 @@ namespace valuascript::compiler
             : AstNode(KIND), name(std::move(n)), value(std::move(val))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && value && value->is_valid();
+        }
     };
 
     class ImportStatement : public AstNode
@@ -31,6 +36,11 @@ namespace valuascript::compiler
         explicit ImportStatement(std::vector<Modifier> mods, NodeName p)
             : AstNode(KIND), modifiers(std::move(mods)), path(std::move(p))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return path.is_valid() && span.is_valid() && are_all_valid(modifiers);
         }
     };
 
@@ -53,6 +63,11 @@ namespace valuascript::compiler
               default_value(std::move(def))
         {
             span = sp;
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && (!type || type->is_valid()) && (!default_value || default_value->is_valid());
         }
     };
 
@@ -77,6 +92,11 @@ namespace valuascript::compiler
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && are_all_valid(parameters) && are_all_valid(return_types) && are_all_valid(body);
+        }
     };
 
     class StructField : public AstNode
@@ -96,6 +116,11 @@ namespace valuascript::compiler
         {
             span = sp;
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && (!type || type->is_valid());
+        }
     };
 
     class StructDefinition : public AstNode
@@ -112,6 +137,11 @@ namespace valuascript::compiler
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), fields(std::move(f))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && are_all_valid(fields);
+        }
     };
 
     class TypeAliasDefinition : public AstNode
@@ -127,6 +157,11 @@ namespace valuascript::compiler
                                      TypeAnnPtr t_type)
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), target_type(std::move(t_type))
         {
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return name.is_valid() && span.is_valid() && are_all_valid(modifiers) && target_type && target_type->is_valid();
         }
     };
 
@@ -147,6 +182,17 @@ namespace valuascript::compiler
             : AstNode(KIND), modifiers(std::move(mods)), target_type(std::move(target))
         {
         }
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return target_type && target_type->is_valid() && span.is_valid() &&
+                   are_all_valid(modifiers) &&
+                   are_all_valid(execution_steps) &&
+                   are_all_valid(function_definitions) &&
+                   are_all_valid(struct_definitions) &&
+                   are_all_valid(enum_definitions) &&
+                   are_all_valid(type_aliases);
+        }
     };
 
     class Program : public AstNode
@@ -165,5 +211,19 @@ namespace valuascript::compiler
         std::vector<ExtensionDefPtr> extension_definitions;
 
         Program() : AstNode(KIND) {}
+
+        [[nodiscard]] bool is_valid() const noexcept override
+        {
+            return span.is_valid() &&
+                   are_all_valid(comments) &&
+                   are_all_valid(import_statements) &&
+                   are_all_valid(directives) &&
+                   are_all_valid(execution_steps) &&
+                   are_all_valid(function_definitions) &&
+                   are_all_valid(struct_definitions) &&
+                   are_all_valid(enum_definitions) &&
+                   are_all_valid(type_aliases) &&
+                   are_all_valid(extension_definitions);
+        }
     };
 }

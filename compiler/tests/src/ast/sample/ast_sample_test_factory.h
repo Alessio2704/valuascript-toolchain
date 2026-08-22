@@ -10,8 +10,6 @@
 
 #include "ast_sample_factory.h"
 #include "ast/core/ast_node_registry.h"
-#include "ast/core/ast_equality.h"
-#include "ast/core/ast_disjoint.h"
 
 namespace valuascript::compiler::test
 {
@@ -29,23 +27,53 @@ namespace valuascript::compiler::test
     template <typename T>
     inline void test_single_sample_node()
     {
-        auto sample = create_sample<T>();
-        if constexpr (std::same_as<decltype(sample), std::unique_ptr<T>>)
+        for (int depth = 0; depth <= 3; ++depth)
         {
-            ASSERT_NE(sample, nullptr);
-            EXPECT_EQ(sample->kind, T::KIND);
-            EXPECT_GT(sample->span.line_start, 0);
-            EXPECT_GT(sample->span.column_start, 0);
-            EXPECT_GT(sample->span.length, 0);
-            EXPECT_NE(sample->span.file_path, nullptr);
+            auto sample = create_sample<T>(depth);
+            if constexpr (std::same_as<decltype(sample), std::unique_ptr<T>>)
+            {
+                ASSERT_NE(sample, nullptr);
+                EXPECT_EQ(sample->kind, T::KIND);
+                EXPECT_TRUE(sample->is_valid());
+            }
+            else
+            {
+                EXPECT_EQ(sample.kind, T::KIND);
+                EXPECT_TRUE(sample.is_valid());
+            }
+        }
+
+        auto seq1 = create_sample<T>();
+        auto seq2 = create_sample<T>();
+        if constexpr (std::same_as<decltype(seq1), std::unique_ptr<T>>)
+        {
+            EXPECT_NE(seq1->span.start_offset, seq2->span.start_offset);
+            EXPECT_NE(seq1.get(), seq2.get());
         }
         else
         {
-            EXPECT_EQ(sample.kind, T::KIND);
-            EXPECT_GT(sample.span.line_start, 0);
-            EXPECT_GT(sample.span.column_start, 0);
-            EXPECT_GT(sample.span.length, 0);
-            EXPECT_NE(sample.span.file_path, nullptr);
+            EXPECT_NE(seq1.span.start_offset, seq2.span.start_offset);
+        }
+
+        reset_sample_generator_state(777);
+        auto reset1 = create_sample<T>();
+        reset_sample_generator_state(777);
+        auto reset2 = create_sample<T>();
+
+        if constexpr (std::same_as<decltype(reset1), std::unique_ptr<T>>)
+        {
+            ASSERT_NE(reset1, nullptr);
+            ASSERT_NE(reset2, nullptr);
+            EXPECT_EQ(reset1->span, reset2->span);
+            EXPECT_NE(reset1.get(), reset2.get());
+            EXPECT_TRUE(reset1->is_valid());
+            EXPECT_TRUE(reset2->is_valid());
+        }
+        else
+        {
+            EXPECT_EQ(reset1.span, reset2.span);
+            EXPECT_TRUE(reset1.is_valid());
+            EXPECT_TRUE(reset2.is_valid());
         }
     }
 
