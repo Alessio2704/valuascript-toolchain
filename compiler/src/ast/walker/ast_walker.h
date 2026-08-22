@@ -22,19 +22,6 @@ namespace valuascript::compiler
     template <bool IsConst, typename T>
     using MaybeConst = std::conditional_t<IsConst, const T, T>;
 
-    template <typename Tuple>
-    struct NodeDispatcher;
-
-    template <typename... Types>
-    struct NodeDispatcher<std::tuple<Types...>>
-    {
-        template <typename Fn>
-        static bool dispatch(AstKind kind, Fn&& fn)
-        {
-            return ((kind == Types::KIND ? (fn.template operator()<Types>(), true) : false) || ...);
-        }
-    };
-
     template <typename Tuple, typename T>
     struct CategoryDispatcher;
 

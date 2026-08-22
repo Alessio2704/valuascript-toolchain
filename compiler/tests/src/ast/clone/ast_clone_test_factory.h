@@ -5,20 +5,15 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <optional>
 #include <concepts>
 #include <tuple>
 
 #include "token/source_span.h"
-#include "token/token_type.h"
 #include "ast/core/ast_core.h"
-#include "ast/core/ast_type.h"
-#include "ast/core/ast_expr.h"
-#include "ast/core/ast_stmt.h"
-#include "ast/core/ast_decl.h"
 #include "ast/core/ast_clone.h"
 #include "ast/core/ast_node_registry.h"
-#include "ast/core/ast_node_schema.h"
+#include "ast/core/ast_disjoint.h"
+#include "ast/sample/ast_sample_factory.h"
 
 namespace valuascript::compiler::test
 {
@@ -39,143 +34,28 @@ namespace valuascript::compiler::test
         return sp;
     }
 
-    inline void assert_spans_equal(const SourceSpan& orig, const SourceSpan& clone)
+    template <typename Base, typename T>
+    inline void test_polymorphic_base_clone(const T& node_instance)
     {
-        EXPECT_EQ(orig.line_start, clone.line_start);
-        EXPECT_EQ(orig.column_start, clone.column_start);
-        EXPECT_EQ(orig.line_end, clone.line_end);
-        EXPECT_EQ(orig.column_end, clone.column_end);
-        EXPECT_EQ(orig.start_offset, clone.start_offset);
-        EXPECT_EQ(orig.length, clone.length);
-        EXPECT_EQ(orig.path(), clone.path());
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_node_names_equal(const NodeName& orig, const NodeName& clone)
-    {
-        EXPECT_EQ(orig.value, clone.value);
-        assert_spans_equal(orig.span, clone.span);
-    }
-
-    inline void assert_deep_equal(const std::string& orig, const std::string& clone)
-    {
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_deep_equal(bool orig, bool clone)
-    {
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_deep_equal(TokenType orig, TokenType clone)
-    {
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_deep_equal(AstKind orig, AstKind clone)
-    {
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_deep_equal(const std::optional<std::string>& orig, const std::optional<std::string>& clone)
-    {
-        EXPECT_EQ(orig, clone);
-    }
-
-    inline void assert_deep_equal(const SourceSpan& orig, const SourceSpan& clone)
-    {
-        assert_spans_equal(orig, clone);
-    }
-
-    inline void assert_deep_equal(const NodeName& orig, const NodeName& clone)
-    {
-        assert_node_names_equal(orig, clone);
-    }
-
-    template <typename T>
-    inline void assert_deep_equal(const T& orig, const T& clone);
-
-    template <typename T>
-    inline void assert_ptr_disjoint_and_deep_equal(const std::unique_ptr<T>& orig, const std::unique_ptr<T>& clone)
-    {
-        if (!orig)
+        if constexpr (std::derived_from<T, Base>)
         {
-            EXPECT_EQ(clone, nullptr);
-            return;
-        }
-        ASSERT_NE(clone, nullptr);
-        EXPECT_NE(clone.get(), orig.get());
-        assert_deep_equal(*orig, *clone);
-    }
-
-    template <typename T>
-    inline void assert_vector_deep_equal(const std::vector<T>& orig_vec, const std::vector<T>& clone_vec)
-    {
-        ASSERT_EQ(orig_vec.size(), clone_vec.size());
-        for (size_t i = 0; i < orig_vec.size(); ++i)
-        {
-            assert_deep_equal(orig_vec[i], clone_vec[i]);
+            auto base_clone = clone_node(static_cast<const Base*>(&node_instance));
+            EXPECT_TRUE(is_a<T>(base_clone.get()));
+            EXPECT_TRUE(ast_is_clone_of(&node_instance, base_clone.get()));
         }
     }
 
-    template <typename T>
-    inline void assert_vector_ptr_disjoint_and_deep_equal(
-        const std::vector<std::unique_ptr<T>>& orig_vec,
-        const std::vector<std::unique_ptr<T>>& clone_vec)
+    template <typename T, typename CategoryTuple>
+    struct CategoryPolymorphicTester;
+
+    template <typename T, typename... Categories>
+    struct CategoryPolymorphicTester<T, std::tuple<Categories...>>
     {
-        ASSERT_EQ(orig_vec.size(), clone_vec.size());
-        for (size_t i = 0; i < orig_vec.size(); ++i)
+        static void test(const T& target_node)
         {
-            assert_ptr_disjoint_and_deep_equal(orig_vec[i], clone_vec[i]);
+            (test_polymorphic_base_clone<Categories>(target_node), ...);
         }
-    }
-
-    template <typename T>
-    inline void assert_deep_equal(const std::unique_ptr<T>& orig, const std::unique_ptr<T>& clone)
-    {
-        assert_ptr_disjoint_and_deep_equal(orig, clone);
-    }
-
-    template <typename T>
-    inline void assert_deep_equal(const std::vector<T>& orig, const std::vector<T>& clone)
-    {
-        assert_vector_deep_equal(orig, clone);
-    }
-
-    template <AstElement T>
-    inline void assert_deep_equal(const std::vector<std::unique_ptr<T>>& orig,
-                                  const std::vector<std::unique_ptr<T>>& clone)
-    {
-        assert_vector_ptr_disjoint_and_deep_equal(orig, clone);
-    }
-
-    template <HasAstNodeSchema T>
-    inline void assert_deep_equal_node(const T& orig, const T& clone)
-    {
-        EXPECT_EQ(orig.kind, clone.kind);
-        for_each_ast_member_pair(orig, clone, [](const auto& orig_val, const auto& clone_val)
-        {
-            assert_deep_equal(orig_val, clone_val);
-        });
-    }
-
-    template <typename T>
-    inline void assert_deep_equal(const T& orig, const T& clone)
-    {
-        if constexpr (HasAstNodeSchema<T>)
-        {
-            assert_deep_equal_node(orig, clone);
-        }
-        else if constexpr (std::is_base_of_v<AstNode, T>)
-        {
-            EXPECT_EQ(orig.kind, clone.kind);
-            assert_spans_equal(orig.span, clone.span);
-        }
-        else
-        {
-            EXPECT_EQ(orig, clone);
-        }
-    }
+    };
 
     template <typename T>
     struct AstCloneSampleFactory;
@@ -185,5 +65,72 @@ namespace valuascript::compiler::test
     {
         { AstCloneSampleFactory<T>::create_sample() };
         { AstCloneSampleFactory<T>::run_full_clone_test() } -> std::same_as<void>;
+    };
+
+    template <typename T>
+    inline void run_pointer_node_test()
+    {
+        EXPECT_EQ(clone_node(static_cast<const T*>(nullptr)), nullptr);
+
+        auto orig = AstCloneSampleFactory<T>::create_sample();
+        auto clone1 = clone_node(orig.get());
+        auto clone2 = clone_node(orig);
+
+        EXPECT_TRUE(ast_is_clone_of(orig, clone1));
+        EXPECT_TRUE(ast_is_clone_of(orig, clone2));
+        EXPECT_TRUE(ast_is_disjoint(clone1, clone2));
+
+        test_polymorphic_base_clone<AstNode>(*orig);
+        CategoryPolymorphicTester<T, AstCategoryTypes>::test(*orig);
+
+        std::vector<std::unique_ptr<T>> vec;
+        vec.push_back(AstCloneSampleFactory<T>::create_sample());
+        vec.push_back(AstCloneSampleFactory<T>::create_sample());
+        EXPECT_TRUE(ast_is_clone_of(vec, clone_nodes(vec)));
+
+        auto original_span = orig->span;
+        clone1->span.start_offset += 1000;
+        EXPECT_EQ(orig->span, original_span);
+    }
+
+    template <typename T>
+    inline void run_value_node_test()
+    {
+        T orig = AstCloneSampleFactory<T>::create_sample();
+        T cloned = clone_node(orig);
+        EXPECT_TRUE(ast_is_clone_of(orig, cloned));
+
+        test_polymorphic_base_clone<AstNode>(orig);
+        CategoryPolymorphicTester<T, AstCategoryTypes>::test(orig);
+
+        std::vector<T> vec;
+        vec.push_back(AstCloneSampleFactory<T>::create_sample());
+        vec.push_back(AstCloneSampleFactory<T>::create_sample());
+        EXPECT_TRUE(ast_is_clone_of(vec, clone_nodes(vec)));
+
+        auto original_span = orig.span;
+        cloned.span.start_offset += 1000;
+        EXPECT_EQ(orig.span, original_span);
+    }
+
+    template <typename T>
+    struct AstCloneSampleFactory
+    {
+        static auto create_sample()
+        {
+            return AstSampleFactory<T>::create(0);
+        }
+
+        static void run_full_clone_test()
+        {
+            if constexpr (std::same_as<decltype(AstSampleFactory<T>::create(0)), std::unique_ptr<T>>)
+            {
+                run_pointer_node_test<T>();
+            }
+            else
+            {
+                run_value_node_test<T>();
+            }
+        }
     };
 }

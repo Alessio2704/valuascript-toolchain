@@ -9,6 +9,8 @@
 #include "ast_stmt.h"
 #include "ast_decl.h"
 #include "ast_concepts.h"
+#include "ast_equality.h"
+#include "ast_disjoint.h"
 
 namespace valuascript::compiler
 {
@@ -588,5 +590,11 @@ namespace valuascript::compiler
             result.push_back(clone_node(item.get()));
         }
         return result;
+    }
+
+    template <typename T1, typename T2>
+    [[nodiscard]] inline bool ast_is_clone_of(const T1& orig, const T2& clone) noexcept
+    {
+        return ast_equals(orig, clone) && ast_is_disjoint(orig, clone);
     }
 }
