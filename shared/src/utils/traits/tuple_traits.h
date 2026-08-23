@@ -96,4 +96,94 @@ namespace valuascript::shared
 
     template <typename T, typename Tuple>
     inline constexpr size_t tuple_index_of_v = TupleIndexOf<T, Tuple>::value;
+
+    template <typename... Tuples>
+    struct TupleConcat;
+
+    template <>
+    struct TupleConcat<>
+    {
+        using type = std::tuple<>;
+    };
+
+    template <typename Tuple>
+    struct TupleConcat<Tuple>
+    {
+        using type = Tuple;
+    };
+
+    template <typename... T1, typename... T2, typename... Rest>
+    struct TupleConcat<std::tuple<T1...>, std::tuple<T2...>, Rest...>
+    {
+        using type = typename TupleConcat<std::tuple<T1..., T2...>, Rest...>::type;
+    };
+
+    template <typename... Tuples>
+    using tuple_concat_t = typename TupleConcat<Tuples...>::type;
+
+    template <typename Tuple, typename Fn>
+    constexpr void tuple_for_each_type(Fn&& fn)
+    {
+        []<typename... Types>(std::tuple<Types...>*, auto&& f) {
+            (f.template operator()<Types>(), ...);
+        }(static_cast<Tuple*>(nullptr), std::forward<Fn>(fn));
+    }
+
+    template <typename Base, typename Tuple>
+    struct TupleAllDeriveFrom;
+
+    template <typename Base, typename... Types>
+    struct TupleAllDeriveFrom<Base, std::tuple<Types...>>
+    {
+        static constexpr bool value = (std::is_base_of_v<Base, Types> && ...);
+    };
+
+    template <typename Base, typename Tuple>
+    inline constexpr bool tuple_all_derive_from_v = TupleAllDeriveFrom<Base, Tuple>::value;
+
+    template <typename TupleA, typename TupleB>
+    struct AreTuplesEquivalent;
+
+    template <typename... TypesA, typename TupleB>
+    struct AreTuplesEquivalent<std::tuple<TypesA...>, TupleB>
+    {
+        static constexpr bool value = (tuple_contains_type_v<TypesA, TupleB> && ...) &&
+                                      (std::tuple_size_v<std::tuple<TypesA...>> == std::tuple_size_v<TupleB>);
+    };
+
+    template <typename TupleA, typename TupleB>
+    inline constexpr bool are_tuples_equivalent_v = AreTuplesEquivalent<TupleA, TupleB>::value;
+
+    template <auto Tag, typename Tuple>
+    struct TupleContainsTag;
+
+    template <auto Tag>
+    struct TupleContainsTag<Tag, std::tuple<>> : std::false_type {};
+
+    template <auto Tag, typename Head, typename... Tail>
+    struct TupleContainsTag<Tag, std::tuple<Head, Tail...>>
+        : std::conditional_t<Head::KIND == Tag, std::true_type, TupleContainsTag<Tag, std::tuple<Tail...>>> {};
+
+    template <auto Tag, typename Tuple>
+    inline constexpr bool tuple_contains_tag_v = TupleContainsTag<Tag, Tuple>::value;
+
+    template <typename Tuple>
+    struct AreTupleTagsUnique;
+
+    template <>
+    struct AreTupleTagsUnique<std::tuple<>> : std::true_type {};
+
+    template <typename Head, typename... Tail>
+    struct AreTupleTagsUnique<std::tuple<Head, Tail...>>
+        : std::conditional_t<
+            TupleContainsTag<Head::KIND, std::tuple<Tail...>>::value,
+            std::false_type,
+            AreTupleTagsUnique<std::tuple<Tail...>>
+        > {};
+
+    template <typename Tuple>
+    inline constexpr bool are_tuple_tags_unique_v = AreTupleTagsUnique<Tuple>::value;
+
+    template <typename Tuple>
+    concept UniqueTupleTags = are_tuple_tags_unique_v<Tuple>;
 }
