@@ -1,5 +1,5 @@
 #include "ast/walker/ast_rewriter.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler
 {

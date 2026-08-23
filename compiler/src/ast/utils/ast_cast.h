@@ -5,9 +5,8 @@
 #include <string_view>
 #include <cassert>
 
-#include "token/source_span.h"
-#include "ast_kind.h"
-#include "ast_concepts.h"
+#include "ast/core/ast_kind.h"
+#include "ast/core/ast_concepts.h"
 
 namespace valuascript::compiler
 {

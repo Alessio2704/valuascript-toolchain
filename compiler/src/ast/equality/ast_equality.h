@@ -7,12 +7,14 @@
 #include <concepts>
 #include <type_traits>
 
-#include "token/source_span.h"
-#include "token/token_type.h"
 #include "ast/core/ast_core.h"
+#include "ast/core/ast_type.h"
+#include "ast/core/ast_expr.h"
+#include "ast/core/ast_stmt.h"
+#include "ast/core/ast_decl.h"
 #include "ast/core/ast_concepts.h"
-#include "ast/core/ast_node_registry.h"
-#include "ast/core/ast_node_schema.h"
+#include "ast/metadata/ast_node_registry.h"
+#include "ast/metadata/ast_node_schema.h"
 
 namespace valuascript::compiler
 {
@@ -60,6 +62,20 @@ namespace valuascript::compiler
 
     template <typename T1, typename T2>
     inline bool ast_equals(const std::optional<T1>& lhs, const std::optional<T2>& rhs) noexcept
+    {
+        if (lhs.has_value() != rhs.has_value()) return false;
+        if (!lhs.has_value()) return true;
+        return ast_equals(*lhs, *rhs);
+    }
+
+    template <typename NodeT1, typename NodeT2>
+    inline bool ast_equals(const OptionalAstField<std::unique_ptr<NodeT1>>& lhs, const OptionalAstField<std::unique_ptr<NodeT2>>& rhs) noexcept
+    {
+        return ast_equals(lhs.get(), rhs.get());
+    }
+
+    template <typename ValT1, typename ValT2>
+    inline bool ast_equals(const OptionalAstField<ValT1>& lhs, const OptionalAstField<ValT2>& rhs) noexcept
     {
         if (lhs.has_value() != rhs.has_value()) return false;
         if (!lhs.has_value()) return true;

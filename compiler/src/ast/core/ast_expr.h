@@ -332,12 +332,12 @@ namespace valuascript::compiler
         ExprPtr target;
         std::vector<SwitchCase> cases;
         std::vector<Modifier> default_modifiers;
-        ExprPtr default_case;
+        OptionalAstField<ExprPtr> default_case = std::nullopt;
 
         SwitchExpression(ExprPtr t,
                          std::vector<SwitchCase> c,
                          std::vector<Modifier> def_mods,
-                         ExprPtr def)
+                         OptionalAstField<ExprPtr> def = std::nullopt)
             : Expression(KIND), target(std::move(t)), cases(std::move(c)), default_modifiers(std::move(def_mods)),
               default_case(std::move(def))
         {

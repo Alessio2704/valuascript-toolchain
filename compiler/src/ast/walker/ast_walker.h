@@ -8,7 +8,7 @@
 #include "ast/core/ast_expr.h"
 #include "ast/core/ast_stmt.h"
 #include "ast/core/ast_decl.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler
 {

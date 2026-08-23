@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #include "ast/validity/ast_validity.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler
 {

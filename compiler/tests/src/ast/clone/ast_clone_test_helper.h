@@ -11,29 +11,12 @@
 #include "token/source_span.h"
 #include "ast/core/ast_core.h"
 #include "ast/clone/ast_clone.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/metadata/ast_node_registry.h"
 #include "ast/equality/ast_disjoint.h"
-#include "ast/sample/ast_sample_factory.h"
+#include "ast/factory/ast_factory.h"
 
 namespace valuascript::compiler::test
 {
-    inline SourceSpan make_test_span(
-        size_t l1 = 1, size_t c1 = 1,
-        size_t l2 = 1, size_t c2 = 10,
-        size_t off = 0, size_t len = 10,
-        std::string_view file = "test_sample.vs")
-    {
-        SourceSpan sp{};
-        sp.line_start = l1;
-        sp.column_start = c1;
-        sp.line_end = l2;
-        sp.column_end = c2;
-        sp.start_offset = off;
-        sp.length = len;
-        sp.file_path = std::make_shared<const std::string>(file);
-        return sp;
-    }
-
     template <typename Base, typename T>
     inline void test_polymorphic_base_clone(const T& node_instance)
     {
@@ -118,12 +101,12 @@ namespace valuascript::compiler::test
     {
         static auto create_sample()
         {
-            return AstSampleFactory<T>::create(0);
+            return AstFactory<T>::create(0);
         }
 
         static void run_full_clone_test()
         {
-            if constexpr (std::same_as<decltype(AstSampleFactory<T>::create(0)), std::unique_ptr<T>>)
+            if constexpr (std::same_as<decltype(AstFactory<T>::create(0)), std::unique_ptr<T>>)
             {
                 run_pointer_node_test<T>();
             }

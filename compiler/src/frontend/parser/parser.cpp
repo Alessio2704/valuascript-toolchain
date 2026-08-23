@@ -23,9 +23,9 @@ namespace valuascript::compiler
     std::unique_ptr<Program> Parser::parse_program()
     {
         auto program = std::make_unique<Program>();
-        program->arena = std::make_unique<AstArena>(256 * 1024);
-        std::pmr::memory_resource* prev_resource = AstArena::current();
-        AstArena::set_current(program->arena->resource());
+        program->arena = std::make_unique<valuascript::shared::Arena>(256 * 1024);
+        std::pmr::memory_resource* prev_resource = valuascript::shared::Arena::current();
+        valuascript::shared::Arena::set_current(program->arena->resource());
 
         const Token& start_token = ctx.cursor.peek();
         std::vector<StmtPtr> dummy_block;
@@ -49,7 +49,7 @@ namespace valuascript::compiler
         {
             program->comments.emplace_back(c);
         }
-        AstArena::set_current(prev_resource);
+        valuascript::shared::Arena::set_current(prev_resource);
         return program;
     }
 

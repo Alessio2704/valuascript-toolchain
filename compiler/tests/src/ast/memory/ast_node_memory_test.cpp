@@ -8,9 +8,9 @@
 #include <cstdint>
 
 #include "ast/core/ast_core.h"
-#include "ast/core/ast_node_registry.h"
-#include "ast/arena/ast_arena.h"
-#include "ast/sample/ast_sample_factory.h"
+#include "ast/metadata/ast_node_registry.h"
+#include "utils/memory/arena.h"
+#include "ast/factory/ast_factory.h"
 
 namespace valuascript::compiler::test
 {
@@ -22,17 +22,17 @@ namespace valuascript::compiler::test
             arena_buffer, sizeof(arena_buffer), std::pmr::null_memory_resource()
         );
 
-        auto* prev = AstArena::current();
-        AstArena::set_current(&fixed_arena);
+        auto* prev = valuascript::shared::Arena::current();
+        valuascript::shared::Arena::set_current(&fixed_arena);
 
         std::unique_ptr<T> node = nullptr;
-        if constexpr (std::same_as<decltype(create_sample<T>()), std::unique_ptr<T>>)
+        if constexpr (std::same_as<decltype(create_sample<T>(0)), std::unique_ptr<T>>)
         {
-            node = create_sample<T>();
+            node = create_sample<T>(0);
         }
         else
         {
-            node = std::make_unique<T>(create_sample<T>());
+            node = std::make_unique<T>(create_sample<T>(0));
         }
 
         ASSERT_NE(node, nullptr);
@@ -46,24 +46,24 @@ namespace valuascript::compiler::test
         EXPECT_LT(node_addr, buf_end) << "Node " << get_ast_node_name<T>() << " address is above arena buffer bounds!";
 
         node.reset();
-        AstArena::set_current(prev);
+        valuascript::shared::Arena::set_current(prev);
     }
 
-    struct AstNodeArenaTestDescriptor
+    struct AstNodeMemoryTestDescriptor
     {
         std::string node_name;
         std::function<void()> run_test;
 
-        friend std::ostream& operator<<(std::ostream& os, const AstNodeArenaTestDescriptor& desc)
+        friend std::ostream& operator<<(std::ostream& os, const AstNodeMemoryTestDescriptor& desc)
         {
             return os << desc.node_name;
         }
     };
 
     template <typename T>
-    AstNodeArenaTestDescriptor make_ast_node_arena_test_descriptor()
+    AstNodeMemoryTestDescriptor make_ast_node_memory_test_descriptor()
     {
-        return AstNodeArenaTestDescriptor{
+        return AstNodeMemoryTestDescriptor{
             .node_name = std::string(get_ast_node_name<T>()),
             .run_test = []()
             {
@@ -73,27 +73,27 @@ namespace valuascript::compiler::test
     }
 
     template <typename Tuple>
-    struct AstNodeArenaTestDescriptorCollector;
+    struct AstNodeMemoryTestDescriptorCollector;
 
     template <typename... Types>
-    struct AstNodeArenaTestDescriptorCollector<std::tuple<Types...>>
+    struct AstNodeMemoryTestDescriptorCollector<std::tuple<Types...>>
     {
-        static std::vector<AstNodeArenaTestDescriptor> collect()
+        static std::vector<AstNodeMemoryTestDescriptor> collect()
         {
-            return { make_ast_node_arena_test_descriptor<Types>()... };
+            return { make_ast_node_memory_test_descriptor<Types>()... };
         }
     };
 
-    inline std::vector<AstNodeArenaTestDescriptor> get_all_ast_node_arena_test_descriptors()
+    inline std::vector<AstNodeMemoryTestDescriptor> get_all_ast_node_memory_test_descriptors()
     {
-        return AstNodeArenaTestDescriptorCollector<AllAstNodeTypes>::collect();
+        return AstNodeMemoryTestDescriptorCollector<AllAstNodeTypes>::collect();
     }
 
-    class AstNodeArenaParameterizedTest : public testing::TestWithParam<AstNodeArenaTestDescriptor>
+    class AstNodeMemoryParameterizedTest : public testing::TestWithParam<AstNodeMemoryTestDescriptor>
     {
     };
 
-    TEST_P(AstNodeArenaParameterizedTest, NodeAllocationLandsInsideArenaBuffer)
+    TEST_P(AstNodeMemoryParameterizedTest, NodeAllocationLandsInsideArenaBuffer)
     {
         const auto& descriptor = GetParam();
         SCOPED_TRACE("Testing Arena Placement for: " + descriptor.node_name);
@@ -101,9 +101,9 @@ namespace valuascript::compiler::test
         descriptor.run_test();
     }
 
-    struct AstNodeArenaTestNameGenerator
+    struct AstNodeMemoryTestNameGenerator
     {
-        std::string operator()(const testing::TestParamInfo<AstNodeArenaTestDescriptor>& info) const
+        std::string operator()(const testing::TestParamInfo<AstNodeMemoryTestDescriptor>& info) const
         {
             return info.param.node_name;
         }
@@ -111,8 +111,8 @@ namespace valuascript::compiler::test
 
     INSTANTIATE_TEST_SUITE_P(
         AllAstNodes,
-        AstNodeArenaParameterizedTest,
-        testing::ValuesIn(get_all_ast_node_arena_test_descriptors()),
-        AstNodeArenaTestNameGenerator{}
+        AstNodeMemoryParameterizedTest,
+        testing::ValuesIn(get_all_ast_node_memory_test_descriptors()),
+        AstNodeMemoryTestNameGenerator{}
     );
 }

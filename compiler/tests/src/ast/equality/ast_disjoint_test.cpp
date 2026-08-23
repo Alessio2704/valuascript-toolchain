@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 #include "ast/equality/ast_disjoint.h"
-#include "ast/sample/ast_sample_factory.h"
+#include "ast/factory/ast_factory.h"
 
 namespace valuascript::compiler::test
 {
     TEST(AstDisjointTest, IndependentlyConstructedTreesAreDisjoint)
     {
-        reset_sample_generator_state();
+        reset_factory_state();
         auto prog1 = create_sample_program();
 
-        reset_sample_generator_state();
+        reset_factory_state();
         auto prog2 = create_sample_program();
 
         EXPECT_TRUE(ast_is_disjoint(prog1, prog2));
@@ -18,7 +18,7 @@ namespace valuascript::compiler::test
 
     TEST(AstDisjointTest, SelfComparisonReturnsFalseForNodesWithPointers)
     {
-        reset_sample_generator_state();
+        reset_factory_state();
         auto prog = create_sample_program();
         EXPECT_FALSE(ast_is_disjoint(prog, prog));
     }
@@ -58,11 +58,11 @@ namespace valuascript::compiler::test
 
     TEST(AstDisjointTest, PolymorphicBasePointerDisjointness)
     {
-        reset_sample_generator_state();
-        auto func1 = create_sample<FunctionDefinition>();
+        reset_factory_state();
+        auto func1 = create_sample<FunctionDefinition>(0);
 
-        reset_sample_generator_state();
-        std::unique_ptr<AstNode> base_func2 = create_sample<FunctionDefinition>();
+        reset_factory_state();
+        std::unique_ptr<AstNode> base_func2 = create_sample<FunctionDefinition>(0);
 
         EXPECT_TRUE(ast_is_disjoint(func1.get(), base_func2.get()));
         EXPECT_FALSE(ast_is_disjoint(func1.get(), func1.get()));

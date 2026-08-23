@@ -1,6 +1,6 @@
 #include "ast_clone_test_helper.h"
-#include "ast/core/ast_node_schema.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/metadata/ast_node_schema.h"
+#include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler::test
 {

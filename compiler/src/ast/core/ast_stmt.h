@@ -107,12 +107,12 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::EnumCase;
         std::vector<Modifier> modifiers;
         NodeName name;
-        ExprPtr value = nullptr;
+        OptionalAstField<ExprPtr> value = std::nullopt;
 
         EnumCase() : AstNode(KIND) {}
         EnumCase(std::vector<Modifier> mods,
                  NodeName n,
-                 ExprPtr val = nullptr,
+                 OptionalAstField<ExprPtr> val = std::nullopt,
                  SourceSpan sp = {})
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), value(std::move(val))
         {

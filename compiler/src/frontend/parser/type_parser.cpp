@@ -1,6 +1,6 @@
 #include "type_parser.h"
 #include "parser.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 #include "list_parser.h"
 #include "error_recovery.h"
 
@@ -57,7 +57,7 @@ namespace valuascript::compiler
                     end_token = cursor.advance();
                 else end_token = cursor.previous();
             }
-            return AstFactory::make_node_with_span<TupleTypeAnnotation>(cursor.make_span(start, end_token),
+            return AstBuilder::build_with_span<TupleTypeAnnotation>(cursor.make_span(start, end_token),
                                                                         std::move(elements));
         }
 
@@ -122,7 +122,7 @@ namespace valuascript::compiler
 
         if (missing_base_type) return nullptr;
 
-        return AstFactory::make_node<TypeAnnotation>(
-            cursor, start, NodeName{name_token.lexeme, cursor.make_span(name_token)}, std::move(generic_args));
+        return AstBuilder::build_with_span<TypeAnnotation>(
+            cursor.make_span(start, cursor.previous()), NodeName{name_token.lexeme, cursor.make_span(name_token)}, std::move(generic_args));
     }
 }

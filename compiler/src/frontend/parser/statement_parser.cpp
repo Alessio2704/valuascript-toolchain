@@ -1,6 +1,6 @@
 #include "statement_parser.h"
 #include "parser.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 #include "error_recovery.h"
 
 namespace valuascript::compiler
@@ -168,7 +168,7 @@ namespace valuascript::compiler
 
         if (value) verify_statement_end();
 
-        return AstFactory::make_node_with_span<Assignment>(
+        return AstBuilder::build_with_span<Assignment>(
             cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
             std::move(targets), std::move(value));
     }
@@ -241,7 +241,7 @@ namespace valuascript::compiler
             const SourceSpan end_span = value ? value->span : start_span;
             if (value) verify_statement_end();
 
-            return AstFactory::make_node_with_span<Reassignment>(cursor.combine_spans(start_span, end_span),
+            return AstBuilder::build_with_span<Reassignment>(cursor.combine_spans(start_span, end_span),
                                                                  std::move(expr), std::move(value));
         }
 
@@ -252,7 +252,7 @@ namespace valuascript::compiler
         }
 
         verify_statement_end();
-        return AstFactory::make_node_with_span<ExpressionStatement>(expr->span, std::move(expr));
+        return AstBuilder::build_with_span<ExpressionStatement>(expr->span, std::move(expr));
     }
 
     std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement(std::vector<Modifier> modifiers)
@@ -271,7 +271,7 @@ namespace valuascript::compiler
              TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)))
         {
             verify_statement_end();
-            return AstFactory::make_node_with_span<ReturnStatement>(
+            return AstBuilder::build_with_span<ReturnStatement>(
                 cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
                 std::move(modifiers), std::move(return_values));
         }
@@ -286,7 +286,7 @@ namespace valuascript::compiler
         while (cursor.match(TokenType::Comma));
 
         verify_statement_end();
-        return AstFactory::make_node_with_span<ReturnStatement>(
+        return AstBuilder::build_with_span<ReturnStatement>(
             cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
             std::move(modifiers), std::move(return_values));
     }

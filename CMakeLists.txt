@@ -14,7 +14,7 @@ if (MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-    target_compile_options(valua_compiler_flags INTERFACE "/W4" "/WX" "/MP")
+    target_compile_options(valua_compiler_flags INTERFACE "/W4" "/WX" "/MP" "/bigobj")
 
     if (ENABLE_SANITIZERS)
         include(CheckCXXCompilerFlag)

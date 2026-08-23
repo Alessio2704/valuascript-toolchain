@@ -4,6 +4,7 @@
 #include "ast_expr.h"
 #include "ast_stmt.h"
 #include "ast_type.h"
+#include "utils/memory/arena.h"
 
 namespace valuascript::compiler
 {
@@ -31,7 +32,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::ImportStatement;
         std::vector<Modifier> modifiers;
         NodeName path;
-        std::optional<std::string> resolved_canonical_path = std::nullopt;
+        OptionalAstField<std::string> resolved_canonical_path = std::nullopt;
 
         explicit ImportStatement(std::vector<Modifier> mods, NodeName p)
             : AstNode(KIND), modifiers(std::move(mods)), path(std::move(p))
@@ -51,13 +52,13 @@ namespace valuascript::compiler
         std::vector<Modifier> modifiers;
         NodeName name;
         TypeAnnPtr type;
-        ExprPtr default_value = nullptr;
+        OptionalAstField<ExprPtr> default_value = std::nullopt;
 
         FunctionParameter() : AstNode(KIND) {}
         FunctionParameter(std::vector<Modifier> mods,
                           NodeName n,
                           TypeAnnPtr t,
-                          ExprPtr def = nullptr,
+                          OptionalAstField<ExprPtr> def = std::nullopt,
                           SourceSpan sp = {})
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), type(std::move(t)),
               default_value(std::move(def))
@@ -80,14 +81,14 @@ namespace valuascript::compiler
         std::vector<FunctionParameter> parameters;
         std::vector<TypeAnnPtr> return_types;
         std::vector<StmtPtr> body;
-        std::optional<std::string> docstring;
+        OptionalAstField<std::string> docstring = std::nullopt;
 
         explicit FunctionDefinition(std::vector<Modifier> mods,
                                     NodeName n,
                                     std::vector<FunctionParameter> params,
                                     std::vector<TypeAnnPtr> ret_types,
                                     std::vector<StmtPtr> b,
-                                    std::optional<std::string> docs = std::nullopt)
+                                    OptionalAstField<std::string> docs = std::nullopt)
             : AstNode(KIND), modifiers(std::move(mods)), name(std::move(n)), parameters(std::move(params)),
               return_types(std::move(ret_types)), body(std::move(b)), docstring(std::move(docs))
         {
@@ -199,7 +200,7 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::Program;
-        std::unique_ptr<AstArena> arena = nullptr;
+        std::unique_ptr<valuascript::shared::Arena> arena = nullptr;
         std::vector<Comment> comments;
         std::vector<ImportPtr> import_statements;
         std::vector<DirectivePtr> directives;

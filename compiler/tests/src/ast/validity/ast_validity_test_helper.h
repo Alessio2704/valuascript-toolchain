@@ -11,8 +11,8 @@
 #include <utility>
 
 #include "ast/validity/ast_validity.h"
-#include "ast/sample/ast_sample_factory.h"
-#include "ast/core/ast_node_registry.h"
+#include "ast/factory/ast_factory.h"
+#include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler::test
 {
@@ -93,7 +93,7 @@ namespace valuascript::compiler::test
     template <typename T>
     inline void test_single_node_validity()
     {
-        auto sample = create_sample<T>();
+        auto sample = create_sample<T>(0);
         if constexpr (std::same_as<decltype(sample), std::unique_ptr<T>>)
         {
             ASSERT_NE(sample, nullptr);
@@ -101,7 +101,7 @@ namespace valuascript::compiler::test
             test_raw_pointer_validity<T>(sample.get());
             test_unique_ptr_validity<T>(sample);
 
-            auto sample_for_vec = create_sample<T>();
+            auto sample_for_vec = create_sample<T>(0);
             test_vector_unique_ptr_validity<T>(std::move(sample_for_vec));
             test_vector_raw_ptr_validity<T>(sample.get());
         }
@@ -110,11 +110,11 @@ namespace valuascript::compiler::test
             test_value_validity<T>(sample);
             test_raw_pointer_validity<T>(&sample);
 
-            auto sample2 = create_sample<T>();
+            auto sample2 = create_sample<T>(0);
             auto sample_uptr = std::make_unique<T>(std::move(sample2));
             test_unique_ptr_validity<T>(sample_uptr);
 
-            auto sample_for_uvec = create_sample<T>();
+            auto sample_for_uvec = create_sample<T>(0);
             auto sample_uptr2 = std::make_unique<T>(std::move(sample_for_uvec));
             test_vector_unique_ptr_validity<T>(std::move(sample_uptr2));
 
@@ -164,7 +164,7 @@ namespace valuascript::compiler::test
     template <>
     struct LeafSampleProvider<SourceSpan>
     {
-        static SourceSpan valid() { return sample_span(); }
+        static SourceSpan valid() { return factory_span(); }
         static std::optional<SourceSpan> invalid() { return SourceSpan{}; }
         static std::string type_name() { return "SourceSpan"; }
     };
@@ -172,8 +172,8 @@ namespace valuascript::compiler::test
     template <>
     struct LeafSampleProvider<NodeName>
     {
-        static NodeName valid() { return sample_name("valid_node"); }
-        static std::optional<NodeName> invalid() { return NodeName("", sample_span()); }
+        static NodeName valid() { return factory_name("valid_node"); }
+        static std::optional<NodeName> invalid() { return NodeName("", factory_span()); }
         static std::string type_name() { return "NodeName"; }
     };
 
