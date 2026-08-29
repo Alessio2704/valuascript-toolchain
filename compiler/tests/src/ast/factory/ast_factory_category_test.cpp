@@ -10,6 +10,8 @@
 
 #include "ast/factory/ast_factory.h"
 #include "ast/categories/ast_category_types.h"
+#include "ast_factory_test_reflection.h"
+#include "utils/traits/tuple_traits.h"
 
 namespace valuascript::compiler::test
 {
@@ -42,31 +44,26 @@ namespace valuascript::compiler::test
         auto single = sample_node<Category>(0);
         ASSERT_NE(single, nullptr);
         EXPECT_TRUE(single->is_valid());
+
+        valuascript::shared::tuple_for_each_type<category_node_types_t<Category>>([]<typename ConcreteNodeT>()
+        {
+            auto sampled = sample_node_by_kind<Category>(ConcreteNodeT::KIND, 0);
+            ASSERT_NE(sampled, nullptr);
+            EXPECT_EQ(sampled->kind, ConcreteNodeT::KIND);
+            EXPECT_TRUE(sampled->is_valid());
+
+            auto as_node = sample_node_as<ConcreteNodeT>(0);
+            const auto& ref = unwrap_node(as_node);
+            EXPECT_EQ(ref.kind, ConcreteNodeT::KIND);
+            EXPECT_TRUE(ref.is_valid());
+        });
     }
 
     template <typename Category>
     AstCategoryTestDescriptor make_ast_category_test_descriptor()
     {
-        std::string name;
-        if constexpr (std::same_as<Category, Statement>)
-        {
-            name = "Statement";
-        }
-        else if constexpr (std::same_as<Category, Expression>)
-        {
-            name = "Expression";
-        }
-        else if constexpr (std::same_as<Category, TypeAnnotation>)
-        {
-            name = "TypeAnnotation";
-        }
-        else
-        {
-            name = "UnknownCategory";
-        }
-
         return AstCategoryTestDescriptor{
-            .category_name = std::move(name),
+            .category_name = std::string(category_name_v<Category>),
             .run_test = []() {
                 test_single_factory_category<Category>();
             }
