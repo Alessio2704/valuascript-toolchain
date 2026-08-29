@@ -1,4 +1,4 @@
-#include "ast/walker/ast_rewriter.h"
+#include "ast_rewriter.h"
 #include "ast/metadata/ast_node_registry.h"
 
 namespace valuascript::compiler
