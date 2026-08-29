@@ -3,12 +3,17 @@
 #include <vector>
 #include <span>
 #include <type_traits>
+#include <memory>
+#include <concepts>
+
 #include "ast/core/ast_core.h"
 #include "ast/core/ast_type.h"
 #include "ast/core/ast_expr.h"
 #include "ast/core/ast_stmt.h"
 #include "ast/core/ast_decl.h"
 #include "ast/metadata/ast_node_registry.h"
+#include "ast/metadata/ast_node_schema.h"
+#include "ast/walker/ast_walker_concepts.h"
 
 namespace valuascript::compiler
 {
@@ -34,8 +39,8 @@ namespace valuascript::compiler
             return (
                 (
                     (std::derived_from<T, Categories> && !std::is_same_v<T, Categories>)
-                    ? action.template operator()<Categories>()
-                    : true
+                        ? action.template operator()<Categories>()
+                        : true
                 ) && ...
             );
         }
@@ -46,8 +51,8 @@ namespace valuascript::compiler
             (
                 (
                     (std::derived_from<T, Categories> && !std::is_same_v<T, Categories>)
-                    ? (action.template operator()<Categories>(), 0)
-                    : 0
+                        ? (action.template operator()<Categories>(), 0)
+                        : 0
                 ), ...
             );
         }
@@ -357,67 +362,111 @@ namespace valuascript::compiler
         {
         }
 
-        virtual void walk_children(MaybeConst<IsConst, Program>& node);
-        virtual void walk_children(MaybeConst<IsConst, ImportStatement>& node);
-        virtual void walk_children(MaybeConst<IsConst, Directive>& node);
-        virtual void walk_children(MaybeConst<IsConst, FunctionDefinition>& node);
-        virtual void walk_children(MaybeConst<IsConst, StructDefinition>& node);
-        virtual void walk_children(MaybeConst<IsConst, EnumDefinition>& node);
-        virtual void walk_children(MaybeConst<IsConst, TypeAliasDefinition>& node);
-        virtual void walk_children(MaybeConst<IsConst, ExtensionDefinition>& node);
-        virtual void walk_children(MaybeConst<IsConst, Assignment>& node);
-        virtual void walk_children(MaybeConst<IsConst, Reassignment>& node);
-        virtual void walk_children(MaybeConst<IsConst, ExpressionStatement>& node);
-        virtual void walk_children(MaybeConst<IsConst, ReturnStatement>& node);
-        virtual void walk_children(MaybeConst<IsConst, BinaryExpression>& node);
-        virtual void walk_children(MaybeConst<IsConst, UnaryExpression>& node);
-        virtual void walk_children(MaybeConst<IsConst, GroupingExpression>& node);
-        virtual void walk_children(MaybeConst<IsConst, ConditionalExpression>& node);
-        virtual void walk_children(MaybeConst<IsConst, FunctionCall>& node);
-        virtual void walk_children(MaybeConst<IsConst, DictLiteral>& node);
-        virtual void walk_children(MaybeConst<IsConst, TensorLiteral>& node);
-        virtual void walk_children(MaybeConst<IsConst, TupleLiteral>& node);
-        virtual void walk_children(MaybeConst<IsConst, BracketAccess>& node);
-        virtual void walk_children(MaybeConst<IsConst, DotAccess>& node);
-        virtual void walk_children(MaybeConst<IsConst, SwitchExpression>& node);
-        virtual void walk_children(MaybeConst<IsConst, TypeAnnotation>& node);
-        virtual void walk_children(MaybeConst<IsConst, TupleTypeAnnotation>& node);
-        virtual void walk_children(MaybeConst<IsConst, Modifier>& node);
-        virtual void walk_children(MaybeConst<IsConst, CallArgument>& node);
-        virtual void walk_children(MaybeConst<IsConst, FunctionParameter>& node);
-        virtual void walk_children(MaybeConst<IsConst, StructField>& node);
-        virtual void walk_children(MaybeConst<IsConst, EnumCase>& node);
-        virtual void walk_children(MaybeConst<IsConst, AssignmentTarget>& node);
-        virtual void walk_children(MaybeConst<IsConst, DictItem>& node);
-        virtual void walk_children(MaybeConst<IsConst, SwitchCase>& node);
-
-        virtual void walk_children(MaybeConst<IsConst, NumberLiteral>&)
+        template <typename T>
+        void auto_walk_children(T& node)
         {
+            for_each_ast_member(node, [&](auto& member)
+            {
+                using MemberT = std::remove_cvref_t<decltype(member)>;
+                if (should_stop_) return;
+
+                if constexpr (IsUniquePtrOfAstNode<MemberT>)
+                {
+                    if (member) walk(member.get());
+                }
+                else if constexpr (IsVectorOfUniquePtrOfAstNode<MemberT>)
+                {
+                    for (auto& item : member)
+                    {
+                        if (should_stop_) return;
+                        if (item) walk(item.get());
+                    }
+                }
+                else if constexpr (IsInnerAstNode<MemberT>)
+                {
+                    walk(member);
+                }
+                else if constexpr (IsVectorOfInnerAstNode<MemberT>)
+                {
+                    for (auto& item : member)
+                    {
+                        if (should_stop_) return;
+                        walk(item);
+                    }
+                }
+                else if constexpr (IsOptionalAstFieldOfAstNode<MemberT>)
+                {
+                    if (member.has_value())
+                    {
+                        using ValT = typename MemberT::value_type;
+                        if constexpr (is_unique_ptr_v<ValT>)
+                        {
+                            if (member.get()) walk(member.get());
+                        }
+                        else
+                        {
+                            walk(*member);
+                        }
+                    }
+                }
+                else if constexpr (IsStdOptionalOfAstNode<MemberT>)
+                {
+                    if (member.has_value())
+                    {
+                        using ValT = typename MemberT::value_type;
+                        if constexpr (is_unique_ptr_v<ValT>)
+                        {
+                            if (*member) walk((*member).get());
+                        }
+                        else
+                        {
+                            walk(*member);
+                        }
+                    }
+                }
+            });
         }
 
-        virtual void walk_children(MaybeConst<IsConst, PercentageLiteral>&)
-        {
-        }
-
-        virtual void walk_children(MaybeConst<IsConst, StringLiteral>&)
-        {
-        }
-
-        virtual void walk_children(MaybeConst<IsConst, BooleanLiteral>&)
-        {
-        }
-
-        virtual void walk_children(MaybeConst<IsConst, IdentifierAccess>&)
-        {
-        }
-
-        virtual void walk_children(MaybeConst<IsConst, SelfExpression>&)
-        {
-        }
-
-        virtual void walk_children(MaybeConst<IsConst, Comment>&)
-        {
-        }
+        virtual void walk_children(MaybeConst<IsConst, Program>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, ImportStatement>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, Directive>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, FunctionDefinition>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, StructDefinition>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, EnumDefinition>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, TypeAliasDefinition>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, ExtensionDefinition>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, Assignment>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, Reassignment>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, ExpressionStatement>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, ReturnStatement>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, BinaryExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, UnaryExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, GroupingExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, ConditionalExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, FunctionCall>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, DictLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, TensorLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, TupleLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, BracketAccess>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, DotAccess>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, SwitchExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, TypeAnnotation>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, TupleTypeAnnotation>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, Modifier>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, CallArgument>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, FunctionParameter>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, StructField>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, EnumCase>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, AssignmentTarget>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, DictItem>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, SwitchCase>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, NumberLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, PercentageLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, StringLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, BooleanLiteral>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, IdentifierAccess>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, SelfExpression>& node) { auto_walk_children(node); }
+        virtual void walk_children(MaybeConst<IsConst, Comment>& node) { auto_walk_children(node); }
 
         void walk(ProgramRef program)
         {
@@ -461,7 +510,15 @@ namespace valuascript::compiler
             ancestor_stack_.pop_back();
         }
 
-        template <AstElement T>
+        template <typename T>
+            requires std::derived_from<T, AstNode> && (!std::is_same_v<T, AstNode>)
+        void walk(MaybeConst<IsConst, T>* node)
+        {
+            walk(static_cast<NodePtr>(node));
+        }
+
+        template <typename T>
+            requires std::derived_from<T, AstNode> && (!std::is_pointer_v<T>)
         void walk(T& node)
         {
             if (should_stop_) return;
@@ -502,8 +559,10 @@ namespace valuascript::compiler
         {
             TraversalAction result = TraversalAction::Continue;
 
-            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>() {
-                bool should_continue = CategoryDispatcher<AstCategoryTypes, T>::dispatch_enter([&]<typename Cat>() {
+            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>()
+            {
+                bool should_continue = CategoryDispatcher<AstCategoryTypes, T>::dispatch_enter([&]<typename Cat>()
+                {
                     if (enter(static_cast<MaybeConst<IsConst, Cat>&>(node)) == TraversalAction::Stop)
                     {
                         result = TraversalAction::Stop;
@@ -523,17 +582,20 @@ namespace valuascript::compiler
 
         void dispatch_children(MaybeConst<IsConst, AstNode>& node)
         {
-            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>() {
+            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>()
+            {
                 walk_children(static_cast<MaybeConst<IsConst, T>&>(node));
             });
         }
 
         void dispatch_leave(MaybeConst<IsConst, AstNode>& node)
         {
-            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>() {
+            NodeDispatcher<AllAstNodeTypes>::dispatch(node.kind, [&]<typename T>()
+            {
                 leave(static_cast<MaybeConst<IsConst, T>&>(node));
 
-                CategoryDispatcher<AstCategoryTypes, T>::dispatch_leave([&]<typename Cat>() {
+                CategoryDispatcher<AstCategoryTypes, T>::dispatch_leave([&]<typename Cat>()
+                {
                     leave(static_cast<MaybeConst<IsConst, Cat>&>(node));
                 });
             });
@@ -542,415 +604,6 @@ namespace valuascript::compiler
         std::vector<NodePtr> ancestor_stack_;
         bool should_stop_ = false;
     };
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, Program>& node)
-    {
-        for (auto& comment : node.comments)
-        {
-            if (should_stop_) return;
-            walk(comment);
-        }
-        for (auto& imp : node.import_statements)
-        {
-            if (should_stop_) return;
-            walk(imp.get());
-        }
-        for (auto& dir : node.directives)
-        {
-            if (should_stop_) return;
-            walk(dir.get());
-        }
-        for (auto& st : node.struct_definitions)
-        {
-            if (should_stop_) return;
-            walk(st.get());
-        }
-        for (auto& en : node.enum_definitions)
-        {
-            if (should_stop_) return;
-            walk(en.get());
-        }
-        for (auto& ta : node.type_aliases)
-        {
-            if (should_stop_) return;
-            walk(ta.get());
-        }
-        for (auto& fn : node.function_definitions)
-        {
-            if (should_stop_) return;
-            walk(fn.get());
-        }
-        for (auto& ext : node.extension_definitions)
-        {
-            if (should_stop_) return;
-            walk(ext.get());
-        }
-        for (auto& step : node.execution_steps)
-        {
-            if (should_stop_) return;
-            walk(step.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, ImportStatement>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, Directive>& node)
-    {
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, FunctionDefinition>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        for (auto& param : node.parameters)
-        {
-            if (should_stop_) return;
-            walk(param);
-        }
-        for (auto& ret : node.return_types)
-        {
-            if (should_stop_) return;
-            walk(ret.get());
-        }
-        for (auto& stmt : node.body)
-        {
-            if (should_stop_) return;
-            walk(stmt.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, StructDefinition>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        for (auto& field : node.fields)
-        {
-            if (should_stop_) return;
-            walk(field);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, EnumDefinition>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.underlying_type) walk(node.underlying_type.get());
-        for (auto& item : node.cases)
-        {
-            if (should_stop_) return;
-            walk(item);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, TypeAliasDefinition>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.target_type) walk(node.target_type.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, ExtensionDefinition>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.target_type) walk(node.target_type.get());
-        for (auto& st : node.struct_definitions)
-        {
-            if (should_stop_) return;
-            walk(st.get());
-        }
-        for (auto& en : node.enum_definitions)
-        {
-            if (should_stop_) return;
-            walk(en.get());
-        }
-        for (auto& ta : node.type_aliases)
-        {
-            if (should_stop_) return;
-            walk(ta.get());
-        }
-        for (auto& fn : node.function_definitions)
-        {
-            if (should_stop_) return;
-            walk(fn.get());
-        }
-        for (auto& step : node.execution_steps)
-        {
-            if (should_stop_) return;
-            walk(step.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, Assignment>& node)
-    {
-        for (auto& target : node.targets)
-        {
-            if (should_stop_) return;
-            walk(target);
-        }
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, Reassignment>& node)
-    {
-        if (node.target) walk(node.target.get());
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, ExpressionStatement>& node)
-    {
-        if (node.expr) walk(node.expr.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, ReturnStatement>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        for (auto& val : node.values)
-        {
-            if (should_stop_) return;
-            walk(val.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, BinaryExpression>& node)
-    {
-        if (node.left) walk(node.left.get());
-        if (node.right) walk(node.right.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, UnaryExpression>& node)
-    {
-        if (node.right) walk(node.right.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, GroupingExpression>& node)
-    {
-        if (node.expression) walk(node.expression.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, ConditionalExpression>& node)
-    {
-        if (node.condition) walk(node.condition.get());
-        if (node.then_branch) walk(node.then_branch.get());
-        if (node.else_branch) walk(node.else_branch.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, FunctionCall>& node)
-    {
-        if (node.target) walk(node.target.get());
-        for (auto& arg : node.arguments)
-        {
-            if (should_stop_) return;
-            walk(arg);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, DictLiteral>& node)
-    {
-        for (auto& item : node.elements)
-        {
-            if (should_stop_) return;
-            walk(item);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, TensorLiteral>& node)
-    {
-        for (auto& elem : node.elements)
-        {
-            if (should_stop_) return;
-            walk(elem.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, TupleLiteral>& node)
-    {
-        for (auto& elem : node.elements)
-        {
-            if (should_stop_) return;
-            walk(elem.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, BracketAccess>& node)
-    {
-        if (node.target) walk(node.target.get());
-        if (node.index) walk(node.index.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, DotAccess>& node)
-    {
-        if (node.target) walk(node.target.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, SwitchExpression>& node)
-    {
-        if (node.target) walk(node.target.get());
-        for (auto& sc : node.cases)
-        {
-            if (should_stop_) return;
-            walk(sc);
-        }
-        for (auto& mod : node.default_modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.default_case) walk(node.default_case.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, TypeAnnotation>& node)
-    {
-        for (auto& arg : node.generic_args)
-        {
-            if (should_stop_) return;
-            walk(arg.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, TupleTypeAnnotation>& node)
-    {
-        for (auto& elem : node.element_types)
-        {
-            if (should_stop_) return;
-            walk(elem.get());
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, Modifier>& node)
-    {
-        for (auto& arg : node.arguments)
-        {
-            if (should_stop_) return;
-            walk(arg);
-        }
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, CallArgument>& node)
-    {
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, FunctionParameter>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.type) walk(node.type.get());
-        if (node.default_value) walk(node.default_value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, StructField>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.type) walk(node.type.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, EnumCase>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, AssignmentTarget>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.type) walk(node.type.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, DictItem>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.value) walk(node.value.get());
-    }
-
-    template <bool IsConst>
-    inline void BasicAstWalker<IsConst>::walk_children(MaybeConst<IsConst, SwitchCase>& node)
-    {
-        for (auto& mod : node.modifiers)
-        {
-            if (should_stop_) return;
-            walk(mod);
-        }
-        if (node.result) walk(node.result.get());
-    }
 
     using ConstAstWalker = BasicAstWalker<true>;
     using AstWalker = BasicAstWalker<false>;

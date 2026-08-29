@@ -46,7 +46,7 @@ namespace valuascript::compiler::test
         {
             ([&]
             {
-                constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
+                [[maybe_unused]] constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
                 using DescriptorT = std::remove_cvref_t<decltype(std::declval<NodeConfig<NodeT>>().*member_ptr)>;
 
                 if constexpr (requires { (cfg.get<NodeT>().*member_ptr).count; })
@@ -72,7 +72,7 @@ namespace valuascript::compiler::test
         {
             ([&]
             {
-                constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
+                [[maybe_unused]] constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
                 if constexpr (requires { (cfg.get<NodeT>().*member_ptr).count; })
                 {
                     (cfg.get<NodeT>().*member_ptr).count = count;
@@ -89,7 +89,7 @@ namespace valuascript::compiler::test
         {
             ([&]
             {
-                constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
+                [[maybe_unused]] constexpr auto member_ptr = std::get<Is>(NodeConfig<NodeT>::members);
                 using DescriptorT = std::remove_cvref_t<decltype(std::declval<NodeConfig<NodeT>>().*member_ptr)>;
 
                 if constexpr (requires { (cfg.get<NodeT>().*member_ptr).prefix; })

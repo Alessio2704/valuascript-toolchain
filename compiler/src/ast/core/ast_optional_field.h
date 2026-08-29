@@ -12,6 +12,9 @@ namespace valuascript::compiler
     template <typename NodeT>
     struct OptionalAstField<std::unique_ptr<NodeT>>
     {
+        using value_type = std::unique_ptr<NodeT>;
+        using element_type = NodeT;
+
         std::unique_ptr<NodeT> ptr = nullptr;
 
         constexpr OptionalAstField() noexcept = default;
@@ -92,6 +95,8 @@ namespace valuascript::compiler
     template <typename ValT>
     struct OptionalAstField
     {
+        using value_type = ValT;
+
         std::optional<ValT> opt = std::nullopt;
 
         constexpr OptionalAstField() noexcept = default;

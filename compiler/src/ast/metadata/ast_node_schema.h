@@ -55,21 +55,21 @@ namespace valuascript::compiler
         }());
 
     template <typename T, typename Func>
-    requires HasAstNodeSchema<T>
-    inline void for_each_ast_member(const T& node, Func&& func)
+    requires HasAstNodeSchema<std::remove_cvref_t<T>>
+    inline void for_each_ast_member(T& node, Func&& func)
     {
         std::apply([&](auto... member_ptr) {
             (func(node.*member_ptr), ...);
-        }, AstNodeSchema<T>::members);
+        }, AstNodeSchema<std::remove_cvref_t<T>>::members);
     }
 
     template <typename T, typename Func>
-    requires HasAstNodeSchema<T>
-    inline void for_each_ast_member_pair(const T& a, const T& b, Func&& func)
+    requires HasAstNodeSchema<std::remove_cvref_t<T>>
+    inline void for_each_ast_member_pair(T& a, T& b, Func&& func)
     {
         std::apply([&](auto... member_ptr) {
             (func(a.*member_ptr, b.*member_ptr), ...);
-        }, AstNodeSchema<T>::members);
+        }, AstNodeSchema<std::remove_cvref_t<T>>::members);
     }
 
     template <>
