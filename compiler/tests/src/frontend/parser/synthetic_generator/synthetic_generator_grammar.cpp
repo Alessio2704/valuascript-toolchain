@@ -5,13 +5,13 @@ namespace valuascript::compiler::test
 {
     static const std::vector<std::pair<TokenType, std::string>>& get_fuzzer_binary_ops()
     {
-        static const auto ops = get_all_binary_operators();
+        static const auto ops = shared::get_all_binary_operators();
         return ops;
     }
 
     static const std::vector<std::pair<TokenType, std::string>>& get_fuzzer_unary_ops()
     {
-        static const auto ops = get_all_unary_operators();
+        static const auto ops = shared::get_all_unary_operators();
         return ops;
     }
 

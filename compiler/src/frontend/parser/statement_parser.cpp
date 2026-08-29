@@ -1,161 +1,11 @@
 #include "statement_parser.h"
 #include "parser.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 #include "error_recovery.h"
 
 namespace valuascript::compiler
 {
     using E = ParserErrorCode;
-
-    namespace
-    {
-        ExprPtr clone_expression(const Expression* expr);
-
-        Modifier clone_modifier(const Modifier& mod)
-        {
-            Modifier copy;
-            copy.name = mod.name;
-            copy.span = mod.span;
-            for (const auto& arg : mod.arguments)
-            {
-                copy.arguments.push_back(CallArgument{
-                    .name = arg.name,
-                    .value = clone_expression(arg.value.get()),
-                    .span = arg.span
-                });
-            }
-            return copy;
-        }
-
-        ExprPtr clone_expression(const Expression* expr)
-        {
-            if (!expr) return nullptr;
-
-            switch (expr->kind)
-            {
-                case AstKind::NumberLiteral: {
-                    auto* e = static_cast<const NumberLiteral*>(expr);
-                    return AstFactory::make_node_with_span<NumberLiteral>(e->span, e->value);
-                }
-                case AstKind::PercentageLiteral: {
-                    auto* e = static_cast<const PercentageLiteral*>(expr);
-                    return AstFactory::make_node_with_span<PercentageLiteral>(e->span, e->value);
-                }
-                case AstKind::StringLiteral: {
-                    auto* e = static_cast<const StringLiteral*>(expr);
-                    return AstFactory::make_node_with_span<StringLiteral>(e->span, e->value);
-                }
-                case AstKind::BooleanLiteral: {
-                    auto* e = static_cast<const BooleanLiteral*>(expr);
-                    return AstFactory::make_node_with_span<BooleanLiteral>(e->span, e->value);
-                }
-                case AstKind::IdentifierAccess: {
-                    auto* e = static_cast<const IdentifierAccess*>(expr);
-                    return AstFactory::make_node_with_span<IdentifierAccess>(e->span, e->name);
-                }
-                case AstKind::SelfExpression: {
-                    auto* e = static_cast<const SelfExpression*>(expr);
-                    return AstFactory::make_node_with_span<SelfExpression>(e->span);
-                }
-                case AstKind::UnaryExpression: {
-                    auto* e = static_cast<const UnaryExpression*>(expr);
-                    return AstFactory::make_node_with_span<UnaryExpression>(
-                        e->span, e->op, clone_expression(e->right.get()));
-                }
-                case AstKind::BinaryExpression: {
-                    auto* e = static_cast<const BinaryExpression*>(expr);
-                    return AstFactory::make_node_with_span<BinaryExpression>(
-                        e->span, clone_expression(e->left.get()), e->op, clone_expression(e->right.get()));
-                }
-                case AstKind::GroupingExpression: {
-                    auto* e = static_cast<const GroupingExpression*>(expr);
-                    return AstFactory::make_node_with_span<GroupingExpression>(
-                        e->span, clone_expression(e->expression.get()));
-                }
-                case AstKind::ConditionalExpression: {
-                    auto* e = static_cast<const ConditionalExpression*>(expr);
-                    return AstFactory::make_node_with_span<ConditionalExpression>(
-                        e->span, clone_expression(e->condition.get()), clone_expression(e->then_branch.get()),
-                        clone_expression(e->else_branch.get()));
-                }
-                case AstKind::BracketAccess: {
-                    auto* e = static_cast<const BracketAccess*>(expr);
-                    return AstFactory::make_node_with_span<BracketAccess>(e->span, clone_expression(e->target.get()),
-                                                                          clone_expression(e->index.get()));
-                }
-                case AstKind::DotAccess: {
-                    auto* e = static_cast<const DotAccess*>(expr);
-                    return AstFactory::make_node_with_span<DotAccess>(
-                        e->span, clone_expression(e->target.get()), e->property_name);
-                }
-                case AstKind::TupleLiteral: {
-                    auto* e = static_cast<const TupleLiteral*>(expr);
-                    std::vector<ExprPtr> elems;
-                    for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
-                    return AstFactory::make_node_with_span<TupleLiteral>(e->span, std::move(elems));
-                }
-                case AstKind::TensorLiteral: {
-                    auto* e = static_cast<const TensorLiteral*>(expr);
-                    std::vector<ExprPtr> elems;
-                    for (const auto& el : e->elements) elems.push_back(clone_expression(el.get()));
-                    return AstFactory::make_node_with_span<TensorLiteral>(e->span, std::move(elems));
-                }
-                case AstKind::FunctionCall: {
-                    auto* e = static_cast<const FunctionCall*>(expr);
-                    std::vector<CallArgument> args;
-                    for (const auto& arg : e->arguments)
-                    {
-                        args.push_back(CallArgument{
-                            .name = arg.name,
-                            .value = clone_expression(arg.value.get()),
-                            .span = arg.span
-                        });
-                    }
-                    return AstFactory::make_node_with_span<FunctionCall>(e->span, clone_expression(e->target.get()),
-                                                                         std::move(args));
-                }
-                case AstKind::DictLiteral: {
-                    auto* e = static_cast<const DictLiteral*>(expr);
-                    std::vector<DictItem> items;
-                    for (const auto& item : e->elements)
-                    {
-                        std::vector<Modifier> mods;
-                        for (const auto& m : item.modifiers) mods.push_back(clone_modifier(m));
-                        items.push_back({
-                            .modifiers = std::move(mods),
-                            .key = item.key,
-                            .value = clone_expression(item.value.get()),
-                            .span = item.span
-                        });
-                    }
-                    return AstFactory::make_node_with_span<DictLiteral>(e->span, std::move(items));
-                }
-                case AstKind::SwitchExpression: {
-                    auto* e = static_cast<const SwitchExpression*>(expr);
-                    std::vector<SwitchCase> cases;
-                    for (const auto& sc : e->cases)
-                    {
-                        std::vector<Modifier> c_mods;
-                        for (const auto& m : sc.modifiers) c_mods.push_back(clone_modifier(m));
-                        cases.push_back({
-                            .modifiers = std::move(c_mods),
-                            .identifiers = sc.identifiers,
-                            .result = clone_expression(sc.result.get()),
-                            .span = sc.span
-                        });
-                    }
-                    std::vector<Modifier> d_mods;
-                    for (const auto& m : e->default_modifiers) d_mods.push_back(clone_modifier(m));
-                    return AstFactory::make_node_with_span<SwitchExpression>(
-                        e->span, clone_expression(e->target.get()), std::move(cases), std::move(d_mods),
-                        clone_expression(e->default_case.get()));
-                }
-                default:
-                    return nullptr;
-            }
-        }
-    }
-
 
     StatementParser::StatementParser(Parser& p) : parser(p), ctx(p.ctx), cursor(p.ctx.cursor)
     {
@@ -182,12 +32,7 @@ namespace valuascript::compiler
         do
         {
             const Token& target_start = cursor.peek();
-            std::vector<Modifier> target_mods;
-            target_mods.reserve(modifiers.size());
-            for (const auto& m : modifiers)
-            {
-                target_mods.push_back(clone_modifier(m));
-            }
+            std::vector<Modifier> target_mods = clone_nodes(modifiers);
 
             auto inner_mods = parser.parse_modifiers();
 
@@ -247,12 +92,12 @@ namespace valuascript::compiler
                     RecoveryConfig::StopAtBoundary({TokenType::Comma, TokenType::Assign})
                 );
             }
-            targets.push_back({
-                .modifiers = std::move(target_mods),
-                .name = NodeName{target.lexeme, cursor.make_span(target)},
-                .type = std::move(type_annotation),
-                .span = cursor.make_span(target_start, cursor.previous())
-            });
+            targets.push_back(AssignmentTarget(
+                std::move(target_mods),
+                NodeName{target.lexeme, cursor.make_span(target)},
+                std::move(type_annotation),
+                cursor.make_span(target_start, cursor.previous())
+            ));
 
             if (!cursor.match(TokenType::Comma))
             {
@@ -323,7 +168,7 @@ namespace valuascript::compiler
 
         if (value) verify_statement_end();
 
-        return AstFactory::make_node_with_span<Assignment>(
+        return AstBuilder::build_with_span<Assignment>(
             cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
             std::move(targets), std::move(value));
     }
@@ -342,7 +187,7 @@ namespace valuascript::compiler
         {
             if (!TokenTraits::is_valid_lvalue(expr.get()))
             {
-                if (expr && expr->is_complete())
+                if (expr && expr->is_valid())
                     cursor.report_error(expr->span, E::InvalidLeftSideExpressionInReassignment);
             }
 
@@ -396,18 +241,18 @@ namespace valuascript::compiler
             const SourceSpan end_span = value ? value->span : start_span;
             if (value) verify_statement_end();
 
-            return AstFactory::make_node_with_span<Reassignment>(cursor.combine_spans(start_span, end_span),
+            return AstBuilder::build_with_span<Reassignment>(cursor.combine_spans(start_span, end_span),
                                                                  std::move(expr), std::move(value));
         }
 
         if (!expr || expr->kind != AstKind::FunctionCall)
         {
-            if (expr && expr->is_complete()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
+            if (expr && expr->is_valid()) cursor.report_error(expr->span, E::InvalidStandaloneStatement);
             return nullptr;
         }
 
         verify_statement_end();
-        return AstFactory::make_node_with_span<ExpressionStatement>(expr->span, std::move(expr));
+        return AstBuilder::build_with_span<ExpressionStatement>(expr->span, std::move(expr));
     }
 
     std::unique_ptr<ReturnStatement> StatementParser::parse_return_statement(std::vector<Modifier> modifiers)
@@ -426,7 +271,7 @@ namespace valuascript::compiler
              TokenTraits::is_expression_statement_start(cursor.peek(), cursor.peek(1).type)))
         {
             verify_statement_end();
-            return AstFactory::make_node_with_span<ReturnStatement>(
+            return AstBuilder::build_with_span<ReturnStatement>(
                 cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
                 std::move(modifiers), std::move(return_values));
         }
@@ -441,7 +286,7 @@ namespace valuascript::compiler
         while (cursor.match(TokenType::Comma));
 
         verify_statement_end();
-        return AstFactory::make_node_with_span<ReturnStatement>(
+        return AstBuilder::build_with_span<ReturnStatement>(
             cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
             std::move(modifiers), std::move(return_values));
     }

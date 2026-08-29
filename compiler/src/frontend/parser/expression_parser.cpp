@@ -1,7 +1,7 @@
 #include "expression_parser.h"
 #include "parser.h"
 #include "token/reserved_keyword_lookup.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 #include "list_parser.h"
 #include "error_recovery.h"
 #include "declaration_rules.h"
@@ -60,7 +60,7 @@ namespace valuascript::compiler
     ExprPtr ExpressionParser::handle_dangling_binary_operator(ExprPtr left, const Token& op)
     {
         cursor.report_error_no_panic(op, E::InvalidExpression);
-        return AstFactory::make_node_with_span<BinaryExpression>(
+        return AstBuilder::build_with_span<BinaryExpression>(
             cursor.combine_spans(left->span, cursor.make_span(op, op)), std::move(left), op.type, nullptr);
     }
 
@@ -278,7 +278,7 @@ namespace valuascript::compiler
                         const SourceSpan right_span = right
                                                           ? right->span
                                                           : cursor.make_span(cursor.previous(), cursor.previous());
-                        left = AstFactory::make_node_with_span<BinaryExpression>(
+                        left = AstBuilder::build_with_span<BinaryExpression>(
                             cursor.combine_spans(left->span, right_span),
                             std::move(left), TokenType::Error, std::move(right)
                         );
@@ -312,7 +312,7 @@ namespace valuascript::compiler
             })
         );
         const SourceSpan right_span = right ? right->span : cursor.make_span(cursor.previous(), cursor.previous());
-        return AstFactory::make_node_with_span<BinaryExpression>(cursor.combine_spans(left->span, right_span),
+        return AstBuilder::build_with_span<BinaryExpression>(cursor.combine_spans(left->span, right_span),
                                                                  std::move(left), op.type, std::move(right));
     }
 
@@ -335,7 +335,7 @@ namespace valuascript::compiler
                 TokenTraits::is_expression_statement_start(next, cursor.peek(1).type))))
             {
                 cursor.report_error_no_panic(op, E::InvalidExpression);
-                return AstFactory::make_node_with_span<UnaryExpression>(cursor.make_span(op, op), op.type, nullptr);
+                return AstBuilder::build_with_span<UnaryExpression>(cursor.make_span(op, op), op.type, nullptr);
             }
         }
 
@@ -345,7 +345,7 @@ namespace valuascript::compiler
                 TokenType::Comma, TokenType::RightParen, TokenType::RightBracket, TokenType::RightBrace
             })
         );
-        return AstFactory::make_node<UnaryExpression>(cursor, op, op.type, std::move(right));
+        return AstBuilder::build_with_span<UnaryExpression>(cursor.make_span(op, cursor.previous()), op.type, std::move(right));
     }
 
     ExprPtr ExpressionParser::handle_invalid_expression_start()
@@ -435,7 +435,7 @@ namespace valuascript::compiler
         {
             cursor.report_error_no_panic(tok, E::ReservedKeywordAsIdentifier, true);
             cursor.advance();
-            return AstFactory::make_node_with_span<IdentifierAccess>(
+            return AstBuilder::build_with_span<IdentifierAccess>(
                 cursor.make_span(tok, tok), NodeName{tok.lexeme, cursor.make_span(tok)});
         }
         cursor.report_error(tok, E::InvalidExpression, force_location);
@@ -498,24 +498,24 @@ namespace valuascript::compiler
 
             for (auto& g : args_gen)
             {
-                arguments.push_back(CallArgument{
-                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                    .value = std::move(g.value),
-                    .span = g.span
-                });
+                arguments.push_back(CallArgument(
+                    NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    std::move(g.value),
+                    g.span
+                ));
             }
 
             if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen) ||
                 (!cursor.check(TokenType::RightParen) && ctx.is_active_closer(cursor.peek().type)))
             {
                 cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterArguments);
-                return AstFactory::make_node_with_span<FunctionCall>(
+                return AstBuilder::build_with_span<FunctionCall>(
                     cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                     std::move(target), std::move(arguments));
             }
 
             const Token& end_token = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterArguments);
-            return AstFactory::make_node_with_span<FunctionCall>(
+            return AstBuilder::build_with_span<FunctionCall>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
                 std::move(arguments));
         }
@@ -523,7 +523,7 @@ namespace valuascript::compiler
         {
             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
-            return AstFactory::make_node_with_span<FunctionCall>(
+            return AstBuilder::build_with_span<FunctionCall>(
                 cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                 std::move(target), std::move(arguments));
         }
@@ -595,7 +595,7 @@ namespace valuascript::compiler
                 catch (const ParseSyncException&)
                 {
                     const SourceSpan slice_end_span = bound_expr ? bound_expr->span : cursor.make_span(colon_token, colon_token);
-                    index_expr = AstFactory::make_node_with_span<BinaryExpression>(
+                    index_expr = AstBuilder::build_with_span<BinaryExpression>(
                         cursor.combine_spans(colon_span, slice_end_span), std::move(index_expr), TokenType::Colon,
                         std::move(bound_expr));
                     throw;
@@ -603,7 +603,7 @@ namespace valuascript::compiler
                 const SourceSpan slice_end_span = bound_expr
                                                       ? bound_expr->span
                                                       : cursor.make_span(cursor.previous(), cursor.previous());
-                index_expr = AstFactory::make_node_with_span<BinaryExpression>(
+                index_expr = AstBuilder::build_with_span<BinaryExpression>(
                     cursor.combine_spans(colon_span, slice_end_span), std::move(index_expr), TokenType::Colon,
                     std::move(bound_expr));
             }
@@ -618,13 +618,13 @@ namespace valuascript::compiler
                 cursor.check(TokenType::Assign))
             {
                 cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorIndex);
-                return AstFactory::make_node_with_span<BracketAccess>(
+                return AstBuilder::build_with_span<BracketAccess>(
                     cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                     std::move(target), std::move(index_expr));
             }
 
             const Token& end_token = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorIndex);
-            return AstFactory::make_node_with_span<BracketAccess>(
+            return AstBuilder::build_with_span<BracketAccess>(
                 cursor.combine_spans(target_span, cursor.make_span(end_token, end_token)), std::move(target),
                 std::move(index_expr));
         }
@@ -632,7 +632,7 @@ namespace valuascript::compiler
         {
             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBracket))
                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
-            return AstFactory::make_node_with_span<BracketAccess>(
+            return AstBuilder::build_with_span<BracketAccess>(
                 cursor.combine_spans(target_span, cursor.make_span(cursor.previous(), cursor.previous())),
                 std::move(target), std::move(index_expr));
         }
@@ -652,7 +652,7 @@ namespace valuascript::compiler
             }), true, true);
 
         SourceSpan prop_span = cursor.make_span(property_token);
-        return AstFactory::make_node_with_span<DotAccess>(
+        return AstBuilder::build_with_span<DotAccess>(
             cursor.combine_spans(target->span, prop_span), std::move(target),
             NodeName{property_token.lexeme, prop_span});
     }
@@ -663,8 +663,8 @@ namespace valuascript::compiler
         CloserTracker tracker(ctx, TokenType::RightParen, ContainerKind::TupleLiteral);
 
         if (cursor.match(TokenType::RightParen))
-            return AstFactory::make_node<TupleLiteral>(
-                cursor, start, std::vector<ExprPtr>{});
+            return AstBuilder::build_with_span<TupleLiteral>(
+                cursor.make_span(start, cursor.previous()), std::vector<ExprPtr>{});
 
         bool failed = false;
         RecoveryConfig conf{
@@ -708,7 +708,6 @@ namespace valuascript::compiler
             if (tok.type == TokenType::EndOfFile) return true;
             if (tok.type == TokenType::Comma || tok.type == TokenType::RightParen) return false;
             if (tok.type != TokenType::RightParen && ctx.is_active_closer(tok.type)) return true;
-            if (tok.type == TokenType::Assign || (tok.type == TokenType::Identifier && next == TokenType::Assign)) return true;
             if (tok.line > cursor.previous().line)
             {
                 if (offset == 0 && (ctx.looks_like_reassignment() || ctx.is_at_any_declaration())) return true;
@@ -736,19 +735,19 @@ namespace valuascript::compiler
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen))
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterTupleElements);
-            return AstFactory::make_node<TupleLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<TupleLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
 
         try
         {
             const Token& end = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterTupleElements);
-            return AstFactory::make_node_with_span<TupleLiteral>(cursor.make_span(start, end), std::move(elements));
+            return AstBuilder::build_with_span<TupleLiteral>(cursor.make_span(start, end), std::move(elements));
         }
         catch (const ParseSyncException&)
         {
             if (!is_at_parent_boundary(0))
                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
-            return AstFactory::make_node<TupleLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<TupleLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
     }
 
@@ -757,7 +756,7 @@ namespace valuascript::compiler
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightParen))
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightParenAfterExpression);
-            return AstFactory::make_node<GroupingExpression>(cursor, start, std::move(first_expr));
+            return AstBuilder::build_with_span<GroupingExpression>(cursor.make_span(start, cursor.previous()), std::move(first_expr));
         }
 
         try
@@ -768,13 +767,13 @@ namespace valuascript::compiler
                     cursor.report_error(cursor.peek(), E::MissingOperator);
             }
             const Token& end = cursor.consume(TokenType::RightParen, E::ExpectedRightParenAfterExpression);
-            return AstFactory::make_node_with_span<GroupingExpression>(cursor.make_span(start, end),
+            return AstBuilder::build_with_span<GroupingExpression>(cursor.make_span(start, end),
                                                                        std::move(first_expr));
         }
         catch (const ParseSyncException&)
         {
             ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
-            return AstFactory::make_node<GroupingExpression>(cursor, start, std::move(first_expr));
+            return AstBuilder::build_with_span<GroupingExpression>(cursor.make_span(start, cursor.previous()), std::move(first_expr));
         }
     }
 
@@ -788,31 +787,31 @@ namespace valuascript::compiler
             (!cursor.check(TokenType::RightBracket) && ctx.is_active_closer(cursor.peek().type)))
         {
             cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorElements);
-            return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<TensorLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
 
         if (cursor.check(TokenType::RightBracket))
         {
             const Token& end = cursor.advance();
-            return AstFactory::make_node_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
+            return AstBuilder::build_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
         }
 
         if (cursor.check(TokenType::Comma))
         {
             cursor.report_error_no_panic(cursor.peek(), E::UnmatchedBracketAfterTensorElements);
-            return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<TensorLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
 
         try
         {
             const Token& end = cursor.consume(TokenType::RightBracket, E::UnmatchedBracketAfterTensorElements);
-            return AstFactory::make_node_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
+            return AstBuilder::build_with_span<TensorLiteral>(cursor.make_span(start, end), std::move(elements));
         }
         catch (const ParseSyncException&)
         {
             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBracket))
                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBracket);
-            return AstFactory::make_node<TensorLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<TensorLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
     }
 
@@ -887,24 +886,24 @@ namespace valuascript::compiler
 
         std::vector<DictItem> elements;
         elements.reserve(items_gen.size());
-        for (auto& g : items_gen) elements.push_back({
-            .modifiers = std::move(g.modifiers),
-            .key = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .value = std::move(g.value),
-            .span = g.span
-        });
+        for (auto& g : items_gen) elements.push_back(DictItem(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.value),
+            g.span
+        ));
 
         if (ErrorRecovery::should_yield_closer_to_parent(ctx, TokenType::RightBrace) ||
             (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type)))
         {
             cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBraceInDictionaryLiteral);
-            return AstFactory::make_node<DictLiteral>(cursor, start, std::move(elements));
+            return AstBuilder::build_with_span<DictLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
         }
 
         if (cursor.check(TokenType::RightBrace))
         {
             const Token& end = cursor.advance();
-            return AstFactory::make_node_with_span<DictLiteral>(cursor.make_span(start, end), std::move(elements));
+            return AstBuilder::build_with_span<DictLiteral>(cursor.make_span(start, end), std::move(elements));
         }
 
         cursor.report_error_no_panic(cursor.previous(), E::UnmatchedBraceInDictionaryLiteral);
@@ -913,7 +912,7 @@ namespace valuascript::compiler
             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightBrace))
                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
         }
-        return AstFactory::make_node<DictLiteral>(cursor, start, std::move(elements));
+        return AstBuilder::build_with_span<DictLiteral>(cursor.make_span(start, cursor.previous()), std::move(elements));
     }
 
     ExprPtr ExpressionParser::parse_conditional_expression()
@@ -1003,7 +1002,7 @@ namespace valuascript::compiler
             else_branch = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_expression(); }, conf);
         }
 
-        return AstFactory::make_node<ConditionalExpression>(cursor, start, std::move(condition), std::move(then_branch),
+        return AstBuilder::build_with_span<ConditionalExpression>(cursor.make_span(start, cursor.previous()), std::move(condition), std::move(then_branch),
                                                             std::move(else_branch));
     }
 
@@ -1026,7 +1025,7 @@ namespace valuascript::compiler
         if (!cursor.check(TokenType::RightBrace) && ctx.is_active_closer(cursor.peek().type))
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedRightBraceAfterSwitchBody);
-            return AstFactory::make_node<SwitchExpression>(cursor, start, std::move(target),
+            return AstBuilder::build_with_span<SwitchExpression>(cursor.make_span(start, cursor.previous()), std::move(target),
                                                            std::move(cases), std::move(default_mods),
                                                            std::move(default_case));
         }
@@ -1034,14 +1033,14 @@ namespace valuascript::compiler
         try
         {
             const Token& end = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterSwitchBody);
-            return AstFactory::make_node_with_span<SwitchExpression>(cursor.make_span(start, end), std::move(target),
+            return AstBuilder::build_with_span<SwitchExpression>(cursor.make_span(start, end), std::move(target),
                                                                      std::move(cases), std::move(default_mods),
                                                                      std::move(default_case));
         }
         catch (const ParseSyncException&)
         {
             ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightBrace);
-            return AstFactory::make_node<SwitchExpression>(cursor, start, std::move(target), std::move(cases),
+            return AstBuilder::build_with_span<SwitchExpression>(cursor.make_span(start, cursor.previous()), std::move(target), std::move(cases),
                                                            std::move(default_mods), std::move(default_case));
         }
     }
@@ -1094,11 +1093,11 @@ namespace valuascript::compiler
             .options = RecoveryOptions::SkipNestedGroupings | RecoveryOptions::StopEarlyIfUnbalancedBlocks
         };
         auto result = ErrorRecovery::try_parse<ExprPtr>(ctx, [&]() { return parse_switch_result(); }, conf);
-        return {
-            .modifiers = std::move(modifiers),
-            .identifiers = std::move(identifiers),
-            .result = std::move(result)
-        };
+        return SwitchCase(
+            std::move(modifiers),
+            std::move(identifiers),
+            std::move(result)
+        );
     }
 
     ExprPtr ExpressionParser::parse_switch_default()
