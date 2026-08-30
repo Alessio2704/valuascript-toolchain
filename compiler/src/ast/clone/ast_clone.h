@@ -3,14 +3,21 @@
 #include <memory>
 #include <vector>
 #include <concepts>
+#include <tuple>
+#include <utility>
+#include <type_traits>
+
 #include "ast/core/ast_core.h"
 #include "ast/core/ast_type.h"
 #include "ast/core/ast_expr.h"
 #include "ast/core/ast_stmt.h"
 #include "ast/core/ast_decl.h"
 #include "ast/core/ast_concepts.h"
+#include "ast/walker/ast_walker_concepts.h"
+#include "ast/metadata/ast_node_schema.h"
 #include "ast/equality/ast_equality.h"
 #include "ast/equality/ast_disjoint.h"
+#include "ast/utils/ast_cast.h"
 
 namespace valuascript::compiler
 {
@@ -38,488 +45,161 @@ namespace valuascript::compiler
 
     namespace detail
     {
+        template <typename MemberT>
+        inline auto clone_member(const MemberT& member)
+        {
+            if constexpr (IsUniquePtrOfAstNode<MemberT>)
+            {
+                return clone_node(member.get());
+            }
+            else if constexpr (IsVectorOfUniquePtrOfAstNode<MemberT>)
+            {
+                return clone_nodes(member);
+            }
+            else if constexpr (IsInnerAstNode<MemberT>)
+            {
+                return clone_node(member);
+            }
+            else if constexpr (IsVectorOfInnerAstNode<MemberT>)
+            {
+                return clone_nodes(member);
+            }
+            else if constexpr (IsOptionalAstFieldOfAstNode<MemberT>)
+            {
+                if (member.has_value())
+                {
+                    using ValT = typename MemberT::value_type;
+                    if constexpr (is_unique_ptr_v<ValT>)
+                    {
+                        return MemberT(clone_node(member.get()));
+                    }
+                    else
+                    {
+                        return MemberT(clone_node(member.value()));
+                    }
+                }
+                return MemberT{};
+            }
+            else
+            {
+                return member;
+            }
+        }
+
+        template <typename NodeT>
+        inline std::unique_ptr<NodeT> clone_node_reflected(const NodeT* node)
+        {
+            if (!node) return nullptr;
+            auto copy = std::make_unique<NodeT>();
+            constexpr size_t N = std::tuple_size_v<decltype(AstNodeSchema<NodeT>::members)>;
+            [&]<size_t... Is>(std::index_sequence<Is...>) {
+                (((*copy).*std::get<Is>(AstNodeSchema<NodeT>::members) = clone_member(node->*std::get<Is>(AstNodeSchema<NodeT>::members))), ...);
+            }(std::make_index_sequence<N>{});
+            return copy;
+        }
+
+        template <typename NodeT>
+        requires valuascript::shared::tuple_contains_type_v<NodeT, AllInnerNodeTypes>
+        inline NodeT clone_inner_node_reflected(const NodeT& node)
+        {
+            NodeT copy{};
+            constexpr size_t N = std::tuple_size_v<decltype(AstNodeSchema<NodeT>::members)>;
+            [&]<size_t... Is>(std::index_sequence<Is...>) {
+                ((copy.*std::get<Is>(AstNodeSchema<NodeT>::members) = clone_member(node.*std::get<Is>(AstNodeSchema<NodeT>::members))), ...);
+            }(std::make_index_sequence<N>{});
+            return copy;
+        }
+
         [[nodiscard]] inline ExprPtr clone_expression(const Expression* expr)
         {
             if (!expr) return nullptr;
-
             switch (expr->kind)
             {
-            case AstKind::NumberLiteral:
-                {
-                    auto* e = static_cast<const NumberLiteral*>(expr);
-                    auto copy = std::make_unique<NumberLiteral>(e->value);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::PercentageLiteral:
-                {
-                    auto* e = static_cast<const PercentageLiteral*>(expr);
-                    auto copy = std::make_unique<PercentageLiteral>(e->value);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::StringLiteral:
-                {
-                    auto* e = static_cast<const StringLiteral*>(expr);
-                    auto copy = std::make_unique<StringLiteral>(e->value);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::BooleanLiteral:
-                {
-                    auto* e = static_cast<const BooleanLiteral*>(expr);
-                    auto copy = std::make_unique<BooleanLiteral>(e->value);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::IdentifierAccess:
-                {
-                    auto* e = static_cast<const IdentifierAccess*>(expr);
-                    auto copy = std::make_unique<IdentifierAccess>(e->name);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::SelfExpression:
-                {
-                    auto* e = static_cast<const SelfExpression*>(expr);
-                    auto copy = std::make_unique<SelfExpression>();
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::UnaryExpression:
-                {
-                    auto* e = static_cast<const UnaryExpression*>(expr);
-                    auto copy = std::make_unique<UnaryExpression>(
-                        e->op, clone_node(e->right.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::BinaryExpression:
-                {
-                    auto* e = static_cast<const BinaryExpression*>(expr);
-                    auto copy = std::make_unique<BinaryExpression>(
-                        clone_node(e->left.get()), e->op, clone_node(e->right.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::GroupingExpression:
-                {
-                    auto* e = static_cast<const GroupingExpression*>(expr);
-                    auto copy = std::make_unique<GroupingExpression>(
-                        clone_node(e->expression.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::ConditionalExpression:
-                {
-                    auto* e = static_cast<const ConditionalExpression*>(expr);
-                    auto copy = std::make_unique<ConditionalExpression>(
-                        clone_node(e->condition.get()),
-                        clone_node(e->then_branch.get()),
-                        clone_node(e->else_branch.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::BracketAccess:
-                {
-                    auto* e = static_cast<const BracketAccess*>(expr);
-                    auto copy = std::make_unique<BracketAccess>(
-                        clone_node(e->target.get()), clone_node(e->index.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::DotAccess:
-                {
-                    auto* e = static_cast<const DotAccess*>(expr);
-                    auto copy = std::make_unique<DotAccess>(
-                        clone_node(e->target.get()), e->property_name);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::TupleLiteral:
-                {
-                    auto* e = static_cast<const TupleLiteral*>(expr);
-                    auto copy = std::make_unique<TupleLiteral>(clone_nodes(e->elements));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::TensorLiteral:
-                {
-                    auto* e = static_cast<const TensorLiteral*>(expr);
-                    auto copy = std::make_unique<TensorLiteral>(clone_nodes(e->elements));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::FunctionCall:
-                {
-                    auto* e = static_cast<const FunctionCall*>(expr);
-                    auto copy = std::make_unique<FunctionCall>(
-                        clone_node(e->target.get()), clone_nodes(e->arguments));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::DictLiteral:
-                {
-                    auto* e = static_cast<const DictLiteral*>(expr);
-                    auto copy = std::make_unique<DictLiteral>(clone_nodes(e->elements));
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::SwitchExpression:
-                {
-                    auto* e = static_cast<const SwitchExpression*>(expr);
-                    auto copy = std::make_unique<SwitchExpression>(
-                        clone_node(e->target.get()),
-                        clone_nodes(e->cases),
-                        clone_nodes(e->default_modifiers),
-                        clone_node(e->default_case.get()));
-                    copy->span = e->span;
-                    return copy;
-                }
-            default:
-                return nullptr;
+            case AstKind::NumberLiteral: return clone_node_reflected(static_cast<const NumberLiteral*>(expr));
+            case AstKind::PercentageLiteral: return clone_node_reflected(static_cast<const PercentageLiteral*>(expr));
+            case AstKind::StringLiteral: return clone_node_reflected(static_cast<const StringLiteral*>(expr));
+            case AstKind::BooleanLiteral: return clone_node_reflected(static_cast<const BooleanLiteral*>(expr));
+            case AstKind::IdentifierAccess: return clone_node_reflected(static_cast<const IdentifierAccess*>(expr));
+            case AstKind::SelfExpression: return clone_node_reflected(static_cast<const SelfExpression*>(expr));
+            case AstKind::UnaryExpression: return clone_node_reflected(static_cast<const UnaryExpression*>(expr));
+            case AstKind::BinaryExpression: return clone_node_reflected(static_cast<const BinaryExpression*>(expr));
+            case AstKind::GroupingExpression: return clone_node_reflected(static_cast<const GroupingExpression*>(expr));
+            case AstKind::ConditionalExpression: return clone_node_reflected(static_cast<const ConditionalExpression*>(expr));
+            case AstKind::FunctionCall: return clone_node_reflected(static_cast<const FunctionCall*>(expr));
+            case AstKind::DictLiteral: return clone_node_reflected(static_cast<const DictLiteral*>(expr));
+            case AstKind::TensorLiteral: return clone_node_reflected(static_cast<const TensorLiteral*>(expr));
+            case AstKind::TupleLiteral: return clone_node_reflected(static_cast<const TupleLiteral*>(expr));
+            case AstKind::BracketAccess: return clone_node_reflected(static_cast<const BracketAccess*>(expr));
+            case AstKind::DotAccess: return clone_node_reflected(static_cast<const DotAccess*>(expr));
+            case AstKind::SwitchExpression: return clone_node_reflected(static_cast<const SwitchExpression*>(expr));
+            default: return nullptr;
             }
         }
 
         [[nodiscard]] inline StmtPtr clone_statement(const Statement* stmt)
         {
             if (!stmt) return nullptr;
-
             switch (stmt->kind)
             {
-            case AstKind::Assignment:
-                {
-                    auto* s = static_cast<const Assignment*>(stmt);
-                    auto copy = std::make_unique<Assignment>(
-                        clone_nodes(s->targets), clone_node(s->value.get()));
-                    copy->span = s->span;
-                    return copy;
-                }
-            case AstKind::Reassignment:
-                {
-                    auto* s = static_cast<const Reassignment*>(stmt);
-                    auto copy = std::make_unique<Reassignment>(
-                        clone_node(s->target.get()), clone_node(s->value.get()));
-                    copy->span = s->span;
-                    return copy;
-                }
-            case AstKind::ExpressionStatement:
-                {
-                    auto* s = static_cast<const ExpressionStatement*>(stmt);
-                    auto copy = std::make_unique<ExpressionStatement>(
-                        clone_node(s->expr.get()));
-                    copy->span = s->span;
-                    return copy;
-                }
-            case AstKind::ReturnStatement:
-                {
-                    auto* s = static_cast<const ReturnStatement*>(stmt);
-                    auto copy = std::make_unique<ReturnStatement>(
-                        clone_nodes(s->modifiers), clone_nodes(s->values));
-                    copy->span = s->span;
-                    return copy;
-                }
-            case AstKind::EnumDefinition:
-                {
-                    auto* s = static_cast<const EnumDefinition*>(stmt);
-                    auto copy = std::make_unique<EnumDefinition>(
-                        clone_nodes(s->modifiers),
-                        s->name,
-                        clone_node(s->underlying_type.get()),
-                        clone_nodes(s->cases));
-                    copy->span = s->span;
-                    return copy;
-                }
-            default:
-                return nullptr;
+            case AstKind::Assignment: return clone_node_reflected(static_cast<const Assignment*>(stmt));
+            case AstKind::Reassignment: return clone_node_reflected(static_cast<const Reassignment*>(stmt));
+            case AstKind::ExpressionStatement: return clone_node_reflected(static_cast<const ExpressionStatement*>(stmt));
+            case AstKind::ReturnStatement: return clone_node_reflected(static_cast<const ReturnStatement*>(stmt));
+            case AstKind::EnumDefinition: return clone_node_reflected(static_cast<const EnumDefinition*>(stmt));
+            default: return nullptr;
             }
         }
 
         [[nodiscard]] inline TypeAnnPtr clone_type_annotation(const TypeAnnotation* type)
         {
             if (!type) return nullptr;
-
             switch (type->kind)
             {
-            case AstKind::TupleTypeAnnotation:
-                {
-                    auto* t = static_cast<const TupleTypeAnnotation*>(type);
-                    auto copy = std::make_unique<TupleTypeAnnotation>(
-                        clone_nodes(t->element_types));
-                    copy->span = t->span;
-                    copy->name = t->name;
-                    copy->generic_args = clone_nodes(t->generic_args);
-                    return copy;
-                }
-            case AstKind::TypeAnnotation:
-                {
-                    auto* t = static_cast<const TypeAnnotation*>(type);
-                    auto copy = std::make_unique<TypeAnnotation>(
-                        t->name, clone_nodes(t->generic_args));
-                    copy->span = t->span;
-                    return copy;
-                }
-            default:
-                return nullptr;
+            case AstKind::TypeAnnotation: return clone_node_reflected(static_cast<const TypeAnnotation*>(type));
+            case AstKind::TupleTypeAnnotation: return clone_node_reflected(static_cast<const TupleTypeAnnotation*>(type));
+            default: return nullptr;
             }
         }
 
         [[nodiscard]] inline std::unique_ptr<AstNode> clone_ast_node(const AstNode* node)
         {
             if (!node) return nullptr;
-
             switch (node->kind)
             {
-            case AstKind::Directive:
-                {
-                    auto* d = static_cast<const Directive*>(node);
-                    auto copy = std::make_unique<Directive>(
-                        d->name, clone_node(d->value.get()));
-                    copy->span = d->span;
-                    return copy;
-                }
-            case AstKind::ImportStatement:
-                {
-                    auto* i = static_cast<const ImportStatement*>(node);
-                    auto copy = std::make_unique<ImportStatement>(
-                        clone_nodes(i->modifiers), i->path);
-                    copy->resolved_canonical_path = i->resolved_canonical_path;
-                    copy->span = i->span;
-                    return copy;
-                }
-            case AstKind::FunctionDefinition:
-                {
-                    auto* f = static_cast<const FunctionDefinition*>(node);
-                    auto copy = std::make_unique<FunctionDefinition>(
-                        clone_nodes(f->modifiers),
-                        f->name,
-                        clone_nodes(f->parameters),
-                        clone_nodes(f->return_types),
-                        clone_nodes(f->body),
-                        f->docstring);
-                    copy->span = f->span;
-                    return copy;
-                }
-            case AstKind::StructDefinition:
-                {
-                    auto* s = static_cast<const StructDefinition*>(node);
-                    auto copy = std::make_unique<StructDefinition>(
-                        clone_nodes(s->modifiers),
-                        s->name,
-                        clone_nodes(s->fields));
-                    copy->span = s->span;
-                    return copy;
-                }
-            case AstKind::TypeAliasDefinition:
-                {
-                    auto* a = static_cast<const TypeAliasDefinition*>(node);
-                    auto copy = std::make_unique<TypeAliasDefinition>(
-                        clone_nodes(a->modifiers),
-                        a->name,
-                        clone_node(a->target_type.get()));
-                    copy->span = a->span;
-                    return copy;
-                }
-            case AstKind::ExtensionDefinition:
-                {
-                    auto* e = static_cast<const ExtensionDefinition*>(node);
-                    auto copy = std::make_unique<ExtensionDefinition>(
-                        clone_nodes(e->modifiers),
-                        clone_node(e->target_type.get()));
-                    copy->execution_steps = clone_nodes(e->execution_steps);
-                    copy->function_definitions = clone_nodes(e->function_definitions);
-                    copy->struct_definitions = clone_nodes(e->struct_definitions);
-                    copy->enum_definitions = clone_nodes(e->enum_definitions);
-                    copy->type_aliases = clone_nodes(e->type_aliases);
-                    copy->span = e->span;
-                    return copy;
-                }
-            case AstKind::Program:
-                {
-                    auto* p = static_cast<const Program*>(node);
-                    auto copy = std::make_unique<Program>();
-                    copy->comments = clone_nodes(p->comments);
-                    copy->import_statements = clone_nodes(p->import_statements);
-                    copy->directives = clone_nodes(p->directives);
-                    copy->execution_steps = clone_nodes(p->execution_steps);
-                    copy->function_definitions = clone_nodes(p->function_definitions);
-                    copy->struct_definitions = clone_nodes(p->struct_definitions);
-                    copy->enum_definitions = clone_nodes(p->enum_definitions);
-                    copy->type_aliases = clone_nodes(p->type_aliases);
-                    copy->extension_definitions = clone_nodes(p->extension_definitions);
-                    copy->span = p->span;
-                    return copy;
-                }
-            case AstKind::Comment:
-                {
-                    auto* c = static_cast<const Comment*>(node);
-                    auto copy = std::make_unique<Comment>(c->text, c->span);
-                    return copy;
-                }
-            case AstKind::Modifier:
-                {
-                    auto* m = static_cast<const Modifier*>(node);
-                    auto copy = std::make_unique<Modifier>(
-                        m->name, clone_nodes(m->arguments), m->span);
-                    return copy;
-                }
-            case AstKind::CallArgument:
-                {
-                    auto* a = static_cast<const CallArgument*>(node);
-                    auto copy = std::make_unique<CallArgument>(
-                        a->name, clone_node(a->value.get()), a->span);
-                    return copy;
-                }
-            case AstKind::FunctionParameter:
-                {
-                    auto* p = static_cast<const FunctionParameter*>(node);
-                    auto copy = std::make_unique<FunctionParameter>(
-                        clone_nodes(p->modifiers),
-                        p->name,
-                        clone_node(p->type.get()),
-                        clone_node(p->default_value.get()),
-                        p->span);
-                    return copy;
-                }
-            case AstKind::StructField:
-                {
-                    auto* f = static_cast<const StructField*>(node);
-                    auto copy = std::make_unique<StructField>(
-                        clone_nodes(f->modifiers),
-                        f->name,
-                        clone_node(f->type.get()),
-                        f->span);
-                    return copy;
-                }
-            case AstKind::EnumCase:
-                {
-                    auto* c = static_cast<const EnumCase*>(node);
-                    auto copy = std::make_unique<EnumCase>(
-                        clone_nodes(c->modifiers),
-                        c->name,
-                        clone_node(c->value.get()),
-                        c->span);
-                    return copy;
-                }
-            case AstKind::DictItem:
-                {
-                    auto* d = static_cast<const DictItem*>(node);
-                    auto copy = std::make_unique<DictItem>(
-                        clone_nodes(d->modifiers),
-                        d->key,
-                        clone_node(d->value.get()),
-                        d->span);
-                    return copy;
-                }
-            case AstKind::SwitchCase:
-                {
-                    auto* s = static_cast<const SwitchCase*>(node);
-                    auto copy = std::make_unique<SwitchCase>(
-                        clone_nodes(s->modifiers),
-                        s->identifiers,
-                        clone_node(s->result.get()),
-                        s->span);
-                    return copy;
-                }
-            case AstKind::AssignmentTarget:
-                {
-                    auto* t = static_cast<const AssignmentTarget*>(node);
-                    auto copy = std::make_unique<AssignmentTarget>(
-                        clone_nodes(t->modifiers),
-                        t->name,
-                        clone_node(t->type.get()),
-                        t->span);
-                    return copy;
-                }
+            case AstKind::Directive: return clone_node_reflected(static_cast<const Directive*>(node));
+            case AstKind::ImportStatement: return clone_node_reflected(static_cast<const ImportStatement*>(node));
+            case AstKind::FunctionDefinition: return clone_node_reflected(static_cast<const FunctionDefinition*>(node));
+            case AstKind::StructDefinition: return clone_node_reflected(static_cast<const StructDefinition*>(node));
+            case AstKind::TypeAliasDefinition: return clone_node_reflected(static_cast<const TypeAliasDefinition*>(node));
+            case AstKind::ExtensionDefinition: return clone_node_reflected(static_cast<const ExtensionDefinition*>(node));
+            case AstKind::Program: return clone_node_reflected(static_cast<const Program*>(node));
+            case AstKind::Comment: return std::make_unique<Comment>(clone_inner_node_reflected(*static_cast<const Comment*>(node)));
+            case AstKind::CallArgument: return std::make_unique<CallArgument>(clone_inner_node_reflected(*static_cast<const CallArgument*>(node)));
+            case AstKind::Modifier: return std::make_unique<Modifier>(clone_inner_node_reflected(*static_cast<const Modifier*>(node)));
+            case AstKind::FunctionParameter: return std::make_unique<FunctionParameter>(clone_inner_node_reflected(*static_cast<const FunctionParameter*>(node)));
+            case AstKind::StructField: return std::make_unique<StructField>(clone_inner_node_reflected(*static_cast<const StructField*>(node)));
+            case AstKind::EnumCase: return std::make_unique<EnumCase>(clone_inner_node_reflected(*static_cast<const EnumCase*>(node)));
+            case AstKind::DictItem: return std::make_unique<DictItem>(clone_inner_node_reflected(*static_cast<const DictItem*>(node)));
+            case AstKind::SwitchCase: return std::make_unique<SwitchCase>(clone_inner_node_reflected(*static_cast<const SwitchCase*>(node)));
+            case AstKind::AssignmentTarget: return std::make_unique<AssignmentTarget>(clone_inner_node_reflected(*static_cast<const AssignmentTarget*>(node)));
             default:
-                {
-                    if (auto expr_copy = clone_expression(dynamic_cast<const Expression*>(node)))
-                    {
-                        return expr_copy;
-                    }
-                    if (auto stmt_copy = clone_statement(dynamic_cast<const Statement*>(node)))
-                    {
-                        return stmt_copy;
-                    }
-                    if (auto type_copy = clone_type_annotation(dynamic_cast<const TypeAnnotation*>(node)))
-                    {
-                        return type_copy;
-                    }
-                    return nullptr;
-                }
+                if (auto expr = dynamic_cast<const Expression*>(node)) return clone_expression(expr);
+                if (auto stmt = dynamic_cast<const Statement*>(node)) return clone_statement(stmt);
+                if (auto type = dynamic_cast<const TypeAnnotation*>(node)) return clone_type_annotation(type);
+                return nullptr;
             }
         }
     }
 
-    inline Comment clone_node(const Comment& comment)
-    {
-        return Comment(comment.text, comment.span);
-    }
-
-    inline CallArgument clone_node(const CallArgument& arg)
-    {
-        return CallArgument(arg.name, clone_node(arg.value.get()), arg.span);
-    }
-
-    inline Modifier clone_node(const Modifier& mod)
-    {
-        return Modifier(mod.name, clone_nodes(mod.arguments), mod.span);
-    }
-
-    inline FunctionParameter clone_node(const FunctionParameter& param)
-    {
-        return FunctionParameter(
-            clone_nodes(param.modifiers),
-            param.name,
-            clone_node(param.type.get()),
-            clone_node(param.default_value.get()),
-            param.span);
-    }
-
-    inline StructField clone_node(const StructField& field)
-    {
-        return StructField(
-            clone_nodes(field.modifiers),
-            field.name,
-            clone_node(field.type.get()),
-            field.span);
-    }
-
-    inline EnumCase clone_node(const EnumCase& item)
-    {
-        return EnumCase(
-            clone_nodes(item.modifiers),
-            item.name,
-            clone_node(item.value.get()),
-            item.span);
-    }
-
-    inline DictItem clone_node(const DictItem& item)
-    {
-        return DictItem(
-            clone_nodes(item.modifiers),
-            item.key,
-            clone_node(item.value.get()),
-            item.span);
-    }
-
-    inline SwitchCase clone_node(const SwitchCase& item)
-    {
-        return SwitchCase(
-            clone_nodes(item.modifiers),
-            item.identifiers,
-            clone_node(item.result.get()),
-            item.span);
-    }
-
-    inline AssignmentTarget clone_node(const AssignmentTarget& target)
-    {
-        return AssignmentTarget(
-            clone_nodes(target.modifiers),
-            target.name,
-            clone_node(target.type.get()),
-            target.span);
-    }
+    inline Comment clone_node(const Comment& comment) { return detail::clone_inner_node_reflected(comment); }
+    inline CallArgument clone_node(const CallArgument& arg) { return detail::clone_inner_node_reflected(arg); }
+    inline Modifier clone_node(const Modifier& mod) { return detail::clone_inner_node_reflected(mod); }
+    inline FunctionParameter clone_node(const FunctionParameter& param) { return detail::clone_inner_node_reflected(param); }
+    inline StructField clone_node(const StructField& field) { return detail::clone_inner_node_reflected(field); }
+    inline EnumCase clone_node(const EnumCase& item) { return detail::clone_inner_node_reflected(item); }
+    inline DictItem clone_node(const DictItem& item) { return detail::clone_inner_node_reflected(item); }
+    inline SwitchCase clone_node(const SwitchCase& item) { return detail::clone_inner_node_reflected(item); }
+    inline AssignmentTarget clone_node(const AssignmentTarget& target) { return detail::clone_inner_node_reflected(target); }
 
     template <AstElement T>
     [[nodiscard]] std::unique_ptr<T> clone_node(const T* node)

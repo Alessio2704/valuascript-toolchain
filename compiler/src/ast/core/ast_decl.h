@@ -15,6 +15,7 @@ namespace valuascript::compiler
         NodeName name;
         ExprPtr value;
 
+        Directive() : AstNode(KIND) {}
         explicit Directive(NodeName n, ExprPtr val)
             : AstNode(KIND), name(std::move(n)), value(std::move(val))
         {
@@ -34,6 +35,7 @@ namespace valuascript::compiler
         NodeName path;
         OptionalAstField<std::string> resolved_canonical_path = std::nullopt;
 
+        ImportStatement() : AstNode(KIND) {}
         explicit ImportStatement(std::vector<Modifier> mods, NodeName p)
             : AstNode(KIND), modifiers(std::move(mods)), path(std::move(p))
         {
@@ -83,6 +85,7 @@ namespace valuascript::compiler
         std::vector<StmtPtr> body;
         OptionalAstField<std::string> docstring = std::nullopt;
 
+        FunctionDefinition() : AstNode(KIND) {}
         explicit FunctionDefinition(std::vector<Modifier> mods,
                                     NodeName n,
                                     std::vector<FunctionParameter> params,
@@ -132,6 +135,7 @@ namespace valuascript::compiler
         NodeName name;
         std::vector<StructField> fields;
 
+        StructDefinition() : AstNode(KIND) {}
         explicit StructDefinition(std::vector<Modifier> mods,
                                   NodeName n,
                                   std::vector<StructField> f)
@@ -153,6 +157,7 @@ namespace valuascript::compiler
         NodeName name;
         TypeAnnPtr target_type;
 
+        TypeAliasDefinition() : AstNode(KIND) {}
         explicit TypeAliasDefinition(std::vector<Modifier> mods,
                                      NodeName n,
                                      TypeAnnPtr t_type)
@@ -178,6 +183,7 @@ namespace valuascript::compiler
         std::vector<EnumDefPtr> enum_definitions;
         std::vector<TypeAliasPtr> type_aliases;
 
+        ExtensionDefinition() : AstNode(KIND) {}
         explicit ExtensionDefinition(std::vector<Modifier> mods,
                                      TypeAnnPtr target)
             : AstNode(KIND), modifiers(std::move(mods)), target_type(std::move(target))

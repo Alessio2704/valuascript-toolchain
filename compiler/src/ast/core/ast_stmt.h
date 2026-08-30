@@ -36,6 +36,7 @@ namespace valuascript::compiler
         std::vector<AssignmentTarget> targets;
         ExprPtr value;
 
+        Assignment() : Statement(KIND) {}
         Assignment(std::vector<AssignmentTarget> tar,
                    ExprPtr val)
             : Statement(KIND), targets(std::move(tar)), value(std::move(val))
@@ -55,6 +56,7 @@ namespace valuascript::compiler
         ExprPtr target;
         ExprPtr value;
 
+        Reassignment() : Statement(KIND) {}
         Reassignment(ExprPtr tar, ExprPtr val)
             : Statement(KIND), target(std::move(tar)), value(std::move(val))
         {
@@ -72,6 +74,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::ExpressionStatement;
         ExprPtr expr;
 
+        ExpressionStatement() : Statement(KIND) {}
         explicit ExpressionStatement(ExprPtr e)
             : Statement(KIND), expr(std::move(e))
         {
@@ -90,6 +93,7 @@ namespace valuascript::compiler
         std::vector<Modifier> modifiers;
         std::vector<ExprPtr> values;
 
+        ReturnStatement() : Statement(KIND) {}
         explicit ReturnStatement(std::vector<Modifier> mods, std::vector<ExprPtr> return_values)
             : Statement(KIND), modifiers(std::move(mods)), values(std::move(return_values))
         {
@@ -134,6 +138,7 @@ namespace valuascript::compiler
         TypeAnnPtr underlying_type;
         std::vector<EnumCase> cases;
 
+        EnumDefinition() : Statement(KIND) {}
         EnumDefinition(std::vector<Modifier> mods,
                        NodeName n,
                        TypeAnnPtr type,

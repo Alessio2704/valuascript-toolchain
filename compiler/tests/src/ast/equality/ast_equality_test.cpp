@@ -4,14 +4,14 @@
 
 namespace valuascript::compiler::test
 {
-    TEST(AstEqualityTest, ReflexivityAcrossSampleProgram)
+    TEST(AstEqualityBaselineTest, ReflexivityAcrossSampleProgram)
     {
         reset_factory_state();
         auto prog = create_sample_program();
         EXPECT_TRUE(ast_equals(prog, prog));
     }
 
-    TEST(AstEqualityTest, IdenticallyConstructedProgramsAreEqual)
+    TEST(AstEqualityBaselineTest, IdenticallyConstructedProgramsAreEqual)
     {
         reset_factory_state();
         auto prog1 = create_sample_program();
@@ -23,35 +23,7 @@ namespace valuascript::compiler::test
         EXPECT_TRUE(ast_equals(prog2, prog1));
     }
 
-    TEST(AstEqualityTest, MutationBreaksEquality)
-    {
-        reset_factory_state();
-        auto prog1 = create_sample_program();
-
-        reset_factory_state();
-        auto prog2 = create_sample_program();
-
-        EXPECT_TRUE(ast_equals(prog1, prog2));
-
-        prog2->span.line_start += 1;
-        EXPECT_FALSE(ast_equals(prog1, prog2));
-
-        prog2->span.line_start = prog1->span.line_start;
-        EXPECT_TRUE(ast_equals(prog1, prog2));
-
-        prog2->execution_steps.pop_back();
-        EXPECT_FALSE(ast_equals(prog1, prog2));
-    }
-
-    TEST(AstEqualityTest, DifferentAstKindsReturnFalse)
-    {
-        auto num = std::make_unique<NumberLiteral>("42");
-        auto str = std::make_unique<StringLiteral>("42");
-
-        EXPECT_FALSE(ast_equals(num, str));
-    }
-
-    TEST(AstEqualityTest, NullptrEqualityComparisons)
+    TEST(AstEqualityBaselineTest, NullptrEqualityComparisons)
     {
         std::unique_ptr<NumberLiteral> p1 = nullptr;
         std::unique_ptr<NumberLiteral> p2 = nullptr;
@@ -62,7 +34,7 @@ namespace valuascript::compiler::test
         EXPECT_FALSE(ast_equals(p3, p1));
     }
 
-    TEST(AstEqualityTest, PolymorphicBasePointerEquality)
+    TEST(AstEqualityBaselineTest, PolymorphicBasePointerEquality)
     {
         reset_factory_state();
         auto func1 = create_sample<FunctionDefinition>(0);

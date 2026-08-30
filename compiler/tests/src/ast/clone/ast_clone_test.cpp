@@ -26,7 +26,7 @@ namespace valuascript::compiler::test
         return AstCloneTestDescriptor{
             .node_name = std::string(get_ast_node_name<T>()),
             .run_test = []() {
-                AstCloneSampleFactory<T>::run_full_clone_test();
+                run_schema_driven_clone_test<T>();
             }
         };
     }
@@ -48,14 +48,14 @@ namespace valuascript::compiler::test
         return AstCloneTestDescriptorCollector<AllAstNodeTypes>::collect();
     }
 
-    class AstCloneTest : public testing::TestWithParam<AstCloneTestDescriptor>
+    class AstCloneParameterizedTest : public testing::TestWithParam<AstCloneTestDescriptor>
     {
     };
 
-    TEST_P(AstCloneTest, DeepCloneAndInvariants)
+    TEST_P(AstCloneParameterizedTest, DeeplyClonesAllSchemaMembersAndPreservesDisjointness)
     {
         const auto& descriptor = GetParam();
-        SCOPED_TRACE("Testing AST Node Clone Engine for: " + descriptor.node_name);
+        SCOPED_TRACE("Testing Schema Member Deep Clone for: " + descriptor.node_name);
         ASSERT_NE(descriptor.run_test, nullptr);
         descriptor.run_test();
     }
@@ -70,7 +70,7 @@ namespace valuascript::compiler::test
 
     INSTANTIATE_TEST_SUITE_P(
         AllAstNodes,
-        AstCloneTest,
+        AstCloneParameterizedTest,
         testing::ValuesIn(get_all_ast_clone_test_descriptors()),
         AstCloneTestNameGenerator{}
     );

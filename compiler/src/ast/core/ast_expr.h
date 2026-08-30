@@ -10,6 +10,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::NumberLiteral;
         std::string value;
 
+        NumberLiteral() : Expression(KIND) {}
         explicit NumberLiteral(std::string_view val) : Expression(KIND), value(val)
         {
         }
@@ -26,6 +27,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::PercentageLiteral;
         std::string value;
 
+        PercentageLiteral() : Expression(KIND) {}
         explicit PercentageLiteral(std::string_view val) : Expression(KIND), value(val)
         {
         }
@@ -42,6 +44,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::StringLiteral;
         std::string value;
 
+        StringLiteral() : Expression(KIND) {}
         explicit StringLiteral(std::string_view val) : Expression(KIND), value(val)
         {
         }
@@ -56,8 +59,9 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::BooleanLiteral;
-        bool value;
+        bool value = false;
 
+        BooleanLiteral() : Expression(KIND) {}
         explicit BooleanLiteral(bool val) : Expression(KIND), value(val)
         {
         }
@@ -74,6 +78,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::IdentifierAccess;
         NodeName name;
 
+        IdentifierAccess() : Expression(KIND) {}
         explicit IdentifierAccess(NodeName n) : Expression(KIND), name(std::move(n))
         {
         }
@@ -101,9 +106,10 @@ namespace valuascript::compiler
     public:
         static constexpr AstKind KIND = AstKind::BinaryExpression;
         ExprPtr left;
-        TokenType op;
+        TokenType op = TokenType::Error;
         ExprPtr right;
 
+        BinaryExpression() : Expression(KIND) {}
         explicit BinaryExpression(ExprPtr l, TokenType o, ExprPtr r)
             : Expression(KIND), left(std::move(l)), op(o), right(std::move(r))
         {
@@ -119,9 +125,10 @@ namespace valuascript::compiler
     {
     public:
         static constexpr AstKind KIND = AstKind::UnaryExpression;
-        TokenType op;
+        TokenType op = TokenType::Error;
         ExprPtr right;
 
+        UnaryExpression() : Expression(KIND) {}
         explicit UnaryExpression(TokenType o, ExprPtr r)
             : Expression(KIND), op(o), right(std::move(r))
         {
@@ -139,6 +146,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::GroupingExpression;
         ExprPtr expression;
 
+        GroupingExpression() : Expression(KIND) {}
         explicit GroupingExpression(ExprPtr expr)
             : Expression(KIND), expression(std::move(expr))
         {
@@ -158,6 +166,7 @@ namespace valuascript::compiler
         ExprPtr then_branch;
         ExprPtr else_branch;
 
+        ConditionalExpression() : Expression(KIND) {}
         explicit ConditionalExpression(ExprPtr cond, ExprPtr thn, ExprPtr els)
             : Expression(KIND), condition(std::move(cond)), then_branch(std::move(thn)), else_branch(std::move(els))
         {
@@ -179,6 +188,7 @@ namespace valuascript::compiler
         ExprPtr target;
         std::vector<CallArgument> arguments;
 
+        FunctionCall() : Expression(KIND) {}
         explicit FunctionCall(ExprPtr tgt, std::vector<CallArgument> args)
             : Expression(KIND), target(std::move(tgt)), arguments(std::move(args))
         {
@@ -220,6 +230,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::DictLiteral;
         std::vector<DictItem> elements;
 
+        DictLiteral() : Expression(KIND) {}
         explicit DictLiteral(std::vector<DictItem> elems)
             : Expression(KIND), elements(std::move(elems))
         {
@@ -237,6 +248,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::TensorLiteral;
         std::vector<ExprPtr> elements;
 
+        TensorLiteral() : Expression(KIND) {}
         explicit TensorLiteral(std::vector<ExprPtr> elems)
             : Expression(KIND), elements(std::move(elems))
         {
@@ -254,6 +266,7 @@ namespace valuascript::compiler
         static constexpr AstKind KIND = AstKind::TupleLiteral;
         std::vector<ExprPtr> elements;
 
+        TupleLiteral() : Expression(KIND) {}
         explicit TupleLiteral(std::vector<ExprPtr> elems)
             : Expression(KIND), elements(std::move(elems))
         {
@@ -272,6 +285,7 @@ namespace valuascript::compiler
         ExprPtr target;
         ExprPtr index;
 
+        BracketAccess() : Expression(KIND) {}
         explicit BracketAccess(ExprPtr tgt, ExprPtr idx)
             : Expression(KIND), target(std::move(tgt)), index(std::move(idx))
         {
@@ -290,6 +304,7 @@ namespace valuascript::compiler
         ExprPtr target;
         NodeName property_name;
 
+        DotAccess() : Expression(KIND) {}
         explicit DotAccess(ExprPtr tgt, NodeName prop)
             : Expression(KIND), target(std::move(tgt)), property_name(std::move(prop))
         {
@@ -334,6 +349,7 @@ namespace valuascript::compiler
         std::vector<Modifier> default_modifiers;
         OptionalAstField<ExprPtr> default_case = std::nullopt;
 
+        SwitchExpression() : Expression(KIND) {}
         SwitchExpression(ExprPtr t,
                          std::vector<SwitchCase> c,
                          std::vector<Modifier> def_mods,
