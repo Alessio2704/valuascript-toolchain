@@ -247,6 +247,8 @@ namespace valuascript::compiler
                     auto copy = std::make_unique<TupleTypeAnnotation>(
                         clone_nodes(t->element_types));
                     copy->span = t->span;
+                    copy->name = t->name;
+                    copy->generic_args = clone_nodes(t->generic_args);
                     return copy;
                 }
             case AstKind::TypeAnnotation:

@@ -3,12 +3,18 @@
 #include <memory>
 #include <vector>
 #include <concepts>
+#include <type_traits>
+#include <utility>
+
 #include "ast/core/ast_core.h"
 #include "ast/core/ast_type.h"
 #include "ast/core/ast_expr.h"
 #include "ast/core/ast_stmt.h"
 #include "ast/core/ast_decl.h"
 #include "ast/metadata/ast_node_registry.h"
+#include "ast/metadata/ast_node_schema.h"
+#include "ast/categories/ast_category_types.h"
+#include "ast/walker/ast_walker_concepts.h"
 
 namespace valuascript::compiler
 {
@@ -17,20 +23,218 @@ namespace valuascript::compiler
     public:
         virtual ~AstRewriter() = default;
 
+        template <typename T>
+        void auto_rewrite_children(T& node)
+        {
+            for_each_ast_member(node, [&](auto& member) {
+                using MemberT = std::remove_cvref_t<decltype(member)>;
+
+                if constexpr (IsUniquePtrOfAstNode<MemberT>)
+                {
+                    if (member)
+                    {
+                        using ConcreteT = typename MemberT::element_type;
+                        if constexpr (std::derived_from<ConcreteT, Expression>)
+                        {
+                            if constexpr (std::same_as<ConcreteT, Expression>)
+                            {
+                                member = rewrite(std::move(member));
+                            }
+                            else
+                            {
+                                member = ast_cast_unique<ConcreteT>(rewrite(std::move(member)));
+                            }
+                        }
+                        else if constexpr (std::derived_from<ConcreteT, Statement>)
+                        {
+                            if constexpr (std::same_as<ConcreteT, Statement>)
+                            {
+                                member = rewrite(std::move(member));
+                            }
+                            else
+                            {
+                                member = ast_cast_unique<ConcreteT>(rewrite(std::move(member)));
+                            }
+                        }
+                        else if constexpr (std::derived_from<ConcreteT, TypeAnnotation>)
+                        {
+                            if constexpr (std::same_as<ConcreteT, TypeAnnotation>)
+                            {
+                                member = rewrite(std::move(member));
+                            }
+                            else
+                            {
+                                member = ast_cast_unique<ConcreteT>(rewrite(std::move(member)));
+                            }
+                        }
+                        else
+                        {
+                            member = rewrite(std::move(member));
+                        }
+                    }
+                }
+                else if constexpr (IsVectorOfUniquePtrOfAstNode<MemberT>)
+                {
+                    for (auto& item : member)
+                    {
+                        if (item)
+                        {
+                            using ConcreteT = typename MemberT::value_type::element_type;
+                            if constexpr (std::derived_from<ConcreteT, Expression>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, Expression>)
+                                {
+                                    item = rewrite(std::move(item));
+                                }
+                                else
+                                {
+                                    item = ast_cast_unique<ConcreteT>(rewrite(std::move(item)));
+                                }
+                            }
+                            else if constexpr (std::derived_from<ConcreteT, Statement>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, Statement>)
+                                {
+                                    item = rewrite(std::move(item));
+                                }
+                                else
+                                {
+                                    item = ast_cast_unique<ConcreteT>(rewrite(std::move(item)));
+                                }
+                            }
+                            else if constexpr (std::derived_from<ConcreteT, TypeAnnotation>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, TypeAnnotation>)
+                                {
+                                    item = rewrite(std::move(item));
+                                }
+                                else
+                                {
+                                    item = ast_cast_unique<ConcreteT>(rewrite(std::move(item)));
+                                }
+                            }
+                            else
+                            {
+                                item = rewrite(std::move(item));
+                            }
+                        }
+                    }
+                }
+                else if constexpr (IsInnerAstNode<MemberT>)
+                {
+                    member = rewrite(std::move(member));
+                }
+                else if constexpr (IsVectorOfInnerAstNode<MemberT>)
+                {
+                    for (auto& item : member)
+                    {
+                        item = rewrite(std::move(item));
+                    }
+                }
+                else if constexpr (IsOptionalAstFieldOfAstNode<MemberT> || IsStdOptionalOfAstNode<MemberT>)
+                {
+                    if (member.has_value())
+                    {
+                        if constexpr (IsOptionalAstFieldOfAstNode<MemberT>)
+                        {
+                            using PtrT = std::remove_cvref_t<decltype(member.value())>;
+                            using ConcreteT = typename PtrT::element_type;
+                            if constexpr (std::derived_from<ConcreteT, Expression>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, Expression>)
+                                {
+                                    member.value() = rewrite(std::move(member.value()));
+                                }
+                                else
+                                {
+                                    member.value() = ast_cast_unique<ConcreteT>(rewrite(std::move(member.value())));
+                                }
+                            }
+                            else if constexpr (std::derived_from<ConcreteT, Statement>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, Statement>)
+                                {
+                                    member.value() = rewrite(std::move(member.value()));
+                                }
+                                else
+                                {
+                                    member.value() = ast_cast_unique<ConcreteT>(rewrite(std::move(member.value())));
+                                }
+                            }
+                            else if constexpr (std::derived_from<ConcreteT, TypeAnnotation>)
+                            {
+                                if constexpr (std::same_as<ConcreteT, TypeAnnotation>)
+                                {
+                                    member.value() = rewrite(std::move(member.value()));
+                                }
+                                else
+                                {
+                                    member.value() = ast_cast_unique<ConcreteT>(rewrite(std::move(member.value())));
+                                }
+                            }
+                            else
+                            {
+                                member.value() = rewrite(std::move(member.value()));
+                            }
+                        }
+                        else
+                        {
+                            using ValT = typename MemberT::value_type;
+                            if constexpr (is_unique_ptr_v<ValT>)
+                            {
+                                using ConcreteT = typename ValT::element_type;
+                                if constexpr (std::derived_from<ConcreteT, Expression>)
+                                {
+                                    if constexpr (std::same_as<ConcreteT, Expression>)
+                                    {
+                                        *member = rewrite(std::move(*member));
+                                    }
+                                    else
+                                    {
+                                        *member = ast_cast_unique<ConcreteT>(rewrite(std::move(*member)));
+                                    }
+                                }
+                                else if constexpr (std::derived_from<ConcreteT, Statement>)
+                                {
+                                    if constexpr (std::same_as<ConcreteT, Statement>)
+                                    {
+                                        *member = rewrite(std::move(*member));
+                                    }
+                                    else
+                                    {
+                                        *member = ast_cast_unique<ConcreteT>(rewrite(std::move(*member)));
+                                    }
+                                }
+                                else if constexpr (std::derived_from<ConcreteT, TypeAnnotation>)
+                                {
+                                    if constexpr (std::same_as<ConcreteT, TypeAnnotation>)
+                                    {
+                                        *member = rewrite(std::move(*member));
+                                    }
+                                    else
+                                    {
+                                        *member = ast_cast_unique<ConcreteT>(rewrite(std::move(*member)));
+                                    }
+                                }
+                                else
+                                {
+                                    *member = rewrite(std::move(*member));
+                                }
+                            }
+                            else
+                            {
+                                *member = rewrite(std::move(*member));
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         virtual std::unique_ptr<Program> rewrite(std::unique_ptr<Program> program)
         {
             if (!program) return nullptr;
-
-            for (auto& comm : program->comments) { comm = rewrite(std::move(comm)); }
-            for (auto& imp : program->import_statements) { imp = rewrite(std::move(imp)); }
-            for (auto& dir : program->directives) { dir = rewrite(std::move(dir)); }
-            for (auto& st : program->struct_definitions) { st = rewrite(std::move(st)); }
-            for (auto& en : program->enum_definitions) { en = rewrite(std::move(en)); }
-            for (auto& ta : program->type_aliases) { ta = rewrite(std::move(ta)); }
-            for (auto& fn : program->function_definitions) { fn = rewrite(std::move(fn)); }
-            for (auto& ext : program->extension_definitions) { ext = rewrite(std::move(ext)); }
-            for (auto& step : program->execution_steps) { step = rewrite(std::move(step)); }
-
+            auto_rewrite_children(*program);
             return program;
         }
 
@@ -38,66 +242,24 @@ namespace valuascript::compiler
         {
             if (!stmt) return nullptr;
 
-            switch (stmt->kind)
-            {
-                case AstKind::Assignment:
-                    return rewrite(ast_cast_unique<Assignment>(std::move(stmt)));
-                case AstKind::Reassignment:
-                    return rewrite(ast_cast_unique<Reassignment>(std::move(stmt)));
-                case AstKind::ExpressionStatement:
-                    return rewrite(ast_cast_unique<ExpressionStatement>(std::move(stmt)));
-                case AstKind::ReturnStatement:
-                    return rewrite(ast_cast_unique<ReturnStatement>(std::move(stmt)));
-                case AstKind::EnumDefinition:
-                    return rewrite(ast_cast_unique<EnumDefinition>(std::move(stmt)));
-                default:
-                    return stmt;
-            }
+            StmtPtr result = nullptr;
+            NodeDispatcher<AllStatementNodeTypes>::dispatch(stmt->kind, [&]<typename T>() {
+                result = rewrite(ast_cast_unique<T>(std::move(stmt)));
+            });
+
+            return result ? std::move(result) : std::move(stmt);
         }
 
         virtual ExprPtr rewrite(ExprPtr expr)
         {
             if (!expr) return nullptr;
 
-            switch (expr->kind)
-            {
-                case AstKind::NumberLiteral:
-                    return rewrite(ast_cast_unique<NumberLiteral>(std::move(expr)));
-                case AstKind::PercentageLiteral:
-                    return rewrite(ast_cast_unique<PercentageLiteral>(std::move(expr)));
-                case AstKind::StringLiteral:
-                    return rewrite(ast_cast_unique<StringLiteral>(std::move(expr)));
-                case AstKind::BooleanLiteral:
-                    return rewrite(ast_cast_unique<BooleanLiteral>(std::move(expr)));
-                case AstKind::IdentifierAccess:
-                    return rewrite(ast_cast_unique<IdentifierAccess>(std::move(expr)));
-                case AstKind::SelfExpression:
-                    return rewrite(ast_cast_unique<SelfExpression>(std::move(expr)));
-                case AstKind::BinaryExpression:
-                    return rewrite(ast_cast_unique<BinaryExpression>(std::move(expr)));
-                case AstKind::UnaryExpression:
-                    return rewrite(ast_cast_unique<UnaryExpression>(std::move(expr)));
-                case AstKind::GroupingExpression:
-                    return rewrite(ast_cast_unique<GroupingExpression>(std::move(expr)));
-                case AstKind::ConditionalExpression:
-                    return rewrite(ast_cast_unique<ConditionalExpression>(std::move(expr)));
-                case AstKind::FunctionCall:
-                    return rewrite(ast_cast_unique<FunctionCall>(std::move(expr)));
-                case AstKind::DictLiteral:
-                    return rewrite(ast_cast_unique<DictLiteral>(std::move(expr)));
-                case AstKind::TensorLiteral:
-                    return rewrite(ast_cast_unique<TensorLiteral>(std::move(expr)));
-                case AstKind::TupleLiteral:
-                    return rewrite(ast_cast_unique<TupleLiteral>(std::move(expr)));
-                case AstKind::BracketAccess:
-                    return rewrite(ast_cast_unique<BracketAccess>(std::move(expr)));
-                case AstKind::DotAccess:
-                    return rewrite(ast_cast_unique<DotAccess>(std::move(expr)));
-                case AstKind::SwitchExpression:
-                    return rewrite(ast_cast_unique<SwitchExpression>(std::move(expr)));
-                default:
-                    return expr;
-            }
+            ExprPtr result = nullptr;
+            NodeDispatcher<AllExpressionNodeTypes>::dispatch(expr->kind, [&]<typename T>() {
+                result = rewrite(ast_cast_unique<T>(std::move(expr)));
+            });
+
+            return result ? std::move(result) : std::move(expr);
         }
 
         virtual TypeAnnPtr rewrite(TypeAnnPtr type)
@@ -108,252 +270,266 @@ namespace valuascript::compiler
             {
                 return rewrite(ast_cast_unique<TupleTypeAnnotation>(std::move(type)));
             }
-            for (auto& arg : type->generic_args) { arg = rewrite(std::move(arg)); }
+
+            auto_rewrite_children(*type);
             return type;
         }
 
         virtual ImportPtr rewrite(ImportPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual DirectivePtr rewrite(DirectivePtr node)
         {
-            if (node && node->value) node->value = rewrite(std::move(node->value));
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual FuncDefPtr rewrite(FuncDefPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            for (auto& param : node->parameters) { param = rewrite(std::move(param)); }
-            for (auto& ret : node->return_types) { ret = rewrite(std::move(ret)); }
-            for (auto& stmt : node->body) { stmt = rewrite(std::move(stmt)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual StructDefPtr rewrite(StructDefPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            for (auto& field : node->fields) { field = rewrite(std::move(field)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual EnumDefPtr rewrite(EnumDefPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            if (node->underlying_type) node->underlying_type = rewrite(std::move(node->underlying_type));
-            for (auto& enum_case : node->cases) { enum_case = rewrite(std::move(enum_case)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual TypeAliasPtr rewrite(TypeAliasPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            if (node->target_type) node->target_type = rewrite(std::move(node->target_type));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExtensionDefPtr rewrite(ExtensionDefPtr node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            if (node->target_type) node->target_type = rewrite(std::move(node->target_type));
-            for (auto& st : node->struct_definitions) { st = rewrite(std::move(st)); }
-            for (auto& en : node->enum_definitions) { en = rewrite(std::move(en)); }
-            for (auto& ta : node->type_aliases) { ta = rewrite(std::move(ta)); }
-            for (auto& fn : node->function_definitions) { fn = rewrite(std::move(fn)); }
-            for (auto& step : node->execution_steps) { step = rewrite(std::move(step)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual StmtPtr rewrite(std::unique_ptr<Assignment> node)
         {
             if (!node) return nullptr;
-            for (auto& target : node->targets) { target = rewrite(std::move(target)); }
-            if (node->value) node->value = rewrite(std::move(node->value));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual StmtPtr rewrite(std::unique_ptr<Reassignment> node)
         {
             if (!node) return nullptr;
-            if (node->target) node->target = rewrite(std::move(node->target));
-            if (node->value) node->value = rewrite(std::move(node->value));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual StmtPtr rewrite(std::unique_ptr<ExpressionStatement> node)
         {
-            if (node && node->expr) node->expr = rewrite(std::move(node->expr));
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual StmtPtr rewrite(std::unique_ptr<ReturnStatement> node)
         {
             if (!node) return nullptr;
-            for (auto& mod : node->modifiers) { mod = rewrite(std::move(mod)); }
-            for (auto& val : node->values) { val = rewrite(std::move(val)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
-        virtual ExprPtr rewrite(std::unique_ptr<NumberLiteral> node) { return node; }
-        virtual ExprPtr rewrite(std::unique_ptr<PercentageLiteral> node) { return node; }
-        virtual ExprPtr rewrite(std::unique_ptr<StringLiteral> node) { return node; }
-        virtual ExprPtr rewrite(std::unique_ptr<BooleanLiteral> node) { return node; }
-        virtual ExprPtr rewrite(std::unique_ptr<IdentifierAccess> node) { return node; }
-        virtual ExprPtr rewrite(std::unique_ptr<SelfExpression> node) { return node; }
+        virtual ExprPtr rewrite(std::unique_ptr<NumberLiteral> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
+
+        virtual ExprPtr rewrite(std::unique_ptr<PercentageLiteral> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
+
+        virtual ExprPtr rewrite(std::unique_ptr<StringLiteral> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
+
+        virtual ExprPtr rewrite(std::unique_ptr<BooleanLiteral> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
+
+        virtual ExprPtr rewrite(std::unique_ptr<IdentifierAccess> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
+
+        virtual ExprPtr rewrite(std::unique_ptr<SelfExpression> node)
+        {
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
+            return node;
+        }
 
         virtual ExprPtr rewrite(std::unique_ptr<BinaryExpression> node)
         {
             if (!node) return nullptr;
-            if (node->left) node->left = rewrite(std::move(node->left));
-            if (node->right) node->right = rewrite(std::move(node->right));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<UnaryExpression> node)
         {
-            if (node && node->right) node->right = rewrite(std::move(node->right));
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<GroupingExpression> node)
         {
-            if (node && node->expression) node->expression = rewrite(std::move(node->expression));
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<ConditionalExpression> node)
         {
             if (!node) return nullptr;
-            if (node->condition) node->condition = rewrite(std::move(node->condition));
-            if (node->then_branch) node->then_branch = rewrite(std::move(node->then_branch));
-            if (node->else_branch) node->else_branch = rewrite(std::move(node->else_branch));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<FunctionCall> node)
         {
             if (!node) return nullptr;
-            if (node->target) node->target = rewrite(std::move(node->target));
-            for (auto& arg : node->arguments) { arg = rewrite(std::move(arg)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<DictLiteral> node)
         {
             if (!node) return nullptr;
-            for (auto& item : node->elements) { item = rewrite(std::move(item)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<TensorLiteral> node)
         {
             if (!node) return nullptr;
-            for (auto& elem : node->elements) { elem = rewrite(std::move(elem)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<TupleLiteral> node)
         {
             if (!node) return nullptr;
-            for (auto& elem : node->elements) { elem = rewrite(std::move(elem)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<BracketAccess> node)
         {
             if (!node) return nullptr;
-            if (node->target) node->target = rewrite(std::move(node->target));
-            if (node->index) node->index = rewrite(std::move(node->index));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<DotAccess> node)
         {
-            if (node && node->target) node->target = rewrite(std::move(node->target));
+            if (!node) return nullptr;
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual ExprPtr rewrite(std::unique_ptr<SwitchExpression> node)
         {
             if (!node) return nullptr;
-            if (node->target) node->target = rewrite(std::move(node->target));
-            for (auto& sc : node->cases) { sc = rewrite(std::move(sc)); }
-            for (auto& mod : node->default_modifiers) { mod = rewrite(std::move(mod)); }
-            if (node->default_case) node->default_case = rewrite(std::move(node->default_case));
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual TypeAnnPtr rewrite(std::unique_ptr<TupleTypeAnnotation> node)
         {
             if (!node) return nullptr;
-            for (auto& elem : node->element_types) { elem = rewrite(std::move(elem)); }
+            auto_rewrite_children(*node);
             return node;
         }
 
         virtual FunctionParameter rewrite(FunctionParameter node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.type) node.type = rewrite(std::move(node.type));
-            if (node.default_value) node.default_value = rewrite(std::move(node.default_value));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual StructField rewrite(StructField node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.type) node.type = rewrite(std::move(node.type));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual EnumCase rewrite(EnumCase node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.value) node.value = rewrite(std::move(node.value));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual SwitchCase rewrite(SwitchCase node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.result) node.result = rewrite(std::move(node.result));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual AssignmentTarget rewrite(AssignmentTarget node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.type) node.type = rewrite(std::move(node.type));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual Modifier rewrite(Modifier node)
         {
-            for (auto& arg : node.arguments) { arg = rewrite(std::move(arg)); }
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual CallArgument rewrite(CallArgument node)
         {
-            if (node.value) node.value = rewrite(std::move(node.value));
+            auto_rewrite_children(node);
             return node;
         }
 
         virtual DictItem rewrite(DictItem node)
         {
-            for (auto& mod : node.modifiers) { mod = rewrite(std::move(mod)); }
-            if (node.value) node.value = rewrite(std::move(node.value));
+            auto_rewrite_children(node);
             return node;
         }
 
-        virtual Comment rewrite(Comment node) { return node; }
+        virtual Comment rewrite(Comment node)
+        {
+            auto_rewrite_children(node);
+            return node;
+        }
     };
 }
