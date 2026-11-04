@@ -1,5 +1,6 @@
 #include "frontend/parser/helpers/parser_test_base.h"
 #include "synthetic_generator.h"
+#include "utils/memory/arena.h"
 #include <string>
 
 namespace valuascript::compiler::test
@@ -11,7 +12,7 @@ namespace valuascript::compiler::test
     TEST_F(SyntheticStressTest, CombinatorialFuzzing)
     {
         constexpr size_t iterations = FUZZ_ITERATIONS;
-        AstArenaScope arena_scope(512 * 1024);
+        valuascript::shared::ArenaScope arena_scope(512 * 1024);
 
         for (size_t seed = 0; seed < iterations; ++seed)
         {

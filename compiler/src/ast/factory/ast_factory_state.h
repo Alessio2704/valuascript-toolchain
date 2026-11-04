@@ -1,0 +1,68 @@
+#pragma once
+
+#include <memory>
+#include <string>
+#include <string_view>
+#include <cstddef>
+#include <utility>
+
+#include "ast/core/ast_node_name.h"
+
+namespace valuascript::compiler
+{
+    class AstFactoryState
+    {
+    public:
+        static size_t& get_id_ref() noexcept
+        {
+            static size_t id = 100;
+            return id;
+        }
+
+        static size_t next_id() noexcept
+        {
+            return ++get_id_ref();
+        }
+
+        static void reset(size_t start = 100) noexcept
+        {
+            get_id_ref() = start;
+        }
+
+        static SourceSpan make_span(int depth = 0)
+        {
+            size_t id = next_id();
+            return SourceSpan{
+                .line_start = id + 1,
+                .column_start = (static_cast<size_t>(depth) * 4) + 1,
+                .line_end = id + 1 + (depth > 0 ? 0 : 1),
+                .column_end = (static_cast<size_t>(depth) * 4) + 13,
+                .file_path = std::make_shared<const std::string>("sample_source.vs"),
+                .start_offset = id * 20,
+                .length = 12
+            };
+        }
+
+        static NodeName make_name(std::string_view prefix = "node", int depth = 0)
+        {
+            size_t id = next_id();
+            std::string str = std::string(prefix) + "_" + std::to_string(id);
+            return NodeName(std::move(str), make_span(depth));
+        }
+    };
+
+    inline void reset_factory_state(size_t start = 100) noexcept
+    {
+        AstFactoryState::reset(start);
+    }
+
+    inline SourceSpan factory_span(int depth = 0)
+    {
+        return AstFactoryState::make_span(depth);
+    }
+
+    inline NodeName factory_name(std::string_view prefix = "node", int depth = 0)
+    {
+        return AstFactoryState::make_name(prefix, depth);
+    }
+}

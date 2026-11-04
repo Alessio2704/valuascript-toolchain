@@ -13,6 +13,7 @@ namespace valuascript::compiler {
         Ast,
         ResolvedProject,
         SymbolTable,
+        TypeTable,
         Bytecode,
         LinterReport
     };

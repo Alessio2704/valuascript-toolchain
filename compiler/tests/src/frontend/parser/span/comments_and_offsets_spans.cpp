@@ -47,15 +47,15 @@ namespace valuascript::compiler::test
 
         ASSERT_EQ(ast->comments.size(), 3);
         EXPECT_EQ(ast->comments[0].text, "// Header comment");
-        EXPECT_EQ(ast->comments[0].start_offset, 0);
-        EXPECT_EQ(ast->comments[0].length, 17);
+        EXPECT_EQ(ast->comments[0].span.start_offset, 0);
+        EXPECT_EQ(ast->comments[0].span.length, 17);
 
         EXPECT_EQ(ast->comments[1].text, "// vs-lint:disable-line");
         size_t c1_off = code.find("// vs-lint");
-        EXPECT_EQ(ast->comments[1].start_offset, c1_off);
+        EXPECT_EQ(ast->comments[1].span.start_offset, c1_off);
 
         EXPECT_EQ(ast->comments[2].text, "// Footer comment");
         size_t c2_off = code.find("// Footer");
-        EXPECT_EQ(ast->comments[2].start_offset, c2_off);
+        EXPECT_EQ(ast->comments[2].span.start_offset, c2_off);
     }
 }

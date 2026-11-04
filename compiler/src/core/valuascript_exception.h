@@ -8,16 +8,20 @@
 #include "frontend/lexer/lexer_error_code.h"
 #include "frontend/parser/parser_error_code.h"
 #include "midend/project_resolver/project_resolver_error_code.h"
+#include "midend/symbol_resolver/symbol_resolver_error_code.h"
+#include "midend/type_checker/type_checker_error_code.h"
 
 namespace valuascript::compiler
 {
-    enum class ValuascriptErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal };
+    enum class ValuascriptErrorCategory { File, Lexical, Syntax, Semantic, Import, Internal, Type };
 
     using ValuascriptErrorCode = std::variant<
         FileReaderErrorCode,
         LexerErrorCode,
         ParserErrorCode,
-        ProjectResolverErrorCode
+        ProjectResolverErrorCode,
+        SymbolResolverErrorCode,
+        TypeCheckerErrorCode
     >;
 
     inline std::ostream& operator<<(std::ostream& os, const ValuascriptErrorCode& code)

@@ -1,7 +1,7 @@
 #include "declaration_parser.h"
 #include "parser.h"
 #include "token/reserved_keyword_lookup.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 #include "list_parser.h"
 #include "block_parser.h"
 #include "error_recovery.h"
@@ -24,7 +24,7 @@ namespace valuascript::compiler
             RecoveryConfig::StopAtBoundary({TokenType::Comma})
         );
         SourceSpan full_span = cursor.combine_spans(start_span, cursor.make_span(path));
-        return AstFactory::make_node_with_span<ImportStatement>(
+        return AstBuilder::build_with_span<ImportStatement>(
             full_span, std::move(modifiers), NodeName{path.lexeme, cursor.make_span(path)});
     }
 
@@ -75,8 +75,8 @@ namespace valuascript::compiler
 
             if (value) parser.verify_statement_end();
         }
-        return AstFactory::make_node<Directive>(
-            cursor, start, NodeName{directive_name, cursor.make_span(name_token)}, std::move(value));
+        return AstBuilder::build_with_span<Directive>(
+            cursor.make_span(start, cursor.previous()), NodeName{directive_name, cursor.make_span(name_token)}, std::move(value));
     }
 
     std::vector<Modifier> DeclarationParser::parse_modifiers(bool is_statement_context)
@@ -130,11 +130,11 @@ namespace valuascript::compiler
 
                     for (auto& g : args_gen)
                     {
-                        arguments.push_back(CallArgument{
-                            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                            .value = std::move(g.value),
-                            .span = g.span
-                        });
+                        arguments.push_back(CallArgument(
+                            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                            std::move(g.value),
+                            g.span
+                        ));
                     }
 
                     bool is_at_boundary =
@@ -150,11 +150,11 @@ namespace valuascript::compiler
                     if (is_at_boundary)
                     {
                         cursor.report_error_no_panic(cursor.peek(), E::UnmatchedParenthesisAfterModifierArgs);
-                        modifiers.push_back(Modifier{
-                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                            .arguments = std::move(arguments),
-                            .span = cursor.make_span(start_token, cursor.previous())
-                        });
+                        modifiers.push_back(Modifier(
+                            NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            std::move(arguments),
+                            cursor.make_span(start_token, cursor.previous())
+                        ));
                     }
                     else
                     {
@@ -164,20 +164,20 @@ namespace valuascript::compiler
                             if (!ctx.is_active_closer(cursor.peek().type) || cursor.check(TokenType::RightParen))
                                 ErrorRecovery::synchronize_and_consume_closer(ctx, TokenType::RightParen);
                         }
-                        modifiers.push_back(Modifier{
-                            .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                            .arguments = std::move(arguments),
-                            .span = cursor.make_span(start_token, cursor.previous())
-                        });
+                        modifiers.push_back(Modifier(
+                            NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                            std::move(arguments),
+                            cursor.make_span(start_token, cursor.previous())
+                        ));
                     }
                 }
                 else
                 {
-                    modifiers.push_back(Modifier{
-                        .name = NodeName{name_token.lexeme, cursor.make_span(name_token)},
-                        .arguments = std::move(arguments),
-                        .span = cursor.make_span(start_token, cursor.previous())
-                    });
+                    modifiers.push_back(Modifier(
+                        NodeName{name_token.lexeme, cursor.make_span(name_token)},
+                        std::move(arguments),
+                        cursor.make_span(start_token, cursor.previous())
+                    ));
                 }
             }
             catch (const ParseSyncException&)
@@ -216,7 +216,7 @@ namespace valuascript::compiler
         else
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedBraceInStructDefinition);
-            return AstFactory::make_node_with_span<StructDefinition>(
+            return AstBuilder::build_with_span<StructDefinition>(
                 cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
                 NodeName{name.lexeme, cursor.make_span(name)}, std::vector<StructField>{}
             );
@@ -261,12 +261,12 @@ namespace valuascript::compiler
 
         std::vector<StructField> fields;
         fields.reserve(fields_gen.size());
-        for (auto& g : fields_gen) fields.push_back({
-            .modifiers = std::move(g.modifiers),
-            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .type = std::move(g.type),
-            .span = g.span
-        });
+        for (auto& g : fields_gen) fields.push_back(StructField(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.type),
+            g.span
+        ));
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterStructBody); }
@@ -276,7 +276,7 @@ namespace valuascript::compiler
             end_token = cursor.previous();
         }
 
-        return AstFactory::make_node_with_span<StructDefinition>(
+        return AstBuilder::build_with_span<StructDefinition>(
             cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(fields));
     }
@@ -326,7 +326,7 @@ namespace valuascript::compiler
         else
         {
             cursor.report_error_no_panic(cursor.peek(), E::ExpectedLeftBraceBeforeEnumBody);
-            return AstFactory::make_node_with_span<EnumDefinition>(
+            return AstBuilder::build_with_span<EnumDefinition>(
                 cursor.combine_spans(start_span, cursor.make_span(cursor.previous())), std::move(modifiers),
                 NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type), std::vector<EnumCase>{}
             );
@@ -361,12 +361,12 @@ namespace valuascript::compiler
 
         std::vector<EnumCase> cases;
         cases.reserve(cases_gen.size());
-        for (auto& g : cases_gen) cases.push_back({
-            .modifiers = std::move(g.modifiers),
-            .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-            .value = std::move(g.value),
-            .span = g.span
-        });
+        for (auto& g : cases_gen) cases.push_back(EnumCase(
+            std::move(g.modifiers),
+            NodeName{g.name.lexeme, cursor.make_span(g.name)},
+            std::move(g.value),
+            g.span
+        ));
 
         Token end_token = cursor.previous();
         try { end_token = cursor.consume(TokenType::RightBrace, E::ExpectedRightBraceAfterEnumBody); }
@@ -376,7 +376,7 @@ namespace valuascript::compiler
             end_token = cursor.previous();
         }
 
-        return AstFactory::make_node_with_span<EnumDefinition>(
+        return AstBuilder::build_with_span<EnumDefinition>(
             cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(underlying_type),
             std::move(cases));
@@ -450,13 +450,13 @@ namespace valuascript::compiler
             {
                 if (g.has_value_separator || g.value) seen_default_param = true;
                 else if (seen_default_param) cursor.report_error_no_panic(g.name, E::NonDefaultParameterAfterDefault);
-                params.push_back({
-                    .modifiers = std::move(g.modifiers),
-                    .name = NodeName{g.name.lexeme, cursor.make_span(g.name)},
-                    .type = std::move(g.type),
-                    .default_value = std::move(g.value),
-                    .span = g.span
-                });
+                params.push_back(FunctionParameter(
+                    std::move(g.modifiers),
+                    NodeName{g.name.lexeme, cursor.make_span(g.name)},
+                    std::move(g.type),
+                    std::move(g.value),
+                    g.span
+                ));
             }
         }
 
@@ -528,7 +528,7 @@ namespace valuascript::compiler
             .parse_statements(ParseContextType::FunctionBody, body);
 
         Token end_token = cursor.previous();
-        return AstFactory::make_node_with_span<FunctionDefinition>(
+        return AstBuilder::build_with_span<FunctionDefinition>(
             cursor.combine_spans(start_span, cursor.make_span(end_token)), std::move(modifiers),
             NodeName{name.lexeme, cursor.make_span(name)}, std::move(params),
             std::move(return_types), std::move(body), std::move(docstring)
@@ -552,7 +552,7 @@ namespace valuascript::compiler
         if (cursor.is_at_end() || next_is_newline_stmt)
         {
             cursor.report_error_no_panic(cursor.peek(), E::MissingTypeAnnotation, false);
-            return AstFactory::make_node_with_span<TypeAliasDefinition>(
+            return AstBuilder::build_with_span<TypeAliasDefinition>(
                 cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
                 std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)}, nullptr);
         }
@@ -573,7 +573,7 @@ namespace valuascript::compiler
         );
 
         if (target_type) parser.verify_statement_end();
-        return AstFactory::make_node_with_span<TypeAliasDefinition>(
+        return AstBuilder::build_with_span<TypeAliasDefinition>(
             cursor.combine_spans(start_span, cursor.make_span(cursor.previous())),
             std::move(modifiers), NodeName{name.lexeme, cursor.make_span(name)},
             std::move(target_type));

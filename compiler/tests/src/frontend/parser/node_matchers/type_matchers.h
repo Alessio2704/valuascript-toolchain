@@ -1,19 +1,18 @@
 #pragma once
 
 #include "core.h"
-#include "specs.h"
 #include "expect_functions.h"
 
 namespace valuascript::compiler::test
 {
     template <typename T = TypeVerifier>
-    TypeVerifier IsType(StringStorage name, std::initializer_list<T>) = delete;
+    TypeVerifier IsType(std::string name, std::initializer_list<T>) = delete;
 
     template <typename... Matchers>
     struct TypeVariadicMatcher
     {
         using node_type = TypeAnnotation;
-        StringStorage name;
+        std::string name;
         std::tuple<Matchers...> generics;
 
         void operator()(TypeAnnotation* t) const
@@ -24,19 +23,19 @@ namespace valuascript::compiler::test
             {
                 (gen_vec.push_back(TypeVerifier(m)), ...);
             }, generics);
-            ExpectType(t, name.get(), gen_vec);
+            ExpectType(t, name, gen_vec);
         }
     };
 
     struct TypeMatcher
     {
         using node_type = TypeAnnotation;
-        StringStorage name;
+        std::string name;
         std::vector<TypeVerifier> generics;
-        void operator()(TypeAnnotation* t) const { ExpectType(t, name.get(), generics); }
+        void operator()(TypeAnnotation* t) const { ExpectType(t, name, generics); }
     };
 
-    inline FluentNodeMatcher<TypeMatcher> IsType(StringStorage name, std::vector<TypeVerifier> generics = {})
+    inline FluentNodeMatcher<TypeMatcher> IsType(std::string name, std::vector<TypeVerifier> generics = {})
     {
         return FluentNodeMatcher<TypeMatcher>{TypeMatcher{.name = std::move(name), .generics = std::move(generics)}};
     }
@@ -44,7 +43,7 @@ namespace valuascript::compiler::test
     template <typename... Matchers>
         requires (sizeof...(Matchers) > 0 && !(sizeof...(Matchers) == 1 && std::same_as<
             std::decay_t<std::tuple_element_t<0, std::tuple<Matchers...>>>, std::vector<TypeVerifier>>))
-    inline auto IsType(StringStorage name, Matchers&&... matchers)
+    inline auto IsType(std::string name, Matchers&&... matchers)
     {
         return FluentNodeMatcher<TypeVariadicMatcher<std::decay_t<Matchers>...>>{
             TypeVariadicMatcher<std::decay_t<Matchers>...>{

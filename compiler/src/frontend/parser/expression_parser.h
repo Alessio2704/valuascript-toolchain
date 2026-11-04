@@ -1,6 +1,6 @@
 #pragma once
 #include "parser_context.h"
-#include "ast_factory.h"
+#include "ast/utils/ast_builder.h"
 
 namespace valuascript::compiler
 {
@@ -71,24 +71,25 @@ namespace valuascript::compiler
     };
 
     template <typename T>
-    ExprPtr ExpressionParser::parse_literal_prefix()
+    inline ExprPtr ExpressionParser::parse_literal_prefix()
     {
         const Token& t = cursor.advance();
+        SourceSpan sp = cursor.make_span(t, cursor.previous());
         if constexpr (std::is_same_v<T, BooleanLiteral>)
         {
-            return AstFactory::make_node<T>(cursor, t, t.type == TokenType::True);
+            return AstBuilder::build_with_span<T>(sp, t.type == TokenType::True);
         }
         else if constexpr (std::is_same_v<T, SelfExpression>)
         {
-            return AstFactory::make_node<T>(cursor, t);
+            return AstBuilder::build_with_span<T>(sp);
         }
         else if constexpr (std::is_same_v<T, IdentifierAccess>)
         {
-            return AstFactory::make_node<T>(cursor, t, NodeName{t.lexeme, cursor.make_span(t)});
+            return AstBuilder::build_with_span<T>(sp, NodeName{t.lexeme, cursor.make_span(t)});
         }
         else
         {
-            return AstFactory::make_node<T>(cursor, t, t.lexeme);
+            return AstBuilder::build_with_span<T>(sp, t.lexeme);
         }
     }
 }
