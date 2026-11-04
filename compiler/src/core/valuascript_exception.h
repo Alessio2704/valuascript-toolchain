@@ -8,6 +8,7 @@
 #include "frontend/lexer/lexer_error_code.h"
 #include "frontend/parser/parser_error_code.h"
 #include "midend/project_resolver/project_resolver_error_code.h"
+#include "midend/symbol_resolver/symbol_resolver_error_code.h"
 
 namespace valuascript::compiler
 {
@@ -17,7 +18,8 @@ namespace valuascript::compiler
         FileReaderErrorCode,
         LexerErrorCode,
         ParserErrorCode,
-        ProjectResolverErrorCode
+        ProjectResolverErrorCode,
+        SymbolResolverErrorCode
     >;
 
     inline std::ostream& operator<<(std::ostream& os, const ValuascriptErrorCode& code)
